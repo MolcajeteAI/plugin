@@ -1,5 +1,5 @@
 {
-  "name": "pm",
+  "name": "prd",
   "version": "1.0.0",
   "description": "Product management plugin for spec-driven development with AgentOS-inspired workflow. Orchestrates product planning, feature specifications, task breakdown, and implementation via specialized subagents.",
   "author": {
