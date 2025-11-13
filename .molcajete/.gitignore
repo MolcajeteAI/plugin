@@ -1,0 +1,5 @@
+# Ignore all temporary and session files
+tmp/
+
+# Keep the .gitignore file itself
+!.gitignore

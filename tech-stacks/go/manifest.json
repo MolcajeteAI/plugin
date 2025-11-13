@@ -1,0 +1,271 @@
+{
+  "name": "go",
+  "version": "1.0.0",
+  "description": "Comprehensive Go development toolkit from project creation through deployment",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "frameworks": [
+    "Standard Library",
+    "Gin",
+    "Echo",
+    "Fiber",
+    "Chi",
+    "Gorilla Mux"
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Initialize new Go project with Makefile and build structure"
+    },
+    {
+      "name": "build",
+      "description": "Build application using Makefile to ./bin directory"
+    },
+    {
+      "name": "run",
+      "description": "Run application using Makefile"
+    },
+    {
+      "name": "test",
+      "description": "Run tests"
+    },
+    {
+      "name": "test-race",
+      "description": "Run tests with race detector"
+    },
+    {
+      "name": "coverage",
+      "description": "Generate coverage report"
+    },
+    {
+      "name": "bench",
+      "description": "Run benchmarks"
+    },
+    {
+      "name": "fmt",
+      "description": "Format code"
+    },
+    {
+      "name": "lint",
+      "description": "Run linters"
+    },
+    {
+      "name": "vet",
+      "description": "Run go vet"
+    },
+    {
+      "name": "profile",
+      "description": "Profile application"
+    },
+    {
+      "name": "optimize",
+      "description": "Analyze and optimize performance"
+    },
+    {
+      "name": "sec-scan",
+      "description": "Run security scanners"
+    },
+    {
+      "name": "vuln-check",
+      "description": "Check for vulnerabilities"
+    },
+    {
+      "name": "docker-build",
+      "description": "Build Docker image"
+    },
+    {
+      "name": "docker-run",
+      "description": "Run Docker container"
+    },
+    {
+      "name": "deploy",
+      "description": "Deploy application"
+    },
+    {
+      "name": "mod-tidy",
+      "description": "Tidy dependencies"
+    },
+    {
+      "name": "generate",
+      "description": "Run go generate"
+    },
+    {
+      "name": "debug",
+      "description": "Debug tests or application"
+    }
+  ],
+  "agents": [
+    {
+      "name": "developer",
+      "description": "Go development with idiomatic patterns",
+      "capabilities": [
+        "go-development",
+        "idiomatic-code",
+        "error-handling",
+        "package-design"
+      ]
+    },
+    {
+      "name": "tester",
+      "description": "Comprehensive testing (unit, integration, benchmark)",
+      "capabilities": [
+        "unit-testing",
+        "integration-testing",
+        "benchmarking",
+        "test-coverage"
+      ]
+    },
+    {
+      "name": "optimizer",
+      "description": "Performance profiling and optimization",
+      "capabilities": [
+        "cpu-profiling",
+        "memory-profiling",
+        "optimization",
+        "benchmarking"
+      ]
+    },
+    {
+      "name": "security",
+      "description": "Security scanning and vulnerability analysis (READ-ONLY)",
+      "capabilities": [
+        "security-scanning",
+        "vulnerability-detection",
+        "secure-code-review"
+      ]
+    },
+    {
+      "name": "deployer",
+      "description": "Docker and deployment management",
+      "capabilities": [
+        "docker-containerization",
+        "kubernetes-deployment",
+        "deployment-validation"
+      ]
+    },
+    {
+      "name": "api-builder",
+      "description": "REST and gRPC API development",
+      "capabilities": [
+        "rest-api-development",
+        "grpc-development",
+        "middleware-design"
+      ]
+    },
+    {
+      "name": "debugger",
+      "description": "Debug tests and runtime issues",
+      "capabilities": [
+        "test-debugging",
+        "runtime-debugging",
+        "log-analysis"
+      ]
+    },
+    {
+      "name": "documenter",
+      "description": "Generate and maintain documentation",
+      "capabilities": [
+        "godoc-generation",
+        "readme-creation",
+        "api-documentation"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "project-structure",
+      "description": "Standard Go project layouts"
+    },
+    {
+      "name": "code-quality",
+      "description": "Go idioms and best practices"
+    },
+    {
+      "name": "error-handling",
+      "description": "Modern error handling patterns"
+    },
+    {
+      "name": "concurrency-patterns",
+      "description": "Goroutines and channels"
+    },
+    {
+      "name": "testing-patterns",
+      "description": "Table-driven tests and mocking"
+    },
+    {
+      "name": "coverage-analysis",
+      "description": "Test coverage tracking"
+    },
+    {
+      "name": "benchmarking",
+      "description": "Performance benchmarking"
+    },
+    {
+      "name": "performance-profiling",
+      "description": "pprof usage and analysis"
+    },
+    {
+      "name": "optimization-techniques",
+      "description": "Performance optimization strategies"
+    },
+    {
+      "name": "security-scanning",
+      "description": "gosec and govulncheck usage"
+    },
+    {
+      "name": "secure-coding",
+      "description": "Security best practices"
+    },
+    {
+      "name": "rest-api-patterns",
+      "description": "REST API implementation"
+    },
+    {
+      "name": "grpc-patterns",
+      "description": "gRPC service implementation"
+    },
+    {
+      "name": "docker-patterns",
+      "description": "Docker containerization"
+    },
+    {
+      "name": "deployment-strategies",
+      "description": "Kubernetes and serverless deployment"
+    },
+    {
+      "name": "documentation-standards",
+      "description": "godoc conventions"
+    }
+  ],
+  "requirements": {
+    "core": [
+      "Go >= 1.21"
+    ],
+    "recommended": [
+      "golangci-lint - Meta-linter",
+      "gosec - Security scanner",
+      "govulncheck - Vulnerability scanner",
+      "Docker - Containerization"
+    ],
+    "optional": [
+      "testify - Testing framework",
+      "mockgen - Mock generation",
+      "Wire - Dependency injection",
+      "sqlc - SQL code generation"
+    ]
+  },
+  "supportedDeploymentTargets": [
+    "Docker",
+    "Kubernetes",
+    "AWS Lambda",
+    "Google Cloud Functions",
+    "Azure Functions",
+    "Google Cloud Run",
+    "AWS ECS/Fargate",
+    "Fly.io",
+    "Heroku",
+    "DigitalOcean App Platform"
+  ]
+}

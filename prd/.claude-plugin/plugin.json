@@ -1,0 +1,36 @@
+{
+  "name": "pm",
+  "version": "1.0.0",
+  "description": "Product management plugin for spec-driven development with AgentOS-inspired workflow. Orchestrates product planning, feature specifications, task breakdown, and implementation via specialized subagents.",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "product-management",
+    "planning",
+    "specs",
+    "tasks",
+    "orchestration"
+  ],
+  "commands": [
+    "./commands/plan-product.md",
+    "./commands/scope-feature.md",
+    "./commands/write-spec.md",
+    "./commands/create-tasks.md",
+    "./commands/break-task.md",
+    "./commands/execute-tasks.md"
+  ],
+  "agents": [
+    "./agents/product-strategist.md",
+    "./agents/feature-analyst.md",
+    "./agents/spec-writer.md",
+    "./agents/task-planner.md",
+    "./agents/orchestrator.md"
+  ],
+  "skills": [
+    "./skills/product-planning/SKILL.md",
+    "./skills/spec-writing/SKILL.md",
+    "./skills/task-breakdown/SKILL.md"
+  ]
+}

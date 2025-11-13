@@ -1,0 +1,73 @@
+{
+  "name": "go",
+  "version": "1.0.0",
+  "description": "Go development with YAGNI/KISS principles, Makefile-driven builds, and idiomatic patterns",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "go",
+    "golang",
+    "testing",
+    "performance",
+    "security",
+    "rest-api",
+    "grpc",
+    "docker",
+    "kubernetes",
+    "makefile",
+    "yagni",
+    "kiss"
+  ],
+  "commands": [
+    "./commands/init.md",
+    "./commands/build.md",
+    "./commands/run.md",
+    "./commands/test.md",
+    "./commands/test-race.md",
+    "./commands/coverage.md",
+    "./commands/bench.md",
+    "./commands/fmt.md",
+    "./commands/lint.md",
+    "./commands/vet.md",
+    "./commands/profile.md",
+    "./commands/optimize.md",
+    "./commands/sec-scan.md",
+    "./commands/vuln-check.md",
+    "./commands/docker-build.md",
+    "./commands/docker-run.md",
+    "./commands/deploy.md",
+    "./commands/mod-tidy.md",
+    "./commands/generate.md",
+    "./commands/debug.md"
+  ],
+  "agents": [
+    "./agents/developer.md",
+    "./agents/tester.md",
+    "./agents/optimizer.md",
+    "./agents/security.md",
+    "./agents/deployer.md",
+    "./agents/api-builder.md",
+    "./agents/debugger.md",
+    "./agents/documenter.md"
+  ],
+  "skills": [
+    "./skills/project-structure/SKILL.md",
+    "./skills/code-quality/SKILL.md",
+    "./skills/error-handling/SKILL.md",
+    "./skills/concurrency-patterns/SKILL.md",
+    "./skills/testing-patterns/SKILL.md",
+    "./skills/coverage-analysis/SKILL.md",
+    "./skills/benchmarking/SKILL.md",
+    "./skills/performance-profiling/SKILL.md",
+    "./skills/optimization-techniques/SKILL.md",
+    "./skills/security-scanning/SKILL.md",
+    "./skills/secure-coding/SKILL.md",
+    "./skills/rest-api-patterns/SKILL.md",
+    "./skills/grpc-patterns/SKILL.md",
+    "./skills/docker-patterns/SKILL.md",
+    "./skills/deployment-strategies/SKILL.md",
+    "./skills/documentation-standards/SKILL.md"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "name": "defaults",
+  "version": "1.0.0",
+  "description": "Defaults plugin providing basic setup for task completion and user prompts",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": ["hooks", "audio", "feedback", "notifications", "productivity"],
+  "skills": ["./skills/play-sound/SKILL.md"],
+  "hooks": "./settings.json"
+}

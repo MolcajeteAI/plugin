@@ -1,0 +1,47 @@
+{
+  "name": "molcajete",
+  "owner": {
+    "name": "Ivan",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "defaults",
+      "source": "./defaults",
+      "description": "Defaults plugin providing audio feedback hooks"
+    },
+    {
+      "name": "git",
+      "source": "./git",
+      "description": "Git plugin for Claude Code"
+    },
+    {
+      "name": "go",
+      "source": "./tech-stacks/go",
+      "description": "Comprehensive Go development assistance from project initialization through deployment, enforcing Go community best practices and modern development principles"
+    },
+    {
+      "name": "res",
+      "source": "./research",
+      "description": "Research and information gathering workflows with automatic detection and smart formatting"
+    },
+    {
+      "name": "prd",
+      "source": "./prd",
+      "description": "Spec driven product management for software projects"
+    },
+    {
+      "name": "sol",
+      "source": "./tech-stacks/solidity",
+      "description": "Smart contract development, testing, auditing, and deployment for Solidity for Foundy and Hardhat support"
+    }
+  ],
+  "enabledPlugins": {
+    "defaults@molcajete": true,
+    "git@molcajete": true,
+    "go@molcajete": true,
+    "prd@molcajete": true,
+    "res@molcajete": true,
+    "sol@molcajete": true
+  }
+}

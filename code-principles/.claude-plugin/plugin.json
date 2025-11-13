@@ -1,0 +1,28 @@
+{
+  "name": "code-principles",
+  "version": "1.0.0",
+  "type": "foundation",
+  "description": "Foundation plugin providing core software development principles, testing standards, and code quality guidelines",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "principles",
+    "software-engineering",
+    "DRY",
+    "SOLID",
+    "KISS",
+    "YAGNI",
+    "testing",
+    "code-quality",
+    "feature-slicing",
+    "best-practices"
+  ],
+  "skills": [
+    "./skills/software-principles/SKILL.md",
+    "./skills/feature-slicing/SKILL.md",
+    "./skills/testing-standards/SKILL.md",
+    "./skills/code-quality/SKILL.md"
+  ]
+}

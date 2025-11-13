@@ -1,0 +1,247 @@
+{
+  "name": "sol",
+  "version": "1.0.0",
+  "description": "Professional Solidity smart contract development with Foundry and Hardhat support",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "frameworks": [
+    "Foundry",
+    "Hardhat",
+    "Hybrid (Foundry + Hardhat)"
+  ],
+  "commands": [
+    {
+      "name": "init",
+      "description": "Initialize new Solidity project with framework selection"
+    },
+    {
+      "name": "compile",
+      "description": "Compile contracts"
+    },
+    {
+      "name": "build",
+      "description": "Full build with artifacts"
+    },
+    {
+      "name": "clean",
+      "description": "Clean build artifacts"
+    },
+    {
+      "name": "install",
+      "description": "Install dependencies"
+    },
+    {
+      "name": "format",
+      "description": "Format code"
+    },
+    {
+      "name": "lint",
+      "description": "Lint code"
+    },
+    {
+      "name": "test",
+      "description": "Run tests"
+    },
+    {
+      "name": "coverage",
+      "description": "Generate coverage report"
+    },
+    {
+      "name": "gas-report",
+      "description": "Generate gas usage report"
+    },
+    {
+      "name": "analyze",
+      "description": "Run static analysis with Slither"
+    },
+    {
+      "name": "audit",
+      "description": "Comprehensive security audit"
+    },
+    {
+      "name": "deploy",
+      "description": "Deploy contracts with verification"
+    },
+    {
+      "name": "verify",
+      "description": "Verify contract on block explorer"
+    },
+    {
+      "name": "upgrade",
+      "description": "Upgrade proxy contracts"
+    },
+    {
+      "name": "debug",
+      "description": "Debug failed transaction or test"
+    },
+    {
+      "name": "snapshot",
+      "description": "Create/compare gas snapshots"
+    },
+    {
+      "name": "fork",
+      "description": "Run fork tests"
+    },
+    {
+      "name": "console",
+      "description": "Interactive console"
+    }
+  ],
+  "agents": [
+    {
+      "name": "developer",
+      "description": "Smart contract development with security best practices",
+      "capabilities": [
+        "smart-contract-development",
+        "natspec-documentation",
+        "code-quality",
+        "framework-integration"
+      ]
+    },
+    {
+      "name": "tester",
+      "description": "Comprehensive testing in framework-appropriate languages",
+      "capabilities": [
+        "unit-testing",
+        "integration-testing",
+        "fuzz-testing",
+        "invariant-testing",
+        "coverage-analysis"
+      ]
+    },
+    {
+      "name": "gas-optimizer",
+      "description": "Gas analysis and optimization with benchmarking",
+      "capabilities": [
+        "gas-analysis",
+        "optimization",
+        "benchmarking",
+        "regression-detection"
+      ]
+    },
+    {
+      "name": "auditor",
+      "description": "Security auditing with automated tools (READ-ONLY)",
+      "capabilities": [
+        "security-analysis",
+        "vulnerability-detection",
+        "static-analysis",
+        "fuzzing"
+      ]
+    },
+    {
+      "name": "deployer",
+      "description": "Multi-chain deployment with verification",
+      "capabilities": [
+        "multi-chain-deployment",
+        "contract-verification",
+        "deployment-validation"
+      ]
+    },
+    {
+      "name": "debugger",
+      "description": "Transaction trace analysis and test debugging",
+      "capabilities": [
+        "trace-analysis",
+        "test-debugging",
+        "execution-flow-analysis"
+      ]
+    },
+    {
+      "name": "upgrader",
+      "description": "Proxy pattern implementation and upgrade safety",
+      "capabilities": [
+        "proxy-implementation",
+        "upgrade-safety",
+        "storage-validation"
+      ]
+    }
+  ],
+  "skills": [
+    {
+      "name": "framework-detection",
+      "description": "Auto-detect Foundry/Hardhat/Hybrid projects"
+    },
+    {
+      "name": "foundry-setup",
+      "description": "Foundry project initialization and configuration"
+    },
+    {
+      "name": "hardhat-setup",
+      "description": "Hardhat project initialization and configuration"
+    },
+    {
+      "name": "code-quality",
+      "description": "Solidity code style and quality standards"
+    },
+    {
+      "name": "natspec-standards",
+      "description": "NatSpec documentation standards"
+    },
+    {
+      "name": "testing-patterns",
+      "description": "Testing strategies for Foundry (Solidity) and Hardhat (TypeScript)"
+    },
+    {
+      "name": "coverage-analysis",
+      "description": "Test coverage analysis and reporting"
+    },
+    {
+      "name": "contract-patterns",
+      "description": "Common Solidity patterns library (ERC20, ERC721, UUPS, etc.)"
+    },
+    {
+      "name": "security-audit",
+      "description": "Security audit methodology and checklists"
+    },
+    {
+      "name": "vulnerability-patterns",
+      "description": "Common vulnerability patterns and fixes"
+    },
+    {
+      "name": "gas-optimization",
+      "description": "Gas optimization techniques and strategies"
+    },
+    {
+      "name": "deployment",
+      "description": "Multi-chain deployment strategies"
+    },
+    {
+      "name": "proxy-patterns",
+      "description": "Upgradeable contract proxy patterns"
+    },
+    {
+      "name": "upgrade-safety",
+      "description": "Safe upgrade practices and storage validation"
+    }
+  ],
+  "requirements": {
+    "core": [
+      "Solidity ^0.8.0",
+      "Node.js >= 18"
+    ],
+    "foundry": [
+      "Foundry (forge, cast, anvil)"
+    ],
+    "hardhat": [
+      "npm or yarn",
+      "TypeScript"
+    ],
+    "optional": [
+      "Slither - Static analysis",
+      "Mythril - Symbolic execution",
+      "Echidna - Fuzzing"
+    ]
+  },
+  "supportedNetworks": [
+    "Ethereum (Mainnet, Sepolia, Goerli)",
+    "Polygon (Mainnet, Mumbai)",
+    "Arbitrum (One, Goerli)",
+    "Optimism (Mainnet, Goerli)",
+    "Base (Mainnet, Goerli)",
+    "Avalanche (C-Chain, Fuji)",
+    "BNB Chain (Mainnet, Testnet)"
+  ]
+}

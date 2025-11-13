@@ -1,0 +1,70 @@
+{
+  "name": "sol",
+  "version": "1.0.0",
+  "description": "Solidity smart contract development with Foundry/Hardhat support",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "IvanTorresEdge@gmail.com"
+  },
+  "keywords": [
+    "solidity",
+    "smart-contracts",
+    "ethereum",
+    "blockchain",
+    "testing",
+    "security",
+    "gas-optimization",
+    "foundry",
+    "hardhat",
+    "upgradeable"
+  ],
+  "commands": [
+    "./commands/analyze.md",
+    "./commands/audit.md",
+    "./commands/build.md",
+    "./commands/clean.md",
+    "./commands/compile.md",
+    "./commands/console.md",
+    "./commands/coverage.md",
+    "./commands/debug.md",
+    "./commands/deploy.md",
+    "./commands/fork.md",
+    "./commands/format.md",
+    "./commands/gas-report.md",
+    "./commands/init.md",
+    "./commands/install.md",
+    "./commands/lint.md",
+    "./commands/optimize-gas.md",
+    "./commands/snapshot.md",
+    "./commands/test-fuzz.md",
+    "./commands/test.md",
+    "./commands/upgrade-check.md",
+    "./commands/upgrade.md",
+    "./commands/verify.md"
+  ],
+  "agents": [
+    "./agents/auditor.md",
+    "./agents/debugger.md",
+    "./agents/deployer.md",
+    "./agents/developer.md",
+    "./agents/gas-optimizer.md",
+    "./agents/tester.md",
+    "./agents/upgrader.md"
+  ],
+  "skills": [
+    "./skills/code-quality/SKILL.md",
+    "./skills/contract-patterns/SKILL.md",
+    "./skills/coverage-analysis/SKILL.md",
+    "./skills/deployment/SKILL.md",
+    "./skills/foundry-setup/SKILL.md",
+    "./skills/framework-detection/SKILL.md",
+    "./skills/gas-optimization/SKILL.md",
+    "./skills/hardhat-setup/SKILL.md",
+    "./skills/natspec-standards/SKILL.md",
+    "./skills/proxy-patterns/SKILL.md",
+    "./skills/security-audit/SKILL.md",
+    "./skills/testing-patterns/SKILL.md",
+    "./skills/upgrade-safety/SKILL.md",
+    "./skills/vulnerability-patterns/SKILL.md"
+  ]
+}

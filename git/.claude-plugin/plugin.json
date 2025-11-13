@@ -1,0 +1,13 @@
+{
+  "name": "git",
+  "version": "1.0.0",
+  "description": "Git workflow automation with commit standards and helper agents",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": ["git", "commit", "version-control", "workflow"],
+  "commands": ["./commands/commit.md", "./commands/amend.md"],
+  "agents": ["./agents/code-committer.md"],
+  "skills": ["./skills/commit-standards/SKILL.md"]
+}

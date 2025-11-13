@@ -1,0 +1,26 @@
+{
+  "name": "res",
+  "version": "1.0.0",
+  "description": "Research and information gathering workflows with automatic detection, intelligent formatting, and source tracking",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "research",
+    "search",
+    "analysis",
+    "documentation",
+    "information-gathering",
+    "reference"
+  ],
+  "commands": ["./commands/search.md", "./commands/document.md"],
+  "agents": [
+    "./agents/orchestrator.md",
+    "./agents/search-agent.md",
+    "./agents/fetch-agent.md",
+    "./agents/local-agent.md",
+    "./agents/synthesis-agent.md"
+  ],
+  "skills": ["./skills/research-methods/SKILL.md"]
+}
