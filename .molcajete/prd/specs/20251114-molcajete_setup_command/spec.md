@@ -519,9 +519,43 @@ const configPath = path.join(os.homedir(), '.claude', 'settings.local.json');
 
 **Progress:** 20/26 story points (77% complete)
 
+### Phase 4: Polish - COMPLETE (2025-11-14)
+
+**What Was Built:**
+- Enhanced `molcajete/commands/setup.md` with comprehensive error messages and user cancellation handling
+
+**Implementation Decisions:**
+
+1. **Contextual error troubleshooting**: Added error type detection and contextual help messages for common failure scenarios
+2. **Graceful cancellation handling**: Implemented dual-check for empty selections (null/empty string and empty array after filtering)
+3. **User-friendly messaging**: Clear distinction between errors (✗) and successful operations with actionable next steps
+4. **Task 4.2 already complete**: Success confirmation with details was already implemented in Phase 2; no additional changes needed
+
+**Key Enhancements:**
+- Error display with troubleshooting sections for permission, JSON, and validation errors
+- Cancellation detection before processing selections
+- Friendly exit message when user cancels setup
+- process.exit() calls for proper command termination
+
+**Edge Cases Handled:**
+- User closes dialog without selecting anything
+- Empty string returned from AskUserQuestion
+- Array filtering results in zero plugins
+- Permission denied with chmod suggestions
+- Invalid JSON with backup command suggestion
+
+**Progress:** 23/26 story points (88% complete)
+
+### Deviations from Original Spec
+
+None - all Phase 4 acceptance criteria met:
+- ✓ Specific messages for permission, JSON, file errors
+- ✓ Shows count of added plugins, preserves feedback
+- ✓ Ctrl+C or ESC cancels without changes (via graceful detection and exit)
+
 ### Next Steps
 
-Phase 4 will add comprehensive error handling and user feedback polish.
+Phase 5 will add documentation and testing.
 
 ## Implementation Summary (Final - To be added after completion)
 

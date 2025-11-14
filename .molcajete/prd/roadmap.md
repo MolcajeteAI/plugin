@@ -33,7 +33,7 @@ We build what we need, when we need it, to the quality standard we demand.
 **Why Now:** Already using these plugins daily; improvements directly impact personal productivity.
 
 **Focus Areas:**
-- **Setup command** - Interactive plugin configuration to streamline onboarding [IN DEVELOPMENT - 77% complete (Phase 3/5 done) - See .molcajete/prd/specs/20251114-molcajete_setup_command/tasks.md]
+- **Setup command** - Interactive plugin configuration to streamline onboarding [IN DEVELOPMENT - 88% complete (Phase 4/5 done, documentation pending) - See .molcajete/prd/specs/20251114-molcajete_setup_command/tasks.md]
 - **PRD plugin** - Enhance strategic interview process; add competitive analysis templates
 - **Research plugin** - Better information synthesis; support for code exploration and analysis
 - **Go plugin** - Expand testing patterns; add observability and deployment guidance

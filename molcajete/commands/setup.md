@@ -80,10 +80,27 @@ const response = await AskUserQuestion({
 });
 
 // Extract selected plugins from response
-const selectedPlugins = response.answers["Which Molcajete plugins would you like to install?"]
+const answerKey = "Which Molcajete plugins would you like to install?";
+const rawAnswer = response.answers[answerKey];
+
+// Handle cancellation or no selection
+if (!rawAnswer || rawAnswer.trim().length === 0) {
+  console.log('\nSetup cancelled - no plugins selected.');
+  console.log('You can run /molcajete:setup again anytime to configure plugins.\n');
+  process.exit(0);
+}
+
+const selectedPlugins = rawAnswer
   .split(',')
   .map(s => s.trim())
   .filter(s => s.length > 0);
+
+// Additional check for empty array after filtering
+if (selectedPlugins.length === 0) {
+  console.log('\nSetup cancelled - no plugins selected.');
+  console.log('You can run /molcajete:setup again anytime to configure plugins.\n');
+  process.exit(0);
+}
 ```
 
 **Pre-population Logic:**
@@ -107,10 +124,27 @@ import { setupPlugins } from 'molcajete:setup-utils';
 // Call the setup function with selected plugin IDs
 const result = await setupPlugins(selectedPlugins);
 
-if (result.success) {
-  console.log(result.message);
-} else {
-  console.error(`Error: ${result.message}`);
+if (!result.success) {
+  console.error('\n✗ Setup failed!\n');
+  console.error(`Error: ${result.message}\n`);
+
+  // Provide contextual help based on error type
+  if (result.message.includes('Permission denied')) {
+    console.error('Troubleshooting:');
+    console.error('- Check file permissions on ~/.claude/settings.local.json');
+    console.error('- The error message above suggests the chmod command to run');
+  } else if (result.message.includes('Invalid JSON')) {
+    console.error('Troubleshooting:');
+    console.error('- Your existing settings.local.json file contains invalid JSON');
+    console.error('- You can backup the file and recreate it, or fix the JSON manually');
+    console.error('- Backup command: cp ~/.claude/settings.local.json ~/.claude/settings.local.json.backup');
+  } else if (result.message.includes('Invalid plugin ID')) {
+    console.error('Troubleshooting:');
+    console.error('- This is a bug in the command - plugin IDs should be pre-validated');
+    console.error('- Please report this issue');
+  }
+
+  process.exit(1);
 }
 ```
 
