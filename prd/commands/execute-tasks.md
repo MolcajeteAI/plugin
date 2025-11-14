@@ -9,14 +9,29 @@ IMPORTANT: Immediately use the Task tool with subagent_type="prd:orchestrator" t
 Use this exact prompt for the agent:
 "Execute the task orchestration workflow following these steps:
 
+**CRITICAL SCOPE CONTROL:**
+- ONLY execute the specific tasks that are explicitly requested
+- If user specifies task IDs (e.g., \"complete task 1.1\" or \"implement Feature 2\"), execute ONLY those tasks
+- STOP immediately after completing the requested tasks - DO NOT continue to other tasks
+- DO NOT assume you should build everything - ask if unclear about scope
+- Completing more than requested wastes time and violates user intent
+
 **IMPORTANT: You CANNOT write files due to subagent limitations. Track all changes and return them to main context for file updates.**
 
-1. **Verify Prerequisites**
+1. **Verify Prerequisites and Scope**
    - Check if spec name is provided
    - If not provided, use AskUserQuestion to ask:
      - Question: \"Which spec should I execute tasks for?\"
      - Header: \"Spec Name\"
      - Options: [User can type in Other field]
+   - Check if specific tasks are requested (task IDs, feature numbers, or \"all\")
+   - If unclear, use AskUserQuestion to ask:
+     - Question: \"Which tasks should I execute? (e.g., 'task 1.1', 'Feature 2', or 'all')\"
+     - Header: \"Task Scope\"
+     - Options:
+       - \"All tasks\" - Execute everything in tasks.md
+       - \"Specific tasks\" - User will specify in Other field
+     - multiSelect: false
 
 2. **Read All Context**
    - Read product context:
@@ -54,13 +69,16 @@ Use this exact prompt for the agent:
      - multiSelect: false
    - Reference task-breakdown skill for orchestration strategies
 
-6. **Execute Tasks**
+6. **Execute Tasks (RESPECT SCOPE)**
+   - Execute ONLY the tasks specified in step 1 - DO NOT continue beyond requested scope
+   - Before starting each task, verify it's within the requested scope
    - Delegate tasks to appropriate tech-specific subagents using Task tool
    - For each completed task:
      - Verify acceptance criteria are met
      - Run tests
      - Track all changes made
    - If tasks fail, document the failure and blockers
+   - After completing requested tasks, STOP and return results - DO NOT continue to additional tasks
 
 7. **Track All Changes (DO NOT WRITE FILES)**
    For each task, record:
