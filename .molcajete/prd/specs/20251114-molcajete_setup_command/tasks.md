@@ -63,24 +63,27 @@ Users should be able to invoke the molcajete:setup command which safely reads an
   - Acceptance: TypeScript skill writes with proper formatting, validates JSON, creates ~/.claude directory if missing
   - Implementation: writeSettings() function with atomic write pattern, directory creation, and validation
 
-## 2. [ ] Interactive plugin selection using AskUserQuestion
+## 2. [x] Interactive plugin selection using AskUserQuestion
 
 Users should be able to interactively select which Molcajete plugins to install using Claude's native AskUserQuestion tool.
 
-- 2.1 [ ] Define plugin metadata in command file
+- 2.1 [x] Define plugin metadata in command file (Completed: 2025-11-14)
   - Complexity: 1 point
   - Dependencies: 1.1
   - Acceptance: Command file lists all available plugins with descriptions
+  - Implementation: Added "Available Plugins" section with 6 plugins and descriptions
 
-- 2.2 [ ] Implement AskUserQuestion for plugin selection
+- 2.2 [x] Implement AskUserQuestion for plugin selection (Completed: 2025-11-14)
   - Complexity: 2 points
   - Dependencies: 2.1
   - Acceptance: Uses AskUserQuestion with multiSelect: true to allow multiple plugin selection
+  - Implementation: Complete AskUserQuestion with proper options array, each with label and description
 
-- 2.3 [ ] Read existing plugins and pre-populate selection
+- 2.3 [x] Read existing plugins and pre-populate selection (Completed: 2025-11-14)
   - Complexity: 2 points
   - Dependencies: 1.3, 2.2
   - Acceptance: Reads current settings and shows already-configured plugins in selection UI
+  - Implementation: Added logic to read existing settings, extract current plugins, display to user, and differentiate in success message
 
 ## 3. [ ] Settings merging and validation in TypeScript skill
 
@@ -229,11 +232,11 @@ The critical path is approximately 22 story points, suggesting 3-4 days of focus
 
 ## Progress Tracking
 
-**Overall Progress:** 35% (9/26 story points completed)
+**Overall Progress:** 54% (14/26 story points completed)
 
 **Phase Status:**
 - Phase 1 (Foundation): **COMPLETE** (9/9 points) ✓
-- Phase 2 (Interactive Selection): Not started (0/5 points)
+- Phase 2 (Interactive Selection): **COMPLETE** (5/5 points) ✓
 - Phase 3 (Core Logic): Not started (0/6 points)
 - Phase 4 (Polish): Not started (0/3 points)
 - Phase 5 (Documentation): Not started (0/4 points)
@@ -243,8 +246,11 @@ The critical path is approximately 22 story points, suggesting 3-4 days of focus
 - 1.2 ✓ Create molcajete/skills/setup-utils.md
 - 1.3 ✓ Implement settings file reader
 - 1.4 ✓ Implement atomic settings writer
+- 2.1 ✓ Define plugin metadata in command file
+- 2.2 ✓ Implement AskUserQuestion for plugin selection
+- 2.3 ✓ Read existing plugins and pre-populate selection
 
 **Next Actions:**
-1. Task 2.1 - Define plugin metadata in command file
-2. Task 2.2 - Implement AskUserQuestion for plugin selection
-3. Task 2.3 - Read existing plugins and pre-populate selection
+1. Task 3.1 - Implement JSON merge logic in skill
+2. Task 3.2 - Add plugin configuration format validation
+3. Task 3.3 - Handle edge cases in existing settings

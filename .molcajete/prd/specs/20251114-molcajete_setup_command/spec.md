@@ -471,9 +471,29 @@ const configPath = path.join(os.homedir(), '.claude', 'settings.local.json');
 - Specified TypeScript skill approach instead of standalone application
 - Used markdown plugin architecture (commands + skills) instead of compiled Node.js package
 
+### Phase 2: Interactive Selection - COMPLETE (2025-11-14)
+
+**What Was Built:**
+- Enhanced `molcajete/commands/setup.md` with complete plugin metadata and AskUserQuestion implementation
+
+**Implementation Decisions:**
+
+1. **Explicit plugin catalog**: Added "Available Plugins" section listing all 6 plugins with descriptions for documentation
+2. **Complete AskUserQuestion structure**: Implemented proper options array with label/description pairs for each plugin
+3. **Pre-population logic**: Added code to read existing settings, extract current plugins, display to user before selection
+4. **Success differentiation**: Success message differentiates between newly added and re-confirmed existing plugins
+
+**Key Enhancements:**
+- Plugin metadata clearly defined in command file
+- AskUserQuestion properly structured with multiSelect: true
+- Existing plugin detection and display before user selection
+- Detailed success feedback showing new vs. existing plugins
+
+**Progress:** 14/26 story points (54% complete)
+
 ### Next Steps
 
-Phase 2 will implement the interactive plugin selection using AskUserQuestion tool.
+Phase 3 will enhance the TypeScript skill with JSON merge logic and validation.
 
 ## Implementation Summary (Final - To be added after completion)
 
