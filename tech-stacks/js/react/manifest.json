@@ -1,0 +1,108 @@
+{
+  "name": "react",
+  "version": "1.0.0",
+  "extends": "js/common",
+  "description": "React 19 frontend development with Vite and Next.js",
+  "author": {
+    "name": "Molcajete.ai",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "frameworks": [
+    "React 19",
+    "Vite",
+    "Next.js",
+    "Tailwind CSS",
+    "Radix UI",
+    "shadcn/ui"
+  ],
+  "commands": [
+    {"name": "spa-init", "description": "Initialize Vite SPA project"},
+    {"name": "nextjs-init", "description": "Initialize Next.js project"},
+    {"name": "preview", "description": "Preview production build"},
+    {"name": "analyze", "description": "Analyze bundle size"},
+    {"name": "test-component", "description": "Test React components"},
+    {"name": "test-e2e", "description": "Run Playwright E2E tests"},
+    {"name": "test-visual", "description": "Visual regression testing"},
+    {"name": "build-spa", "description": "Build Vite SPA"},
+    {"name": "build-nextjs", "description": "Build Next.js app"},
+    {"name": "deploy-vercel", "description": "Deploy to Vercel"},
+    {"name": "deploy-netlify", "description": "Deploy to Netlify"},
+    {"name": "deploy-cloudflare", "description": "Deploy to Cloudflare Pages"}
+  ],
+  "agents": [
+    {
+      "name": "component-builder",
+      "description": "React component development",
+      "capabilities": ["react-component-development", "hooks-patterns", "server-components", "react-19-features"]
+    },
+    {
+      "name": "state-architect",
+      "description": "State management design",
+      "capabilities": ["state-management-design", "zustand-patterns", "tanstack-query-patterns", "context-optimization"]
+    },
+    {
+      "name": "ui-designer",
+      "description": "UI component implementation",
+      "capabilities": ["ui-component-design", "accessibility-implementation", "responsive-design", "tailwind-patterns"]
+    },
+    {
+      "name": "performance-optimizer",
+      "description": "React performance optimization",
+      "capabilities": ["bundle-analysis", "code-splitting", "lazy-loading", "rendering-optimization"]
+    },
+    {
+      "name": "e2e-tester",
+      "description": "Playwright E2E testing",
+      "capabilities": ["playwright-testing", "visual-testing", "accessibility-testing", "e2e-patterns"]
+    }
+  ],
+  "skills": [
+    {"name": "react-19-patterns", "description": "React 19 features and patterns"},
+    {"name": "hooks-best-practices", "description": "React Hooks patterns"},
+    {"name": "component-patterns", "description": "Component composition patterns"},
+    {"name": "performance-patterns", "description": "React performance optimization"},
+    {"name": "vite-configuration", "description": "Vite setup for SPAs"},
+    {"name": "nextjs-configuration", "description": "Next.js 15 setup"},
+    {"name": "bundle-optimization", "description": "Bundle size optimization"},
+    {"name": "zustand-patterns", "description": "Zustand state management"},
+    {"name": "tanstack-query-setup", "description": "TanStack Query setup"},
+    {"name": "jotai-patterns", "description": "Jotai atomic state"},
+    {"name": "radix-ui-patterns", "description": "Radix UI components"},
+    {"name": "shadcn-ui-setup", "description": "shadcn/ui setup"},
+    {"name": "tailwind-setup", "description": "Tailwind CSS configuration"},
+    {"name": "responsive-design", "description": "Responsive design patterns"},
+    {"name": "component-testing", "description": "Component testing patterns"},
+    {"name": "playwright-setup", "description": "Playwright E2E setup"},
+    {"name": "visual-regression", "description": "Visual regression testing"},
+    {"name": "accessibility-testing", "description": "Accessibility testing"},
+    {"name": "vite-deployment", "description": "Vite SPA deployment"},
+    {"name": "nextjs-deployment", "description": "Next.js deployment"}
+  ],
+  "requirements": {
+    "core": [
+      "All js/common requirements",
+      "React >= 19.0"
+    ],
+    "recommended": [
+      "Vite >= 6.0 (for SPAs) OR Next.js >= 15.0 (for full-stack)",
+      "Tailwind CSS >= 4.0",
+      "@tanstack/react-query >= 5.0",
+      "Zustand >= 5.0"
+    ],
+    "optional": [
+      "Playwright >= 1.40 - E2E testing",
+      "Radix UI - Accessible components",
+      "shadcn/ui - Component library"
+    ]
+  },
+  "supportedDeploymentTargets": [
+    "Vercel",
+    "Netlify",
+    "Cloudflare Pages",
+    "AWS Amplify",
+    "Firebase Hosting",
+    "GitHub Pages",
+    "Azure Static Web Apps",
+    "Render"
+  ]
+}

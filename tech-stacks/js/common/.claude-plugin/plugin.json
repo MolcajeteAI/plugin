@@ -1,0 +1,61 @@
+{
+  "name": "js",
+  "version": "1.0.0",
+  "description": "Base JavaScript/TypeScript development with strict TypeScript, Biome/ESLint, Vitest testing, and modern ESM patterns",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "typescript",
+    "javascript",
+    "esm",
+    "vitest",
+    "eslint",
+    "biome",
+    "nodejs"
+  ],
+  "commands": [
+    "./commands/init.md",
+    "./commands/install.md",
+    "./commands/dev.md",
+    "./commands/build.md",
+    "./commands/type-check.md",
+    "./commands/lint.md",
+    "./commands/format.md",
+    "./commands/format-check.md",
+    "./commands/test.md",
+    "./commands/test-watch.md",
+    "./commands/test-coverage.md",
+    "./commands/test-ui.md",
+    "./commands/audit.md",
+    "./commands/audit-fix.md",
+    "./commands/license-check.md",
+    "./commands/validate.md",
+    "./commands/pre-commit.md"
+  ],
+  "agents": [
+    "./agents/developer.md",
+    "./agents/tester.md",
+    "./agents/security.md",
+    "./agents/quality-guardian.md",
+    "./agents/documenter.md"
+  ],
+  "skills": [
+    "./skills/typescript-strict-config/SKILL.md",
+    "./skills/esm-module-patterns/SKILL.md",
+    "./skills/type-safety-patterns/SKILL.md",
+    "./skills/error-handling-patterns/SKILL.md",
+    "./skills/eslint-flat-config/SKILL.md",
+    "./skills/biome-setup/SKILL.md",
+    "./skills/vitest-configuration/SKILL.md",
+    "./skills/build-tools/SKILL.md",
+    "./skills/testing-patterns/SKILL.md",
+    "./skills/mocking-strategies/SKILL.md",
+    "./skills/coverage-standards/SKILL.md",
+    "./skills/dependency-security/SKILL.md",
+    "./skills/license-compliance/SKILL.md",
+    "./skills/code-quality-standards/SKILL.md",
+    "./skills/pre-commit-hooks/SKILL.md"
+  ]
+}

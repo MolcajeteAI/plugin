@@ -1,0 +1,96 @@
+{
+  "name": "common",
+  "version": "1.0.0",
+  "internal": true,
+  "description": "Shared foundation for JavaScript/TypeScript stacks (INTERNAL)",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "frameworks": [
+    "TypeScript",
+    "Vitest",
+    "ESLint",
+    "Prettier",
+    "Biome"
+  ],
+  "commands": [
+    {"name": "init", "description": "Initialize TypeScript project with strict config"},
+    {"name": "install", "description": "Install and audit dependencies"},
+    {"name": "dev", "description": "Run development environment"},
+    {"name": "build", "description": "Build project"},
+    {"name": "type-check", "description": "Run TypeScript compiler checks"},
+    {"name": "lint", "description": "Run linter"},
+    {"name": "format", "description": "Format code"},
+    {"name": "format-check", "description": "Check formatting"},
+    {"name": "test", "description": "Run test suite"},
+    {"name": "test-watch", "description": "Run tests in watch mode"},
+    {"name": "test-coverage", "description": "Generate coverage report"},
+    {"name": "test-ui", "description": "Open Vitest UI"},
+    {"name": "audit", "description": "Security audit"},
+    {"name": "audit-fix", "description": "Auto-fix vulnerabilities"},
+    {"name": "license-check", "description": "Check dependency licenses"},
+    {"name": "validate", "description": "Run all quality checks"},
+    {"name": "pre-commit", "description": "Pre-commit quality gate"}
+  ],
+  "agents": [
+    {
+      "name": "developer",
+      "description": "TypeScript development with strict type safety",
+      "capabilities": ["typescript-development", "type-safe-coding", "esm-module-design", "error-handling"]
+    },
+    {
+      "name": "tester",
+      "description": "Vitest testing and coverage",
+      "capabilities": ["unit-testing", "integration-testing", "test-coverage-analysis", "mocking-strategies"]
+    },
+    {
+      "name": "security",
+      "description": "Security auditing and vulnerability scanning (READ-ONLY)",
+      "capabilities": ["dependency-scanning", "vulnerability-detection", "license-compliance", "security-code-review"]
+    },
+    {
+      "name": "quality-guardian",
+      "description": "Code quality enforcement",
+      "capabilities": ["type-checking", "lint-enforcement", "format-validation", "pre-commit-hooks"]
+    },
+    {
+      "name": "documenter",
+      "description": "TypeScript documentation generation",
+      "capabilities": ["tsdoc-generation", "readme-creation", "api-documentation", "changelog-maintenance"]
+    }
+  ],
+  "skills": [
+    {"name": "typescript-strict-config", "description": "Strict TypeScript configuration"},
+    {"name": "esm-module-patterns", "description": "Modern ESM patterns"},
+    {"name": "type-safety-patterns", "description": "Advanced TypeScript type patterns"},
+    {"name": "error-handling-patterns", "description": "Type-safe error handling"},
+    {"name": "eslint-flat-config", "description": "ESLint 9.x configuration"},
+    {"name": "biome-setup", "description": "Biome linter/formatter setup"},
+    {"name": "vitest-configuration", "description": "Vitest testing setup"},
+    {"name": "build-tools", "description": "Build tool configuration"},
+    {"name": "testing-patterns", "description": "Unit testing patterns"},
+    {"name": "mocking-strategies", "description": "Test mocking strategies"},
+    {"name": "coverage-standards", "description": "Coverage requirements"},
+    {"name": "dependency-security", "description": "Dependency security scanning"},
+    {"name": "license-compliance", "description": "License checking"},
+    {"name": "code-quality-standards", "description": "Quality gates"},
+    {"name": "pre-commit-hooks", "description": "Pre-commit hook setup"}
+  ],
+  "requirements": {
+    "core": [
+      "Node.js >= 22 LTS",
+      "npm >= 10 or pnpm >= 9"
+    ],
+    "recommended": [
+      "TypeScript >= 5.7",
+      "Vitest >= 2.0",
+      "Biome >= 1.9 OR (ESLint >= 9.0 + Prettier >= 3.0)"
+    ],
+    "optional": [
+      "Snyk - Vulnerability scanning",
+      "Husky - Git hooks",
+      "lint-staged - Pre-commit linting"
+    ]
+  }
+}

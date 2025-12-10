@@ -34,6 +34,21 @@
       "name": "sol",
       "source": "./tech-stacks/solidity",
       "description": "Smart contract development, testing, auditing, and deployment for Solidity for Foundy and Hardhat support"
+    },
+    {
+      "name": "js",
+      "source": "./tech-stacks/js/common",
+      "description": "Base JavaScript/TypeScript development with strict TypeScript, Biome/ESLint, Vitest testing, and modern ESM patterns"
+    },
+    {
+      "name": "react",
+      "source": "./tech-stacks/js/react",
+      "description": "React 19 and Next.js 15 development with Vite, TailwindCSS, component testing, and deployment patterns"
+    },
+    {
+      "name": "node",
+      "source": "./tech-stacks/js/node",
+      "description": "Node.js backend development with Fastify, Prisma/Drizzle ORM, Docker containerization, and serverless deployment"
     }
   ],
   "enabledPlugins": {
@@ -42,6 +57,9 @@
     "go@molcajete": true,
     "prd@molcajete": true,
     "res@molcajete": true,
-    "sol@molcajete": true
+    "sol@molcajete": true,
+    "js@molcajete": true,
+    "react@molcajete": true,
+    "node@molcajete": true
   }
 }

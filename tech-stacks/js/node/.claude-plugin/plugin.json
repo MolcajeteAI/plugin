@@ -1,0 +1,53 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "description": "Node.js backend development with Fastify, Prisma/Drizzle ORM, Docker containerization, and serverless deployment",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "nodejs",
+    "fastify",
+    "prisma",
+    "drizzle",
+    "docker",
+    "serverless",
+    "typescript"
+  ],
+  "commands": [
+    "./commands/api-init.md",
+    "./commands/db-generate.md",
+    "./commands/db-migrate.md",
+    "./commands/db-seed.md",
+    "./commands/api-validate.md",
+    "./commands/test-integration.md",
+    "./commands/test-e2e.md",
+    "./commands/test-containers.md",
+    "./commands/docker-build.md",
+    "./commands/docker-run.md",
+    "./commands/deploy.md"
+  ],
+  "agents": [
+    "./agents/api-builder.md",
+    "./agents/database-architect.md",
+    "./agents/deployer.md"
+  ],
+  "skills": [
+    "./skills/fastify-patterns/SKILL.md",
+    "./skills/api-versioning/SKILL.md",
+    "./skills/authentication-strategies/SKILL.md",
+    "./skills/authorization-patterns/SKILL.md",
+    "./skills/prisma-setup/SKILL.md",
+    "./skills/drizzle-setup/SKILL.md",
+    "./skills/migration-strategies/SKILL.md",
+    "./skills/query-optimization/SKILL.md",
+    "./skills/zod-validation/SKILL.md",
+    "./skills/serialization-patterns/SKILL.md",
+    "./skills/integration-testing/SKILL.md",
+    "./skills/testcontainers-usage/SKILL.md",
+    "./skills/e2e-testing-backend/SKILL.md",
+    "./skills/docker-backend-patterns/SKILL.md",
+    "./skills/serverless-patterns/SKILL.md"
+  ]
+}

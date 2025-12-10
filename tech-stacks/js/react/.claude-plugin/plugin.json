@@ -1,0 +1,61 @@
+{
+  "name": "react",
+  "version": "1.0.0",
+  "description": "React 19 and Next.js 15 development with Vite, TailwindCSS, component testing, and deployment patterns",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "react",
+    "nextjs",
+    "vite",
+    "tailwind",
+    "typescript",
+    "playwright",
+    "testing"
+  ],
+  "commands": [
+    "./commands/spa-init.md",
+    "./commands/nextjs-init.md",
+    "./commands/preview.md",
+    "./commands/analyze.md",
+    "./commands/test-component.md",
+    "./commands/test-e2e.md",
+    "./commands/test-visual.md",
+    "./commands/build-spa.md",
+    "./commands/build-nextjs.md",
+    "./commands/deploy-vercel.md",
+    "./commands/deploy-netlify.md",
+    "./commands/deploy-cloudflare.md"
+  ],
+  "agents": [
+    "./agents/component-builder.md",
+    "./agents/state-architect.md",
+    "./agents/ui-designer.md",
+    "./agents/performance-optimizer.md",
+    "./agents/e2e-tester.md"
+  ],
+  "skills": [
+    "./skills/react-19-patterns/SKILL.md",
+    "./skills/hooks-best-practices/SKILL.md",
+    "./skills/component-patterns/SKILL.md",
+    "./skills/performance-patterns/SKILL.md",
+    "./skills/vite-configuration/SKILL.md",
+    "./skills/nextjs-configuration/SKILL.md",
+    "./skills/bundle-optimization/SKILL.md",
+    "./skills/zustand-patterns/SKILL.md",
+    "./skills/tanstack-query-setup/SKILL.md",
+    "./skills/jotai-patterns/SKILL.md",
+    "./skills/radix-ui-patterns/SKILL.md",
+    "./skills/shadcn-ui-setup/SKILL.md",
+    "./skills/tailwind-setup/SKILL.md",
+    "./skills/responsive-design/SKILL.md",
+    "./skills/component-testing/SKILL.md",
+    "./skills/playwright-setup/SKILL.md",
+    "./skills/visual-regression/SKILL.md",
+    "./skills/accessibility-testing/SKILL.md",
+    "./skills/vite-deployment/SKILL.md",
+    "./skills/nextjs-deployment/SKILL.md"
+  ]
+}

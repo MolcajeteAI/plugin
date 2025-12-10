@@ -1,0 +1,108 @@
+{
+  "name": "node",
+  "version": "1.0.0",
+  "extends": "js/common",
+  "description": "Node.js backend development with Fastify, Prisma, and modern patterns",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "frameworks": [
+    "Fastify",
+    "Express",
+    "Hono",
+    "Prisma",
+    "Drizzle ORM",
+    "tRPC",
+    "GraphQL"
+  ],
+  "commands": [
+    { "name": "api-init", "description": "Initialize REST/GraphQL API project" },
+    { "name": "db-generate", "description": "Generate Prisma client" },
+    { "name": "db-migrate", "description": "Run database migrations" },
+    { "name": "db-seed", "description": "Seed database" },
+    { "name": "api-validate", "description": "Validate API schemas" },
+    { "name": "test-integration", "description": "Run integration tests" },
+    { "name": "test-e2e", "description": "Run end-to-end tests" },
+    { "name": "test-containers", "description": "Run tests with Docker" },
+    { "name": "docker-build", "description": "Build Docker image" },
+    { "name": "docker-run", "description": "Run Docker container" },
+    { "name": "deploy", "description": "Deploy to platform" }
+  ],
+  "agents": [
+    {
+      "name": "api-builder",
+      "description": "REST/GraphQL/tRPC API development",
+      "capabilities": [
+        "rest-api-development",
+        "graphql-development",
+        "trpc-development",
+        "middleware-design",
+        "authentication-patterns"
+      ]
+    },
+    {
+      "name": "database-architect",
+      "description": "Database schema design and management",
+      "capabilities": [
+        "schema-design",
+        "migration-management",
+        "query-optimization",
+        "orm-patterns"
+      ]
+    },
+    {
+      "name": "deployer",
+      "description": "Docker and platform deployment",
+      "capabilities": [
+        "docker-containerization",
+        "serverless-deployment",
+        "platform-deployment",
+        "deployment-validation"
+      ]
+    }
+  ],
+  "skills": [
+    { "name": "fastify-patterns", "description": "Fastify framework patterns" },
+    { "name": "api-versioning", "description": "API versioning strategies" },
+    { "name": "authentication-strategies", "description": "Authentication patterns" },
+    { "name": "authorization-patterns", "description": "Authorization implementation" },
+    { "name": "prisma-setup", "description": "Prisma ORM setup" },
+    { "name": "drizzle-setup", "description": "Drizzle ORM setup" },
+    { "name": "migration-strategies", "description": "Database migrations" },
+    { "name": "query-optimization", "description": "Query performance" },
+    { "name": "zod-validation", "description": "Zod schema validation" },
+    { "name": "serialization-patterns", "description": "Data serialization" },
+    { "name": "integration-testing", "description": "API integration testing" },
+    { "name": "testcontainers-usage", "description": "Docker-based testing" },
+    { "name": "e2e-testing-backend", "description": "Backend E2E testing" },
+    { "name": "docker-backend-patterns", "description": "Docker for Node.js" },
+    { "name": "serverless-patterns", "description": "Serverless deployment" }
+  ],
+  "requirements": {
+    "core": ["All js/common requirements", "Node.js >= 22 LTS"],
+    "recommended": [
+      "Fastify >= 5.0 OR Express >= 5.0",
+      "Prisma >= 6.0 OR Drizzle ORM >= 0.33",
+      "Zod >= 3.23",
+      "Pino >= 9.0"
+    ],
+    "optional": [
+      "Docker >= 24.0",
+      "testcontainers - Integration testing",
+      "Supertest - HTTP testing"
+    ]
+  },
+  "supportedDeploymentTargets": [
+    "Docker",
+    "Vercel",
+    "Railway",
+    "Fly.io",
+    "Render",
+    "AWS Lambda",
+    "Cloudflare Workers",
+    "Google Cloud Run",
+    "Azure Container Apps",
+    "DigitalOcean App Platform"
+  ]
+}
