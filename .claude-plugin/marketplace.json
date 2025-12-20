@@ -49,6 +49,11 @@
       "name": "node",
       "source": "./tech-stacks/js/node",
       "description": "Node.js backend development with Fastify, Prisma/Drizzle ORM, Docker containerization, and serverless deployment"
+    },
+    {
+      "name": "react-native",
+      "source": "./tech-stacks/js/react-native",
+      "description": "React Native with Expo SDK 52+, NativeWind, Gluestack-ui, and EAS Build/Update for mobile development"
     }
   ],
   "enabledPlugins": {
@@ -60,6 +65,7 @@
     "sol@molcajete": true,
     "js@molcajete": true,
     "react@molcajete": true,
-    "node@molcajete": true
+    "node@molcajete": true,
+    "react-native@molcajete": true
   }
 }
