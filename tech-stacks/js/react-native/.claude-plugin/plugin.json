@@ -1,0 +1,58 @@
+{
+  "name": "react-native",
+  "version": "1.0.0",
+  "description": "React Native with Expo SDK 52+, NativeWind, Gluestack-ui, and EAS Build/Update for mobile development",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "keywords": [
+    "react-native",
+    "expo",
+    "nativewind",
+    "gluestack-ui",
+    "eas",
+    "mobile",
+    "ios",
+    "android",
+    "maestro"
+  ],
+  "commands": [
+    "./commands/expo-init.md",
+    "./commands/preview.md",
+    "./commands/test-component.md",
+    "./commands/test-e2e.md",
+    "./commands/build-ios.md",
+    "./commands/build-android.md",
+    "./commands/build-all.md",
+    "./commands/deploy-eas.md",
+    "./commands/analyze.md",
+    "./commands/update-ota.md"
+  ],
+  "agents": [
+    "./agents/component-builder.md",
+    "./agents/ui-designer.md",
+    "./agents/navigation-architect.md",
+    "./agents/performance-optimizer.md",
+    "./agents/e2e-tester.md"
+  ],
+  "skills": [
+    "./skills/nativewind-patterns/SKILL.md",
+    "./skills/gluestack-ui-setup/SKILL.md",
+    "./skills/expo-router-patterns/SKILL.md",
+    "./skills/expo-configuration/SKILL.md",
+    "./skills/react-native-performance/SKILL.md",
+    "./skills/flashlist-patterns/SKILL.md",
+    "./skills/reanimated-patterns/SKILL.md",
+    "./skills/zustand-mobile-patterns/SKILL.md",
+    "./skills/tanstack-query-mobile/SKILL.md",
+    "./skills/form-handling-mobile/SKILL.md",
+    "./skills/secure-storage-patterns/SKILL.md",
+    "./skills/maestro-testing/SKILL.md",
+    "./skills/component-testing-mobile/SKILL.md",
+    "./skills/accessibility-mobile/SKILL.md",
+    "./skills/eas-build-setup/SKILL.md",
+    "./skills/eas-update-setup/SKILL.md",
+    "./skills/platform-specific-code/SKILL.md"
+  ]
+}
