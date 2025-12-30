@@ -197,12 +197,29 @@ Capabilities:
 project/
 ├── src/
 │   ├── components/
-│   │   ├── Button/
-│   │   │   ├── Button.tsx
-│   │   │   ├── Button.stories.tsx
-│   │   │   └── __tests__/
-│   │   │       └── Button.test.tsx
-│   │   └── ...
+│   │   ├── atoms/
+│   │   │   ├── Button/
+│   │   │   │   ├── Button.tsx
+│   │   │   │   ├── Button.stories.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   └── __tests__/
+│   │   │   │       └── Button.test.tsx
+│   │   │   ├── Input/
+│   │   │   ├── Label/
+│   │   │   └── index.ts          # Barrel export for atoms
+│   │   ├── molecules/
+│   │   │   ├── FormField/
+│   │   │   ├── SearchForm/
+│   │   │   └── index.ts          # Barrel export for molecules
+│   │   ├── organisms/
+│   │   │   ├── Header/
+│   │   │   ├── LoginForm/
+│   │   │   └── index.ts          # Barrel export for organisms
+│   │   ├── templates/
+│   │   │   ├── MainLayout/
+│   │   │   ├── AuthLayout/
+│   │   │   └── index.ts          # Barrel export for templates
+│   │   └── index.ts              # Main barrel export
 │   ├── hooks/
 │   │   ├── useAuth.ts
 │   │   └── __tests__/
@@ -210,9 +227,18 @@ project/
 │   ├── stores/
 │   │   └── userStore.ts
 │   ├── pages/
-│   │   └── Home.tsx
+│   │   ├── Home/
+│   │   │   └── HomePage.tsx
+│   │   └── Dashboard/
+│   │       └── DashboardPage.tsx
+│   ├── lib/
+│   │   └── utils.ts
+│   ├── types/
 │   ├── App.tsx
 │   └── main.tsx
+├── .storybook/
+│   ├── main.ts
+│   └── preview.ts
 ├── public/
 ├── tests/
 │   └── e2e/
@@ -224,25 +250,55 @@ project/
 └── package.json
 ```
 
+**Component Organization:** Uses [Atomic Design](https://bradfrost.com/blog/post/atomic-web-design/) pattern:
+- **atoms/** - Basic building blocks (Button, Input, Label)
+- **molecules/** - Functional units combining atoms (FormField, SearchForm)
+- **organisms/** - Complex UI sections (Header, LoginForm)
+- **templates/** - Page-level layout structures (MainLayout, AuthLayout)
+- **pages/** - Specific template instances with real content
+
 ### Next.js App
 
 ```
 project/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx
+│   │   ├── layout.tsx            # Uses templates from components/
 │   │   ├── page.tsx
 │   │   └── api/
 │   │       └── route.ts
 │   ├── components/
-│   │   └── Button/
-│   │       ├── Button.tsx
-│   │       └── __tests__/
-│   │           └── Button.test.tsx
+│   │   ├── atoms/
+│   │   │   ├── Button/
+│   │   │   │   ├── Button.tsx
+│   │   │   │   ├── Button.stories.tsx
+│   │   │   │   ├── index.ts
+│   │   │   │   └── __tests__/
+│   │   │   │       └── Button.test.tsx
+│   │   │   ├── Input/
+│   │   │   ├── Label/
+│   │   │   └── index.ts          # Barrel export for atoms
+│   │   ├── molecules/
+│   │   │   ├── FormField/
+│   │   │   ├── SearchForm/
+│   │   │   └── index.ts          # Barrel export for molecules
+│   │   ├── organisms/
+│   │   │   ├── Header/
+│   │   │   ├── LoginForm/
+│   │   │   └── index.ts          # Barrel export for organisms
+│   │   ├── templates/
+│   │   │   ├── MainLayout/
+│   │   │   ├── DashboardLayout/
+│   │   │   ├── AuthLayout/
+│   │   │   └── index.ts          # Barrel export for templates
+│   │   └── index.ts              # Main barrel export
 │   ├── hooks/
 │   │   └── useAuth.ts
 │   └── stores/
 │       └── userStore.ts
+├── .storybook/
+│   ├── main.ts
+│   └── preview.ts
 ├── public/
 ├── tests/
 │   └── e2e/
@@ -252,6 +308,15 @@ project/
 ├── biome.json
 └── package.json
 ```
+
+**Component Organization:** Uses [Atomic Design](https://bradfrost.com/blog/post/atomic-web-design/) pattern:
+- **atoms/** - Basic building blocks (Button, Input, Label)
+- **molecules/** - Functional units combining atoms (FormField, SearchForm)
+- **organisms/** - Complex UI sections (Header, LoginForm)
+- **templates/** - Page-level layout structures (MainLayout, AuthLayout)
+- **app/** - Pages via Next.js file-based routing (uses templates)
+
+**Note:** Next.js layouts (`app/layout.tsx`) import and use templates from `components/templates/`. Templates are reusable component patterns; Next.js layouts are route-specific wrappers.
 
 ## Quality Requirements
 

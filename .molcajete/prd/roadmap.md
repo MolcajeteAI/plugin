@@ -19,6 +19,7 @@ We build what we need, when we need it, to the quality standard we demand.
 **Potential Additions:**
 - **Python plugin** - Python development standards, testing, packaging
 - **React/Frontend plugin** - Component patterns, state management, build optimization
+  - **Atomic Design Pattern** [COMPLETE - 100%] - Default component organization hierarchy (Atoms, Molecules, Organisms, Templates, Pages) with Storybook integration for React and React Native tech-stacks. All 6 features complete: Vite SPA, Next.js, Expo, Component Builders, PRD Override, Documentation. Completed 2025-12-29. See `.molcajete/prd/specs/20251229-atomic_design_pattern/spec.md`
 - **Testing plugin** - Test strategy, test generation, TDD workflows
 - **Deployment plugin** - CI/CD patterns, containerization, infrastructure as code
 

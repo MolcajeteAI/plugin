@@ -172,21 +172,43 @@ project/
 ├── app/
 │   ├── (auth)/
 │   │   ├── login.tsx
-│   │   └── register.tsx
+│   │   ├── register.tsx
+│   │   └── _layout.tsx
 │   ├── (tabs)/
 │   │   ├── _layout.tsx
 │   │   ├── index.tsx
 │   │   └── profile.tsx
 │   └── _layout.tsx
 ├── components/
-│   ├── ui/
+│   ├── atoms/
 │   │   ├── Button/
 │   │   │   ├── Button.tsx
+│   │   │   ├── Button.stories.tsx
+│   │   │   ├── index.ts
 │   │   │   └── __tests__/
 │   │   │       └── Button.test.tsx
-│   │   └── ...
-│   ├── forms/
-│   └── layouts/
+│   │   ├── Input/
+│   │   ├── Text/
+│   │   ├── Icon/
+│   │   └── index.ts          # Barrel export for atoms
+│   ├── molecules/
+│   │   ├── SearchBar/
+│   │   ├── FormField/
+│   │   ├── ListItem/
+│   │   └── index.ts          # Barrel export for molecules
+│   ├── organisms/
+│   │   ├── Header/
+│   │   ├── TabBar/
+│   │   ├── LoginForm/
+│   │   └── index.ts          # Barrel export for organisms
+│   ├── templates/
+│   │   ├── ScreenLayout/
+│   │   │   ├── ScreenLayout.tsx
+│   │   │   └── index.ts
+│   │   ├── AuthLayout/
+│   │   ├── TabLayout/
+│   │   └── index.ts          # Barrel export for templates
+│   └── index.ts              # Main barrel export
 ├── hooks/
 │   ├── useAuth.ts
 │   └── __tests__/
@@ -202,6 +224,9 @@ project/
 ├── assets/
 │   ├── images/
 │   └── fonts/
+├── .storybook/
+│   ├── main.ts
+│   └── preview.ts
 ├── __tests__/
 │   └── e2e/
 │       └── login.yaml
@@ -212,6 +237,15 @@ project/
 ├── tailwind.config.js
 └── package.json
 ```
+
+**Component Organization:** Uses [Atomic Design](https://bradfrost.com/blog/post/atomic-web-design/) pattern:
+- **atoms/** - Basic building blocks (Button, Input, Text, Icon)
+- **molecules/** - Functional units combining atoms (SearchBar, FormField, ListItem)
+- **organisms/** - Complex UI sections (Header, TabBar, LoginForm)
+- **templates/** - Screen-level layout structures (ScreenLayout, AuthLayout, TabLayout)
+- **app/** - Screens via Expo Router file-based routing (uses templates)
+
+**Note:** Expo projects do not use a `src/` directory. Templates handle mobile-specific concerns like safe areas, status bar, and keyboard avoidance.
 
 ## Quality Requirements
 
