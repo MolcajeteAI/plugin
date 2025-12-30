@@ -60,6 +60,12 @@ Use for:
 | `/react-native:test-component` | Test React Native components |
 | `/react-native:test-e2e` | Run Maestro E2E tests |
 
+### Refactoring
+
+| Command | Description |
+|---------|-------------|
+| `/react-native:refactor-atomic-design` | Refactor existing project to Atomic Design structure |
+
 ### Build & Deploy
 
 | Command | Description |
@@ -133,6 +139,18 @@ Capabilities:
 - Mobile gestures
 - Platform-specific testing
 - Visual regression
+
+### code-analyzer
+
+Analyzes component structure and generates refactoring plans for Atomic Design migration with mobile-specific criteria.
+
+Capabilities:
+- Component scanning and analysis
+- Atomic level classification with mobile criteria
+- Accessibility prop detection
+- Refactoring plan generation
+- Import statement updates
+- React Native Storybook story generation
 
 ## Skills
 

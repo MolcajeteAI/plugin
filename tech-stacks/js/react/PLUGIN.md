@@ -81,6 +81,12 @@ Use for:
 | `/react:test-e2e` | Run Playwright E2E tests |
 | `/react:test-visual` | Visual regression testing |
 
+### Refactoring
+
+| Command | Description |
+|---------|-------------|
+| `/react:refactor-atomic-design` | Refactor existing project to Atomic Design structure |
+
 ### Build & Deploy
 
 | Command | Description |
@@ -154,6 +160,17 @@ Capabilities:
 - Visual testing
 - Accessibility testing
 - E2E patterns
+
+### code-analyzer
+
+Analyzes component structure and generates refactoring plans for Atomic Design migration.
+
+Capabilities:
+- Component scanning and analysis
+- Atomic level classification
+- Refactoring plan generation
+- Import statement updates
+- Storybook story generation
 
 ## Skills
 

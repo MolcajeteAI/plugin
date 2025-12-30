@@ -20,6 +20,7 @@ We build what we need, when we need it, to the quality standard we demand.
 - **Python plugin** - Python development standards, testing, packaging
 - **React/Frontend plugin** - Component patterns, state management, build optimization
   - **Atomic Design Pattern** [COMPLETE - 100%] - Default component organization hierarchy (Atoms, Molecules, Organisms, Templates, Pages) with Storybook integration for React and React Native tech-stacks. All 6 features complete: Vite SPA, Next.js, Expo, Component Builders, PRD Override, Documentation. Completed 2025-12-29. See `.molcajete/prd/specs/20251229-atomic_design_pattern/spec.md`
+  - **Refactor Atomic Design Command** [COMPLETE - 100%] - Command to refactor existing projects to Atomic Design pattern. Analyzes flat component structures, generates migration plan with user approval, moves files, updates imports, creates barrel exports, and generates Storybook stories. Available as `/react:refactor-atomic-design` and `/react-native:refactor-atomic-design`. All 7 features complete including React Native implementation with mobile-specific classification and on-device Storybook support. Completed 2025-12-29. See `.molcajete/prd/specs/20251229-refactor_atomic_design_command/spec.md`
 - **Testing plugin** - Test strategy, test generation, TDD workflows
 - **Deployment plugin** - CI/CD patterns, containerization, infrastructure as code
 
