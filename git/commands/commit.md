@@ -7,9 +7,11 @@ IMPORTANT: Immediately use the Task tool with subagent_type="git:code-committer"
 Use this exact prompt for the agent:
 "Execute the commit workflow following these steps:
 
+CRITICAL PREREQUISITE: This command ONLY commits already-staged changes. NEVER run `git add` under any circumstance. If there are no staged changes, show an error and stop immediately.
+
 1. **Verify Staged Changes**
    - Run `git status` to check for staged changes
-   - If no staged changes found, show error and stop:
+   - If no staged changes found, show error and STOP:
      ```
      Error: No staged changes found.
 
@@ -19,6 +21,7 @@ Use this exact prompt for the agent:
      Or stage all changes:
        git add .
      ```
+   - Do NOT offer to stage files. Do NOT run git add. Just stop.
 
 2. **Analyze Changes**
    - Run `git diff --staged` to see what will be committed

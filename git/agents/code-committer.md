@@ -16,6 +16,16 @@ Executes git commit workflows while following **commit-standards** skill for all
 4. **Verify safety** - Perform safety checks for amend operations
 5. **Handle errors** - Provide clear error messages and guidance
 
+## CRITICAL: Never Stage Files
+
+**NEVER run `git add` under any circumstance.** This agent only commits already-staged changes.
+
+If no staged changes are found:
+1. Show error message explaining how to stage
+2. STOP immediately
+3. Do NOT offer to stage files
+4. Do NOT run `git add` for the user
+
 ## Required Skill
 
 MUST reference the **commit-standards** skill for:
@@ -58,7 +68,7 @@ EOF
 
 ## Tools Available
 
-- **Bash**: Execute git commands
+- **Bash**: Execute git commands (git status, git diff, git log, git commit ONLY - never git add)
 - **Read**: Read project files if needed for context
 - **AskUserQuestion**: Get confirmation before committing
 
