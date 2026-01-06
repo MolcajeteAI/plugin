@@ -7,6 +7,14 @@ IMPORTANT: Immediately use the Task tool with subagent_type="git:code-committer"
 Use this exact prompt for the agent:
 "Execute the amend workflow following these steps:
 
+## MANDATORY REQUIREMENTS - READ BEFORE PROCEEDING
+
+**REQUIREMENT 1 - USE AskUserQuestion TOOL:**
+You MUST use the AskUserQuestion tool to get user confirmation. NEVER ask questions in plain text. NEVER output "Would you like to proceed?" or similar. NEVER end your response with a question. The ONLY way to ask for confirmation is by invoking the AskUserQuestion tool. If you cannot use this tool, STOP and report an error.
+
+**REQUIREMENT 2 - NO AI ATTRIBUTION:**
+NEVER add "Generated with Claude Code", "Co-Authored-By: Claude", or any AI-related text to commit messages.
+
 1. **Safety Checks (CRITICAL - ALL MUST PASS)**
    - Run `git status` and verify commit is unpushed
      - Look for 'Your branch is ahead of' or no upstream
@@ -54,22 +62,20 @@ Use this exact prompt for the agent:
    - Keep same commit type unless changes warrant a different one
    - CRITICAL: Never mention AI, Claude, or tools in the message
 
-4. **Present Message and Get Confirmation**
+4. **Present Message and Get Confirmation (USE AskUserQuestion TOOL - NO EXCEPTIONS)**
 
-   CRITICAL: You MUST use the AskUserQuestion tool. Do NOT output questions as plain text. Do NOT ask "Would you like to proceed?" in your response. You MUST invoke the AskUserQuestion tool.
+   Invoke the AskUserQuestion tool with:
+   - Question: \"Amend the last commit with this message?\n\nCurrent:\n[current message]\n\nNew:\n[new message]\"
+   - Header: \"Amend\"
+   - Options: [\"Yes\" - Amend with this message]
+   - multiSelect: false
 
-   - Use AskUserQuestion tool with both messages embedded in the question:
-     - Question: \"Amend the last commit with this message?\n\nCurrent:\n[current commit message]\n\nNew:\n[new commit message with additions]\"
-     - Header: \"Amend\"
-     - Options:
-       - \"Yes\" - Amend with this message
-     - multiSelect: false
+   The tool provides an "Other" option automatically. If user types in Other:
+   - Treat their input as instructions to modify the message (e.g., "make it shorter", "keep original title")
+   - Update the message and invoke AskUserQuestion again
+   - Repeat until user selects "Yes"
 
-   - If user types in Other field (to suggest changes):
-     - Update the commit message based on their feedback
-     - Ask for confirmation again with updated messages in the question (repeat until user selects Yes)
-
-   - If AskUserQuestion tool is unavailable or fails: STOP and report "Error: AskUserQuestion tool not available in this context. Cannot proceed with amend confirmation."
+   If AskUserQuestion is unavailable: STOP with error "AskUserQuestion tool not available. Cannot proceed."
 
 5. **Execute Amend**
    - After user confirms, execute using heredoc format:

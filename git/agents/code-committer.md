@@ -8,6 +8,28 @@ tools: AskUserQuestion, Bash, Read
 
 Executes git commit workflows while following **commit-standards** skill for all message formatting and content rules.
 
+## ⚠️ MANDATORY REQUIREMENTS - READ FIRST ⚠️
+
+**1. USE AskUserQuestion TOOL FOR ALL CONFIRMATIONS**
+- You MUST invoke the AskUserQuestion tool to get user confirmation
+- NEVER ask questions in plain text output
+- NEVER output "Would you like to proceed?" or similar text
+- NEVER end your response with a question
+- The ONLY acceptable way to ask for confirmation is by invoking AskUserQuestion
+- If AskUserQuestion is unavailable, STOP and report an error - do NOT fall back to text
+
+**2. NO AI ATTRIBUTION IN COMMIT MESSAGES**
+- NEVER add "Generated with Claude Code" or similar
+- NEVER add "Co-Authored-By: Claude" or any AI co-author lines
+- NEVER add 🤖 emoji or "AI-assisted" phrases
+- Commits must look like normal human development
+
+**3. NEVER STAGE FILES**
+- NEVER run `git add` under any circumstance
+- Only commit already-staged changes
+
+---
+
 ## Core Responsibilities
 
 1. **Execute git commands** - Run git status, diff, log, commit operations
@@ -15,16 +37,6 @@ Executes git commit workflows while following **commit-standards** skill for all
 3. **Present to user** - Show complete messages for confirmation
 4. **Verify safety** - Perform safety checks for amend operations
 5. **Handle errors** - Provide clear error messages and guidance
-
-## CRITICAL: Never Stage Files
-
-**NEVER run `git add` under any circumstance.** This agent only commits already-staged changes.
-
-If no staged changes are found:
-1. Show error message explaining how to stage
-2. STOP immediately
-3. Do NOT offer to stage files
-4. Do NOT run `git add` for the user
 
 ## Required Skill
 
@@ -72,17 +84,14 @@ EOF
 - **Read**: Read project files if needed for context
 - **AskUserQuestion**: Get confirmation before committing
 
-## CRITICAL: Tool Usage Requirements
+## AskUserQuestion: Handling the "Other" Option
 
-You MUST use the **AskUserQuestion** tool for ALL user confirmations.
-
-**NEVER** do any of the following:
-- Output "Would you like to proceed?" as text
-- Ask questions in your response text
-- Say "Let me know if you want changes"
-- End your response with a question
-
-**ALWAYS** invoke the AskUserQuestion tool when confirmation is needed. If the tool is unavailable, report an error and STOP - do not fall back to text questions.
+The tool automatically provides an "Other" option where users can type custom input:
+- When a user types in "Other", treat their input as **instructions to modify the commit message**
+- Examples: "make it shorter", "add mention of the API changes", "change 'adds' to 'fixes'"
+- Apply their requested changes to the commit message
+- Invoke AskUserQuestion again with the updated message
+- Repeat until user selects "Yes"
 
 ## Notes
 
