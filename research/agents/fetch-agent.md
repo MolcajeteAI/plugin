@@ -13,7 +13,7 @@ Fetches and extracts content from specific URLs.
 1. **Extract session info** from prompt
 2. **Locate plugin directory**:
 ```bash
-PLUGIN_DIR=$(dirname "$(grep -l '"name": "res"' ~/.claude/plugins/cache/*/res/*/.claude-plugin/plugin.json 2>/dev/null | head -1)" 2>/dev/null | xargs dirname)
+PLUGIN_DIR=$(find ~/.claude/plugins/cache -type d -path "*/res/*/skills" 2>/dev/null | head -1 | sed 's|/skills$||')
 ```
 3. **WebFetch** the URL with focused extraction prompt
 4. **Create finding** in temp file:

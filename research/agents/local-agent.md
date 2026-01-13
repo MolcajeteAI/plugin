@@ -13,7 +13,7 @@ Searches local project for relevant files and information.
 1. **Extract session info** from prompt
 2. **Locate plugin directory**:
 ```bash
-PLUGIN_DIR=$(dirname "$(grep -l '"name": "res"' ~/.claude/plugins/cache/*/res/*/.claude-plugin/plugin.json 2>/dev/null | head -1)" 2>/dev/null | xargs dirname)
+PLUGIN_DIR=$(find ~/.claude/plugins/cache -type d -path "*/res/*/skills" 2>/dev/null | head -1 | sed 's|/skills$||')
 ```
 3. **Discover files** with Glob (e.g., `**/*.md`, `.claude/**`)
 4. **Search content** with Grep

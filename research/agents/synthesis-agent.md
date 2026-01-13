@@ -14,7 +14,7 @@ Combines findings from all agents into formatted response.
 
 2. **Locate plugin directory**:
 ```bash
-PLUGIN_DIR=$(dirname "$(grep -l '"name": "res"' ~/.claude/plugins/cache/*/res/*/.claude-plugin/plugin.json 2>/dev/null | head -1)" 2>/dev/null | xargs dirname)
+PLUGIN_DIR=$(find ~/.claude/plugins/cache -type d -path "*/res/*/skills" 2>/dev/null | head -1 | sed 's|/skills$||')
 ```
 
 3. **List findings**:
