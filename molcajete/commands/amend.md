@@ -117,16 +117,16 @@ If the user types in "Other":
 
 ## Step 4: Execute Amend
 
-After confirmation, execute using heredoc format:
+After confirmation, write the commit message file using the **Write tool**, then amend using Bash. Do NOT use heredocs — zsh's internal heredoc temp file creation is blocked by the sandbox.
+
+1. Use the **Write tool** to create `/tmp/claude/commit-msg.txt` with the confirmed message
+2. Then run in a **single Bash call**:
 
 ```bash
-git commit --amend -m "$(cat <<'EOF'
-{confirmed message}
-EOF
-)"
+git commit --amend -F /tmp/claude/commit-msg.txt && rm /tmp/claude/commit-msg.txt && git log --oneline -1
 ```
 
-Verify success with `git log --oneline -1`.
+**Do NOT use heredocs (`<< 'EOF'`) in Bash** — zsh creates an internal temp file for heredoc processing in a location the sandbox blocks, even if the output targets `/tmp/claude/`.
 
 Report the result: show the new commit hash and message.
 
@@ -138,5 +138,5 @@ Report the result: show the new commit hash and message.
 - Do not use the word "comprehensive" in any output.
 - If any safety check fails, stop immediately. Do not proceed or offer workarounds.
 - Show the complete before/after messages in the confirmation prompt.
-- If `git commit --amend` fails, report the error. Do not retry automatically.
+- If `git commit --amend` fails (e.g., pre-commit hook), report the error. Do not retry automatically.
 - The sub-agent drafts the message. You handle safety checks, confirmation, and execution.

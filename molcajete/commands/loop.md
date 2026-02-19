@@ -335,12 +335,11 @@ Parse the structured report from the sub-agent.
    - Match project convention for prefixes (use them if the project uses them, skip if not)
    - No AI attribution of any kind
 
-3. **Write message to temp file and commit**:
+3. **Write message to temp file and commit**: Use the **Write tool** to create `/tmp/claude/commit-msg.txt` with the commit message, then run in a **single Bash call**:
    ```bash
-   printf '%s\n' '{subject}' '' '{bullet 1}' '{bullet 2}' > /tmp/claude/commit-msg.txt
-   git commit -F /tmp/claude/commit-msg.txt
-   rm /tmp/claude/commit-msg.txt
+   git commit -F /tmp/claude/commit-msg.txt && rm /tmp/claude/commit-msg.txt
    ```
+   **Do NOT use `printf`, `echo`, or heredocs to create the file** — use the Write tool instead. Shell piping and redirects to files fail in the sandbox.
 
 4. **Verify**: Run `git log --oneline -1` to confirm.
 
