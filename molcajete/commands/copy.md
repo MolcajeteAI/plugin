@@ -54,7 +54,7 @@ The built-in "Other" option lets the user type custom instructions.
 
 **After the user responds:**
 
-- **Copy to clipboard**: Pipe the rewritten text to `pbcopy` via Bash. Confirm it was copied.
+- **Copy to clipboard**: Read `${CLAUDE_PLUGIN_ROOT}/skills/clipboard/SKILL.md`, then follow its rules to copy the rewritten text. Confirm it was copied.
 - **Save to temp/copy.md**: Create the `temp/` directory if needed (`mkdir -p temp`), then write the text to `temp/copy.md` using the Write tool. Confirm the file was saved.
 - **Custom input**: Follow the user's instructions.
 

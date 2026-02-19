@@ -65,7 +65,7 @@ The built-in "Other" option lets the user type custom instructions.
 
 **After the user responds:**
 
-- **Copy to clipboard**: Pipe the prompt text to `pbcopy` via Bash. Confirm it was copied.
+- **Copy to clipboard**: Read `${CLAUDE_PLUGIN_ROOT}/skills/clipboard/SKILL.md`, then follow its rules to copy the prompt text. Confirm it was copied.
 - **Save to temp/prompt.md**: Create the `temp/` directory if needed (`mkdir -p temp`), then write the text to `temp/prompt.md` using the Write tool. Confirm the file was saved.
 - **Custom input**: Follow the user's instructions.
 

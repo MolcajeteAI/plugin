@@ -85,7 +85,7 @@ The user can also type a custom option (e.g., a different path or filename).
 
 **After the user responds:**
 - **Save**: Create the `research/` directory in the project root if it doesn't exist. Write the synthesized content to the chosen path. Confirm the file was saved.
-- **Copy to clipboard**: Pipe the synthesized content to `pbcopy` via Bash. Confirm it was copied.
+- **Copy to clipboard**: Read `${CLAUDE_PLUGIN_ROOT}/skills/clipboard/SKILL.md`, then follow its rules to copy the synthesized content. Confirm it was copied.
 - **Custom input**: Follow the user's instructions (different path, different name, etc.).
 
 ## Rules

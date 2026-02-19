@@ -1,6 +1,6 @@
 {
   "name": "m",
-  "version": "2.1.6",
+  "version": "2.1.7",
   "description": "Core development workflow with generic agents and discoverable skills",
   "author": {
     "name": "Ivan Torres",
@@ -27,6 +27,7 @@
     "./commands/test.md"
   ],
   "skills": [
+    "./skills/clipboard/SKILL.md",
     "./skills/code-documentation/SKILL.md",
     "./skills/copywriting/SKILL.md",
     "./skills/dev-workflow/SKILL.md",
