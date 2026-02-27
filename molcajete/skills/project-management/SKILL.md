@@ -52,10 +52,10 @@ Every ID includes a 4-character **feature tag** derived from the feature folder'
 
 ### Base-62 Tag Algorithm
 
-Compute the tag from the feature folder's `YYYYMMDD-HHmm` timestamp:
+Compute the tag from the feature folder's `YYYYMMDD-HHmm` timestamp (always UTC):
 
-1. Parse the timestamp as a datetime
-2. Compute total minutes since epoch **2026-01-01 00:00**
+1. Parse the timestamp as a UTC datetime
+2. Compute total minutes since epoch **2026-01-01 00:00 UTC**
 3. Repeatedly divide by 62, collecting remainders
 4. Map remainders: `0-9` → `'0'-'9'`, `10-35` → `'A'-'Z'`, `36-61` → `'a'-'z'`
 5. Read characters MSB-first (last quotient to first remainder)
@@ -91,7 +91,7 @@ Use markdown tables for requirements, metrics, risks, and any data with consiste
 
 Feature specification folders use the format: `YYYYMMDD-HHmm-{slug}/`
 
-- Timestamp is when the feature was first scoped
+- Timestamp is when the feature was first scoped, **always in UTC**
 - Slug uses underscores, lowercase, derived from the feature name
 - Example: `20260131-1430-patient_onboarding/`
 

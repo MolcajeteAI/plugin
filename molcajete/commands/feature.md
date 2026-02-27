@@ -104,7 +104,7 @@ Skip questions where the answer is obvious from context. Pre-fill from existing 
 
 Create a timestamped feature folder and requirements document:
 
-1. Generate the folder name: `prd/specs/YYYYMMDD-HHmm-{slug}/` where the timestamp is now and the slug is derived from the feature name (lowercase, underscores).
+1. Generate the folder name: `prd/specs/YYYYMMDD-HHmm-{slug}/` where the timestamp is the current time in UTC and the slug is derived from the feature name (lowercase, underscores).
 2. Compute the feature tag from the folder timestamp using the base-62 algorithm described in the project-management skill (ID Scheme section).
 3. Write `requirements.md` following the requirements template exactly.
 4. Ensure all IDs follow the scheme: UC-{tag}-001, US-{tag}-001, FR-{tag}-001, NFR-{tag}-001 (sequential within this document, using the computed tag).

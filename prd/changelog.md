@@ -11,6 +11,13 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-02-27
+
+- [15:23] Fix: Use UTC for all timestamps
+  Adds explicit UTC qualification to all timestamp references in skill files and commands — changelog HH:MM entries, feature folder YYYYMMDD-HHmm naming, and Base-62 tag epoch. Ensures consistency across time zones.
+  - Plan: [fix-utc-timestamps.md](specs/chores/plans/fix-utc-timestamps.md)
+  - Changelog: [changelog-fix-utc-timestamps.md](specs/chores/plans/changelog-fix-utc-timestamps.md)
+
 ## 2026-02-24
 
 - [14:30] Add codebase exploration workflow for generic feature names to /m:stories
