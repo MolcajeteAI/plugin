@@ -249,7 +249,8 @@ After all 4 agents return:
 
 3. **Update main changelog**: Append to `prd/changelog.md` in chronological format:
    - Add entry under today's date heading (create heading if not exists)
-   - Include timestamp (HH:MM), fix title, brief description
+   - Get the current UTC time by running `date -u +%H:%M` and use it as the timestamp (HH:MM)
+   - Include the timestamp, fix title, brief description
    - Link to the fix plan file and changelog file
 
    Example:
