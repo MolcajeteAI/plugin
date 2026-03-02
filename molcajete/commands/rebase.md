@@ -1,7 +1,7 @@
 ---
 description: Interactive rebase helper
 model: claude-opus-4-6
-allowed-tools: Read, Bash(*), Task, AskUserQuestion
+allowed-tools: Read, Edit, Write, Bash(*), Task, AskUserQuestion
 argument-hint: <base branch, e.g. "main" or "master">
 ---
 
@@ -19,7 +19,41 @@ You help the user rebase their current branch onto a target base branch. You per
 
 **NEVER FORCE PUSH WITHOUT EXPLICIT CONFIRMATION.** After rebase, if the branch was previously pushed, warn the user that force push is required and get explicit confirmation.
 
-## Step 1: Validate Input
+## Step 0: Detect Entry Scenario
+
+**Run this FIRST, before anything else.** Determine whether a rebase is already in progress:
+
+```bash
+git rev-parse REBASE_HEAD 2>/dev/null
+```
+
+- **If REBASE_HEAD exists** → **Scenario B: In-progress rebase with conflicts.** Skip Steps 1–4 entirely. The rebase is paused mid-way — there are conflicted files waiting to be resolved.
+- **If REBASE_HEAD does not exist** → **Scenario A: Fresh rebase.** Continue from Step 1.
+
+For Scenario B, detect the target branch from the rebase state:
+```bash
+onto=$(cat .git/rebase-merge/onto 2>/dev/null || cat .git/rebase-apply/onto 2>/dev/null)
+git branch --contains "$onto" --format='%(refname:short)' 2>/dev/null | head -5
+```
+
+Also recover the original branch name:
+```bash
+cat .git/rebase-merge/head-name 2>/dev/null | sed 's|refs/heads/||'
+```
+
+Use AskUserQuestion to confirm:
+- **Question:** "A rebase is already in progress. Continue resolving conflicts?"
+- **Header:** "In-progress rebase"
+- **Options:**
+  - "Yes, continue" — Resume conflict resolution
+  - "Abort rebase" — Run `git rebase --abort` and restore the branch
+- **multiSelect:** false
+
+If the user aborts, run `git rebase --abort`, confirm the branch is restored, and stop.
+
+If continuing, proceed to Step 5 (Understand Both Branches) to build context, then Step 6 (Resolve Conflicts).
+
+## Step 1: Validate Input (Scenario A only)
 
 If `$ARGUMENTS` is empty or does not look like a branch name, use AskUserQuestion to ask:
 - **Question:** "Which branch should I rebase onto?"
@@ -27,7 +61,7 @@ If `$ARGUMENTS` is empty or does not look like a branch name, use AskUserQuestio
 - **Options:** ["master", "main"]
 - **multiSelect:** false
 
-## Step 2: Safety Checks
+## Step 2: Safety Checks (Scenario A only)
 
 Run all checks using Bash. If any check fails, show the error and stop immediately.
 
@@ -77,7 +111,7 @@ Run `git log origin/{current branch}..HEAD --oneline 2>/dev/null` and `git log H
 
 If the branch has been pushed, note this as a warning (do not stop — include it in the confirmation step).
 
-## Step 3: Show Rebase Preview
+## Step 3: Show Rebase Preview (Scenario A only)
 
 Use a Task with `subagent_type="Bash"` to gather the preview data:
 
@@ -110,7 +144,7 @@ Warning: This branch has been pushed to the remote.
 After rebasing, you will need to force push: git push --force-with-lease
 ```
 
-## Step 4: Get Confirmation
+## Step 4: Get Confirmation (Scenario A only)
 
 Use AskUserQuestion with:
 - **Question:** "{the preview summary from Step 3}\n\nProceed with rebase?"
@@ -120,7 +154,76 @@ Use AskUserQuestion with:
 
 If the user declines, stop.
 
-## Step 5: Execute Rebase
+## Step 5: Understand Both Branches
+
+**This step runs for both Scenario A and Scenario B.** Before resolving any conflicts, build a mental model of what each branch was trying to accomplish. This understanding drives every conflict resolution decision.
+
+### 5.1: Find the Merge Base
+
+For Scenario B (in-progress rebase):
+```bash
+git merge-base REBASE_HEAD {base branch}
+```
+
+For Scenario A (before starting the rebase):
+```bash
+git merge-base HEAD {base branch}
+```
+
+### 5.2: Analyze Both Branches' Intent (Parallel Sub-Agents)
+
+Launch **two parallel** Tasks with `subagent_type="general-purpose"`:
+
+**Sub-agent 1 — Current branch intent:**
+
+```
+Analyze the intent of the current branch (the one being rebased). This is research only — do not modify any files.
+
+Run these commands:
+1. `git log --format='%h %s%n%b' {merge-base}..{REBASE_HEAD or HEAD}` — full commit messages
+2. `git diff --stat {merge-base}..{REBASE_HEAD or HEAD}` — which files were touched
+3. `git diff {merge-base}..{REBASE_HEAD or HEAD}` — the actual changes
+4. For key changed files, read the full file to understand broader context
+
+Return:
+CURRENT_BRANCH_INTENT:
+- Purpose: {1-2 sentences: what was this branch trying to accomplish?}
+- Key changes: {bullet list of the main things it did}
+- Files modified: {list of files and what changed in each}
+```
+
+**Sub-agent 2 — Target branch intent:**
+
+```
+Analyze the intent of the target branch (the one being rebased onto). This is research only — do not modify any files.
+
+Run these commands:
+1. `git log --format='%h %s%n%b' {merge-base}..{base branch}` — full commit messages
+2. `git diff --stat {merge-base}..{base branch}` — which files were touched
+3. `git diff {merge-base}..{base branch}` — the actual changes
+4. For key changed files, read the full file to understand broader context
+
+Return:
+TARGET_BRANCH_INTENT:
+- Purpose: {1-2 sentences: what was this branch trying to accomplish?}
+- Key changes: {bullet list of the main things it did}
+- Files modified: {list of files and what changed in each}
+```
+
+### 5.3: Synthesize and Present
+
+Combine the results into a summary and show it to the user before proceeding:
+
+```
+Branch Analysis
+
+Current branch was doing: {purpose}
+Target branch was doing: {purpose}
+
+Overlapping files: {files modified by both branches — these are likely conflict sources}
+```
+
+### 5.4: Execute Rebase (Scenario A only)
 
 Run via Bash:
 
@@ -150,6 +253,10 @@ Analyze a git rebase conflict and propose a resolution.
 File: {file path}
 Current branch: {current branch}
 Base branch: {base branch}
+
+Branch context from prior analysis:
+- Current branch intent: {summary from Step 5}
+- Target branch intent: {summary from Step 5}
 
 Do the following:
 
@@ -246,7 +353,16 @@ Report that the rebase was cancelled and the branch is restored to its pre-rebas
 After successful rebase:
 
 1. Show the updated commit log: `git log --oneline -10`
-2. If the branch was previously pushed, use AskUserQuestion:
+
+2. Use AskUserQuestion to confirm satisfaction:
+   - **Question:** "The rebase is complete. Are you satisfied with the result?"
+   - **Header:** "Result"
+   - **Options:** ["Yes, looks good" — Keep the rebase result]
+   - **multiSelect:** false
+
+   The "Other" option lets the user describe concerns. If unsatisfied, discuss what to adjust.
+
+3. If the branch was previously pushed, use a follow-up AskUserQuestion:
    - **Question:** "The branch was previously pushed. Force push to update the remote?"
    - **Header:** "Force push"
    - **Options:** ["Yes, force push" — Run git push --force-with-lease, "No, skip" — Leave the remote as-is for now]
@@ -264,3 +380,16 @@ If the user confirms force push, run `git push --force-with-lease` (never `--for
 - If `git rebase` fails for reasons other than conflicts, report the error and suggest `git rebase --abort`.
 - Delegate file reading and git analysis to sub-agents to keep the main context clean.
 - The goal of conflict resolution is to preserve the intent of BOTH branches whenever possible. Picking one side is the fallback, not the default.
+- Never run `git rebase --continue` or write conflict resolutions without explicit user confirmation.
+- Never silently drop code from either branch.
+- Always explain the *intent* behind each proposed resolution — not just what changed.
+- Read actual commit messages and diffs to understand intent. Do not guess.
+
+## Conflict Resolution Principles
+
+When resolving conflicts, apply these in order:
+
+1. **Preserve functional intent** — If both branches added distinct functionality, include both. Never silently drop features.
+2. **Prefer the target branch's structure** — Since we're rebasing onto it, its organization takes precedence for shared scaffolding (imports, file layout, config).
+3. **Prefer the current branch's logic** — The current branch's specific changes (the ones being rebased) take precedence for the work being carried forward.
+4. **When in doubt, ask** — Never silently discard code. Surface the ambiguity to the user via AskUserQuestion.
