@@ -1,6 +1,6 @@
 ---
 description: Interactive git rebase with conflict resolution
-model: claude-opus-4-6
+model: claude-sonnet-4-6
 allowed-tools: Read, Edit, Bash(*), AskUserQuestion
 argument-hint: <base branch, e.g. "main" or "master">
 ---
@@ -139,93 +139,79 @@ Run `git status` via Bash. Parse the output to identify:
 - **Conflicted files** — listed as "both modified" or "both added"
 - **Already resolved files** — cleanly merged by git
 
-### 6.2: Get Ours and Theirs Versions
+### 6.2: Save Ours Version and Read Conflict Markers
 
-For each conflicted file, extract both sides using git and get the conflicted file content. Run all three via Bash:
+For each conflicted file, save the ours version and read the conflict markers via Bash in a single command:
 
 ```bash
-git show :2:{file path} > $TMPDIR/ours.txt
-git show :3:{file path} > $TMPDIR/theirs.txt
-cat {file path}
+git show :2:{file path} > $TMPDIR/ours_{basename}.txt && cat {file path}
 ```
 
 - `:2:` is the ours version (the branch being rebased onto)
-- `:3:` is the theirs version (the commit being replayed)
-- `cat` shows the file with conflict markers so you can identify individual hunks
-
-Count the total number of conflict hunks (each `<<<<<<<`...`>>>>>>>` block is one hunk).
+- `cat` shows the file with conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) so you can understand each hunk
+- Use a unique basename per file (e.g., `ours_changelog.txt`, `ours_README.txt`) to avoid collisions when resolving multiple files
 
 Rules for structured content (changelogs, configs, package lists, imports):
 - NEVER duplicate section headers, date headers, or group keys — merge entries under shared headers
 - Sort entries according to the file's existing convention
 
-### 6.3: Present Hunks One at a Time Using Diff
+### 6.3: Resolve the File and Show Diff
 
-Process hunks **sequentially, one at a time**. For each hunk, generate a real diff — do NOT manually format diffs as text output.
+For each conflicted file, resolve ALL conflict hunks at once, then show the user a real diff for confirmation.
 
-**For each hunk, do these steps in order:**
+**Step A — Resolve all hunks.** Use the Edit tool to replace each conflict-marked section (`<<<<<<<` through `>>>>>>>`) with the resolved content. Preserve the intent of BOTH sides whenever possible. Combine changes when complementary. Pick one side only when truly contradictory.
 
-**Step A — Write the "before" content.** Use the Write tool to save the ours side of this hunk (content between `<<<<<<<` and `=======`) to a temp file:
-
-Write to `$TMPDIR/hunk_before.txt` — exact ours content, every line, no truncation.
-
-**Step B — Write the resolved content.** Determine the correct merge (preserve intent of BOTH sides when possible). Use the Write tool to save the resolved content to a temp file:
-
-Write to `$TMPDIR/hunk_after.txt` — exact resolved content, every line, no truncation.
-
-**Do NOT use heredocs (`cat << EOF`).** Always use the Write tool for temp files.
-
-**Step C — Generate the diff.** Run the diff command via Bash:
+**Step B — Generate the diff.** Run via Bash:
 
 ```bash
-diff -u $TMPDIR/hunk_before.txt $TMPDIR/hunk_after.txt | tail -n +3
+diff -u $TMPDIR/ours_{basename}.txt {file path} | tail -n +3
 ```
 
 The `tail -n +3` strips the file headers, keeping only the `@@` hunks and `+`/`-` lines.
 
-**Step D — Show the diff in your text response.** Do NOT rely on the Bash tool output being visible — it gets collapsed. Instead, copy the exact output from the diff command and paste it into your text response wrapped in a `` ```diff `` code fence:
+**Step C — Show the diff in your text response.** Do NOT rely on the Bash tool output — it gets collapsed. Copy the exact output from the diff command and paste it into your text response wrapped in a `` ```diff `` code fence:
 
 ````
-Conflict in `{file path}` — hunk {n} of {total}: {1 sentence — what ours changed, what theirs changed, how the resolution combines them}
+Conflict in `{file path}`: {1-2 sentences — what ours changed, what theirs changed, how the resolution combines them}
 
 ```diff
-{paste the exact diff output here — verbatim from the diff command, do not modify it}
+{paste the exact diff -u output here — verbatim, do not modify it}
 ```
 ````
 
-This is the only content the user sees. It must be in your text response, not inside a Bash tool result.
+This is the only content the user sees. It MUST be in your text response, not inside a Bash tool result.
 
-**Then confirm** using AskUserQuestion:
-- **Question:** "Accept this resolution for hunk {n} of {total} in `{file path}`?"
-- **Header:** "Hunk {n}/{total}"
+**Step D — Confirm** using AskUserQuestion:
+- **Question:** "Accept this resolution for `{file path}`?"
+- **Header:** "Resolve"
 - **Options:**
-  - "Accept" — Use the proposed resolution for this hunk
-  - "Keep ours" — Take only the current branch's version of this hunk
-  - "Keep theirs" — Take only the base branch's version of this hunk
+  - "Accept" — Use this resolution
+  - "Keep ours" — Discard theirs, keep only ours
+  - "Keep theirs" — Discard ours, keep only theirs
   - "Abort rebase" — Cancel the entire rebase
 - **multiSelect:** false
 
 The tool automatically provides an "Other" option. If the user types in Other:
-- Treat their input as instructions (e.g., "keep the function signature from ours but use the body from theirs")
-- Apply their instructions to produce a new resolution
-- Show the updated resolution and invoke AskUserQuestion again
+- Treat their input as instructions (e.g., "keep the function from ours but use the imports from theirs")
+- Re-edit the file accordingly
+- Re-run `diff -u` and show the updated diff
+- Invoke AskUserQuestion again
 - Repeat until the user selects an option
 
-Only after the user confirms a hunk do you move to the next one.
+If "Keep ours": `git checkout --ours -- {file path}`
+If "Keep theirs": `git checkout --theirs -- {file path}`
 
-### 6.5: Apply Resolutions
+### 6.4: Stage and Continue
 
-After each hunk is confirmed, edit the file to replace the conflict-marked section (`<<<<<<<` through `>>>>>>>`) with the confirmed resolution.
-
-After ALL hunks in a file are resolved, stage the file:
+After the user confirms a file's resolution, stage it:
 
 ```bash
 git add {file path}
 ```
 
-Then move to the next conflicted file (back to 6.1) if there are more.
+Then move to the next conflicted file (back to 6.2) if there are more.
 
-### 6.6: Continue Rebase
+### 6.5: Continue Rebase
 
 After ALL conflicted files for the current commit are resolved and staged, run:
 
@@ -235,7 +221,7 @@ git rebase --continue
 
 If new conflicts appear on the next commit being replayed, go back to Step 6.1 and repeat the process.
 
-### 6.7: Abort Option
+### 6.6: Abort Option
 
 If the user selects "Abort rebase" at any point during conflict resolution:
 
@@ -267,4 +253,6 @@ If the user confirms force push, run `git push --force-with-lease` (never `--for
 - Do not add AI or tool attribution anywhere.
 - If `git rebase` fails for reasons other than conflicts, report the error and suggest `git rebase --abort`.
 - The goal of conflict resolution is to preserve the intent of BOTH branches whenever possible. Picking one side is the fallback, not the default.
-- Always generate diffs using the temp file + `diff -u` approach in Step 6.3. Never manually format diff output as text.
+- Always generate diffs using `diff -u` against the saved ours file. Never manually format diff output as text.
+- Never use heredocs (`cat << EOF`) — use the Write tool or Bash redirects (`>`) for file operations.
+- Never use the Read tool during conflict resolution — use Bash (`cat`, `git show`) instead.
