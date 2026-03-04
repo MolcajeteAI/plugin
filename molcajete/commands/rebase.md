@@ -1,5 +1,5 @@
 ---
-description: Interactive rebase helper
+description: Rebase current branch onto a target branch with safety checks, preview, and intelligent conflict resolution that understands both branches' intent
 model: claude-opus-4-6
 allowed-tools: Read, Edit, Write, Bash(*), Task, AskUserQuestion
 argument-hint: <base branch, e.g. "main" or "master">
@@ -13,13 +13,13 @@ You help the user rebase their current branch onto a target base branch. You per
 
 ## Mandatory Requirements
 
-**NEVER STAGE FILES UNLESS RESOLVING CONFLICTS.** During normal operation, do not run `git add`. The only exception is during conflict resolution (Step 6), where staging resolved files is part of the rebase workflow.
+**NEVER STAGE FILES UNLESS RESOLVING CONFLICTS.** During normal operation, do not run `git add`. The only exception is during conflict resolution (Step 7), where staging resolved files is part of the rebase workflow.
 
 **USE AskUserQuestion FOR ALL CONFIRMATIONS.** Never ask questions as plain text. Never end your response with a question.
 
 **NEVER FORCE PUSH WITHOUT EXPLICIT CONFIRMATION.** After rebase, if the branch was previously pushed, warn the user that force push is required and get explicit confirmation.
 
-## Step 0: Detect Entry Scenario
+## Step 1: Detect Entry Scenario
 
 **Run this FIRST, before anything else.** Determine whether a rebase is already in progress:
 
@@ -27,8 +27,8 @@ You help the user rebase their current branch onto a target base branch. You per
 git rev-parse REBASE_HEAD 2>/dev/null
 ```
 
-- **If REBASE_HEAD exists** → **Scenario B: In-progress rebase with conflicts.** Skip Steps 1–4 entirely. The rebase is paused mid-way — there are conflicted files waiting to be resolved.
-- **If REBASE_HEAD does not exist** → **Scenario A: Fresh rebase.** Continue from Step 1.
+- **If REBASE_HEAD exists** → **Scenario B: In-progress rebase with conflicts.** Skip to Step 4 (Analyze Branch Intent). The rebase is paused mid-way — there are conflicted files waiting to be resolved.
+- **If REBASE_HEAD does not exist** → **Scenario A: Fresh rebase.** Continue from Step 2.
 
 For Scenario B, detect the target branch from the rebase state:
 ```bash
@@ -51,9 +51,9 @@ Use AskUserQuestion to confirm:
 
 If the user aborts, run `git rebase --abort`, confirm the branch is restored, and stop.
 
-If continuing, proceed to Step 5 (Understand Both Branches) to build context, then Step 6 (Resolve Conflicts).
+If continuing, proceed to Step 4 (Analyze Branch Intent) to build context, then Step 7 (Resolve Conflicts).
 
-## Step 1: Validate Input (Scenario A only)
+## Step 2: Validate Input (Scenario A only)
 
 If `$ARGUMENTS` is empty or does not look like a branch name, use AskUserQuestion to ask:
 - **Question:** "Which branch should I rebase onto?"
@@ -61,7 +61,7 @@ If `$ARGUMENTS` is empty or does not look like a branch name, use AskUserQuestio
 - **Options:** ["master", "main"]
 - **multiSelect:** false
 
-## Step 2: Safety Checks (Scenario A only)
+## Step 3: Safety Checks (Scenario A only)
 
 Run all checks using Bash. If any check fails, show the error and stop immediately.
 
@@ -109,68 +109,40 @@ Either commit or stash your changes first:
 
 Run `git log origin/{current branch}..HEAD --oneline 2>/dev/null` and `git log HEAD..origin/{current branch} --oneline 2>/dev/null` to check if the branch has been pushed.
 
-If the branch has been pushed, note this as a warning (do not stop — include it in the confirmation step).
+If the branch has been pushed, note this as a warning (do not stop — include it in the preview step).
 
-## Step 3: Show Rebase Preview (Scenario A only)
+## Step 4: Analyze Branch Intent (Conditional)
 
-Use a Task with `subagent_type="Bash"` to gather the preview data:
+**This step runs for both Scenario A and Scenario B**, but only when the complexity warrants it.
 
-```
-Run these commands and return their output:
-1. git log --oneline {base branch}..HEAD
-2. git log --oneline HEAD..{base branch} | wc -l
-3. git diff --stat {base branch}...HEAD
-```
+### 4.1: Assess Complexity
 
-Present a summary:
+Before launching sub-agents, quickly assess whether analysis is needed:
 
-```
-Rebase Preview
-
-Branch: {current branch}
-Onto:   {base branch}
-
-Commits to rebase ({count}):
-  {commit list}
-
-Files changed on this branch: {count}
-Commits behind {base branch}: {count}
-```
-
-If the branch has been pushed, add:
-
-```
-Warning: This branch has been pushed to the remote.
-After rebasing, you will need to force push: git push --force-with-lease
-```
-
-## Step 4: Get Confirmation (Scenario A only)
-
-Use AskUserQuestion with:
-- **Question:** "{the preview summary from Step 3}\n\nProceed with rebase?"
-- **Header:** "Rebase"
-- **Options:** ["Yes, rebase" — Rebase {count} commits onto {base branch}]
-- **multiSelect:** false
-
-If the user declines, stop.
-
-## Step 5: Understand Both Branches
-
-**This step runs for both Scenario A and Scenario B.** Before resolving any conflicts, build a mental model of what each branch was trying to accomplish. This understanding drives every conflict resolution decision.
-
-### 5.1: Find the Merge Base
-
-For Scenario B (in-progress rebase):
 ```bash
-git merge-base REBASE_HEAD {base branch}
+git merge-base HEAD {base branch}  # (or REBASE_HEAD for Scenario B)
 ```
 
-For Scenario A (before starting the rebase):
+Then check:
 ```bash
-git merge-base HEAD {base branch}
+# Count files modified by both branches (overlap)
+comm -12 \
+  <(git diff --name-only {merge-base}..HEAD | sort) \
+  <(git diff --name-only {merge-base}..{base branch} | sort)
 ```
 
-### 5.2: Analyze Both Branches' Intent (Parallel Sub-Agents)
+**Skip analysis** (proceed directly to Step 5 for Scenario A, or Step 7 for Scenario B) when ALL of these are true:
+- Zero or one overlapping files
+- The diff is small (fewer than ~100 lines changed across both branches)
+- The rebase intent is obvious from commit messages alone
+
+**Run analysis** when ANY of these are true:
+- Multiple overlapping files (files modified by both branches)
+- Large or complex diffs
+- Non-trivial merge base (branches diverged significantly)
+- Scenario B (conflicts already exist — understanding intent is critical for resolution)
+
+### 4.2: Analyze Both Branches' Intent (Parallel Sub-Agents)
 
 Launch **two parallel** Tasks with `subagent_type="general-purpose"`:
 
@@ -197,22 +169,23 @@ CURRENT_BRANCH_INTENT:
 ```
 Analyze the intent of the target branch (the one being rebased onto). This is research only — do not modify any files.
 
+IMPORTANT: Do NOT fetch the entire target branch history. The target branch may have hundreds of commits. Scope your analysis to commits that touch the overlapping files (files modified by both branches).
+
 Run these commands:
-1. `git log --format='%h %s%n%b' {merge-base}..{base branch}` — full commit messages
-2. `git diff --stat {merge-base}..{base branch}` — which files were touched
-3. `git diff {merge-base}..{base branch}` — the actual changes
-4. For key changed files, read the full file to understand broader context
+1. For each overlapping file: `git log --format='%h %s%n%b' {merge-base}..{base branch} -- {file path}` — only commits touching that file
+2. `git diff {merge-base}..{base branch} -- {overlapping files}` — changes scoped to overlapping files only
+3. If you need broader context (e.g., to understand a rename or a moved function), expand to neighboring files but do NOT run an unscoped `git log` or `git diff` on the entire branch
 
 Return:
 TARGET_BRANCH_INTENT:
-- Purpose: {1-2 sentences: what was this branch trying to accomplish?}
-- Key changes: {bullet list of the main things it did}
-- Files modified: {list of files and what changed in each}
+- Purpose: {1-2 sentences: what was this branch trying to accomplish in the overlapping files?}
+- Key changes: {bullet list of the main things it did to the overlapping files}
+- Files modified: {list of overlapping files and what changed in each}
 ```
 
-### 5.3: Synthesize and Present
+### 4.3: Synthesize
 
-Combine the results into a summary and show it to the user before proceeding:
+Combine the results into a summary for use in subsequent steps:
 
 ```
 Branch Analysis
@@ -223,7 +196,73 @@ Target branch was doing: {purpose}
 Overlapping files: {files modified by both branches — these are likely conflict sources}
 ```
 
-### 5.4: Execute Rebase (Scenario A only)
+For Scenario A, this analysis feeds into the preview (Step 5). For Scenario B, it feeds into conflict resolution (Step 7).
+
+## Step 5: Show Rebase Preview (Scenario A only)
+
+Run these commands via Bash to gather the preview data:
+
+```bash
+git log --oneline {base branch}..HEAD
+git log --oneline HEAD..{base branch} | wc -l
+git diff --stat {base branch}...HEAD
+git diff {base branch}...HEAD
+```
+
+Present the summary **and** the full diff to the user:
+
+```
+Rebase Preview
+
+Branch: {current branch}
+Onto:   {base branch}
+
+Commits to rebase ({count}):
+  {commit list}
+
+Files changed on this branch: {count}
+Commits behind {base branch}: {count}
+```
+
+If Step 4 ran, include the branch analysis summary:
+
+```
+Branch Analysis
+
+Current branch was doing: {purpose}
+Target branch was doing: {purpose}
+
+Overlapping files: {list — these are likely conflict sources}
+```
+
+Then show the full diff output below the summary, inside a fenced code block with the `diff` language tag for syntax highlighting:
+
+````
+```diff
+{output of git diff {base branch}...HEAD}
+```
+````
+
+If the branch has been pushed, add:
+
+```
+Warning: This branch has been pushed to the remote.
+After rebasing, you will need to force push: git push --force-with-lease
+```
+
+## Step 6: Confirm and Execute Rebase (Scenario A only)
+
+### 6.1: Get Confirmation
+
+Use AskUserQuestion with:
+- **Question:** "{the preview summary from Step 5}\n\nProceed with rebase?"
+- **Header:** "Rebase"
+- **Options:** ["Yes, rebase" — Rebase {count} commits onto {base branch}]
+- **multiSelect:** false
+
+If the user declines, stop.
+
+### 6.2: Execute Rebase
 
 Run via Bash:
 
@@ -231,96 +270,105 @@ Run via Bash:
 git rebase {base branch}
 ```
 
-If the rebase completes without conflicts, skip to Step 7 (Post-Rebase).
+If the rebase completes without conflicts, skip to Step 8 (Post-Rebase).
 
-## Step 6: Resolve Conflicts
+If conflicts occur, proceed to Step 7. (If Step 4 was skipped earlier because the rebase looked simple, run Step 4 now before entering Step 7 — conflicts mean the analysis is needed after all.)
 
-This is the core of the rebase command. When conflicts occur, you analyze both branches' intent and propose an intelligent merge for each conflicted file.
+## Step 7: Resolve Conflicts
 
-### 6.1: Identify Conflicted Files
+This is the core of the rebase command. When conflicts occur, you analyze both branches' intent (from Step 4) and propose an intelligent merge for each conflicted file.
+
+### 7.1: Identify Conflicted Files
 
 Run `git status` via Bash. Parse the output to identify:
 - **Conflicted files** — listed as "both modified" or "both added"
 - **Already resolved files** — cleanly merged by git
 
-### 6.2: Analyze Each Conflicted File (Sub-Agent)
+### 7.2: Analyze Each Conflicted File (Sub-Agent)
 
-For **each conflicted file**, launch a Task with `subagent_type="general-purpose"` to deeply analyze the conflict:
+For **each conflicted file**, launch a Task with `subagent_type="general-purpose"` to analyze the conflict and propose resolutions **per conflict hunk**:
 
 ```
-Analyze a git rebase conflict and propose a resolution.
+Analyze a git rebase conflict and propose a resolution for EACH individual conflict hunk.
 
 File: {file path}
 Current branch: {current branch}
 Base branch: {base branch}
 
 Branch context from prior analysis:
-- Current branch intent: {summary from Step 5}
-- Target branch intent: {summary from Step 5}
+- Current branch intent: {summary from Step 4}
+- Target branch intent: {summary from Step 4}
 
 Do the following:
 
 1. Read the conflicted file at {file path} to see the conflict markers (<<<<<<< HEAD, =======, >>>>>>> {commit})
 
-2. Understand what EACH SIDE intended:
-   - Run `git log --oneline {base branch}..REBASE_HEAD -- {file path}` to see commits from the current branch that touched this file
-   - Run `git log --oneline REBASE_HEAD..{base branch} -- {file path}` to see commits from the base branch that touched this file
-   - Run `git show REBASE_HEAD:{file path}` to see the current branch's full version (ours during rebase)
-   - Run `git show {base branch}:{file path}` to see the base branch's full version (theirs during rebase)
+2. Identify EACH separate conflict hunk in the file. A conflict hunk is one <<<<<<< ... ======= ... >>>>>>> block. Number them sequentially.
 
-3. Read surrounding files if needed to understand the broader context:
+3. Understand what EACH SIDE intended:
+   - Run `git log --oneline REBASE_HEAD..{base branch} -- {file path}` to see commits from the base branch that touched this file (scope to this file only — do NOT fetch the entire branch history)
+   - Run `git log --oneline {merge-base}..REBASE_HEAD -- {file path}` to see commits from the current branch that touched this file
+   - Run `git show REBASE_HEAD:{file path}` to see the current branch's full version
+   - Run `git show {base branch}:{file path}` to see the base branch's full version
+
+4. Read surrounding files if needed to understand the broader context:
    - Check imports/exports that the conflicted code depends on
    - Check callers of functions involved in the conflict
    - Check type definitions referenced by the conflicted code
 
-4. Determine the intent of each branch:
-   - What was the current branch trying to achieve in this file?
-   - What was the base branch trying to achieve in this file?
-   - Are the changes complementary (both can coexist), contradictory (only one can win), or overlapping (same area, different approaches)?
+5. For EACH conflict hunk, propose a resolution:
+   - **Best option: Combine both changes.** If the changes are complementary or overlapping but compatible, write the merged version that preserves the intent of BOTH branches.
+   - **Second option: Pick one side.** If the changes are truly contradictory and cannot be combined, recommend which side to keep.
 
-5. Propose a resolution:
-   - **Best option: Combine both changes.** If the changes are complementary or overlapping but compatible, write the merged version that preserves the intent of BOTH branches. This is the ideal outcome.
-   - **Second option: Pick one side.** If the changes are truly contradictory and cannot be combined, recommend which side to keep and explain why.
+Return your response in this exact format (repeat for each hunk):
 
-Return your response in this exact format:
+HUNK {N} of {total}:
+BEFORE (conflict markers as they appear in the file):
+{The exact <<<<<<< ... ======= ... >>>>>>> block, including a few lines of surrounding context}
 
-ANALYSIS:
-- Current branch intent: {what the current branch was trying to do}
-- Base branch intent: {what the base branch was trying to do}
-- Conflict type: {complementary | contradictory | overlapping}
-
-PROPOSED_RESOLUTION:
-{The complete resolved content for the conflicted sections — no conflict markers, ready to use. Show enough surrounding context (5-10 lines before and after) so the user can verify the placement.}
-
-EXPLANATION:
-{2-3 sentences explaining why this resolution is correct and how it preserves both branches' intent.}
+AFTER (proposed resolution):
+{The resolved code — no conflict markers, ready to use. Include the same surrounding context lines so placement is clear.}
 ```
 
-### 6.3: Present Resolution to User
+### 7.3: Present Each Conflict Hunk to User
 
-For each conflicted file, present the sub-agent's analysis and proposed resolution, then use AskUserQuestion:
+Present conflict hunks **one at a time**. For each hunk, show ONLY the proposed resolved code — no analysis, no explanation, no commentary. The code speaks for itself.
 
-- **Question:** "Conflict in `{file path}`:\n\n**Current branch ({current branch}) intended:** {current branch intent}\n**Base branch ({base branch}) intended:** {base branch intent}\n\n**Proposed resolution:**\n```\n{proposed resolution}\n```\n\n{explanation}"
-- **Header:** "Conflict"
+Use AskUserQuestion with:
+- **Question:** Show the proposed resolution as a fenced code block with appropriate language tag. Format:
+
+  ````
+  `{file path}` — conflict {N}/{total}
+
+  ```{language}
+  {the AFTER code from the sub-agent — the proposed resolved version with surrounding context}
+  ```
+  ````
+
+- **Header:** "Conflict {N}/{total}"
 - **Options:**
-  - "Accept proposal" — Use the proposed merged resolution
+  - "Accept" — Use this resolution
   - "Keep {current branch}" — Take only the current branch's changes
   - "Keep {base branch}" — Take only the base branch's changes
 - **multiSelect:** false
 
 The tool automatically provides an "Other" option. If the user types in Other:
-- Treat their input as instructions (e.g., "keep the function from current branch but use the imports from base branch")
+- Treat their input as instructions for how to resolve this specific hunk
 - Apply their instructions to produce a new resolution
-- Invoke AskUserQuestion again with the updated proposal
+- Invoke AskUserQuestion again showing ONLY the updated code block
 - Repeat until the user selects an option
 
-### 6.4: Apply Resolution
+Process all hunks in a file sequentially before moving to the next file.
 
-Based on the user's choice:
+### 7.4: Apply Resolutions
 
-- **"Accept proposal"** — Write the resolved content to the file using the proposed resolution. Apply the changes by editing the conflicted sections to replace conflict markers with the resolved content.
-- **"Keep {current branch}"** — Run `git checkout --ours -- {file path}` via Bash
-- **"Keep {base branch}"** — Run `git checkout --theirs -- {file path}` via Bash
+After all hunks in a file are decided, apply them:
+
+- **"Accept"** hunks — Edit the file to replace each conflict block (<<<<<<< through >>>>>>>) with the accepted resolution code.
+- **"Keep {current branch}"** hunks — Use the code from the <<<<<<< HEAD side.
+- **"Keep {base branch}"** hunks — Use the code from the >>>>>>> side.
+
+Apply all hunk resolutions for the file in a single pass (top to bottom), then stage:
 
 After resolving, stage the file:
 
@@ -328,17 +376,19 @@ After resolving, stage the file:
 git add {file path}
 ```
 
-### 6.5: Continue Rebase
+### 7.5: Continue Rebase
 
 After ALL conflicted files for the current commit are resolved and staged, run:
 
 ```bash
-git rebase --continue
+GIT_EDITOR=true git rebase --continue
 ```
 
-If new conflicts appear on the next commit being replayed, go back to Step 6.1 and repeat the process.
+Setting `GIT_EDITOR=true` accepts the original commit message without opening an editor.
 
-### 6.6: Abort Option
+If new conflicts appear on the next commit being replayed, go back to Step 7.1 and repeat the process.
+
+### 7.6: Abort Option
 
 At any point during conflict resolution, include an "Abort rebase" option in the AskUserQuestion choices. If selected:
 
@@ -348,7 +398,7 @@ git rebase --abort
 
 Report that the rebase was cancelled and the branch is restored to its pre-rebase state.
 
-## Step 7: Post-Rebase
+## Step 8: Post-Rebase
 
 After successful rebase:
 
