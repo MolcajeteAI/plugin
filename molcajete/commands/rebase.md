@@ -139,53 +139,61 @@ Run `git status` via Bash. Parse the output to identify:
 - **Conflicted files** — listed as "both modified" or "both added"
 - **Already resolved files** — cleanly merged by git
 
-### 6.2: Read and Resolve Each Conflicted File
+### 6.2: Get Ours and Theirs Versions
 
-For each conflicted file:
+For each conflicted file, extract both sides using git and get the conflicted file content. Run all three via Bash:
 
-1. Read the file using the Read tool. It contains conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) that delimit each hunk.
-2. Count the total number of conflict hunks (each `<<<<<<<`...`>>>>>>>` block is one hunk).
-3. Resolve hunks one at a time (see 6.3).
+```bash
+git show :2:{file path} > $TMPDIR/ours.txt
+git show :3:{file path} > $TMPDIR/theirs.txt
+cat {file path}
+```
+
+- `:2:` is the ours version (the branch being rebased onto)
+- `:3:` is the theirs version (the commit being replayed)
+- `cat` shows the file with conflict markers so you can identify individual hunks
+
+Count the total number of conflict hunks (each `<<<<<<<`...`>>>>>>>` block is one hunk).
 
 Rules for structured content (changelogs, configs, package lists, imports):
 - NEVER duplicate section headers, date headers, or group keys — merge entries under shared headers
 - Sort entries according to the file's existing convention
 
-### 6.3: Present Hunks One at a Time Using Diff Files
+### 6.3: Present Hunks One at a Time Using Diff
 
-Process hunks **sequentially, one at a time**. For each hunk, generate a real diff using actual files — do NOT manually format diffs as text output.
+Process hunks **sequentially, one at a time**. For each hunk, generate a real diff — do NOT manually format diffs as text output.
 
 **For each hunk, do these steps in order:**
 
-**Step A — Extract the "before" content.** Write the ours side (content between `<<<<<<<` and `=======`) to a temp file:
+**Step A — Write the "before" content.** Use the Write tool to save the ours side of this hunk (content between `<<<<<<<` and `=======`) to a temp file:
+
+Write to `$TMPDIR/hunk_before.txt` — exact ours content, every line, no truncation.
+
+**Step B — Write the resolved content.** Determine the correct merge (preserve intent of BOTH sides when possible). Use the Write tool to save the resolved content to a temp file:
+
+Write to `$TMPDIR/hunk_after.txt` — exact resolved content, every line, no truncation.
+
+**Do NOT use heredocs (`cat << EOF`).** Always use the Write tool for temp files.
+
+**Step C — Generate the diff.** Run the diff command via Bash:
 
 ```bash
-cat > $TMPDIR/hunk_before.txt << 'HUNK_EOF'
-{exact ours content — every line, no truncation}
-HUNK_EOF
+diff -u $TMPDIR/hunk_before.txt $TMPDIR/hunk_after.txt | tail -n +3
 ```
 
-**Step B — Write your resolved content.** Determine the correct merge (preserve intent of BOTH sides when possible), then write the resolved content to a temp file:
+The `tail -n +3` strips the file headers, keeping only the `@@` hunks and `+`/`-` lines.
 
-```bash
-cat > $TMPDIR/hunk_after.txt << 'HUNK_EOF'
-{exact resolved content — every line, no truncation}
-HUNK_EOF
-```
+**Step D — Show the diff in your text response.** Do NOT rely on the Bash tool output being visible — it gets collapsed. Instead, copy the exact output from the diff command and paste it into your text response wrapped in a `` ```diff `` code fence:
 
-**Step C — Generate and show the diff.** Run the diff command and show the output:
-
-```bash
-echo '```diff' && diff -u $TMPDIR/hunk_before.txt $TMPDIR/hunk_after.txt | tail -n +3 && echo '```'
-```
-
-This produces a real, properly formatted unified diff inside a code fence. The `tail -n +3` strips the file headers, keeping only the `@@` hunks and `+`/`-` lines.
-
-**Before the diff output**, print one line of context:
-
-```
+````
 Conflict in `{file path}` — hunk {n} of {total}: {1 sentence — what ours changed, what theirs changed, how the resolution combines them}
+
+```diff
+{paste the exact diff output here — verbatim from the diff command, do not modify it}
 ```
+````
+
+This is the only content the user sees. It must be in your text response, not inside a Bash tool result.
 
 **Then confirm** using AskUserQuestion:
 - **Question:** "Accept this resolution for hunk {n} of {total} in `{file path}`?"
