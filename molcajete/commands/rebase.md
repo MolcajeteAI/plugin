@@ -1,7 +1,7 @@
 ---
-description: Interactive git rebase with intelligent conflict resolution
+description: Interactive git rebase with conflict resolution
 model: claude-opus-4-6
-allowed-tools: Read, Bash(*), Task, AskUserQuestion
+allowed-tools: Read, Edit, Bash(*), AskUserQuestion
 argument-hint: <base branch, e.g. "main" or "master">
 ---
 
@@ -139,149 +139,93 @@ Run `git status` via Bash. Parse the output to identify:
 - **Conflicted files** — listed as "both modified" or "both added"
 - **Already resolved files** — cleanly merged by git
 
-### 6.2: Analyze Each Conflicted File (Sub-Agent)
+### 6.2: Get the Diff from Git
 
-For **each conflicted file**, launch a Task with `subagent_type="general-purpose"` to analyze the conflict and propose resolutions for ALL hunks in that file at once:
+For each conflicted file, use git to get the actual conflict diff. Do NOT use sub-agents for analysis.
 
-```
-Analyze a git rebase conflict and propose a resolution for EVERY conflict hunk in this file.
+Run via Bash:
 
-File: {file path}
-Current branch: {current branch}
-Base branch: {base branch}
-
-Do the following:
-
-1. Read the conflicted file at {file path} to see ALL conflict markers (<<<<<<< HEAD, =======, >>>>>>> {commit}). Count how many separate conflict hunks exist in the file.
-
-2. TRIAGE each hunk — determine if it is trivial or ambiguous:
-
-   TRIVIAL hunks (skip deep analysis, resolve directly):
-   - Both sides added adjacent, non-overlapping content (e.g., new imports, new list entries, new changelog entries)
-   - Only one side made a meaningful change and the other is a context shift
-   - Version bumps, whitespace, or formatting differences
-
-   AMBIGUOUS hunks (require deep analysis):
-   - Both sides modified the same lines with different logic
-   - Structural changes that could interact (renamed functions, moved code blocks)
-   - Changes to shared state, configuration, or types where both sides' assumptions matter
-
-3. FOR AMBIGUOUS HUNKS ONLY — do the deep analysis:
-   - Run `git log --oneline {base branch}..REBASE_HEAD -- {file path}` to see commits from the current branch that touched this file
-   - Run `git log --oneline REBASE_HEAD..{base branch} -- {file path}` to see commits from the base branch that touched this file
-   - Run `git show REBASE_HEAD:{file path}` to see the current branch's full version
-   - Run `git show {base branch}:{file path}` to see the base branch's full version
-   - Read surrounding files if needed (imports, callers, type definitions)
-
-4. Propose a resolution for EACH hunk:
-   - **Best option: Combine both changes** preserving intent of BOTH branches.
-   - **Fallback: Pick one side** if the changes are truly contradictory.
-
-   CRITICAL RULES for structured/list content (changelogs, configs, package lists, import blocks):
-   - NEVER duplicate section headers, date headers, or group keys. Merge entries under shared headers.
-   - Sort entries according to the file's existing convention (by timestamp, alphabetically, etc.).
-   - Show the COMPLETE merged content for the section — never truncate with "..." or ellipsis.
-
-5. For each hunk, provide THREE versions of the content (no conflict markers, no truncation):
-   - OURS: The exact content from the current branch's side of the conflict
-   - THEIRS: The exact content from the base branch's side of the conflict
-   - RESOLVED: Your proposed merged result
-
-   All three must be COMPLETE — every line, no "..." or ellipsis. The user needs to compare them.
-
-Return your response in this exact format, repeating the HUNK block for each conflict hunk in order:
-
-FILE_ANALYSIS:
-- Current branch intent for this file: {what the current branch was trying to do}
-- Base branch intent for this file: {what the base branch was trying to do}
-- Total conflict hunks: {count}
-- Deep analysis needed: {yes/no — yes if any hunk is ambiguous}
-
-HUNK 1 of {total}:
-- Lines: {approximate line range in the conflicted file}
-- Triage: {trivial | ambiguous}
-- Conflict type: {complementary | contradictory | overlapping}
-- Current branch change: {1-line summary of what this side did}
-- Base branch change: {1-line summary of what this side did}
-- OURS:
-{exact content from the current branch's side — complete, no truncation}
-- THEIRS:
-{exact content from the base branch's side — complete, no truncation}
-- RESOLVED:
-{proposed merged result — complete, no truncation}
-- Explanation: {1-2 sentences on why this resolution is correct}
-
-HUNK 2 of {total}:
-...
+```bash
+git diff -- {file path}
 ```
 
-### 6.3: Present Hunks to User One at a Time
+This shows the real conflict with `+`/`-` markers and conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`). This is the ground truth — use it directly.
 
-Process hunks **sequentially, one at a time**. For each hunk, show what each side has and the proposed resolution, then ask for confirmation.
+Also read the conflicted file with the Read tool to see the full context with conflict markers in place.
 
-**Show the three versions** — before the AskUserQuestion, output the hunk to the chat so the user can compare:
+### 6.3: Parse Hunks and Resolve
+
+From the conflicted file, identify each conflict hunk (each `<<<<<<<`...`=======`...`>>>>>>>` block). Count the total number of hunks in the file.
+
+For each hunk, extract:
+- **Ours**: the content between `<<<<<<<` and `=======`
+- **Theirs**: the content between `=======` and `>>>>>>>`
+
+Then propose a resolution. The goal is to preserve the intent of BOTH sides whenever possible. Combine both changes when they are complementary. Pick one side only when they are truly contradictory.
+
+Rules for structured content (changelogs, configs, package lists, imports):
+- NEVER duplicate section headers, date headers, or group keys — merge entries under shared headers
+- Sort entries according to the file's existing convention
+
+### 6.4: Present Hunks to User One at a Time
+
+Process hunks **sequentially, one at a time**. For each hunk, first show the git diff, then show your proposed resolution, then ask for confirmation.
+
+**Show the diff and resolution** — output this to the chat before the AskUserQuestion:
 
 ````
 ---
 Conflict in `{file path}` — hunk {n} of {total}
 
-**{current branch}** changed: {1-line summary}
-**{base branch}** changed: {1-line summary}
-
-Ours ({current branch}):
-```
-{exact OURS content from sub-agent — complete, no truncation}
-```
-
-Theirs ({base branch}):
-```
-{exact THEIRS content from sub-agent — complete, no truncation}
+```diff
+{the actual git diff output for THIS hunk only — copied from the git diff command, showing the real +/- lines and conflict markers}
 ```
 
 Proposed resolution:
-```
-{exact RESOLVED content from sub-agent — complete, no truncation}
+
+```{language}
+{your resolved content — complete, every line, no "..." or truncation}
 ```
 
-{explanation}
+{1-2 sentence explanation of why this resolution is correct}
 ---
 ````
 
-NEVER truncate content with "..." or ellipsis. Show every line so the user can verify.
+Use the file's language for syntax highlighting in the resolution block (e.g., `ts`, `md`, `json`).
+
+NEVER truncate content with "..." or ellipsis. Show every line.
 
 **Then confirm** using AskUserQuestion:
 - **Question:** "Accept this resolution for hunk {n} of {total} in `{file path}`?"
 - **Header:** "Hunk {n}/{total}"
 - **Options:**
   - "Accept" — Use the proposed resolution for this hunk
-  - "Keep {current branch}" — Take only the current branch's version of this hunk
-  - "Keep {base branch}" — Take only the base branch's version of this hunk
+  - "Keep ours" — Take only the current branch's version of this hunk
+  - "Keep theirs" — Take only the base branch's version of this hunk
   - "Abort rebase" — Cancel the entire rebase
-  - "Type for something else"
 - **multiSelect:** false
 
 The tool automatically provides an "Other" option. If the user types in Other:
-- Treat their input as instructions (e.g., "keep the function signature from current branch but use the body from base branch")
+- Treat their input as instructions (e.g., "keep the function signature from ours but use the body from theirs")
 - Apply their instructions to produce a new resolution
-- Show the updated diff and invoke AskUserQuestion again
+- Show the updated resolution and invoke AskUserQuestion again
 - Repeat until the user selects an option
 
 Only after the user confirms a hunk do you move to the next one.
 
-### 6.4: Apply All Resolutions for the File
+### 6.5: Apply Resolutions
 
-After ALL hunks in a file have been confirmed by the user, apply them all at once:
+After each hunk is confirmed, edit the file to replace the conflict-marked section (`<<<<<<<` through `>>>>>>>`) with the confirmed resolution.
 
-1. Edit the file to replace each conflict-marked section with the user's confirmed resolution for that hunk
-2. Stage the file:
+After ALL hunks in a file are resolved, stage the file:
 
 ```bash
 git add {file path}
 ```
 
-Then move to the next conflicted file (back to 6.2) if there are more.
+Then move to the next conflicted file (back to 6.1) if there are more.
 
-### 6.5: Continue Rebase
+### 6.6: Continue Rebase
 
 After ALL conflicted files for the current commit are resolved and staged, run:
 
@@ -291,7 +235,7 @@ git rebase --continue
 
 If new conflicts appear on the next commit being replayed, go back to Step 6.1 and repeat the process.
 
-### 6.6: Abort Option
+### 6.7: Abort Option
 
 If the user selects "Abort rebase" at any point during conflict resolution:
 
@@ -322,5 +266,5 @@ If the user confirms force push, run `git push --force-with-lease` (never `--for
 - Do not use the word "comprehensive" in any output.
 - Do not add AI or tool attribution anywhere.
 - If `git rebase` fails for reasons other than conflicts, report the error and suggest `git rebase --abort`.
-- Delegate file reading and git analysis to sub-agents to keep the main context clean.
 - The goal of conflict resolution is to preserve the intent of BOTH branches whenever possible. Picking one side is the fallback, not the default.
+- Use `git diff -- {file}` to get the real conflict diff. Do not reconstruct diffs manually.
