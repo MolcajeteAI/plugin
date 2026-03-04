@@ -157,7 +157,7 @@ Rules for structured content (changelogs, configs, package lists, imports):
 - NEVER duplicate section headers, date headers, or group keys — merge entries under shared headers
 - Sort entries according to the file's existing convention
 
-**Output format** — show this as text output before the AskUserQuestion. Follow this format EXACTLY, including the triple-backtick diff block:
+**Output format** — show this as text output before the AskUserQuestion. Follow this format EXACTLY:
 
 ````
 Conflict in `{file path}` — hunk {n} of {total}
@@ -165,12 +165,14 @@ Conflict in `{file path}` — hunk {n} of {total}
 {1-2 sentence explanation: what ours changed, what theirs changed, and how the resolution combines them}
 
 ```diff
-{resolution diff — lines removed from ours prefixed with -, lines added from theirs prefixed with +, unchanged context lines with no prefix. Every line of the resolved section must appear. No truncation, no "..."}
+{the ENTIRE resolved hunk — every single line, inside this one diff block}
 ```
 ````
 
+**CRITICAL: The entire hunk goes inside a single `` ```diff `` ... `` ``` `` block.** Every line of the resolved content must be inside that block. Nothing outside it. No matter how many lines the hunk has — 5 lines or 500 lines — it all goes inside ONE diff block. Never split the content across multiple blocks. Never let content spill out as plain text.
+
 **Diff formatting rules:**
-- Use `diff` as the language tag — always ```` ```diff ````, never anything else
+- Use `diff` as the language tag — always `` ```diff ``, never anything else
 - Lines that exist in both sides unchanged: no prefix (context)
 - Lines only in ours that are being kept: no prefix (context)
 - Lines only in theirs that are being added: prefix with `+`
@@ -178,7 +180,7 @@ Conflict in `{file path}` — hunk {n} of {total}
 - Lines replacing them in the resolution: prefix with `+`
 - Every single line must appear — NEVER use `...` or ellipsis to truncate
 
-**Example 1 — complementary additions to a changelog (both sides added entries under the same date):**
+**Example 1 — large changelog hunk with multi-line entries (both sides added entries under the same date):**
 
 ````
 Conflict in `CHANGELOG.md` — hunk 1 of 1
@@ -187,14 +189,31 @@ Both branches added entries under `## 2026-02-28`. Merging all entries under a s
 
 ```diff
  ## 2026-02-28
-+- [23:45] Implement WithdrawFlow frontend (UC-0KoZ-009/2)
- - [21:30] Add Privy Go SDK and P-256 key generation (UC-0KoZ-021/0.2)
- - [21:00] Extend config for Privy Server Wallets (UC-0KoZ-021/0.1)
-+- [21:00] Implement backend withdrawal support (UC-0KoZ-009/1)
-+- [15:30] Fix lazy-initialize publicClient in WithdrawFlow
-+- [15:19] Fix raw RPC error messages in WithdrawFlow
++- [18:30] Add rate limiting to API gateway (PROJ-042/2)
++  Configured per-route rate limits with Redis-backed sliding window. Added `X-RateLimit-Remaining` response header.
++  Fallback to in-memory store when Redis is unavailable.
++  - Plan: [task-PROJ-042--2.md](specs/plans/task-PROJ-042--2.md)
++  - Changelog: [changelog-PROJ-042--2.md](specs/plans/changelog-PROJ-042--2.md)
++
+ - [16:00] Implement user profile page (PROJ-038/1)
+   Added avatar upload with S3 presigned URLs, display name editing with validation,
+   timezone selector, and email notification preferences. Includes 12 unit tests.
+   - Plan: [task-PROJ-038--1.md](specs/plans/task-PROJ-038--1.md)
+   - Changelog: [changelog-PROJ-038--1.md](specs/plans/changelog-PROJ-038--1.md)
++
++- [14:00] Fix session expiry redirect loop (PROJ-038/0.1)
++  Clears stale session cookie before redirecting to login. Adds `max-age` to cookie options.
++  - Plan: [task-PROJ-038--0.1.md](specs/plans/task-PROJ-038--0.1.md)
++  - Changelog: [changelog-PROJ-038--0.1.md](specs/plans/changelog-PROJ-038--0.1.md)
+
+ - [12:00] Add OAuth2 provider configuration (PROJ-042/1)
+   Added Google and GitHub OAuth2 flows. Config loaded from environment variables.
+   - Plan: [task-PROJ-042--1.md](specs/plans/task-PROJ-042--1.md)
+   - Changelog: [changelog-PROJ-042--1.md](specs/plans/changelog-PROJ-042--1.md)
 ```
 ````
+
+Note how the ENTIRE hunk — including multi-line descriptions, links, and blank lines — is inside a single `` ```diff `` block. Nothing leaks out.
 
 **Example 2 — overlapping function changes (both sides modified the same function):**
 
