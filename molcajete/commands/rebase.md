@@ -139,111 +139,53 @@ Run `git status` via Bash. Parse the output to identify:
 - **Conflicted files** — listed as "both modified" or "both added"
 - **Already resolved files** — cleanly merged by git
 
-### 6.2: Read the Conflicted File
+### 6.2: Read and Resolve Each Conflicted File
 
-Read each conflicted file using the Read tool. The file contains conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) that delimit each hunk.
+For each conflicted file:
 
-Count the total number of conflict hunks in the file (each `<<<<<<<`...`>>>>>>>` block is one hunk).
-
-### 6.3: Resolve and Present Hunks One at a Time
-
-Process hunks **sequentially, one at a time**. For each hunk:
-
-1. Read the ours side (between `<<<<<<<` and `=======`) and the theirs side (between `=======` and `>>>>>>>`).
-2. Propose a resolution that preserves the intent of BOTH sides whenever possible. Combine changes when complementary. Pick one side only when truly contradictory.
-3. Present ONLY the proposed resolution as a diff block. Do NOT show the raw conflict markers or the git diff output.
+1. Read the file using the Read tool. It contains conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) that delimit each hunk.
+2. Count the total number of conflict hunks (each `<<<<<<<`...`>>>>>>>` block is one hunk).
+3. Resolve hunks one at a time (see 6.3).
 
 Rules for structured content (changelogs, configs, package lists, imports):
 - NEVER duplicate section headers, date headers, or group keys — merge entries under shared headers
 - Sort entries according to the file's existing convention
 
-**Output format** — show this as text output before the AskUserQuestion. Follow this format EXACTLY:
+### 6.3: Present Hunks One at a Time Using Diff Files
 
-````
-Conflict in `{file path}` — hunk {n} of {total}
+Process hunks **sequentially, one at a time**. For each hunk, generate a real diff using actual files — do NOT manually format diffs as text output.
 
-{1-2 sentence explanation: what ours changed, what theirs changed, and how the resolution combines them}
+**For each hunk, do these steps in order:**
 
-```diff
-{the ENTIRE resolved hunk — every single line, inside this one diff block}
+**Step A — Extract the "before" content.** Write the ours side (content between `<<<<<<<` and `=======`) to a temp file:
+
+```bash
+cat > $TMPDIR/hunk_before.txt << 'HUNK_EOF'
+{exact ours content — every line, no truncation}
+HUNK_EOF
 ```
-````
 
-**CRITICAL: The entire hunk goes inside a single `` ```diff `` ... `` ``` `` block.** Every line of the resolved content must be inside that block. Nothing outside it. No matter how many lines the hunk has — 5 lines or 500 lines — it all goes inside ONE diff block. Never split the content across multiple blocks. Never let content spill out as plain text.
+**Step B — Write your resolved content.** Determine the correct merge (preserve intent of BOTH sides when possible), then write the resolved content to a temp file:
 
-**Diff formatting rules:**
-- Use `diff` as the language tag — always `` ```diff ``, never anything else
-- Lines that exist in both sides unchanged: no prefix (context)
-- Lines only in ours that are being kept: no prefix (context)
-- Lines only in theirs that are being added: prefix with `+`
-- Lines from ours that are being replaced: prefix with `-`
-- Lines replacing them in the resolution: prefix with `+`
-- Every single line must appear — NEVER use `...` or ellipsis to truncate
-
-**Example 1 — large changelog hunk with multi-line entries (both sides added entries under the same date):**
-
-````
-Conflict in `CHANGELOG.md` — hunk 1 of 1
-
-Both branches added entries under `## 2026-02-28`. Merging all entries under a single header, sorted by timestamp descending.
-
-```diff
- ## 2026-02-28
-+- [18:30] Add rate limiting to API gateway (PROJ-042/2)
-+  Configured per-route rate limits with Redis-backed sliding window. Added `X-RateLimit-Remaining` response header.
-+  Fallback to in-memory store when Redis is unavailable.
-+  - Plan: [task-PROJ-042--2.md](specs/plans/task-PROJ-042--2.md)
-+  - Changelog: [changelog-PROJ-042--2.md](specs/plans/changelog-PROJ-042--2.md)
-+
- - [16:00] Implement user profile page (PROJ-038/1)
-   Added avatar upload with S3 presigned URLs, display name editing with validation,
-   timezone selector, and email notification preferences. Includes 12 unit tests.
-   - Plan: [task-PROJ-038--1.md](specs/plans/task-PROJ-038--1.md)
-   - Changelog: [changelog-PROJ-038--1.md](specs/plans/changelog-PROJ-038--1.md)
-+
-+- [14:00] Fix session expiry redirect loop (PROJ-038/0.1)
-+  Clears stale session cookie before redirecting to login. Adds `max-age` to cookie options.
-+  - Plan: [task-PROJ-038--0.1.md](specs/plans/task-PROJ-038--0.1.md)
-+  - Changelog: [changelog-PROJ-038--0.1.md](specs/plans/changelog-PROJ-038--0.1.md)
-
- - [12:00] Add OAuth2 provider configuration (PROJ-042/1)
-   Added Google and GitHub OAuth2 flows. Config loaded from environment variables.
-   - Plan: [task-PROJ-042--1.md](specs/plans/task-PROJ-042--1.md)
-   - Changelog: [changelog-PROJ-042--1.md](specs/plans/changelog-PROJ-042--1.md)
+```bash
+cat > $TMPDIR/hunk_after.txt << 'HUNK_EOF'
+{exact resolved content — every line, no truncation}
+HUNK_EOF
 ```
-````
 
-Note how the ENTIRE hunk — including multi-line descriptions, links, and blank lines — is inside a single `` ```diff `` block. Nothing leaks out.
+**Step C — Generate and show the diff.** Run the diff command and show the output:
 
-**Example 2 — overlapping function changes (both sides modified the same function):**
-
-````
-Conflict in `src/utils/auth.ts` — hunk 1 of 2
-
-Ours added a `timeout` parameter; theirs added retry logic. Both changes are compatible — combining them.
-
-```diff
--export async function authenticate(token: string) {
--  const result = await verifyToken(token);
-+export async function authenticate(token: string, timeout = 5000) {
-+  const result = await retry(() => verifyToken(token), { attempts: 3 });
-   return result;
- }
+```bash
+echo '```diff' && diff -u $TMPDIR/hunk_before.txt $TMPDIR/hunk_after.txt | tail -n +3 && echo '```'
 ```
-````
 
-**Example 3 — contradictory changes (only one side can win):**
+This produces a real, properly formatted unified diff inside a code fence. The `tail -n +3` strips the file headers, keeping only the `@@` hunks and `+`/`-` lines.
 
-````
-Conflict in `package.json` — hunk 1 of 1
+**Before the diff output**, print one line of context:
 
-Ours set version to `2.1.0`, theirs set it to `3.0.0`. Keeping theirs since the base branch has the newer release.
-
-```diff
--  "version": "2.1.0",
-+  "version": "3.0.0",
 ```
-````
+Conflict in `{file path}` — hunk {n} of {total}: {1 sentence — what ours changed, what theirs changed, how the resolution combines them}
+```
 
 **Then confirm** using AskUserQuestion:
 - **Question:** "Accept this resolution for hunk {n} of {total} in `{file path}`?"
@@ -317,4 +259,4 @@ If the user confirms force push, run `git push --force-with-lease` (never `--for
 - Do not add AI or tool attribution anywhere.
 - If `git rebase` fails for reasons other than conflicts, report the error and suggest `git rebase --abort`.
 - The goal of conflict resolution is to preserve the intent of BOTH branches whenever possible. Picking one side is the fallback, not the default.
-- Use `git diff -- {file}` to get the real conflict diff. Do not reconstruct diffs manually.
+- Always generate diffs using the temp file + `diff -u` approach in Step 6.3. Never manually format diff output as text.
