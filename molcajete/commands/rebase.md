@@ -139,61 +139,92 @@ Run `git status` via Bash. Parse the output to identify:
 - **Conflicted files** — listed as "both modified" or "both added"
 - **Already resolved files** — cleanly merged by git
 
-### 6.2: Get the Diff from Git
+### 6.2: Read the Conflicted File
 
-For each conflicted file, use git to get the actual conflict diff. Do NOT use sub-agents for analysis.
+Read each conflicted file using the Read tool. The file contains conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`) that delimit each hunk.
 
-Run via Bash:
+Count the total number of conflict hunks in the file (each `<<<<<<<`...`>>>>>>>` block is one hunk).
 
-```bash
-git diff -- {file path}
-```
+### 6.3: Resolve and Present Hunks One at a Time
 
-This shows the real conflict with `+`/`-` markers and conflict markers (`<<<<<<<`, `=======`, `>>>>>>>`). This is the ground truth — use it directly.
+Process hunks **sequentially, one at a time**. For each hunk:
 
-Also read the conflicted file with the Read tool to see the full context with conflict markers in place.
-
-### 6.3: Parse Hunks and Resolve
-
-From the conflicted file, identify each conflict hunk (each `<<<<<<<`...`=======`...`>>>>>>>` block). Count the total number of hunks in the file.
-
-For each hunk, extract:
-- **Ours**: the content between `<<<<<<<` and `=======`
-- **Theirs**: the content between `=======` and `>>>>>>>`
-
-Then propose a resolution. The goal is to preserve the intent of BOTH sides whenever possible. Combine both changes when they are complementary. Pick one side only when they are truly contradictory.
+1. Read the ours side (between `<<<<<<<` and `=======`) and the theirs side (between `=======` and `>>>>>>>`).
+2. Propose a resolution that preserves the intent of BOTH sides whenever possible. Combine changes when complementary. Pick one side only when truly contradictory.
+3. Present ONLY the proposed resolution as a diff block. Do NOT show the raw conflict markers or the git diff output.
 
 Rules for structured content (changelogs, configs, package lists, imports):
 - NEVER duplicate section headers, date headers, or group keys — merge entries under shared headers
 - Sort entries according to the file's existing convention
 
-### 6.4: Present Hunks to User One at a Time
-
-Process hunks **sequentially, one at a time**. For each hunk, first show the git diff, then show your proposed resolution, then ask for confirmation.
-
-**Show the diff and resolution** — output this to the chat before the AskUserQuestion:
+**Output format** — show this as text output before the AskUserQuestion. Follow this format EXACTLY, including the triple-backtick diff block:
 
 ````
----
 Conflict in `{file path}` — hunk {n} of {total}
 
+{1-2 sentence explanation: what ours changed, what theirs changed, and how the resolution combines them}
+
 ```diff
-{the actual git diff output for THIS hunk only — copied from the git diff command, showing the real +/- lines and conflict markers}
+{resolution diff — lines removed from ours prefixed with -, lines added from theirs prefixed with +, unchanged context lines with no prefix. Every line of the resolved section must appear. No truncation, no "..."}
 ```
-
-Proposed resolution:
-
-```{language}
-{your resolved content — complete, every line, no "..." or truncation}
-```
-
-{1-2 sentence explanation of why this resolution is correct}
----
 ````
 
-Use the file's language for syntax highlighting in the resolution block (e.g., `ts`, `md`, `json`).
+**Diff formatting rules:**
+- Use `diff` as the language tag — always ```` ```diff ````, never anything else
+- Lines that exist in both sides unchanged: no prefix (context)
+- Lines only in ours that are being kept: no prefix (context)
+- Lines only in theirs that are being added: prefix with `+`
+- Lines from ours that are being replaced: prefix with `-`
+- Lines replacing them in the resolution: prefix with `+`
+- Every single line must appear — NEVER use `...` or ellipsis to truncate
 
-NEVER truncate content with "..." or ellipsis. Show every line.
+**Example 1 — complementary additions to a changelog (both sides added entries under the same date):**
+
+````
+Conflict in `CHANGELOG.md` — hunk 1 of 1
+
+Both branches added entries under `## 2026-02-28`. Merging all entries under a single header, sorted by timestamp descending.
+
+```diff
+ ## 2026-02-28
++- [23:45] Implement WithdrawFlow frontend (UC-0KoZ-009/2)
+ - [21:30] Add Privy Go SDK and P-256 key generation (UC-0KoZ-021/0.2)
+ - [21:00] Extend config for Privy Server Wallets (UC-0KoZ-021/0.1)
++- [21:00] Implement backend withdrawal support (UC-0KoZ-009/1)
++- [15:30] Fix lazy-initialize publicClient in WithdrawFlow
++- [15:19] Fix raw RPC error messages in WithdrawFlow
+```
+````
+
+**Example 2 — overlapping function changes (both sides modified the same function):**
+
+````
+Conflict in `src/utils/auth.ts` — hunk 1 of 2
+
+Ours added a `timeout` parameter; theirs added retry logic. Both changes are compatible — combining them.
+
+```diff
+-export async function authenticate(token: string) {
+-  const result = await verifyToken(token);
++export async function authenticate(token: string, timeout = 5000) {
++  const result = await retry(() => verifyToken(token), { attempts: 3 });
+   return result;
+ }
+```
+````
+
+**Example 3 — contradictory changes (only one side can win):**
+
+````
+Conflict in `package.json` — hunk 1 of 1
+
+Ours set version to `2.1.0`, theirs set it to `3.0.0`. Keeping theirs since the base branch has the newer release.
+
+```diff
+-  "version": "2.1.0",
++  "version": "3.0.0",
+```
+````
 
 **Then confirm** using AskUserQuestion:
 - **Question:** "Accept this resolution for hunk {n} of {total} in `{file path}`?"
