@@ -154,25 +154,40 @@ Do the following:
 
 1. Read the conflicted file at {file path} to see ALL conflict markers (<<<<<<< HEAD, =======, >>>>>>> {commit}). Count how many separate conflict hunks exist in the file.
 
-2. Understand what EACH SIDE intended:
+2. TRIAGE each hunk — determine if it is trivial or ambiguous:
+
+   TRIVIAL hunks (skip deep analysis, resolve directly):
+   - Both sides added adjacent, non-overlapping content (e.g., new imports, new list entries, new changelog entries)
+   - Only one side made a meaningful change and the other is a context shift
+   - Version bumps, whitespace, or formatting differences
+
+   AMBIGUOUS hunks (require deep analysis):
+   - Both sides modified the same lines with different logic
+   - Structural changes that could interact (renamed functions, moved code blocks)
+   - Changes to shared state, configuration, or types where both sides' assumptions matter
+
+3. FOR AMBIGUOUS HUNKS ONLY — do the deep analysis:
    - Run `git log --oneline {base branch}..REBASE_HEAD -- {file path}` to see commits from the current branch that touched this file
    - Run `git log --oneline REBASE_HEAD..{base branch} -- {file path}` to see commits from the base branch that touched this file
-   - Run `git show REBASE_HEAD:{file path}` to see the current branch's full version (ours during rebase)
-   - Run `git show {base branch}:{file path}` to see the base branch's full version (theirs during rebase)
+   - Run `git show REBASE_HEAD:{file path}` to see the current branch's full version
+   - Run `git show {base branch}:{file path}` to see the base branch's full version
+   - Read surrounding files if needed (imports, callers, type definitions)
 
-3. Read surrounding files if needed to understand the broader context:
-   - Check imports/exports that the conflicted code depends on
-   - Check callers of functions involved in the conflict
-   - Check type definitions referenced by the conflicted code
+4. Propose a resolution for EACH hunk:
+   - **Best option: Combine both changes** preserving intent of BOTH branches.
+   - **Fallback: Pick one side** if the changes are truly contradictory.
 
-4. For EACH conflict hunk, determine:
-   - What was the current branch trying to achieve in this hunk?
-   - What was the base branch trying to achieve in this hunk?
-   - Are the changes complementary (both can coexist), contradictory (only one can win), or overlapping (same area, different approaches)?
+   CRITICAL RULES for structured/list content (changelogs, configs, package lists, import blocks):
+   - NEVER duplicate section headers, date headers, or group keys. Merge entries under shared headers.
+   - Sort entries according to the file's existing convention (by timestamp, alphabetically, etc.).
+   - Show the COMPLETE merged content for the section — never truncate with "..." or ellipsis.
 
-5. Propose a resolution for EACH hunk:
-   - **Best option: Combine both changes.** If the changes are complementary or overlapping but compatible, write the merged version that preserves the intent of BOTH branches.
-   - **Second option: Pick one side.** If the changes are truly contradictory and cannot be combined, recommend which side to keep and explain why.
+5. For each hunk, provide THREE versions of the content (no conflict markers, no truncation):
+   - OURS: The exact content from the current branch's side of the conflict
+   - THEIRS: The exact content from the base branch's side of the conflict
+   - RESOLVED: Your proposed merged result
+
+   All three must be COMPLETE — every line, no "..." or ellipsis. The user needs to compare them.
 
 Return your response in this exact format, repeating the HUNK block for each conflict hunk in order:
 
@@ -180,14 +195,20 @@ FILE_ANALYSIS:
 - Current branch intent for this file: {what the current branch was trying to do}
 - Base branch intent for this file: {what the base branch was trying to do}
 - Total conflict hunks: {count}
+- Deep analysis needed: {yes/no — yes if any hunk is ambiguous}
 
 HUNK 1 of {total}:
 - Lines: {approximate line range in the conflicted file}
+- Triage: {trivial | ambiguous}
 - Conflict type: {complementary | contradictory | overlapping}
-- Current branch change: {what this hunk changes on the current branch}
-- Base branch change: {what this hunk changes on the base branch}
-- Proposed resolution:
-{The resolved content for THIS hunk only — no conflict markers, ready to use. Include 3-5 lines of surrounding context before and after so the user can verify placement.}
+- Current branch change: {1-line summary of what this side did}
+- Base branch change: {1-line summary of what this side did}
+- OURS:
+{exact content from the current branch's side — complete, no truncation}
+- THEIRS:
+{exact content from the base branch's side — complete, no truncation}
+- RESOLVED:
+{proposed merged result — complete, no truncation}
 - Explanation: {1-2 sentences on why this resolution is correct}
 
 HUNK 2 of {total}:
@@ -196,23 +217,37 @@ HUNK 2 of {total}:
 
 ### 6.3: Present Hunks to User One at a Time
 
-Process hunks **sequentially, one at a time**. For each hunk, first show the diff as a text block, then ask for confirmation.
+Process hunks **sequentially, one at a time**. For each hunk, show what each side has and the proposed resolution, then ask for confirmation.
 
-**Show the diff first** — before the AskUserQuestion, output the hunk to the chat so the user can read it:
+**Show the three versions** — before the AskUserQuestion, output the hunk to the chat so the user can compare:
 
 ````
+---
 Conflict in `{file path}` — hunk {n} of {total}
 
-**{current branch}** intended: {current branch change for this hunk}
-**{base branch}** intended: {base branch change for this hunk}
+**{current branch}** changed: {1-line summary}
+**{base branch}** changed: {1-line summary}
+
+Ours ({current branch}):
+```
+{exact OURS content from sub-agent — complete, no truncation}
+```
+
+Theirs ({base branch}):
+```
+{exact THEIRS content from sub-agent — complete, no truncation}
+```
 
 Proposed resolution:
-```diff
-{proposed resolution formatted as a diff — use - for removed lines, + for added lines, and unmarked lines for context}
+```
+{exact RESOLVED content from sub-agent — complete, no truncation}
 ```
 
 {explanation}
+---
 ````
+
+NEVER truncate content with "..." or ellipsis. Show every line so the user can verify.
 
 **Then confirm** using AskUserQuestion:
 - **Question:** "Accept this resolution for hunk {n} of {total} in `{file path}`?"
