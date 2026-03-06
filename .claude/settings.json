@@ -53,5 +53,31 @@
   "enabledPlugins": {
     "m@Molcajete.ai": true
   },
-  "outputStyle": "default"
+  "outputStyle": "default",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/guard-plugin-json.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/validate-frontmatter.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
 }
