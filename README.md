@@ -73,8 +73,9 @@ The `m` plugin is the core of Molcajete.ai. Every command is a structured prompt
 | Command | Description |
 |---------|-------------|
 | `/m:init` | Initialize a new project with mission, tech stack, roadmap, and changelog |
-| `/m:feature` | Scope a rough idea into structured requirements |
-| `/m:spec` | Create a technical specification for a feature |
+| `/m:feature` | Scope a new feature into structured requirements |
+| `/m:refactor` | Research a refactoring/replacement, produce impact analysis and requirements |
+| `/m:spec` | Create a technical specification for a feature or refactor |
 | `/m:tasks` | Break a specification into sequenced implementation tasks |
 | `/m:dev` | Implement a task from the task plan |
 | `/m:fix` | Diagnose and fix a bug or failed implementation |

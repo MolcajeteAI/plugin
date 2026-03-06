@@ -11,7 +11,10 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
-## 2026-03-06
+## 2026-03-06 — v2.5.0
+
+- [add] Extract inline templates from `research-methods` skill into individual files
+  Creates `templates/` directory with 6 self-contained template files (introduction, learning-guide, how-to, reference, refactor-impact, deep-research). Each file includes structure, rules, and a worked example. SKILL.md reduced from ~1057 lines to ~570 lines. Each orchestration path now reads only the template it needs instead of loading all 5 templates on every invocation. Deletes `references/templates.md` (683 lines) — content distributed into focused files.
 
 - [add] Add `/m:explain` command — replaces `/m:summary` with a focused 3-5 minute Introduction format
   Introduces a new explain command that launches 2 parallel agents (web + local) and synthesizes findings into a friendly, beginner-oriented Introduction. Replaces the old summary command.

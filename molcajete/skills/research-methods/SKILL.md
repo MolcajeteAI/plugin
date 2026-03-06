@@ -6,7 +6,7 @@ description: >
   Triggers on phrases like "research X", "how does X work", "explain X to me",
   "I want to learn about X", "what is X and how do I use it", "deep dive into X",
   or any request to investigate, explore, or study a technical or non-technical subject.
-  Also triggers via /m:explain and /m:research commands.
+  Also triggers via /m:explain, /m:research, and /m:refactor commands.
 ---
 
 # Research Methods
@@ -26,7 +26,7 @@ Before doing anything, determine the depth of research needed. This is the route
 - "How do I amend a git commit?"
 - "What's the difference between PUT and PATCH?"
 
-**Action:** Answer inline using the appropriate template (How-To or Reference). Do your own web searches if needed. No agents. No save prompt. Just answer well.
+**Action:** Answer inline using the appropriate template (How-To or Reference). After choosing the template, read it: `Read: templates/how-to.md` or `Read: templates/reference.md`. Do your own web searches if needed. No agents. No save prompt. Just answer well.
 
 ### Explain
 
@@ -52,6 +52,18 @@ Before doing anything, determine the depth of research needed. This is the route
 
 **Action:** Run the full orchestration flow (Steps 2-6 below). Parallel agents, tech stack detection, synthesis, save prompt.
 
+### Refactor Impact
+
+**Signals:** "what's the impact of changing X", "find everywhere we use Y", "what would it take to change X", explicit `/m:refactor` command
+
+**Examples:**
+- "What's the impact of switching from REST to GraphQL?"
+- "Find everywhere we use the old auth middleware"
+- "What would it take to change our logging library?"
+- Any `/m:refactor` invocation
+
+**Action:** Run the Refactor Impact flow (Steps 2r-4r below). Launch 2 agents (web research + codebase scan), synthesize into a Refactor Impact document, then save.
+
 ### When in Doubt
 
 If the request is ambiguous, use AskUserQuestion:
@@ -61,6 +73,7 @@ If the request is ambiguous, use AskUserQuestion:
   1. "Quick answer — just explain it briefly"
   2. "Explain it — a solid 3-5 minute introduction"
   3. "Deep research — full investigation with multiple sources"
+  4. "Refactor impact — find what code changes and where"
 - **multiSelect:** false
 
 ---
@@ -91,323 +104,11 @@ Choose the template based on what the user needs:
 | **Learning Guide** | Understand a topic deeply from scratch | 10-20 min | "Research sharding in Postgres", "Deep dive into event sourcing" |
 | **How-To** | Practical steps to accomplish something | 5-10 min | "How do I set up Redis caching?", "How to deploy with Docker Compose" |
 | **Reference** | Quick lookup, comparison, or cheat sheet | 2-3 min | "Compare ORMs for Node", "What are the options for state management?" |
+| **Refactor Impact** | Analyze impact of a change to existing code | varies | "What's the impact of changing X", "Find everywhere we use Y" |
 
 If unclear, default to **Introduction** for explain requests, **Learning Guide** for deep research.
 
-### Template 1: Introduction
-
-A 3-5 minute read that gets someone oriented on a topic. Same friendly tone as the Learning Guide but shorter and tighter — the essentials only. Think of it as the article you'd want to read before deciding whether to go deeper.
-
-**Target length:** 600-1200 words.
-
-```markdown
-# [Topic]: What It Is and Why It Matters
-
-_[2-3 sentence summary: what this is, why you should care, and what you'll understand by the end]_
-
----
-
-## What Is [Topic]?
-
-[Explain the core concept in plain language. Use an everyday analogy. 2-3 paragraphs max.]
-
-### Key Terms
-
-| Term | What it means |
-|------|--------------|
-| **[Term 1]** | [Plain-language definition, 1-2 sentences] |
-| **[Term 2]** | [Plain-language definition] |
-| **[Term 3]** | [Plain-language definition] |
-
-## How It Works
-
-[The mechanism in a nutshell. One Mermaid diagram + 2-3 paragraphs explaining the flow.]
-
-```mermaid
-flowchart TD
-    A[Input] --> B[Process]
-    B --> C[Output]
-```
-
-## When to Use It
-
-[Practical guidance: when this is the right choice, when it's not, and what the alternatives are. Keep it honest — "you probably don't need this if..."]
-
-## Quick Example
-
-```[language]
-// A minimal, working example that shows the concept in action
-// Comments on every non-obvious line
-```
-
-## Key Takeaways
-
-1. [Most important thing]
-2. [Second most important]
-3. [Third]
-
-## Go Deeper
-
-- [URL] — [Best resource to continue learning]
-- [URL] — [Second resource]
-- [URL] — [Third resource]
-```
-
-#### Introduction Rules
-
-- **600-1200 words** — respect the reader's time. If it takes more than 5 minutes to read, cut.
-- One analogy to ground the concept
-- One Mermaid diagram max
-- One code example max
-- Key Terms table for any jargon
-- "Go Deeper" section replaces Sources — these are curated next-step links, not just citations
-- Skip the Parts/numbered structure — this is short enough to be flat
-- Be opinionated in "When to Use It" — don't just list pros/cons, give a recommendation
-
-### Template 2: Learning Guide
-
-The flagship template. Takes the reader from zero knowledge to solid understanding. Friendly, progressive, example-rich.
-
-```markdown
-# [Topic Title]
-
-**[One sentence describing what this document covers and who it's for]**
-
-_[2-3 sentence summary: what this is, why it matters, and what you'll know by the end]_
-
----
-
-**What you'll learn:**
-- [Concept 1 — the basics]
-- [Concept 2 — how it works]
-- [Concept 3 — how to use it]
-- [Concept 4 — trade-offs and decisions]
-
----
-
-## Part 1: The Basics
-
-### 1.1 [Core concept in plain language]
-
-[Explain the fundamental idea as if the reader has never heard of it. Use an analogy from everyday life if possible.]
-
-#### A Simple Example
-
-[Walk through a concrete, relatable example. Make it specific — names, numbers, scenarios the reader can picture.]
-
-#### Key Terms
-
-| Term | What it means |
-|------|--------------|
-| **[Term 1]** | [Plain-language definition, 1-2 sentences] |
-| **[Term 2]** | [Plain-language definition] |
-| **[Term 3]** | [Plain-language definition] |
-
-### 1.2 [Why this matters / the problem it solves]
-
-[Explain the motivation. What pain does this address? What was life like before?]
-
-## Part 2: How It Works
-
-### 2.1 [The mechanism / architecture / process]
-
-[Explain how the thing actually works under the hood. Use a diagram:]
-
-```mermaid
-flowchart TD
-    A[Step 1] --> B[Step 2]
-    B --> C{Decision}
-    C -->|Option A| D[Result A]
-    C -->|Option B| E[Result B]
-```
-
-### 2.2 [Component by component]
-
-[Break down each piece. For each component:]
-
-**[Component Name]** — [one-line description].
-
-[2-3 sentences explaining what it does and why it exists. Include a code snippet or example if it helps.]
-
-## Part 3: Approaches and Options
-
-### 3.1 [Option/Approach A]
-
-[What it is, when to use it, pros and cons]
-
-### 3.2 [Option/Approach B]
-
-[What it is, when to use it, pros and cons]
-
-### Comparison
-
-| | Approach A | Approach B | Approach C |
-|---|---|---|---|
-| **Best for** | ... | ... | ... |
-| **Trade-off** | ... | ... | ... |
-| **Complexity** | ... | ... | ... |
-
-## Part 4: How To Do It
-
-### Step 1: [First action]
-
-[Clear instruction with code example]
-
-```[language]
-// code example with comments explaining each line
-```
-
-### Step 2: [Next action]
-
-[Continue step by step]
-
-## Part 5: Things to Watch Out For
-
-- **[Gotcha 1]** — [What happens and how to avoid it]
-- **[Gotcha 2]** — [What happens and how to avoid it]
-- **[Edge case]** — [When this breaks and what to do]
-
-## Part 6: Key Takeaways
-
-1. [Most important thing to remember]
-2. [Second most important]
-3. [Third]
-
-## Sources
-
-- [URL] — [What information came from this source]
-- [URL] — [Description]
-```
-
-#### Learning Guide Rules
-
-- Start every topic with what the reader already knows, then bridge to the new concept
-- Define every technical term the first time it appears — inline or in a terms table
-- Use at least one Mermaid diagram for any topic involving architecture, flow, or relationships
-- Use comparison tables when presenting multiple options
-- Keep paragraphs short (3-5 sentences max)
-- Use bold for key terms and emphasis
-- Number parts sequentially so readers can reference them ("as Part 1 explained...")
-- End each part with a bridge sentence to the next
-
-### Template 2: How-To
-
-Practical, step-by-step guide for accomplishing a specific task.
-
-```markdown
-# How To: [Task]
-
-**[What you'll accomplish by the end of this guide]**
-
-## Prerequisites
-
-- [What you need before starting]
-- [Required tools/knowledge]
-
-## Key Terms
-
-| Term | What it means |
-|------|--------------|
-| **[Term]** | [Definition] |
-
-## Steps
-
-### Step 1: [Action]
-
-[Why this step matters]
-
-```[language]
-// what to do
-```
-
-[What to expect after this step]
-
-### Step 2: [Action]
-
-[Continue...]
-
-## Verify It Works
-
-[How to confirm everything is set up correctly]
-
-```[language]
-// verification command or test
-```
-
-## Common Issues
-
-| Problem | Cause | Fix |
-|---------|-------|-----|
-| [Error/symptom] | [Why it happens] | [What to do] |
-
-## Sources
-
-- [URL] — [Description]
-```
-
-#### How-To Rules
-
-- Lead with what the reader will accomplish
-- List prerequisites upfront — don't let them get stuck mid-guide
-- One action per step
-- Show expected output after each step when possible
-- Include a "Verify It Works" section
-- Add a troubleshooting table for common issues
-
-### Template 3: Reference
-
-Quick-lookup format for comparisons, options, or specifications.
-
-```markdown
-# [Topic] Reference
-
-**[One sentence: what this reference covers]**
-
-## Overview
-
-[2-3 sentences of context — just enough to orient the reader]
-
-## Options at a Glance
-
-| Name | What it does | Best for | License | Popularity |
-|------|-------------|----------|---------|------------|
-| [A] | [Description] | [Use case] | [License] | [Stars/downloads] |
-| [B] | [Description] | [Use case] | [License] | [Stars/downloads] |
-
-## [Option A]: Details
-
-[2-3 paragraphs covering: what it is, strengths, weaknesses, when to pick it]
-
-```[language]
-// minimal example
-```
-
-## [Option B]: Details
-
-[Same structure]
-
-## Decision Guide
-
-```mermaid
-flowchart TD
-    A[What do you need?] --> B{Need X?}
-    B -->|Yes| C[Use Option A]
-    B -->|No| D{Need Y?}
-    D -->|Yes| E[Use Option B]
-    D -->|No| F[Use Option C]
-```
-
-## Sources
-
-- [URL] — [Description]
-```
-
-#### Reference Rules
-
-- Lead with the comparison table — let readers scan first
-- Keep descriptions short and factual
-- Include a decision flowchart (Mermaid) when there are 3+ options
-- Minimal code examples — just enough to show the API/syntax
+Template files are in `templates/`. Each orchestration step reads only the template it needs.
 
 ---
 
@@ -470,6 +171,11 @@ Return:
 
 ### Step 4e: Synthesize and Save
 
+Read the Introduction template:
+```
+Read: templates/introduction.md
+```
+
 After both agents return, assemble the findings into a document using the **Introduction** template.
 
 - Apply the same Writing Principles (plain language, friendly tone, analogies, Mermaid diagrams)
@@ -486,6 +192,108 @@ After presenting the document, use AskUserQuestion to offer saving:
 - **multiSelect:** false
 
 Follow the same save flow as deep research (Step 6).
+
+---
+
+## Refactor Impact Orchestration (Steps 2r-4r)
+
+These steps run for **Refactor Impact** requests (classified in Step 1) or when invoked via `/m:refactor`.
+
+### Step 2r: Parse Input
+
+Analyze the request to understand what change the user wants:
+
+- What is being changed (technology, pattern, architecture, API, etc.)
+- What is the desired end state
+- Any constraints or preferences mentioned
+
+If the input is empty or ambiguous, use AskUserQuestion to ask what change they want to analyze.
+
+### Step 3r: Execute Research
+
+Launch **2 agents in a single message** using the Task tool.
+
+#### Agent 1: Web Research Agent
+
+**subagent_type:** `general-purpose`
+
+Only runs if the change involves new technology, patterns, or external APIs. Skip if the change is purely internal refactoring.
+
+**Prompt template:**
+```
+Change description: {description}
+
+You are a web research agent. Based on the change described, search for relevant documentation, patterns, and best practices that inform how this change should be implemented.
+
+This could involve:
+- A new technology/library being introduced — research its API surface and integration patterns
+- A pattern change — research best practices for the target pattern
+- A bug fix or architectural correction — research the correct approach
+
+If the change is purely internal (no new technology or pattern to research), return a brief note saying no external research was needed.
+
+Use WebSearch and WebFetch if external research is relevant. Read the 2-3 most relevant pages.
+
+Return:
+- What you found that's relevant to implementing this change
+- Any new packages/dependencies needed (with install commands)
+- Key patterns or APIs the implementation should use
+- 3-5 source URLs if applicable
+```
+
+#### Agent 2: Deep Codebase Scan
+
+**subagent_type:** `Explore`
+**Thoroughness:** "very thorough"
+
+**Prompt template:**
+```
+Change description: {description}
+
+Find EVERY place in the codebase affected by this change. Be thorough — missing a file means something breaks or stays stale.
+
+Search for:
+- Direct references (files that directly use the thing being changed)
+- Indirect dependencies (files that depend on files being changed)
+- Configuration (env vars, config objects, initialization code)
+- Tests (test files that cover affected functionality)
+- Documentation (READMEs, comments referencing affected patterns)
+
+For EACH file found, return:
+- **File path**
+- **What it does** (1 sentence)
+- **Why it's affected** (what about this file relates to the change)
+- **What needs to change** (specific: what code, what pattern, what behavior)
+- **Complexity** (Low / Medium / High)
+
+Also return:
+- Total file count
+- Files grouped by module/directory
+- Any files that are especially complex or risky
+```
+
+### Step 4r: Synthesize and Save
+
+Read the Refactor Impact template:
+```
+Read: templates/refactor-impact.md
+```
+
+After both agents return, assemble the findings into a document using the **Refactor Impact** template.
+
+- Apply the Writing Principles (plain language, friendly tone, Mermaid diagrams)
+- List every affected file — do not skip files to shorten the document
+- Omit template sections that don't apply
+
+**Save behavior:**
+- If a save path was provided by the caller (e.g., a command passes a path), use it directly — do not ask the user
+- If no save path was provided (natural language trigger), use AskUserQuestion to offer saving:
+  - **Question:** "Save this as `research/{suggested-slug}.md`?"
+  - **Header:** "Save"
+  - **Options:**
+    1. "Save to research/{suggested-slug}.md"
+    2. "Copy to clipboard"
+  - **multiSelect:** false
 
 ---
 
@@ -638,109 +446,10 @@ Return structured findings with:
 
 ### Step 5: Synthesize
 
-After all 4 agents return their findings, assemble a long-form research document using the **Learning Guide** template as the base structure, extended with deep-research sections.
+After all 4 agents return their findings, read the deep research template and assemble a long-form research document:
 
-Read the templates reference for full examples:
 ```
-Read: references/templates.md
-```
-
-#### Deep Research Document Structure
-
-The document uses the Learning Guide template but adds these sections for deep research:
-
-```markdown
----
-date: {today's date}
-query: {original research input}
-stack: {DETECTED_STACK}
----
-
-# {Topic Title}
-
-**{One sentence: what this document covers}**
-
-_{2-3 sentence summary: what this is, why it matters, what you'll know by the end}_
-
----
-
-**What you'll learn:**
-- {Concept 1 — the basics}
-- {Concept 2 — how it works}
-- {Concept 3 — the options}
-- {Concept 4 — how to implement it}
-
----
-
-## Part 1: Understanding the Basics
-
-### 1.1 {Core concept in plain language}
-{Explain as if the reader has never heard of this. Use an everyday analogy.}
-
-#### Key Terms
-{Table: Term | What it means — plain language, 1-2 sentences each}
-
-### 1.2 {Why this matters / the problem it solves}
-{Motivation, context, what was life like before}
-
-## Part 2: How It Works
-
-### 2.1 {The mechanism / architecture}
-{Mermaid diagram showing the flow/architecture}
-
-### 2.2 {Component by component}
-{Break down each piece with bold names and clear explanations}
-
-## Part 3: Options and Approaches
-
-### Tech Stack Context
-{DETECTED_STACK and how it affects the recommendations}
-
-### {Option A}
-{What, when to use, pros/cons}
-
-### {Option B}
-{Same structure}
-
-### Comparison
-{Table comparing all options side by side}
-
-### Library / Tool Comparison
-{Table from Agent 3: name | what it does | popularity | license | when to use}
-
-## Part 4: How To Do It
-
-### Step 1: {Action}
-{Clear instruction with code in the detected language}
-
-### Step 2: {Next action}
-{Continue step by step, combining Agent 1 docs + Agent 4 local patterns}
-
-## Part 5: Scenarios and Edge Cases
-{Table or subsections: basic case, edge cases, production considerations}
-
-## Part 6: Things to Watch Out For
-{Gotchas, pitfalls, common mistakes — be honest}
-
-## Part 7: Key Takeaways
-{Numbered list of the most important points}
-
-## Knowledge Gaps
-{What this research didn't cover, where to look next}
-
-## Sources
-
-### Tier 1 — Official Documentation
-- {URL} — {What info came from here}
-
-### Tier 2 — Authoritative Secondary
-- {URL} — {Description}
-
-### Tier 3 — Community
-- {URL} — {Description}
-
-### Tier 4 — Unverified
-- {URL} — {Description and why included}
+Read: templates/deep-research.md
 ```
 
 ### Step 6: Save
@@ -844,7 +553,9 @@ All diagrams use Mermaid. Common types:
 
 - Use AskUserQuestion for ALL user interaction (clarification, depth selection, save). Never ask questions as plain text.
 - For explain requests, launch 2 agents (web + local) in a single message.
+- For refactor impact, launch 2 agents (web + Explore) in a single message.
 - For deep research, launch ALL 4 agents in a single message for maximum parallelism.
+- When a save path is provided by the caller, use it directly instead of asking the user.
 - Pass `DETECTED_STACK` to every agent prompt (deep research only).
 - Tag every finding with its source tier ([Tier 1] through [Tier 4]).
 - Include code examples in the detected language — never use a different language unless the query is about a different language.
@@ -854,6 +565,6 @@ All diagrams use Mermaid. Common types:
 
 ## Related Files
 
-- `references/templates.md` — Detailed template examples with full samples
+- `templates/` — Individual template files (introduction, learning-guide, how-to, reference, refactor-impact, deep-research)
 - `references/search-strategies.md` — Advanced search techniques per domain
 - `references/source-evaluation.md` — Criteria for assessing source quality
