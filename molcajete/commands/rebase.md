@@ -1,6 +1,6 @@
 ---
 description: Interactive git rebase with conflict resolution
-model: claude-sonnet-4-6
+model: claude-opus-4-6
 allowed-tools: Read, Edit, Bash(*), AskUserQuestion
 argument-hint: <base branch, e.g. "main" or "master">
 ---

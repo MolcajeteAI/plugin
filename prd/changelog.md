@@ -11,6 +11,25 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-03-06
+
+- [add] Add `/m:explain` command — replaces `/m:summary` with a focused 3-5 minute Introduction format
+  Introduces a new explain command that launches 2 parallel agents (web + local) and synthesizes findings into a friendly, beginner-oriented Introduction. Replaces the old summary command.
+
+- [change] Merge `summary` command into `research-methods` skill
+  The `research-methods` skill is now the single source of truth for all research flows. Orchestration logic (agents, synthesis, save) moved from individual commands into the skill. Commands (`/m:explain`, `/m:research`) are thin triggers that skip the router and go straight to their respective depth.
+
+- [add] Add 3-tier routing to `research-methods` skill
+  Skill now classifies requests into Quick Question (inline, no agents), Explain (2 agents, Introduction template), or Deep Research (4 agents, Learning Guide). Ambiguous requests prompt the user with AskUserQuestion.
+
+- [add] Add Introduction template to `research-methods` skill
+  New 600-1200 word template for the Explain tier. Flat structure, one analogy, one Mermaid diagram, one code example, and a "Go Deeper" section instead of a raw sources list.
+
+- [change] Skill triggers on natural language
+  The `research-methods` skill description now includes natural language trigger phrases so it activates without a slash command ("explain X", "research X", "help me understand X", etc.).
+
+- [remove] Remove `/m:summary` command
+
 ## 2026-02-27
 
 - [15:23] Fix: Use UTC for all timestamps

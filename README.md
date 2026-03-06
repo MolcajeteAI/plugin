@@ -81,14 +81,26 @@ The `m` plugin is the core of Molcajete.ai. Every command is a structured prompt
 | `/m:test` | Write, run, or analyze tests for code |
 | `/m:review` | Code review on staged or recent changes |
 | `/m:doc` | Generate or update documentation for a file or directory |
+| `/m:explain` | Explain a topic in a clear, friendly 3-5 minute read |
 | `/m:research` | Deep research with tech stack context, parallel agents, and long-form output |
-| `/m:summary` | Quick web and local research with brief synthesis |
 | `/m:copy` | Rewrite text or file content with clear structure and good copy |
 | `/m:prompt` | Write a well-structured LLM prompt from a rough description |
 | `/m:debug` | Guided debugging workflow with hypothesis testing |
 | `/m:commit` | Create a well-formatted commit from staged changes |
 | `/m:amend` | Amend the last commit with staged changes |
 | `/m:rebase` | Interactive rebase helper |
+
+### Natural Language Triggers
+
+Some skills activate automatically based on what you say — no slash command needed. The `research-methods` skill is the first to support this:
+
+| What you say | What runs | Output |
+|---|---|---|
+| "What is a CLOB?" | Quick answer | Inline response, no agents |
+| "Explain how OAuth works" | Explain flow (2 agents) | 3-5 minute Introduction, save prompt |
+| "Research sharding for our Postgres" | Deep research (4 agents) | Full Learning Guide, save prompt |
+
+The `/m:explain` and `/m:research` commands are shortcuts that skip classification and go straight to their respective depth.
 
 ### Skills
 
@@ -107,7 +119,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each skil
 | `react-writing-code` | React component patterns, hooks, and state management |
 | `copywriting` | Text transformation for restructuring and improving clarity of written content |
 | `prompting` | Writing clear, effective LLM prompts with structure and specificity |
-| `research-methods` | Research standards, source evaluation tiers, search strategies, and document templates |
+| `research-methods` | Research skill with 3 depth tiers (quick, explain, deep), beginner-friendly templates, and source evaluation. Triggers on natural language ("research X", "explain X", "help me understand X") or via `/m:explain` and `/m:research` commands |
 | `react-components` | Component composition, Radix UI, and Tailwind conventions |
 | `tailwind-css` | Tailwind utility class patterns and design system usage |
 | `typescript-testing` | Vitest and testing conventions for TypeScript projects |
