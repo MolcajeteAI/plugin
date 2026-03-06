@@ -11,6 +11,22 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-03-06 — v2.6.0
+
+### Added
+
+- Project-local Claude config (`CLAUDE.md`, `.claude/` directory) with hooks, agents, skills, and `/bump` command for in-repo development tooling
+- `/bump` command for version bumping and changelog workflow
+- `versioning` skill with semver conventions and changelog format rules
+- `skill-reviewer` agent for checking skill consistency
+- PreToolUse/PostToolUse hooks for `plugin.json` guard and frontmatter validation
+
+### Changed
+
+- `git-committing` skill now owns the full commit orchestration workflow — `commit.md` is a thin trigger
+- Added natural language trigger phrases to `git-committing` skill description so committing works without `/m:commit`
+- Commit workflow now detects large staged changes with multiple independent concerns and offers to split them into smaller logical commits, confirming each one individually
+
 ## 2026-03-06 — v2.5.0
 
 - [add] Extract inline templates from `research-methods` skill into individual files
