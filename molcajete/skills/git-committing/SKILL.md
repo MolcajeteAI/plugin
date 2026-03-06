@@ -242,9 +242,15 @@ Stage your changes first:
 
 Do not offer to stage files. Do not run `git add`. Stop immediately.
 
-### Step 2: Assess Scope
+### Step 2: Gather Context and Assess Scope
 
-Run `git diff --staged --stat` and `git diff --staged` to understand the scope of the staged changes.
+Run these three commands in parallel and store the output for later steps:
+
+1. `git diff --staged --stat` → store as `DIFF_STAT`
+2. `git diff --staged` → store as `DIFF`
+3. `git log --oneline -10` → store as `RECENT_LOG`
+
+Use `DIFF_STAT` and `DIFF` to understand the scope of the staged changes.
 
 A commit is **too large** when the staged changes contain **2 or more logically independent concerns**. Examples:
 - A new feature AND an unrelated bug fix
@@ -274,26 +280,32 @@ If the user chooses to split, proceed to Step 2c.
 
 ### Step 2c: Plan the Split
 
-Launch a Task with `subagent_type="general-purpose"`:
+Launch a Task with `subagent_type="general-purpose"`. Pass `DIFF_STAT`, `DIFF`, and `RECENT_LOG` inline — the sub-agent must NOT run git commands or read files:
 
 ```
-Analyze the staged changes and plan how to split them into logical, atomic commits.
+Plan how to split these staged changes into logical, atomic commits.
 
-Read the commit standards:
-- ${CLAUDE_PLUGIN_ROOT}/skills/git-committing/SKILL.md
-- ${CLAUDE_PLUGIN_ROOT}/skills/git-committing/references/message-format.md
+## Commit message rules
+- Start with imperative verb: Adds, Fixes, Updates, Removes, Refactors, Improves, Moves, Renames, Replaces, Simplifies
+- First line max 50 characters — move details to body bullets
+- Body bullets (hyphens) explain WHY, only for non-trivial changes
+- Match project prefix convention from the recent log below
+- NEVER mention AI, Claude, or tools
 
-Then:
-1. Run `git diff --staged --stat` for file summary
-2. Run `git diff --staged` for full changes
-3. For each changed file, read the full file to understand context
-4. Run `git log --oneline -10` to match project commit style
+## File summary
+{DIFF_STAT}
 
-Group the changes into logical, atomic commits. Each commit should represent one concern.
+## Full diff
+{DIFF}
 
-Return a JSON array of commit groups. Each group has:
-- "message": the commit message (following the skill's rules)
-- "files": array of file paths to include in this commit
+## Recent commits (match style)
+{RECENT_LOG}
+
+Group the changes into logical, atomic commits. Each commit = one concern.
+
+Return a JSON array of commit groups:
+- "message": the commit message
+- "files": array of file paths for this commit
 - "reason": one sentence explaining why these files belong together
 
 Example:
@@ -332,37 +344,14 @@ Return ONLY the JSON array, nothing else.
 
 Report all commits created (hash + message for each).
 
-### Step 3: Draft Commit Message (Sub-Agent)
+### Step 3: Draft Commit Message
 
-Launch a Task with `subagent_type="general-purpose"`:
-
-```
-Analyze the staged changes and draft a commit message. Do NOT execute any commit.
-
-Read the commit standards skill first:
-- ${CLAUDE_PLUGIN_ROOT}/skills/git-committing/SKILL.md
-- ${CLAUDE_PLUGIN_ROOT}/skills/git-committing/references/message-format.md
-- ${CLAUDE_PLUGIN_ROOT}/skills/git-committing/references/examples.md
-
-Then:
-1. Run `git diff --staged` to see full changes
-2. Run `git diff --staged --stat` for file summary
-3. For each changed file, read the full file to understand the context of the changes (not just the diff hunks)
-4. Run `git log --oneline -10` to match project commit style (conventional prefixes or not)
-5. Draft a commit message following the skill's rules:
-   - Imperative verb (Adds, Fixes, Updates, Removes, Refactors, Improves, etc.)
-   - First line under 50 characters
-   - Body bullet points only when the change is non-trivial
-   - Match project convention for prefixes
-   - NEVER mention AI, Claude, or tools
-
-Return ONLY the commit message text, nothing else. No explanation, no preamble. Just the message.
-```
+Draft the commit message directly — do NOT launch a sub-agent. You already have `DIFF_STAT`, `DIFF`, and `RECENT_LOG` in context from Step 2. Use the commit message rules from this skill (imperative verb, 50-char limit, body bullets for non-trivial changes, match project prefix convention from `RECENT_LOG`, no AI attribution).
 
 ### Step 4: Get Confirmation
 
-Take the message returned by the sub-agent and use AskUserQuestion:
-- **Question:** "Commit with this message?\n\n```\n{message from sub-agent}\n```"
+Use AskUserQuestion with the drafted message:
+- **Question:** "Commit with this message?\n\n```\n{drafted message}\n```"
 - **Header:** "Commit"
 - **Options:**
   1. "Yes, commit" -- Commit with this message
@@ -395,7 +384,7 @@ Report the result: show the commit hash and message.
 - In the split flow (Step 2d): staging is managed by the orchestration. Only stage files from `ORIGINALLY_STAGED`. Never touch files that were not originally staged.
 - Never add AI or tool attribution to commit messages.
 - Show the complete message in the confirmation prompt, never a summary.
-- The sub-agent drafts messages. You handle confirmation and execution.
+- In the single-commit flow, draft the message directly — no sub-agent. Sub-agents are only used in the split flow (Step 2c).
 - During split flow, if any commit fails, re-stage all remaining uncommitted files from `ORIGINALLY_STAGED` so the user's staging area is restored, then stop and report the error.
 
 ---

@@ -17,4 +17,4 @@ Read: ${CLAUDE_PLUGIN_ROOT}/skills/git-committing/SKILL.md
 
 Follow the skill's Commit Orchestration (Steps 1-5) exactly. The skill is the single source of truth for commit message standards, scope assessment, split flow, confirmation, and execution.
 
-If `$ARGUMENTS` is not empty, pass it as context to the sub-agent prompt in Step 3: "Incorporate this context: $ARGUMENTS"
+If `$ARGUMENTS` is not empty, incorporate it as context when drafting the commit message in Step 3.

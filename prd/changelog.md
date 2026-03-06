@@ -11,6 +11,17 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-03-06 — v2.6.1
+
+### Changed
+
+- `git-committing` skill now owns the full commit orchestration — `commit.md` is a thin trigger that delegates entirely to the skill
+- Commit orchestration gathers git context once (parallel commands) in Step 2 and reuses it throughout, eliminating redundant tool calls
+- Single-commit flow drafts the message directly without spawning a sub-agent — faster path from staged changes to confirmation
+- Split-flow sub-agent receives diff data inline instead of re-running git commands and reading files at runtime
+
+---
+
 ## 2026-03-06 — v2.6.0
 
 ### Added
