@@ -1,6 +1,15 @@
 # Single-Task Mode
 
-You are implementing a specific task from a feature's tasks.md file. Follow this strict 7-step workflow and execute ONLY the requested task.
+You are implementing a specific sub-task from a feature's tasks.md file. The task identifier must be a sub-task ID (N.M format, e.g., "UC-0Fy0-001/1.1"). If a parent task ID is given (e.g., "UC-0Fy0-001/1"), use AskUserQuestion to ask which sub-task to work on. Follow this strict 7-step workflow and execute ONLY the requested sub-task.
+
+## Designated Agents
+
+This workflow delegates to these agents (read agent definitions before dispatching):
+
+- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — implements code and tests from the approved plan
+- **Reviewer** (`${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`) — reviews code for correctness, security, performance
+
+See `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` for invocation protocol and handoff patterns.
 
 ## Step 1: Gather Context
 
@@ -76,6 +85,16 @@ Enter plan mode using EnterPlanMode. In plan mode:
 3. Write the plan to `prd/specs/{feature}/plans/{task-slug}.md` (create the `plans/` directory if needed).
 4. Exit plan mode with ExitPlanMode to get user approval.
 
+## Step 3b: Load BDD Acceptance Criteria
+
+1. Read `bdd/CLAUDE.md`. If no `# BDD Configuration` section, skip this step (backward compatible).
+2. Grep `bdd/features/` for files containing `@task-{current-task-ID}`.
+3. If matching scenarios exist:
+   a. Read the matching `.feature` files and extract scenarios tagged with the current task ID.
+   b. Update the plan file with a "BDD Acceptance Criteria" section listing each scenario.
+   c. These scenarios become the primary acceptance criteria.
+4. If no matching scenarios exist, skip (fall back to current behavior).
+
 ## Step 4: Write Code
 
 Implement the task following the approved plan. Key rules:
@@ -91,6 +110,7 @@ Write tests for the code you created or modified:
 - Follow existing test patterns in the codebase
 - Cover the acceptance criteria from the task
 - Include edge cases and error scenarios
+- If BDD scenarios exist for this task (tagged `@task-{ID}`): (1) Locate step definition files in bdd/steps/ with TODO: implement step bodies for matching scenarios. (2) Implement those bodies with real assertions using the detected BDD framework and patterns from bdd/CLAUDE.md. (3) Do NOT create new step definitions or modify scenario structure. (4) After implementing step definitions, write unit tests as normal. If no BDD scenarios exist, write unit tests only.
 
 ## Step 6: Run Tests
 
@@ -102,7 +122,7 @@ Run the test suite to verify everything passes:
 
 ## Step 7: Quality Gate
 
-Launch 4 parallel sub-agents using the Task tool in a single message:
+Launch 3 parallel sub-agents using the Task tool in a single message:
 
 **Agent 1 — Formatter** (subagent_type: `Bash`):
 - Prompt: Detect which files were changed (Go files in `server/`, frontend files elsewhere). Run `gofmt -l` on changed `.go` files and `pnpm run format --check` (or equivalent Biome check command) on changed frontend files. Return:
@@ -120,19 +140,15 @@ Launch 4 parallel sub-agents using the Task tool in a single message:
   {linter output, or "NONE"}
   ```
 
-**Agent 3 — Self-review** (subagent_type: `general-purpose`):
-- Prompt: Read all files created or modified during this task (provide the file list). Also read the relevant coding skills (`.claude/skills/go-writing-code/SKILL.md`, `.claude/skills/typescript-writing-code/SKILL.md`, `.claude/skills/react-writing-code/SKILL.md`, `.claude/skills/software-principles/SKILL.md`) based on the stack. Review the changes for: security issues, missing error handling, convention violations from CLAUDE.md, performance concerns, and code quality. Return:
-  ```
-  REVIEW_STATUS: PASS | ISSUES_FOUND
-  FINDINGS:
-  - Severity: CRITICAL | WARNING | SUGGESTION
-    File: {path:line}
-    Issue: {description}
-    Fix: {suggested fix}
-  ```
+**Agent 3 — Reviewer** (invoke the Reviewer agent):
+- Read the Reviewer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Provide the list of all files created or modified during this task
+- The Reviewer discovers stack-specific coding skills at runtime for convention checking
+- Return the Reviewer's standard output format (REVIEW_STATUS, VERDICT, FINDINGS)
 
 **Agent 4 — README updater** (subagent_type: `general-purpose`):
-- Prompt: Read the code-documentation skill at `.claude/skills/code-documentation/SKILL.md` and the README template at `.claude/skills/code-documentation/references/readme-template.md`. Identify all directories where files were **created** or **deleted** during this task (provide the list). For each such directory (skip `node_modules/`, `dist/`, `build/`, `coverage/`, `vendor/`, `.git/`, `__tests__/`, `prd/`, asset-only directories):
+- Prompt: Read the code-documentation skill at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/SKILL.md` and the README template at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/references/readme-template.md`. Identify all directories where files were **created** or **deleted** during this task (provide the list). For each such directory (skip `node_modules/`, `dist/`, `build/`, `coverage/`, `vendor/`, `.git/`, `__tests__/`, `prd/`, asset-only directories):
   - If `README.md` exists: read it + the directory's files, determine what updates are needed (file listing, diagrams, last-updated date)
   - If `README.md` does not exist: read all files in the directory, prepare full README content following the template
   Return:
@@ -143,10 +159,10 @@ Launch 4 parallel sub-agents using the Task tool in a single message:
     Content: {full README content if CREATE, or specific updates if UPDATE}
   ```
 
-After all 4 agents return:
+After all agents return:
 1. If formatting issues -> run the formatter to fix them
 2. If lint issues -> fix the lint errors
-3. If self-review found CRITICAL or WARNING issues -> fix them
+3. If Reviewer found CRITICAL or WARNING issues -> fix them
 4. Write README content from Agent 4 (CREATE new files, UPDATE existing ones)
 5. If any code was changed in steps 1-3 -> re-run tests (Step 6). README-only changes do NOT trigger re-testing.
 

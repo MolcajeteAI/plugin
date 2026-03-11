@@ -134,3 +134,5 @@ The changelog (`prd/changelog.md`) is designed as an LLM memory document — org
 | [references/requirements-template.md](./references/requirements-template.md) | UC/US/FR/NFR with consistent IDs |
 | [references/spec-template.md](./references/spec-template.md) | Data models, API contracts, Mermaid diagrams |
 | [references/tasks-template.md](./references/tasks-template.md) | Vertical slices organized by UC, with story points |
+| [references/user-story-template.md](./references/user-story-template.md) | User stories with acceptance criteria linked to BDD scenarios |
+| [references/task-update-protocol.md](./references/task-update-protocol.md) | Standardized task completion and fix note recording |

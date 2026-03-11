@@ -24,15 +24,19 @@ Removes deprecated API endpoints
 Refactors database connection logic
 ```
 
-## Multi-Line Commits
+## Multi-Line Commits (Feature-Linked)
 
-For complex changes, add bullet points explaining why.
+When commits relate to a tracked feature, include `Feature:` and `Usecase:` metadata before the summary.
 
 ### Feature Addition
 
 ```
 Adds email verification for new users
 
+Feature: User onboarding
+Usecase: UC-0Fy0-001
+
+Summary:
 - Sends verification link on registration
 - Blocks login until email is verified
 - Adds resend verification option
@@ -44,6 +48,10 @@ Adds email verification for new users
 ```
 Fixes race condition in payment processing
 
+Feature: Payment gateway
+Usecase: UC-0Kp2-003
+
+Summary:
 - Adds transaction locking
 - Prevents duplicate charges
 - Retries failed transactions once
@@ -55,17 +63,40 @@ Fixes race condition in payment processing
 ```
 Refactors error handling across API
 
+Feature: Console authentication
+Usecase: UC-0Fcy-001
+
+Summary:
 - Creates central error handler
 - Standardizes error response format
 - Removes duplicate error code
 - Makes errors easier to debug
 ```
 
+### Adding Tests
+
+```
+Adds tests for authentication flow
+
+Feature: Email authentication
+Usecase: UC-0Fcy-002
+
+Summary:
+- Covers login success and failure cases
+- Tests token expiration
+- Validates error messages
+```
+
+## Multi-Line Commits (No Feature)
+
+When commits are chores or not tied to a specific feature, omit the metadata lines.
+
 ### Performance Improvement
 
 ```
 Improves database query performance
 
+Summary:
 - Adds indexes on frequently queried columns
 - Reduces N+1 queries with eager loading
 - Caches user permissions
@@ -77,20 +108,11 @@ Improves database query performance
 ```
 Updates CI pipeline for faster builds
 
+Summary:
 - Parallelizes test execution
 - Caches dependencies between runs
 - Skips builds for documentation changes
 - Reduces average build time from 15min to 6min
-```
-
-### Adding Tests
-
-```
-Adds tests for authentication flow
-
-- Covers login success and failure cases
-- Tests token expiration
-- Validates error messages
 ```
 
 ### Dependency Updates
@@ -98,6 +120,7 @@ Adds tests for authentication flow
 ```
 Updates React from v17 to v18
 
+Summary:
 - Migrates to new root API
 - Updates test setup
 - Removes deprecated lifecycle methods
@@ -108,6 +131,7 @@ Updates React from v17 to v18
 ```
 Removes legacy API endpoints
 
+Summary:
 - Drops v1 endpoints (deprecated 6 months ago)
 - Updates documentation
 - Adds migration guide
@@ -198,6 +222,7 @@ Co-Authored-By: Claude <noreply@anthropic.com>
 # GOOD — no attribution
 Adds user authentication
 
+Summary:
 - Creates login and registration pages
 - Adds JWT token handling
 - Stores user session in localStorage
