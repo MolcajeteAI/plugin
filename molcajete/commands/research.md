@@ -9,6 +9,13 @@ argument-hint: <research query or URL>
 
 **Research input:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates directly to the Researcher agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Researcher** (`${CLAUDE_PLUGIN_ROOT}/agents/researcher.md`) — deep research with parallel sub-agents and source evaluation
+
 Read the research-methods skill and execute it in **Deep Research** mode — skip Step 1 classification and go directly to Step 2 (Detect Tech Stack).
 
 ```

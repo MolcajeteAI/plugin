@@ -9,6 +9,18 @@ argument-hint: <what you want to change, e.g. "add error monitoring to the front
 
 **Input:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates to two agents in sequence:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol and handoff patterns
+- **Researcher** (`${CLAUDE_PLUGIN_ROOT}/agents/researcher.md`) — impact analysis (Refactor Impact mode)
+- **Spec Writer** (`${CLAUDE_PLUGIN_ROOT}/agents/spec-writer.md`) — requirements generation from impact analysis
+
+**Chain:** Researcher -> Spec Writer (see handoff protocol for context passing)
+
+**What this command keeps:** Product context verification, folder creation, file writing.
+
 ## Step 1: Verify Product Context
 
 Check that `prd/mission.md` and `prd/tech-stack.md` exist. If they don't, tell the user to run `/m:init` first and stop.

@@ -9,6 +9,13 @@ argument-hint: <topic to explain>
 
 **Topic:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates directly to the Researcher agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Researcher** (`${CLAUDE_PLUGIN_ROOT}/agents/researcher.md`) — topic explanation with friendly language and practical examples
+
 Read the research-methods skill and execute it in **Explain** mode — skip Step 1 classification and go directly to Step 2e (Parse Input).
 
 ```

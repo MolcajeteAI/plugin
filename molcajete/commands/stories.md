@@ -2,7 +2,7 @@
 description: Generate BDD scenarios and step definitions for a feature
 model: claude-opus-4-6
 allowed-tools: Read, Write, Edit, Glob, Grep, Bash(*), Task, AskUserQuestion
-argument-hint: <UC-ID like "UC-0KTg-001", feature name, or description>
+argument-hint: <UC-ID like "UC-0KTg-001", spec folder path, feature name, or description>
 ---
 
 # Generate BDD Scenarios
@@ -10,6 +10,15 @@ argument-hint: <UC-ID like "UC-0KTg-001", feature name, or description>
 You are a BDD scenario generator. You create Gherkin feature files and step definitions in the project's `bdd/` directory.
 
 **Target feature:** $ARGUMENTS
+
+## Designated Agents
+
+This command delegates to the BDD Analyst agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **BDD Analyst** (`${CLAUDE_PLUGIN_ROOT}/agents/bdd-analyst.md`) — translates requirements into Gherkin scenarios with domain categorization and task tagging
+
+**What this command keeps:** Argument parsing, scaffold verification, BDD setup detection.
 
 ## Step 1: Parse Argument
 
@@ -26,6 +35,23 @@ If `$ARGUMENTS` is empty or blank, use AskUserQuestion:
 - multiSelect: false
 
 Use the user's response as the argument and re-evaluate from step 1b.
+
+### 1e. Spec Folder Path
+
+If the argument resolves to a directory path (relative or absolute) that contains both `requirements.md` and `tasks.md`:
+
+1. Read `requirements.md` to extract all UCs, acceptance criteria, and NFRs.
+2. Read `tasks.md` to extract task breakdowns for each UC.
+3. Store all extracted context -- it will drive categorization (Step 2-cat) and generation (Step 3).
+4. Proceed to Step 2 (scaffold), then Step 2-cat (categorization).
+
+If the directory exists but is missing `requirements.md` or `tasks.md`, warn: "Spec folder `{path}` is missing {file}. Cannot proceed with spec-driven generation." Then use AskUserQuestion:
+- Question: "How should I proceed?"
+- Header: "Incomplete spec"
+- Options:
+  - "Treat as a generic feature name" -- proceed to step 1d
+  - "Cancel" -- stop execution
+- multiSelect: false
 
 ### 1b. Use Case ID
 
@@ -63,6 +89,18 @@ Read the following skill files, then follow the scaffold procedure:
 - `${CLAUDE_PLUGIN_ROOT}/skills/gherkin/references/scaffold.md`
 
 This step runs on every invocation. It ensures the `bdd/` directory structure exists and that INDEX.md files are in sync with the file system. If the scaffold already exists and indexes are in sync, this step completes instantly.
+
+After scaffold setup, run Step 2f-persist to persist BDD configuration to `bdd/CLAUDE.md`.
+
+## Step 2-cat: Categorization and Placement Plan
+
+This step runs **only** when the argument is a spec folder path (Step 1e). For UC-ID (Step 1b), existing feature (Step 1c), or generic name (Step 1d) arguments, skip to Step 2-exp or Step 3.
+
+Read and follow:
+- `${CLAUDE_PLUGIN_ROOT}/skills/gherkin/references/categorization.md`
+- `${CLAUDE_PLUGIN_ROOT}/skills/gherkin/references/task-tagging.md`
+
+Generate the placement plan, then present it to the user via AskUserQuestion. On approval, proceed to Step 3 with the plan driving the generation loop.
 
 ## Step 2-exp: Explore Codebase for Generic Name
 
@@ -105,7 +143,12 @@ After every successful invocation, display a structured summary:
 - Python: `behave bdd/features/{domain}/{feature-name}.feature`
 - Go: `godog bdd/features/{domain}/{feature-name}.feature`
 - TypeScript: `npx cucumber-js bdd/features/{domain}/{feature-name}.feature`
+| UCs covered        | {count} ({UC-ID list})                         |
+| Task tags          | {count}                                        |
+| NFR coverage       | {tags with domain counts}                      |
 ```
+
+If a placement plan was used (Step 2-cat), also output the cross-functional coverage matrix from Step 3b-nfr.
 
 ## Error Handling
 
@@ -113,6 +156,9 @@ After every successful invocation, display a structured summary:
 |----------|----------|
 | Empty argument | Use AskUserQuestion to ask what feature to generate (see Step 1a) |
 | UC-ID not found in specs | Warn user with the exact UC-ID. Offer to treat as generic name or cancel (see Step 1b) |
+| Spec folder missing `tasks.md` | Warn user with exact path. Offer to treat as generic name or cancel (see Step 1e) |
+| UC already covered | Mark as SKIP in placement plan. Do not regenerate (see categorization dedup) |
+| Task tag already exists | Skip duplicate task tag. Do not generate duplicate scenarios |
 | Mixed language files in `bdd/steps/` | Warn: "Mixed languages detected in `bdd/steps/`: {list}. Using majority language: {language}." Proceed with majority |
 | Feature file would exceed 15 scenarios | Promote to directory with logically-named sub-files (see splitting check) |
 | INDEX.md out of sync with file system | Rebuild from file system contents before proceeding. Report fixes |

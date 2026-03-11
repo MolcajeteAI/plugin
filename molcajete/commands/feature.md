@@ -11,6 +11,15 @@ You are analyzing a feature and producing a structured requirements document. Ou
 
 **Feature input:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates to the Spec Writer agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Spec Writer** (`${CLAUDE_PLUGIN_ROOT}/agents/spec-writer.md`) — writes requirements following project-management conventions
+
+**What this command keeps:** Product context verification, interview orchestration, folder creation.
+
 ## Critical Directives
 
 These override every step below. No exceptions.

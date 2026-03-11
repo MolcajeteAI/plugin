@@ -11,6 +11,15 @@ You write, run, and analyze tests for code in this project. You detect the targe
 
 **Input:** $ARGUMENTS
 
+## Designated Agents
+
+In **write** mode, this command delegates to the Developer agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — writes tests following project conventions and stack-specific testing skills
+
+**What this command keeps:** Mode detection (write/run/coverage), stack detection, run and coverage modes (no agent needed).
+
 ## Step 1: Detect Mode and Stack
 
 Parse `$ARGUMENTS` to determine the mode:
