@@ -1,14 +1,16 @@
 {
   "name": "m",
-  "version": "2.6.1",
+  "version": "2.7.0",
   "description": "Core development workflow with generic agents and discoverable skills",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
   },
   "keywords": ["workflow", "development", "testing", "documentation", "git"],
+  "agents": "./agents/",
   "commands": [
     "./commands/amend.md",
+    "./commands/bdd-setup.md",
     "./commands/commit.md",
     "./commands/copy.md",
     "./commands/debug.md",
@@ -19,6 +21,7 @@
     "./commands/init.md",
     "./commands/prompt.md",
     "./commands/rebase.md",
+    "./commands/run.md",
     "./commands/refactor.md",
     "./commands/explain.md",
     "./commands/research.md",
@@ -29,6 +32,7 @@
     "./commands/test.md"
   ],
   "skills": [
+    "./skills/agent-coordination/SKILL.md",
     "./skills/clipboard/SKILL.md",
     "./skills/code-documentation/SKILL.md",
     "./skills/copywriting/SKILL.md",
