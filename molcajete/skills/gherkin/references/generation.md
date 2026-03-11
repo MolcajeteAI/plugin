@@ -38,16 +38,35 @@ After the dedup check, carry forward:
 - The list of step patterns already used in the existing feature file (so 3c maximizes step reuse)
 - The file path and line count of the existing feature file (so 3b knows where to append)
 
+## 3-cat. Categorization and Placement Plan
+
+This step runs **only** when the argument is a spec folder path (Step 1e in stories.md) containing multiple UCs. For single UC-ID (Step 1b), existing feature (Step 1c), or generic name (Step 1d) arguments, skip to 3a.
+
+1. Read `{spec-folder}/tasks.md` to extract all UCs and their task breakdowns.
+2. Read `{spec-folder}/requirements.md` to extract NFRs (non-functional requirements).
+3. Read `bdd/features/INDEX.md` to identify existing UC coverage.
+4. For each UC, classify into a domain using the heuristic in `references/categorization.md`.
+5. Build the placement plan following the format in `references/categorization.md`.
+6. Present the placement plan to the user via AskUserQuestion:
+   - Question: "Review the BDD placement plan. Proceed with generation?"
+   - Header: "BDD Placement Plan"
+   - Options:
+     - "Proceed" -- generate all CREATE entries
+     - "Cancel" -- stop execution
+   - multiSelect: false
+7. If the user proceeds, loop through Steps 3a-3d for each CREATE entry in the placement plan.
+
 ## 3a. Determine Domain Folder
 
 Decide which `bdd/features/{domain}/` folder to place the feature file in:
 
-1. If the argument was resolved from a UC-ID (Step 1b), infer the domain from the spec's subject area (e.g., an authentication UC goes in `authentication/`).
-2. If the argument matched an existing feature (Step 1c), use the same domain folder as the existing file.
-3. If the argument is a generic name (Step 1d), use the primary domain determined in the exploration procedure.
-4. Check existing domain folders in `bdd/features/`. If a suitable domain already exists, use it.
-5. If no existing domain fits, create a new `bdd/features/{domain}/` folder with a descriptive kebab-case name.
-6. If the feature spans multiple domains, use `cross-domain/`.
+1. If a placement plan exists (3-cat ran), use the domain/path from the plan for the current UC.
+2. If the argument was resolved from a UC-ID (Step 1b), infer the domain from the spec's subject area (e.g., an authentication UC goes in `authentication/`).
+3. If the argument matched an existing feature (Step 1c), use the same domain folder as the existing file.
+4. If the argument is a generic name (Step 1d), use the primary domain determined in the exploration procedure.
+5. Check existing domain folders in `bdd/features/`. If a suitable domain already exists, use it.
+6. If no existing domain fits, create a new `bdd/features/{domain}/` folder with a descriptive kebab-case name.
+7. If the feature spans multiple domains, use `cross-domain/`.
 
 ## 3b. Generate Feature File
 
@@ -56,9 +75,17 @@ Create the feature file at `bdd/features/{domain}/{feature-name}.feature` (or `.
 Follow the file naming rules, tagging rules, step writing rules, and Gherkin construct selection rules from SKILL.md.
 
 **Feature-level structure:**
-- Add feature-level tags: `@{domain}` and one priority tag (`@smoke`, `@regression`, or `@critical`)
+- Add feature-level tags in order: `@{domain} @uc-{UC-ID} @{priority-tag}`
 - Write a 1-2 sentence description immediately after the `Feature:` line
+- Add `Source: {spec-folder}/requirements.md` after the description (when spec context is available)
 - Use `Background:` only if 2+ scenarios share the same preconditions
+
+**Scenario-level tagging:**
+- Add `@task-{ID}` as the first tag on each Scenario/Scenario Outline line, followed by `@{scenario-tag}`
+- The task ID links the scenario to a specific task in `tasks.md`
+
+**NFR tag injection:**
+- If a scenario validates a non-functional requirement, add `@nfr` to its tags
 
 **Appending to an existing feature (Step 1c path):**
 
@@ -72,6 +99,26 @@ When the feature file already exists (argument matched in Step 1c, after dedup i
    - If the file has a `Background:`, new scenarios inherit it — do not duplicate the Background block.
 4. Only generate scenarios that passed the dedup check in 3-pre. Skip any that were flagged as duplicates.
 5. Update the "Action" field in the summary to "Updated" (not "Created").
+
+## 3b-nfr. Non-Functional Requirement Injection
+
+This step runs **only** when a placement plan exists (3-cat ran) and NFRs were extracted from `requirements.md`. Otherwise skip to 3c.
+
+**Universal NFRs** (apply across all domains):
+1. Create a dedicated feature file in `cross-domain/` (e.g., `cross-domain/audit-logging.feature`).
+2. Add `@nfr` tag on the Feature line.
+3. Generate scenarios that validate the NFR across representative domains.
+
+**Scoped NFRs** (apply to specific domains or UCs):
+1. Add `And` assertion steps to relevant scenarios in the domain feature file.
+2. Add `@nfr` tag to affected scenarios.
+3. Do not create a separate feature file.
+
+After processing all NFRs, output a cross-functional coverage matrix:
+```
+| NFR | Type | Target File | Scenarios Affected |
+|-----|------|-------------|--------------------|
+```
 
 ## 3c. Generate Step Definitions
 
@@ -89,7 +136,7 @@ For each Given/When/Then step in the generated feature file:
 
 If the target step file already exists, append the new step definitions to the end of the file using the Edit tool. If the file does not exist, create it using the matching template from `templates/steps-{language}.md`.
 
-Follow the step definition rules from SKILL.md (docstrings, parameter descriptions, TODO placeholder body).
+**Real assertions:** Step definitions are part of the executable specification. They must contain real assertions based on the scenario context (acceptance criteria, spec data models, API contracts). The assertions should fail (red) when no production code exists and pass (green) after the Developer implements the feature. Follow the step definition rules from SKILL.md (docstrings, parameter descriptions, real assertion body).
 
 **Language consistency:** Use the language detected in the scaffold step. Never create step files in a different language than detected.
 
@@ -101,7 +148,7 @@ After generating the feature file (3b) and step definitions (3c), update both IN
 
 1. Read the current `bdd/features/INDEX.md`.
 2. Find the heading for the target domain (e.g., `## Authentication`). If the heading does not exist, add it.
-3. **New feature:** Add a new feature entry under the domain heading following the Features INDEX.md template format — file path, 1-sentence summary, and all scenario names with brief descriptions.
+3. **New feature:** Add a new feature entry under the domain heading following the Features INDEX.md template format — linked feature name, file path, `**UCs:**` line with `@uc-{UC-ID}`, 1-sentence summary, and all scenario names with brief descriptions.
 4. **Existing feature (Step 1c path):** Find the existing feature entry. Append only the new scenario names to its scenario list — do not re-list existing scenarios. Do not change the file path or summary unless they are inaccurate.
 5. Use the Edit tool to insert or update the entry.
 

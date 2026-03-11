@@ -7,7 +7,7 @@ Use this template for `.feature.md` files (Markdown-Gherkin format). Select this
 
 {1-2 sentence description of the feature}
 
-**Tags:** `@{domain}` `@{priority-tag}`
+**Tags:** `@{domain}` `@uc-{UC-ID}` `@{priority-tag}`
 
 ## Background
 
@@ -15,7 +15,7 @@ Use this template for `.feature.md` files (Markdown-Gherkin format). Select this
 
 ## Scenario: {Scenario Name}
 
-**Tags:** `@{scenario-tag}`
+**Tags:** `@task-{ID}` `@{scenario-tag}`
 
 - **Given** {declarative system state}
 - **When** {user action}
@@ -23,7 +23,7 @@ Use this template for `.feature.md` files (Markdown-Gherkin format). Select this
 
 ## Scenario Outline: {Parameterized Scenario Name}
 
-**Tags:** `@{scenario-tag}`
+**Tags:** `@task-{ID}` `@{scenario-tag}`
 
 - **Given** {state with `<param>`}
 - **When** {action with `<param>`}

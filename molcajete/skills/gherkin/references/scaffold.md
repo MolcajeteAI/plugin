@@ -56,6 +56,28 @@ Do NOT create step definition files during scaffold setup — those are created 
 3. `bdd/steps/world.[ext]` (see `templates/world-{language}.md` for the detected language)
 4. `bdd/steps/environment.py` — only if Python is the detected language (included in `templates/world-python.md`)
 
+## 2f-persist. Persist BDD Setup
+
+Check if `bdd/CLAUDE.md` exists and contains a `# BDD Configuration` section. If it does, skip this step -- configuration is already persisted.
+
+If not, write the following to `bdd/CLAUDE.md` (create or append). If the file already contains an `## Extended Configuration` section (written by `/m:bdd-setup`), preserve it -- only write the base `# BDD Configuration` fields above it:
+
+```markdown
+# BDD Configuration
+
+- **Format:** {Standard Gherkin | MDG}
+- **Language:** {Python | Go | TypeScript}
+- **Framework:** {behave | godog | cucumber-js}
+- **Directory style:** domain-organized
+- **Organization:** one feature per UC
+- **Domain mapping:**
+  - {domain-1}/: {subject description}
+  - {domain-2}/: {subject description}
+  - cross-domain/: cross-functional requirements
+```
+
+Use the values detected in Steps 2d (language) and 2e (format). Domain mapping comes from Step 2c.
+
 ## 2g. Validate Index Files
 
 This section detects drift between INDEX.md entries and actual files on disk. If the scaffold was just created in this invocation (steps 2b–2f ran), skip this section and proceed to Step 3 — newly created indexes are empty and inherently in sync. Otherwise (Step 2a routed here because the scaffold already existed), run the checks below.

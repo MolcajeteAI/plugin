@@ -3,20 +3,21 @@
 Use this template for `.feature` files. Select this format when the project uses standard Gherkin (not MDG). Never mix formats.
 
 ```gherkin
-@{domain} @{priority-tag}
+@{domain} @uc-{UC-ID} @{priority-tag}
 Feature: {Feature Name}
   {1-2 sentence description of the feature}
+  Source: {spec-folder}/requirements.md
 
   Background:
     Given {shared precondition}
 
-  @{scenario-tag}
+  @task-{ID} @{scenario-tag}
   Scenario: {Scenario Name}
     Given {declarative system state}
     When {user action}
     Then {exact assertion}
 
-  @{scenario-tag}
+  @task-{ID} @{scenario-tag}
   Scenario Outline: {Parameterized Scenario Name}
     Given {state with <param>}
     When {action with <param>}
