@@ -2,6 +2,15 @@
 
 You are implementing multiple tasks from a feature's tasks.md file. Follow this orchestration workflow to plan all tasks upfront and execute them in dependency-ordered waves with parallel subagents.
 
+## Designated Agents
+
+Each subagent in a wave delegates to these agents internally (read agent definitions before dispatching):
+
+- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — implements code and tests from the plan
+- **Reviewer** (`${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`) — reviews code for correctness, security, performance
+
+See `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` for invocation protocol and handoff patterns.
+
 ## Step M1: Gather Context
 
 Launch a `general-purpose` sub-agent using the Task tool to build a combined brief covering ALL selected tasks. The prompt must include the feature folder path(s) and all task details you extracted. The agent should:
@@ -178,7 +187,7 @@ Run these checks sequentially:
 
 **Lint check:** Run `golangci-lint run` on changed Go packages and/or `pnpm run lint` on changed frontend files. Fix any issues.
 
-**Self-review:** Review your own changes for: security issues, missing error handling, convention violations, performance concerns. Fix any CRITICAL or WARNING issues found.
+**Self-review (Reviewer agent):** Read the Reviewer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`. Review your own changes for: security issues, missing error handling, convention violations, performance concerns. Fix any CRITICAL or WARNING issues found.
 
 **README updates:** For directories where files were created or deleted (skip node_modules/, dist/, build/, coverage/, vendor/, .git/, __tests__/, prd/, asset-only directories):
 - If README.md exists: update file listing, diagrams, last-updated date as needed

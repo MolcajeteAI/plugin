@@ -7,9 +7,22 @@ argument-hint: <task ID like "UC-0Fy0-001/1.1" or feature like "Feature 2">
 
 # Implement Task
 
-You are implementing a specific task from a feature's tasks.md file. You follow a strict 8-step workflow and execute ONLY the requested task.
+You are implementing a specific task from a feature's tasks.md file. You follow a strict 9-step workflow and execute ONLY the requested task.
 
 **Task identifier:** $ARGUMENTS
+
+## Designated Agents
+
+This command delegates to these agents. Read the agent-coordination skill and agent definitions before dispatching:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol and handoff patterns
+- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — implements code and tests from the approved plan
+- **Reviewer** (`${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`) — reviews code for correctness, security, performance, conventions, test coverage
+- **Committer** (`${CLAUDE_PLUGIN_ROOT}/agents/committer.md`) — stages files and commits with proper message format
+
+**Chain:** Developer -> Reviewer -> Committer (with fix loops on review issues or hook failures)
+
+**What this command keeps:** Context gathering, plan approval, progress tracking, scope control, formatter/linter execution.
 
 ## Critical Directives
 
@@ -80,39 +93,28 @@ If anything about the task is ambiguous after reading the context brief, use Ask
 
 If the task is clear, skip this step.
 
-## Sub-Task Handling
+## Execution Scope
 
-After gathering context, determine whether the target task has sub-tasks in tasks.md:
-
-- **Leaf task** (e.g., "UC-0Fy0-001/8.1" — no children): Proceed through Steps 3–8 once.
-- **Parent task** (e.g., "UC-0Fy0-001/8" — has sub-tasks like 8.1, 8.2): Iterate through each **uncompleted** sub-task in order. For EACH sub-task:
-  1. Execute Steps 3–8 (Plan → Code → Tests → Run Tests → Update Progress → Quality Gate)
-  2. Then proceed to the next uncompleted sub-task
-
-After ALL sub-tasks are complete, mark the parent task checkbox as complete in tasks.md (see Step 7).
-
-This per-sub-task update ensures progress is saved even if context limits are reached mid-execution.
+This command executes exactly ONE sub-task (e.g., "UC-0Fy0-001/1.1"). The external coordinator manages iteration across sub-tasks. If `$ARGUMENTS` points to a parent task (e.g., "UC-0Fy0-001/1"), use AskUserQuestion to ask which sub-task to implement.
 
 ## Step 3: Plan
 
 > Remember: **Right over easy.** Plan the correct solution, not the fastest one.
 
-1. Determine the plan scope and filename from the target work:
-   - Full feature → `task-feature.md`
-   - Use case → `task-UC-{tag}-NNN.md`
-   - Task → `task-UC-{tag}-NNN--N.md`
-   - Sub-task → `task-UC-{tag}-NNN--N.M.md`
+1. Get a UTC timestamp by running `date -u +%Y%m%d-%H%M` (e.g., `20260311-1430`).
+
+2. The plan filename is: `{timestamp}-task-UC-{tag}-NNN--N.M.md`
 
    Note: double-dash `--` separates the UC ID from the task/subtask number.
 
-2. Explore the codebase to understand existing patterns, related code, and where new code should go.
+3. Explore the codebase to understand existing patterns, related code, and where new code should go.
 
-3. Write the plan to `prd/specs/{feature}/plans/{plan-filename}` (create the `plans/` directory if needed). The plan should cover:
+4. Write the plan to `prd/specs/{feature}/plans/{plan-filename}` (create the `plans/` directory if needed). The plan should cover:
    - Files to create or modify
    - Key implementation decisions
    - How this integrates with existing code
 
-4. Present the plan to the user. Output the plan content in your message, then use AskUserQuestion:
+5. Present the plan to the user. Output the plan content in your message, then use AskUserQuestion:
    - Question: "Do you accept the plan?"
    - Header: "Plan"
    - Options:
@@ -120,7 +122,17 @@ This per-sub-task update ensures progress is saved even if context limits are re
      - "No, I have feedback" — user provides feedback via the "Other" option
    - multiSelect: false
 
-5. If the user provides feedback, update the plan file, present the updated plan, and ask again. Repeat until accepted.
+6. If the user provides feedback, update the plan file, present the updated plan, and ask again. Repeat until accepted.
+
+## Step 3b: Load BDD Acceptance Criteria
+
+1. Read `bdd/CLAUDE.md`. If no `# BDD Configuration` section, skip this step (backward compatible).
+2. Grep `bdd/features/` for files containing `@task-{current-task-ID}`.
+3. If matching scenarios exist:
+   a. Read the matching `.feature` files and extract scenarios tagged with the current task ID.
+   b. Update the plan file with a "BDD Acceptance Criteria" section listing each scenario.
+   c. These scenarios become the primary acceptance criteria.
+4. If no matching scenarios exist, skip (fall back to current behavior).
 
 ## Step 4: Write Code
 
@@ -139,20 +151,24 @@ Write tests for the code you created or modified:
 - Follow existing test patterns in the codebase
 - Cover the acceptance criteria from the task
 - Include edge cases and error scenarios
+- If BDD scenarios exist for this task (tagged `@task-{ID}`): (1) Locate step definition files in bdd/steps/ with TODO: implement step bodies for matching scenarios. (2) Implement those bodies with real assertions using the detected BDD framework and patterns from bdd/CLAUDE.md. (3) Do NOT create new step definitions or modify scenario structure. (4) After implementing step definitions, write unit tests as normal. If no BDD scenarios exist, write unit tests only.
 
 ## Step 6: Run Tests
 
 Run the test suite to verify everything passes:
 - Run the specific tests you wrote
 - Run the broader test suite for affected areas
+- Run BDD tests scoped to the current task's tag: `--tags=@task-{ID}`
+- Run formatter on changed files and fix any issues
+- Run linter on changed files and fix any issues
 - If tests fail, fix the code and re-run until green
 - Do NOT skip failing tests or mark them as expected failures
 
 ## Step 7: Update Progress
 
-Run this **immediately** after Steps 3–6 pass for each sub-task (or for a leaf task). Do NOT defer these updates.
+Run this **immediately** after Steps 3–6 pass. Do NOT defer these updates.
 
-1. **Update tasks.md**: Mark the sub-task (or leaf task) checkbox as complete. Add completion notes:
+1. **Update tasks.md**: Mark the sub-task checkbox as complete. Add completion notes:
    ```
    - [x] N.M {Task title}
      - Complexity: {points}
@@ -162,7 +178,7 @@ Run this **immediately** after Steps 3–6 pass for each sub-task (or for a leaf
      - Notes: {brief description of approach, key decisions, files created/modified}
    ```
 
-2. **Write per-task changelog file**: Create `prd/specs/{feature}/plans/changelog-UC-{tag}-NNN--N.M.md` with:
+2. **Write per-task changelog file**: Get a UTC timestamp by running `date -u +%Y%m%d-%H%M`. Create `prd/specs/{feature}/plans/{timestamp}-changelog-UC-{tag}-NNN--N.M.md` with:
    - What was implemented
    - Key decisions made
    - Files created/modified
@@ -180,47 +196,26 @@ Run this **immediately** after Steps 3–6 pass for each sub-task (or for a leaf
 
    - [22:00] Implement console admin sign-in
      Adds JWT-based authentication for console admin users.
-     - Plan: [task-UC-0Fcy-001--1.md](specs/20260212-1456-console_authentication/plans/task-UC-0Fcy-001--1.md)
-     - Changelog: [changelog-UC-0Fcy-001--1.1.md](specs/20260212-1456-console_authentication/plans/changelog-UC-0Fcy-001--1.1.md)
+     - Plan: [20260214-2200-task-UC-0Fcy-001--1.1.md](specs/20260212-1456-console_authentication/plans/20260214-2200-task-UC-0Fcy-001--1.1.md)
+     - Changelog: [20260214-2200-changelog-UC-0Fcy-001--1.1.md](specs/20260212-1456-console_authentication/plans/20260214-2200-changelog-UC-0Fcy-001--1.1.md)
    ```
 
-If this is a **leaf task** (no parent), proceed to Step 8 (Quality Gate), then you are done.
-If this is a **sub-task of a parent**, proceed to Step 8, then move to the next uncompleted sub-task (back to Step 3). Once all sub-tasks are done, mark the parent task checkbox as complete in tasks.md and stop.
+After updating progress, proceed to Step 8 (Quality Gate), then stop.
 
-## Step 8: Quality Gate
+## Step 8: Review Gate
 
 > Remember: **Fix everything you see.** All issues found here must be fixed — including pre-existing ones. Zero warnings, zero errors, zero failing tests.
 
-Launch 4 parallel sub-agents using the Task tool in a single message:
+Launch 2 parallel sub-agents using the Task tool in a single message:
 
-**Agent 1 — Formatter** (subagent_type: `Bash`):
-- Prompt: Detect which files were changed (Go files in `server/`, frontend files elsewhere). Run `gofmt -l` on changed `.go` files and `pnpm run format --check` (or equivalent Biome check command) on changed frontend files. Return:
-  ```
-  FORMAT_STATUS: PASS | FAIL
-  FILES_WITH_ISSUES:
-  {list of files needing formatting, or "NONE"}
-  ```
+**Agent 1 — Reviewer** (invoke the Reviewer agent):
+- Read the Reviewer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Provide all FILES_CREATED and FILES_MODIFIED from Developer output
+- The Reviewer discovers stack-specific coding skills at runtime for convention checking
+- Return the Reviewer's standard output format (REVIEW_STATUS, VERDICT, FINDINGS)
 
-**Agent 2 — Linter** (subagent_type: `Bash`):
-- Prompt: Detect which files were changed (Go files in `server/`, frontend files elsewhere). Run `golangci-lint run` on changed Go packages and `pnpm run lint` on changed frontend files. Return:
-  ```
-  LINT_STATUS: PASS | FAIL
-  LINT_OUTPUT:
-  {linter output, or "NONE"}
-  ```
-
-**Agent 3 — Self-review** (subagent_type: `general-purpose`):
-- Prompt: Read all files created or modified during this task (provide the file list). Also read the relevant coding skills (`${CLAUDE_PLUGIN_ROOT}/skills/go-writing-code/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/typescript-writing-code/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/react-writing-code/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/software-principles/SKILL.md`) based on the stack. Review the changes for: security issues, missing error handling, convention violations from CLAUDE.md, performance concerns, and code quality. Return:
-  ```
-  REVIEW_STATUS: PASS | ISSUES_FOUND
-  FINDINGS:
-  - Severity: CRITICAL | WARNING | SUGGESTION
-    File: {path:line}
-    Issue: {description}
-    Fix: {suggested fix}
-  ```
-
-**Agent 4 — README updater** (subagent_type: `general-purpose`):
+**Agent 2 — README updater** (subagent_type: `general-purpose`):
 - Prompt: Read the code-documentation skill at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/SKILL.md` and the README template at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/references/readme-template.md`. Identify all directories where files were **created** or **deleted** during this task (provide the list). For each such directory (skip `node_modules/`, `dist/`, `build/`, `coverage/`, `vendor/`, `.git/`, `__tests__/`, `prd/`, asset-only directories):
   - If `README.md` exists: read it + the directory's files, determine what updates are needed (file listing, diagrams, last-updated date)
   - If `README.md` does not exist: read all files in the directory, prepare full README content following the template
@@ -232,12 +227,30 @@ Launch 4 parallel sub-agents using the Task tool in a single message:
     Content: {full README content if CREATE, or specific updates if UPDATE}
   ```
 
-After all 4 agents return:
-1. If formatting issues → run the formatter to fix them
-2. If lint issues → fix the lint errors
-3. If self-review found CRITICAL or WARNING issues → fix them
-4. Write README content from Agent 4 (CREATE new files, UPDATE existing ones)
-5. If any code was changed in steps 1-3 → re-run tests (Step 6). README-only changes do NOT trigger re-testing.
+After both agents return:
+1. Write README content from Agent 2 (CREATE new files, UPDATE existing ones)
+2. If Reviewer VERDICT is APPROVE (no CRITICAL/WARNING findings) -> proceed to Step 9
+3. If Reviewer found CRITICAL or WARNING issues:
+   a. Send FINDINGS to the Developer agent to fix (same invocation as Step 4, with FINDINGS as additional input)
+   b. After Developer fixes, re-run tests (Step 6 logic)
+   c. Re-run Reviewer on updated files (standalone, no README updater)
+   d. Max 3 fix cycles. If the review still has CRITICAL issues after 3 cycles, escalate to user via AskUserQuestion.
+4. Run the full feature BDD suite: `--tags=@uc-{UC-ID}`. If tests fail, fix and re-run.
+
+## Step 9: Commit
+
+Launch the Committer agent using the Task tool:
+- Read the Committer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/committer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Provide: task ID, task title, feature name, UC ID, accumulated FILES_CREATED + FILES_MODIFIED (from Developer, README updater, and any fix-cycle changes)
+
+After the Committer returns:
+1. If COMMIT_STATUS is SUCCESS -> report commit hash and message to user
+2. If COMMIT_STATUS is HOOK_FAILURE:
+   a. Send HOOK_OUTPUT to the Developer agent to fix the issues
+   b. After Developer fixes, re-run Review Gate (Step 8) then Committer (Step 9)
+   c. Max 3 hook-failure cycles. If commit still fails after 3 cycles, escalate to user via AskUserQuestion.
+3. If COMMIT_STATUS is ERROR -> report error to user and stop
 
 ## Scope Control
 
@@ -247,11 +260,10 @@ This is critical: execute ONLY the requested task (or its sub-tasks). Do not:
 - Add features not in the task's acceptance criteria
 - Modify files outside the task's scope unless required by the task
 
-When done, tell the user what was completed and suggest: "Next task: `/m:dev {UC-{tag}-NNN/next-task-id}`"
+When done, tell the user what was completed (include commit hash) and suggest: "Next task: `/m:dev {UC-{tag}-NNN/next-task-id}`"
 
 ## Rules
 
 - Use AskUserQuestion for ALL user interaction. Never ask questions as plain text.
 - Follow all project conventions from CLAUDE.md.
-- Never stage files or create commits — the user manages git.
 - Do not use the word "comprehensive" in any document.

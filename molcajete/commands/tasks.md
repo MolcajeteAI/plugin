@@ -11,6 +11,15 @@ You are breaking a technical specification into actionable implementation tasks 
 
 **Feature folder:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates to the Spec Writer agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Spec Writer** (`${CLAUDE_PLUGIN_ROOT}/agents/spec-writer.md`) — breaks specs into vertical task slices with story points and dependencies
+
+**What this command keeps:** Context loading, folder identification, spec verification, dependency validation, roadmap update.
+
 ## Critical Directives
 
 These override every step below. No exceptions.

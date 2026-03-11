@@ -5,12 +5,18 @@
 ```
 <Verb> <what changed>
 
-- <why detail 1>
-- <why detail 2>
-- <why detail 3>
+Feature: <feature name>
+Usecase: <UC-XXXX-NNN>
+
+Summary:
+- <change detail 1>
+- <change detail 2>
+- <change detail 3>
 ```
 
-The first line is the subject. The body (bullet points) is optional but recommended for non-trivial changes.
+The first line is the subject. The body is optional but recommended for non-trivial changes.
+
+When the commit relates to a tracked feature or use case, include `Feature:` and `Usecase:` lines in the body before the summary. Derive these from the task brief, plan file path, or `prd/specs/` context. If the commit is a chore or not tied to any feature, omit both lines.
 
 ## First Line Rules
 
@@ -89,7 +95,7 @@ When using prefixes, still follow the imperative verb and 50-character rules for
 
 ### When to Include a Body
 
-Add bullet points when:
+Include the body when:
 - The change affects multiple files or areas
 - The reasoning is not obvious from the diff
 - Multiple steps or trade-offs were involved
@@ -97,15 +103,31 @@ Add bullet points when:
 
 ### Body Format
 
-Use bullet points (hyphens), not paragraphs. Each bullet explains one aspect of **why**.
+**Feature/Usecase metadata:** When the commit relates to a tracked feature, add `Feature:` and `Usecase:` lines before the summary. Derive the feature name and UC ID from the task brief, plan path, or `prd/specs/` folder name.
+
+**Summary bullets:** Use hyphens to describe what changed and why.
 
 ```
 Refactors authentication flow
 
+Feature: Email authentication
+Usecase: UC-0Fcy-001
+
+Summary:
 - Separates login and registration logic
 - Makes code easier to test independently
 - Removes duplicate token validation
 - Prepares for OAuth integration
+```
+
+For chores or changes not tied to a feature, omit the metadata lines:
+
+```
+Updates dependencies to latest versions
+
+Summary:
+- Bumps React from 18.2 to 18.3
+- Bumps TypeScript from 5.3 to 5.4
 ```
 
 ### When NOT to Include a Body
@@ -114,10 +136,6 @@ Simple, obvious changes need only the subject:
 
 ```
 Fixes typo in README
-```
-
-```
-Updates dependencies to latest versions
 ```
 
 ## What NOT to Include

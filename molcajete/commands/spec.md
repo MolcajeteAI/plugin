@@ -11,6 +11,15 @@ You are producing a technical specification document for a feature. Output goes 
 
 **Feature folder:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates to the Spec Writer agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Spec Writer** (`${CLAUDE_PLUGIN_ROOT}/agents/spec-writer.md`) — writes specifications following project-management conventions
+
+**What this command keeps:** Context loading, folder identification, requirements check, roadmap update.
+
 ## Critical Directives
 
 These override every step below. No exceptions.

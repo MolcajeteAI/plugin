@@ -1,6 +1,8 @@
 # Python Step Definition Template
 
-Use this template when creating new step definition files for Python (behave). Each template includes docstrings with parameter descriptions and a TODO placeholder body.
+Use this template when creating new step definition files for Python (behave). Each template includes docstrings with parameter descriptions and real assertion bodies.
+
+Step definitions are part of the executable specification. They must contain real assertions that fail (red) when no production code exists and pass (green) after the Developer implements the feature.
 
 When creating a new step file, use the full template (module docstring + imports + step functions). When appending to an existing step file, add only the new step functions.
 
@@ -14,35 +16,44 @@ Steps for {domain description} scenarios.
 from behave import given, when, then
 
 
-@given("{step pattern with {param}}")
-def step_given_description(context, param):
+@given("user {name} is logged in")
+def step_given_user_logged_in(context, name):
     """
-    Set up {what this step does}.
+    Set up an authenticated user session.
 
     Args:
-        param (str): {parameter description}
+        name (str): Username to authenticate as
     """
-    raise NotImplementedError("TODO: implement step")
+    context.user = context.app.get_user(name)
+    context.session = context.app.login(context.user)
+    assert context.session is not None, f"Failed to create session for {name}"
 
 
-@when("{step pattern with {param}}")
-def step_when_description(context, param):
+@when("the user creates a {entity} with name {name}")
+def step_when_create_entity(context, entity, name):
     """
-    Perform {what this step does}.
+    Perform entity creation via the application.
 
     Args:
-        param (str): {parameter description}
+        entity (str): Type of entity to create
+        name (str): Name for the new entity
     """
-    raise NotImplementedError("TODO: implement step")
+    context.response = context.app.create(entity, {"name": name}, session=context.session)
 
 
-@then("{step pattern with {param}}")
-def step_then_description(context, param):
+@then("the {entity} record should have:")
+def step_then_record_should_have(context, entity):
     """
-    Assert {what this step verifies}.
+    Assert the entity record matches expected field values.
 
     Args:
-        param (str): {parameter description}
+        entity (str): Type of entity to verify
     """
-    raise NotImplementedError("TODO: implement step")
+    record = context.app.get_latest(entity)
+    assert record is not None, f"No {entity} record found"
+    for row in context.table:
+        actual = getattr(record, row["field"])
+        assert str(actual) == row["value"], (
+            f"{entity}.{row['field']}: expected {row['value']}, got {actual}"
+        )
 ```

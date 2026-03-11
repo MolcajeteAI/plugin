@@ -78,6 +78,10 @@ If no sources yield domains, create a single `general/` domain folder. Always en
 - Use kebab-case: `user-registration.feature`, not `userRegistration.feature` or `user_registration.feature`
 - Name must describe the feature, not a scenario: `password-reset.feature`, not `forgot-password-click.feature`
 
+## File Organization
+
+One `.feature` file per use case (UC). The file name is derived from the UC title in kebab-case. The `@uc-{UC-ID}` tag on the Feature line is the canonical link between the feature file and the UC in `requirements.md`. See [references/categorization.md](./references/categorization.md) for domain classification and placement plan rules.
+
 ## Tagging Rules (FR-0KTg-017)
 
 Every scenario must have at least one tag. Choose from:
@@ -90,8 +94,11 @@ Every scenario must have at least one tag. Choose from:
 | `@backend` | Scenarios that test server-side behavior only |
 | `@fullstack` | Scenarios requiring UI + backend interaction |
 | `@{domain}` | Domain-specific tag matching the folder name (e.g., `@auth`, `@billing`) |
+| `@uc-{UC-ID}` | UC traceability tag on Feature line (e.g., `@uc-UC-0KTg-001`) |
+| `@task-{ID}` | Task traceability tag on Scenario line (e.g., `@task-UC-0KTg-001--1.1`) |
+| `@nfr` | Non-functional requirement coverage |
 
-Scenarios may have multiple tags. Feature-level tags: `@{domain}` and one priority tag (`@smoke`, `@regression`, or `@critical`).
+Feature-level tag order: `@{domain} @uc-{UC-ID} @{priority-tag}`. Scenario-level tag order: `@task-{ID} @{scenario-tag}`. See [references/task-tagging.md](./references/task-tagging.md) for tag formats and dedup rules.
 
 ## Step Writing Rules
 
@@ -127,6 +134,8 @@ Before creating any step definitions, read `bdd/steps/INDEX.md` to identify exis
 | Common | `common_steps.[ext]` | Generic steps reusable across domains: login, navigation, time manipulation, basic CRUD |
 | API | `api_steps.[ext]` | HTTP request/response steps: sending requests, checking status codes, validating response bodies |
 | Database | `db_steps.[ext]` | Database assertion steps: checking row counts, verifying column values, seeding test data |
+| Filesystem | `fs_steps.[ext]` | File existence, content, and absence assertions |
+| Queue | `queue_steps.[ext]` | Message queue publish/consume assertions |
 | Domain-specific | `{domain}_steps.[ext]` | Steps unique to a business domain: billing calculations, notification rules, auth policies |
 
 If the target step file exists, append new definitions. If not, create it using the matching template from `templates/`.
@@ -136,11 +145,33 @@ If the target step file exists, append new definitions. If not, create it using 
 Every new step definition must include:
 - A docstring (Python) or doc comment (Go, TypeScript) describing what the step does
 - Parameter descriptions with types in the docstring
-- A `TODO: implement step` placeholder body (not an empty body)
+- A real assertion body that validates the expected behavior. Step definitions are part of the executable specification and must contain meaningful assertions that fail (red) before production code exists.
+
+## State Validation Patterns
+
+BDD scenarios validate behavior including state changes and side effects. Use business-language step patterns for DB, filesystem, queue, cache, and audit assertions. See [references/state-validation.md](./references/state-validation.md) for the full pattern table.
 
 ## Index Maintenance Rules (FR-0KTg-029)
 
 Both `bdd/features/INDEX.md` and `bdd/steps/INDEX.md` must be updated together after any generation. Never leave partial index state — updating one without the other could introduce drift.
+
+## BDD Setup Persistence
+
+After scaffold creation, persist BDD configuration to `bdd/CLAUDE.md` so future invocations skip detection. The persisted configuration includes:
+- **Format:** Standard Gherkin or MDG
+- **Language:** Python, Go, or TypeScript
+- **Framework:** behave, godog, or cucumber-js
+- **Directory style:** Flat or domain-organized
+- **Organization:** One feature per UC
+- **Domain mapping:** Detected domain folders and their subjects
+
+Extended configuration (written by `/m:bdd-setup`):
+- **E2E framework:** Playwright, Cypress, Selenium, or None
+- **Database driver:** Driver name or None
+- **Database state strategy:** transaction-rollback, testcontainers, truncation, or none
+- **Page Object Model:** yes or no
+
+See Step 2f-persist in [references/scaffold.md](./references/scaffold.md).
 
 ## Reference Files
 
@@ -148,6 +179,11 @@ Both `bdd/features/INDEX.md` and `bdd/steps/INDEX.md` must be updated together a
 |------|-------------|
 | [references/scaffold.md](./references/scaffold.md) | Scaffold creation and index validation procedure (Steps 2a-2h) |
 | [references/exploration.md](./references/exploration.md) | Codebase exploration for generic feature names (Steps 2-exp-a to 2-exp-e) |
-| [references/generation.md](./references/generation.md) | Feature file and step definition generation (Steps 3-pre to 3d) |
+| [references/generation.md](./references/generation.md) | Feature file and step definition generation (Steps 3-cat to 3d) |
+| [references/categorization.md](./references/categorization.md) | Domain classification heuristic, placement plan format, incremental growth |
+| [references/state-validation.md](./references/state-validation.md) | Generic Gherkin-level step patterns for state/side-effect assertions |
+| [references/task-tagging.md](./references/task-tagging.md) | `@task-{ID}` and `@uc-{UC-ID}` tag formats, UC-to-file mapping, dedup rules |
 | [templates/](./templates/) | Individual file templates (INDEX.md, world modules, features, steps) |
+| [references/database-fixtures.md](./references/database-fixtures.md) | Database state management patterns (transaction-rollback, testcontainers, truncation) |
+| [references/validation-report.md](./references/validation-report.md) | Post-test validation report format, tag-to-requirement mapping, BDD runner output parsing |
 | [references/splitting.md](./references/splitting.md) | Feature file splitting when scenario count exceeds 15 (Step 3e) |

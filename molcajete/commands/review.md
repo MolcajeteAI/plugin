@@ -11,6 +11,15 @@ You perform a thorough code review on a set of changes. You analyze correctness,
 
 **Review scope:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates to the Reviewer agent:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol
+- **Reviewer** (`${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`) — reviews code across 5 dimensions with structured findings
+
+**What this command keeps:** Scope detection (staged, commit range, PR, branch), report formatting, file classification.
+
 ## Step 1: Determine Scope
 
 Parse `$ARGUMENTS` to determine what to review:

@@ -11,6 +11,19 @@ You are fixing or adjusting an already-implemented feature. You follow a strict 
 
 **Fix request:** $ARGUMENTS
 
+## Designated Agents
+
+This command delegates to these agents. Read the agent-coordination skill and agent definitions before dispatching:
+
+- `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol and handoff patterns
+- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — implements the code fix and tests from the approved plan
+- **Reviewer** (`${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`) — reviews the fix for correctness, security, performance
+- **Committer** (`${CLAUDE_PLUGIN_ROOT}/agents/committer.md`) — stages files and commits with proper message format
+
+**Chain:** Developer -> Reviewer -> Committer (with fix loops on review issues or hook failures)
+
+**What this command keeps:** Parse fix request, spec-first analysis, plan approval, PRD updates (fix notes), formatter/linter execution.
+
 ## Critical Directives
 
 These override every step below. No exceptions.
@@ -114,27 +127,45 @@ If anything about the fix is ambiguous after reading the context brief, use AskU
 
 If the fix is clear, skip this step.
 
+## Step 3b: Root Cause Classification
+
+Classify the defect's root cause:
+
+| Classification | Indicator | Action |
+|---------------|-----------|--------|
+| Requirements gap | Acceptance criteria missing/incorrect | Update requirements.md |
+| Spec error | Data model/API/flow incorrect | Update spec.md |
+| Task definition gap | Task criteria incomplete/wrong | Update tasks.md |
+| BDD scenario error | Steps don't match intended behavior | Update .feature files |
+| Code-only bug | Spec is correct, implementation diverged | Skip to Step 4 |
+
+1. Read `bdd/CLAUDE.md`. If not configured, classify as "Code-only bug" (backward compatible).
+2. Check `bdd/features/` for scenarios related to affected task/UC.
+3. Evaluate fix description against spec artifacts. Determine classification.
+4. If NOT "Code-only bug": update spec artifacts, present to user via AskUserQuestion, iterate until approved, then proceed to Step 4.
+5. If "Code-only bug": proceed to Step 4 directly.
+
 ## Step 4: Plan
 
 > Remember: **Right over easy.** Fix the root cause, not the symptom. If the proper fix is harder than a workaround, do the proper fix.
 
-1. Determine the plan filename. Use the `fix-` prefix with the appropriate scope:
-   - Use case scope → `fix-UC-{tag}-NNN.md`
-   - Task scope → `fix-UC-{tag}-NNN--N.md`
-   - Sub-task scope → `fix-UC-{tag}-NNN--N.M.md`
-   - General fix or chores fix (no specific task) → `fix-{slug}.md` (short slug from the fix description)
+1. Get a UTC timestamp by running `date -u +%Y%m%d-%H%M` (e.g., `20260311-1430`).
+
+2. Determine the plan filename:
+   - Sub-task scope → `{timestamp}-fix-UC-{tag}-NNN--N.M.md`
+   - General fix or chores fix (no specific task) → `{timestamp}-fix-{slug}.md` (short slug from the fix description)
 
    Note: double-dash `--` separates the UC ID from the task/subtask number.
 
-2. Explore the codebase to understand the current implementation, the bug or issue, and what needs to change.
+3. Explore the codebase to understand the current implementation, the bug or issue, and what needs to change.
 
-3. Write the plan to `prd/specs/{feature}/plans/{plan-filename}` (create the `plans/` directory if needed). The plan should cover:
+4. Write the plan to `prd/specs/{feature}/plans/{plan-filename}` (create the `plans/` directory if needed). The plan should cover:
    - Root cause analysis (what's wrong and why)
    - Files to modify
    - The fix approach
    - How to verify the fix works
 
-4. Present the plan to the user. Output the plan content in your message, then use AskUserQuestion:
+5. Present the plan to the user. Output the plan content in your message, then use AskUserQuestion:
    - Question: "Do you accept the fix plan?"
    - Header: "Plan"
    - Options:
@@ -142,7 +173,7 @@ If the fix is clear, skip this step.
      - "No, I have feedback" — user provides feedback via the "Other" option
    - multiSelect: false
 
-5. If the user provides feedback, update the plan file, present the updated plan, and ask again. Repeat until accepted.
+6. If the user provides feedback, update the plan file, present the updated plan, and ask again. Repeat until accepted.
 
 ## Step 5: Write Code
 
@@ -167,43 +198,24 @@ Write or update tests for the code you modified:
 Run the test suite to verify everything passes:
 - Run the specific tests you wrote or modified
 - Run the broader test suite for affected areas
+- If `bdd/CLAUDE.md` is configured, run BDD tests for the affected task/UC tags: `--tags=@task-{ID}` or `--tags=@uc-{UC-ID}`
 - If tests fail, fix the code and re-run until green
 - Do NOT skip failing tests or mark them as expected failures
 
-## Step 8: Quality Gate
+## Step 8: Review Gate
 
 > Remember: **Fix everything you see.** All issues found here must be fixed — including pre-existing ones. Zero warnings, zero errors, zero failing tests.
 
-Launch 4 parallel sub-agents using the Task tool in a single message:
+Launch 2 parallel sub-agents using the Task tool in a single message:
 
-**Agent 1 — Formatter** (subagent_type: `Bash`):
-- Prompt: Detect which files were changed (Go files in `server/`, frontend files elsewhere). Run `gofmt -l` on changed `.go` files and `pnpm run format --check` (or equivalent Biome check command) on changed frontend files. Return:
-  ```
-  FORMAT_STATUS: PASS | FAIL
-  FILES_WITH_ISSUES:
-  {list of files needing formatting, or "NONE"}
-  ```
+**Agent 1 — Reviewer** (invoke the Reviewer agent):
+- Read the Reviewer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Provide all FILES_CREATED and FILES_MODIFIED from Developer output
+- The Reviewer discovers stack-specific coding skills at runtime for convention checking
+- Return the Reviewer's standard output format (REVIEW_STATUS, VERDICT, FINDINGS)
 
-**Agent 2 — Linter** (subagent_type: `Bash`):
-- Prompt: Detect which files were changed (Go files in `server/`, frontend files elsewhere). Run `golangci-lint run` on changed Go packages and `pnpm run lint` on changed frontend files. Return:
-  ```
-  LINT_STATUS: PASS | FAIL
-  LINT_OUTPUT:
-  {linter output, or "NONE"}
-  ```
-
-**Agent 3 — Self-review** (subagent_type: `general-purpose`):
-- Prompt: Read all files created or modified during this fix (provide the file list). Also read the relevant coding skills (`${CLAUDE_PLUGIN_ROOT}/skills/go-writing-code/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/typescript-writing-code/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/react-writing-code/SKILL.md`, `${CLAUDE_PLUGIN_ROOT}/skills/software-principles/SKILL.md`) based on the stack. Review the changes for: security issues, missing error handling, convention violations from CLAUDE.md, performance concerns, and code quality. Return:
-  ```
-  REVIEW_STATUS: PASS | ISSUES_FOUND
-  FINDINGS:
-  - Severity: CRITICAL | WARNING | SUGGESTION
-    File: {path:line}
-    Issue: {description}
-    Fix: {suggested fix}
-  ```
-
-**Agent 4 — README updater** (subagent_type: `general-purpose`):
+**Agent 2 — README updater** (subagent_type: `general-purpose`):
 - Prompt: Read the code-documentation skill at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/SKILL.md` and the README template at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/references/readme-template.md`. Identify all directories where files were **created** or **deleted** during this fix (provide the list). For each such directory (skip `node_modules/`, `dist/`, `build/`, `coverage/`, `vendor/`, `.git/`, `__tests__/`, `prd/`, asset-only directories):
   - If `README.md` exists: read it + the directory's files, determine what updates are needed (file listing, diagrams, last-updated date)
   - If `README.md` does not exist: read all files in the directory, prepare full README content following the template
@@ -215,12 +227,14 @@ Launch 4 parallel sub-agents using the Task tool in a single message:
     Content: {full README content if CREATE, or specific updates if UPDATE}
   ```
 
-After all 4 agents return:
-1. If formatting issues -> run the formatter to fix them
-2. If lint issues -> fix the lint errors
-3. If self-review found CRITICAL or WARNING issues -> fix them
-4. Write README content from Agent 4 (CREATE new files, UPDATE existing ones)
-5. If any code was changed in steps 1-3 -> re-run tests (Step 7). README-only changes do NOT trigger re-testing.
+After both agents return:
+1. Write README content from Agent 2 (CREATE new files, UPDATE existing ones)
+2. If Reviewer VERDICT is APPROVE (no CRITICAL/WARNING findings) -> proceed to Step 9
+3. If Reviewer found CRITICAL or WARNING issues:
+   a. Send FINDINGS to the Developer agent to fix (same invocation as Step 5, with FINDINGS as additional input)
+   b. After Developer fixes, re-run tests (Step 7 logic)
+   c. Re-run Reviewer on updated files (standalone, no README updater)
+   d. Max 3 fix cycles. If the review still has CRITICAL issues after 3 cycles, escalate to user via AskUserQuestion.
 
 ## Step 9: Update PRD Files (No Status Change)
 
@@ -242,7 +256,7 @@ After all 4 agents return:
      - Fix (2026-02-12): Fixed interface to include CopyFrom method that was missing from DBExecutor, causing compilation failures in bulk insert operations
    ```
 
-2. **Write per-task changelog file**: Create `prd/specs/{feature}/plans/changelog-fix-{slug}.md` (matching the plan filename but with `changelog-` prefix) with:
+2. **Write per-fix changelog file**: Get a UTC timestamp by running `date -u +%Y%m%d-%H%M`. Create `prd/specs/{feature}/plans/{timestamp}-changelog-fix-{slug}.md` (or `{timestamp}-changelog-fix-UC-{tag}-NNN--N.M.md` for sub-task scoped fixes) with:
    - What was fixed and why (root cause)
    - Files modified
    - Requirement IDs affected
@@ -259,8 +273,8 @@ After all 4 agents return:
 
    - [22:00] Fix CopyFrom missing from DBExecutor interface
      Adds CopyFrom method to DBExecutor, resolving compilation failures in bulk inserts.
-     - Plan: [fix-UC-0FyC-001--1.1.md](specs/20260212-1512-db_executor_transactions/plans/fix-UC-0FyC-001--1.1.md)
-     - Changelog: [changelog-fix-UC-0FyC-001--1.1.md](specs/20260212-1512-db_executor_transactions/plans/changelog-fix-UC-0FyC-001--1.1.md)
+     - Plan: [20260214-2200-fix-UC-0FyC-001--1.1.md](specs/20260212-1512-db_executor_transactions/plans/20260214-2200-fix-UC-0FyC-001--1.1.md)
+     - Changelog: [20260214-2200-changelog-fix-UC-0FyC-001--1.1.md](specs/20260212-1512-db_executor_transactions/plans/20260214-2200-changelog-fix-UC-0FyC-001--1.1.md)
    ```
 
 ## Scope Control
@@ -271,12 +285,26 @@ This is critical: fix ONLY the described issue. Do not:
 - Add features not related to the fix
 - Modify files outside the fix's scope unless required
 
-When done, tell the user what was fixed and where the fix notes were recorded.
+When done, tell the user what was fixed (include commit hash) and where the fix notes were recorded.
+
+## Step 10: Commit
+
+Launch the Committer agent using the Task tool:
+- Read the Committer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/committer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Provide: fix context (task ID or slug, feature name, UC ID if applicable), accumulated FILES_CREATED + FILES_MODIFIED (from Developer, README updater, and any fix-cycle changes)
+
+After the Committer returns:
+1. If COMMIT_STATUS is SUCCESS -> report commit hash and message to user
+2. If COMMIT_STATUS is HOOK_FAILURE:
+   a. Send HOOK_OUTPUT to the Developer agent to fix the issues
+   b. After Developer fixes, re-run Review Gate (Step 8) then Committer (Step 10)
+   c. Max 3 hook-failure cycles. If commit still fails after 3 cycles, escalate to user via AskUserQuestion.
+3. If COMMIT_STATUS is ERROR -> report error to user and stop
 
 ## Rules
 
 - Use AskUserQuestion for ALL user interaction. Never ask questions as plain text.
 - Follow all project conventions from CLAUDE.md.
-- Never stage files or create commits — the user manages git.
 - Do not use the word "comprehensive" in any document.
 - Never mark task checkboxes — fixes do not change completion status.

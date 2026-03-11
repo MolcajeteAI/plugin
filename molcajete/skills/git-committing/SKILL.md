@@ -22,12 +22,18 @@ Standards for writing clear, concise git commit messages that communicate change
 ```
 <Verb> <what changed>
 
-- <why detail 1>
-- <why detail 2>
-- <why detail 3>
+Feature: <feature name>
+Usecase: <UC-XXXX-NNN>
+
+Summary:
+- <change detail 1>
+- <change detail 2>
+- <change detail 3>
 ```
 
-The first line is the subject. The body (bullet points) is optional but recommended for non-trivial changes. Separate the subject from the body with a blank line.
+The first line is the subject. The body is optional but recommended for non-trivial changes. Separate the subject from the body with a blank line.
+
+When the commit relates to a tracked feature or use case, include the `Feature:` and `Usecase:` lines in the body before the summary. Derive these from the task brief, plan file path, or `prd/specs/` context. If the commit is a chore or not tied to any feature (e.g., dependency updates, config changes), omit the `Feature:` and `Usecase:` lines entirely.
 
 ### First Line Rules
 
@@ -59,28 +65,42 @@ The first line is the subject. The body (bullet points) is optional but recommen
 
 ### Body (Optional)
 
-Use bullet points (hyphens, not paragraphs) to explain **why** when:
+Include the body when:
 - The change affects multiple files or areas
 - The reasoning is not obvious from the diff
 - Multiple steps or trade-offs were involved
 
+**Feature/Usecase metadata:** When the commit relates to a tracked feature, add `Feature:` and `Usecase:` lines before the summary. Derive the feature name and UC ID from the task brief, plan path, or `prd/specs/` folder name.
+
+**Summary bullets:** Use hyphens to describe what changed and why.
+
 ```
 Refactors authentication flow
 
+Feature: Email authentication
+Usecase: UC-0Fcy-001
+
+Summary:
 - Separates login and registration logic
 - Makes code easier to test independently
 - Removes duplicate token validation
 - Prepares for OAuth integration
 ```
 
+For chores or changes not tied to a feature, omit the metadata lines:
+
+```
+Updates dependencies to latest versions
+
+Summary:
+- Bumps React from 18.2 to 18.3
+- Bumps TypeScript from 5.3 to 5.4
+```
+
 For simple, obvious changes, a single subject line is enough:
 
 ```
 Fixes typo in README
-```
-
-```
-Updates dependencies to latest versions
 ```
 
 ### Issue References
@@ -287,8 +307,9 @@ Plan how to split these staged changes into logical, atomic commits.
 
 ## Commit message rules
 - Start with imperative verb: Adds, Fixes, Updates, Removes, Refactors, Improves, Moves, Renames, Replaces, Simplifies
-- First line max 50 characters — move details to body bullets
-- Body bullets (hyphens) explain WHY, only for non-trivial changes
+- First line max 50 characters — move details to body
+- Body format: Feature/Usecase metadata (if applicable), then "Summary:" with hyphens
+- If the changes relate to a tracked feature, include "Feature: <name>" and "Usecase: <UC-XXXX-NNN>" lines before the summary
 - Match project prefix convention from the recent log below
 - NEVER mention AI, Claude, or tools
 
@@ -310,7 +331,7 @@ Return a JSON array of commit groups:
 
 Example:
 [
-  {"message": "Adds user search endpoint\n\n- Adds GET /users/search with query parameter\n- Includes pagination support", "files": ["src/routes/users.ts", "src/services/search.ts", "tests/routes/users.test.ts"], "reason": "All files implement the search feature"},
+  {"message": "Adds user search endpoint\n\nFeature: User management\nUsecase: UC-0Fy0-003\n\nSummary:\n- Adds GET /users/search with query parameter\n- Includes pagination support", "files": ["src/routes/users.ts", "src/services/search.ts", "tests/routes/users.test.ts"], "reason": "All files implement the search feature"},
   {"message": "Fixes typo in README", "files": ["README.md"], "reason": "Unrelated documentation fix"}
 ]
 
