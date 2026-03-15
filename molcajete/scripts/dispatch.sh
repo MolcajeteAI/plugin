@@ -132,18 +132,36 @@ dispatch_task() {
   update_task "$task_id" "status" "in_progress"
   update_task "$task_id" "worktree" "$worktree_name"
 
-  # Clean up stale worktree/branch from previous attempts
+  # Reuse or create worktree
+  local reused_worktree=0
   if [[ -d "$worktree_path" ]]; then
-    git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
-  fi
-  git -C "$PROJECT_DIR" branch -D "$branch_name" 2>/dev/null || true
+    local stale_changes
+    stale_changes=$(git -C "$worktree_path" status --porcelain 2>/dev/null || true)
+    local stale_commits
+    stale_commits=$(git -C "$PROJECT_DIR" log "HEAD..${branch_name}" --oneline 2>/dev/null || true)
 
-  # Create worktree from the project repo
-  if ! git -C "$PROJECT_DIR" worktree add "$worktree_path" -b "$branch_name" 2>&1; then
-    error "Failed to create worktree for $task_id"
-    update_task "$task_id" "status" "failed"
-    update_task "$task_id" "error" "worktree_creation"
-    return 1
+    if [[ -n "$stale_changes" || -n "$stale_commits" ]]; then
+      # Worktree has work from previous attempt — keep it for the retry agent
+      log "Worktree has work from previous attempt. Preserving for retry."
+      reused_worktree=1
+    else
+      # Worktree is clean — remove and recreate
+      git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
+      git -C "$PROJECT_DIR" branch -D "$branch_name" 2>/dev/null || true
+    fi
+  else
+    # No existing worktree — clean up orphan branch if any
+    git -C "$PROJECT_DIR" branch -D "$branch_name" 2>/dev/null || true
+  fi
+
+  if [[ $reused_worktree -eq 0 ]]; then
+    # Create fresh worktree from the project repo
+    if ! git -C "$PROJECT_DIR" worktree add "$worktree_path" -b "$branch_name" 2>&1; then
+      error "Failed to create worktree for $task_id"
+      update_task "$task_id" "status" "failed"
+      update_task "$task_id" "error" "worktree_creation"
+      return 1
+    fi
   fi
 
   local dev_prompt
@@ -159,6 +177,26 @@ dispatch_task() {
   log "Agent output logged to $log_file"
 
   if [[ $exit_code -eq 0 ]]; then
+    # Check for uncommitted changes the agent left behind (e.g., Bash sandbox failure)
+    local uncommitted
+    uncommitted=$(git -C "$worktree_path" status --porcelain 2>/dev/null || true)
+    if [[ -n "$uncommitted" ]]; then
+      local task_title
+      task_title=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .title // "untitled"' "$TASKS_JSON")
+      log "Agent left uncommitted changes in worktree. Auto-committing."
+      git -C "$worktree_path" add -A 2>&1 || true
+      git -C "$worktree_path" commit -m "feat: ${task_title}
+
+Task: ${task_id}
+Auto-committed by dispatcher (agent could not commit)" 2>&1 || {
+        error "Auto-commit failed for $task_id"
+        update_task "$task_id" "status" "failed"
+        update_task "$task_id" "error" "auto_commit_failed"
+        return 1
+      }
+      log "Auto-commit successful"
+    fi
+
     # Verify the agent actually committed work on the worktree branch
     local new_commits
     new_commits=$(git -C "$PROJECT_DIR" log "HEAD..${branch_name}" --oneline 2>/dev/null || true)

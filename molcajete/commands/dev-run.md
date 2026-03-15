@@ -43,6 +43,51 @@ Decision rules:
 - **Review escalation:** If issues persist after max retries, fail with structured JSON output instead of blocking.
 - **Commit hook failure:** If hooks fail after max retries, fail with structured JSON output instead of blocking.
 
+## Step 0: Environment Validation
+
+Before any other work, verify that the Bash tool is functional:
+```bash
+echo "bash-ok: $(pwd)"
+```
+
+If this command fails with an EPERM or sandbox error:
+1. Log the exact error message
+2. Output:
+   ```json
+   {"HEADLESS_FAILURE": true, "reason": "bash_unavailable", "error": "<exact error message>"}
+   ```
+3. Stop execution immediately. Do not proceed to Step 1.
+
+This prevents wasted work when the shell sandbox is misconfigured.
+
+## Step 0b: Detect Work in Progress
+
+Check if a previous attempt left work in this worktree:
+
+```bash
+git status --porcelain
+git log --oneline HEAD..$(git branch --show-current) 2>/dev/null || true
+```
+
+If there are uncommitted changes or commits on the current branch that aren't on the base branch:
+
+1. Inventory what exists:
+   - List all modified/untracked files from `git status`
+   - Read any plan files already created in `prd/specs/{feature}/plans/`
+   - Check if BDD step definitions or production code have been written
+   - Check if tests pass on the existing work
+
+2. Determine what phase the previous attempt reached:
+   - Plan file exists -> previous attempt got past Step 3
+   - BDD step definitions written -> previous attempt got past Step 4
+   - Production code written -> previous attempt got past Step 6
+   - Progress files updated -> previous attempt got past Step 10
+   - Only missing a commit -> skip directly to Step 11
+
+3. Log: `[HEADLESS] Resuming from previous attempt. WIP detected at phase: {phase}. Skipping to Step {N}.`
+
+4. Skip directly to the appropriate step. Do NOT redo work that's already complete. If the existing work has issues (failing tests, incomplete implementation), resume at the step that would fix those issues.
+
 ## Step 1: Gather Context
 
 1. Find the tasks.md file. If `$ARGUMENTS` looks like a task ID (e.g., "UC-0Fy0-001/1.1", "UC-0Fy0-002/1"), search all `prd/specs/*/tasks.md` files for that task under the matching UC section. If `$ARGUMENTS` mentions a feature name, find the matching folder. If ambiguous, pick the best match and log: `[HEADLESS] Assumed task ID maps to: {resolved path}`.
@@ -289,7 +334,16 @@ After the Committer returns:
       {"HEADLESS_FAILURE": true, "reason": "commit_hook_failure", "hook_output": "<last hook output>"}
       ```
       Then stop execution.
-3. If COMMIT_STATUS is ERROR -> report error and stop
+3. If COMMIT_STATUS is ERROR, or the Committer agent fails entirely (e.g., Bash tool unavailable):
+   a. Attempt inline commit as a fallback:
+      - Stage specific files: `git add <file1> <file2> ...` using the accumulated FILES_CREATED + FILES_MODIFIED lists
+      - Commit with: `git commit -m "feat(<scope>): <task title>\n\nTask: <task-id>\nFeature: <feature-name>\nUC: <uc-id>"`
+   b. If inline commit succeeds, report the commit hash
+   c. If inline commit also fails, output:
+      ```json
+      {"HEADLESS_FAILURE": true, "reason": "commit_failure", "error": "<error from both attempts>"}
+      ```
+      Then stop execution. The dispatcher will attempt to auto-commit any remaining changes.
 
 ## Scope Control
 
