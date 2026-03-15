@@ -7,7 +7,6 @@
     "email": "ivantorresedge@gmail.com"
   },
   "keywords": ["workflow", "development", "testing", "documentation", "git"],
-  "agents": "./agents/",
   "commands": [
     "./commands/amend.md",
     "./commands/bdd-setup.md",
@@ -30,6 +29,15 @@
     "./commands/stories.md",
     "./commands/tasks.md",
     "./commands/test.md"
+  ],
+  "agents": [
+    "./agents/bdd-analyst.md",
+    "./agents/bdd-setup.md",
+    "./agents/committer.md",
+    "./agents/developer.md",
+    "./agents/researcher.md",
+    "./agents/reviewer.md",
+    "./agents/spec-writer.md"
   ],
   "skills": [
     "./skills/agent-coordination/SKILL.md",
