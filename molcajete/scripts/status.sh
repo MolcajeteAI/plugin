@@ -21,8 +21,9 @@ completed=$(jq '[.tasks[] | select(.status == "completed")] | length' "$TASKS_JS
 pending=$(jq '[.tasks[] | select(.status == "pending")] | length' "$TASKS_JSON")
 in_progress=$(jq '[.tasks[] | select(.status == "in_progress")] | length' "$TASKS_JSON")
 failed=$(jq '[.tasks[] | select(.status == "failed")] | length' "$TASKS_JSON")
+merge_pending=$(jq '[.tasks[] | select(.status == "merge_pending")] | length' "$TASKS_JSON")
 
-echo "Total: $total | Completed: $completed | Pending: $pending | In Progress: $in_progress | Failed: $failed"
+echo "Total: $total | Completed: $completed | Pending: $pending | In Progress: $in_progress | Merge Pending: $merge_pending | Failed: $failed"
 echo ""
 
 # Print task table

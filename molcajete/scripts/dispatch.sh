@@ -14,10 +14,28 @@ set -euo pipefail
 SPEC_FOLDER="${1:?Usage: dispatch.sh <spec-folder-path>}"
 TASKS_JSON="${SPEC_FOLDER}/tasks.json"
 MAX_PARALLEL="${MOLCAJETE_MAX_PARALLEL:-3}"
-TIMEOUT="${MOLCAJETE_TASK_TIMEOUT:-600}"
+TIMEOUT="${MOLCAJETE_TASK_TIMEOUT:-900}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PLUGIN_ROOT="$(cd "$SCRIPTS_DIR/.." && pwd)"
 MAX_RETRIES=2
 SHUTDOWN=0
+
+# Derive project directory and worktree base
+PROJECT_DIR=$(git -C "$SPEC_FOLDER" rev-parse --show-toplevel)
+WORKTREE_BASE="${PROJECT_DIR}--molcajete"
+mkdir -p "$WORKTREE_BASE"
+
+# Build the dev command prompt from dev.md with resolved paths
+build_dev_prompt() {
+  local task_id="$1"
+  local prompt
+  # Read dev.md and strip YAML frontmatter (BSD sed compatible)
+  prompt=$(awk 'BEGIN{c=0} /^---$/{c++; next} c>=2{print}' "$PLUGIN_ROOT/commands/dev.md")
+  # Substitute variables
+  prompt="${prompt//\$ARGUMENTS/$task_id}"
+  prompt="${prompt//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
+  echo "$prompt"
+}
 
 trap 'echo ""; echo "[coordinator] Received shutdown signal. Preserving worktrees and saving state."; SHUTDOWN=1' INT TERM
 
@@ -88,26 +106,37 @@ dispatch_task() {
   local task_id="$1"
   local worktree_name="task-${task_id//\//-}"
 
-  log "Dispatching: $task_id (worktree: $worktree_name)"
+  local worktree_path="$WORKTREE_BASE/$worktree_name"
+  local branch_name="worktree-$worktree_name"
+
+  log "Dispatching: $task_id (worktree: $worktree_path)"
   update_task "$task_id" "status" "in_progress"
   update_task "$task_id" "worktree" "$worktree_name"
 
+  # Clean up stale worktree/branch from previous attempts
+  if [[ -d "$worktree_path" ]]; then
+    git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
+  fi
+  git -C "$PROJECT_DIR" branch -D "$branch_name" 2>/dev/null || true
+
+  # Create worktree from the project repo
+  if ! git -C "$PROJECT_DIR" worktree add "$worktree_path" -b "$branch_name" 2>&1; then
+    error "Failed to create worktree for $task_id"
+    update_task "$task_id" "status" "failed"
+    update_task "$task_id" "error" "worktree_creation"
+    return 1
+  fi
+
+  local dev_prompt
+  dev_prompt=$(build_dev_prompt "$task_id")
+
   local output
   local exit_code=0
-  output=$(timeout "${TIMEOUT}s" claude -p "/m:dev $task_id" --worktree "$worktree_name" --output-format json 2>&1) || exit_code=$?
+  output=$(unset CLAUDECODE; cd "$worktree_path" && timeout "${TIMEOUT}s" claude --dangerously-skip-permissions --model claude-opus-4-6 -p "$dev_prompt" --output-format json 2>&1) || exit_code=$?
 
   if [[ $exit_code -eq 0 ]]; then
     log "Task $task_id completed successfully"
-
-    # Merge worktree
-    bash "$SCRIPTS_DIR/merge.sh" "$worktree_name" 2>&1 || {
-      error "Merge failed for $task_id. Worktree preserved at $worktree_name"
-      update_task "$task_id" "status" "failed"
-      update_task "$task_id" "error" "merge_conflict"
-      return 1
-    }
-
-    update_task "$task_id" "status" "completed"
+    update_task "$task_id" "status" "merge_pending"
 
     # Extract commit hash from output if available
     local commit_hash
@@ -224,7 +253,6 @@ while true; do
 
     if [[ $local_exit -ne 0 ]]; then
       # Check retry eligibility
-      local retries
       retries=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .retries' "$TASKS_JSON")
 
       if [[ $local_exit -eq 3 ]]; then
@@ -238,6 +266,23 @@ while true; do
       else
         log "Task $task_id failed after $MAX_RETRIES retries. Skipping."
       fi
+    fi
+  done
+
+  # Sequential merge phase -- one at a time to avoid git lock contention
+  for task_id in "${dispatched_ids[@]}"; do
+    task_status=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .status' "$TASKS_JSON")
+    [[ "$task_status" != "merge_pending" ]] && continue
+
+    worktree_name="task-${task_id//\//-}"
+    log "Merging worktree for $task_id"
+
+    if bash "$SCRIPTS_DIR/merge.sh" "$worktree_name" "$PROJECT_DIR" 2>&1; then
+      update_task "$task_id" "status" "completed"
+    else
+      error "Merge failed for $task_id. Worktree preserved at $worktree_name"
+      update_task "$task_id" "status" "failed"
+      update_task "$task_id" "error" "merge_conflict"
     fi
   done
 done
