@@ -199,7 +199,7 @@ After generating the document, tell the user:
 - Total story points and number of tasks
 - Whether a Shared Prerequisites section was needed (and why, briefly)
 - Critical path summary
-- Suggest next steps: "Use `/m:dev {UC-{tag}-NNN/task-id}` to start implementing a task (e.g., `/m:dev UC-0Fy0-001/1.1`)."
+- Suggest next steps: "Use `/m:stories {spec-folder}` to generate BDD scenarios (e.g., `/m:stories prd/specs/your-feature/`)."
 
 ## Rules
 
