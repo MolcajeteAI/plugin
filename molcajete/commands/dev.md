@@ -7,7 +7,7 @@ argument-hint: <task ID like "UC-0Fy0-001/1.1" or feature like "Feature 2">
 
 # Implement Task
 
-You are implementing a specific task from a feature's tasks.md file. You follow a strict 9-step workflow and execute ONLY the requested task.
+You are implementing a specific task from a feature's tasks.md file. You follow a strict 11-step workflow with BDD red-green enforcement and execute ONLY the requested task.
 
 **Task identifier:** $ARGUMENTS
 
@@ -16,13 +16,14 @@ You are implementing a specific task from a feature's tasks.md file. You follow 
 This command delegates to these agents. Read the agent-coordination skill and agent definitions before dispatching:
 
 - `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/SKILL.md` — invocation protocol and handoff patterns
-- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — implements code and tests from the approved plan
+- **Tester** (`${CLAUDE_PLUGIN_ROOT}/agents/tester.md`) — implements BDD step definitions from the approved plan (red phase)
+- **Developer** (`${CLAUDE_PLUGIN_ROOT}/agents/developer.md`) — implements production code and unit tests from the approved plan (green phase)
 - **Reviewer** (`${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`) — reviews code for correctness, security, performance, conventions, test coverage
 - **Committer** (`${CLAUDE_PLUGIN_ROOT}/agents/committer.md`) — stages files and commits with proper message format
 
-**Chain:** Developer -> Reviewer -> Committer (with fix loops on review issues or hook failures)
+**Chain:** Tester(red) -> RED GATE -> Developer(green) -> GREEN GATE -> REGRESSION GATE -> Reviewer -> Progress Update -> Committer
 
-**What this command keeps:** Context gathering, plan approval, progress tracking, scope control, formatter/linter execution.
+**What this command keeps:** Context gathering, plan generation, BDD test gates (inline Bash), progress tracking, scope control.
 
 ## Critical Directives
 
@@ -113,16 +114,9 @@ This command executes exactly ONE sub-task (e.g., "UC-0Fy0-001/1.1"). The extern
    - Files to create or modify
    - Key implementation decisions
    - How this integrates with existing code
+   - **Planned interfaces:** function signatures, CSS selectors, API endpoints, component names that step definitions will assert against
 
-5. Present the plan to the user. Output the plan content in your message, then use AskUserQuestion:
-   - Question: "Do you accept the plan?"
-   - Header: "Plan"
-   - Options:
-     - "Yes, proceed with implementation" — proceed to Step 4
-     - "No, I have feedback" — user provides feedback via the "Other" option
-   - multiSelect: false
-
-6. If the user provides feedback, update the plan file, present the updated plan, and ask again. Repeat until accepted.
+5. The plan is executed autonomously. Do NOT present the plan for user approval. Proceed directly to Step 3b.
 
 ## Step 3b: Load BDD Acceptance Criteria
 
@@ -132,41 +126,105 @@ This command executes exactly ONE sub-task (e.g., "UC-0Fy0-001/1.1"). The extern
    a. Read the matching `.feature` files and extract scenarios tagged with the current task ID.
    b. Update the plan file with a "BDD Acceptance Criteria" section listing each scenario.
    c. These scenarios become the primary acceptance criteria.
-4. If no matching scenarios exist, skip (fall back to current behavior).
+   d. Verify that matching step definition files in `bdd/steps/` contain `TODO: implement step` bodies. If scenarios exist but stubs are missing, log a warning and skip BDD enforcement for this task (fall back to unit tests only — skip Steps 4-5).
+4. If no matching scenarios exist, skip BDD enforcement (fall back to unit tests only — skip Steps 4-5).
 
-## Step 4: Write Code
+## Step 4: RED PHASE (Tester Agent)
+
+> This step is skipped if no BDD scenarios exist for this task (see Step 3b).
+
+Invoke the Tester agent:
+- Read the Tester agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/tester.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Input: task brief, approved plan (with planned interfaces), BDD scenarios for `@task-{ID}`, step definition file paths with TODO bodies
+- Scope: ONLY `bdd/steps/` files
+- The Tester discovers stack-specific testing skills at runtime
+
+## Step 5: RED GATE
+
+> This step is skipped if no BDD scenarios exist for this task (see Step 3b).
+
+Run BDD tests inline via Bash, using the framework from `bdd/CLAUDE.md`:
+```bash
+behave --tags=@task-{ID} bdd/features/   # or cucumber-js/godog per bdd/CLAUDE.md
+```
+
+- `EXIT != 0` (tests fail): **Expected.** Log "RED GATE PASSED — tests fail as expected" and proceed to Step 6.
+- `EXIT == 0` (tests pass): **Unexpected.** Re-invoke Tester to strengthen assertions. Max 2 retries, then skip BDD enforcement and log warning.
+- Syntax/import error (distinguishable from assertion failure): Re-invoke Tester to fix. Max 2 retries, then skip BDD enforcement and log warning.
+
+## Step 6: GREEN PHASE (Developer Agent)
 
 > Remember: **Right over easy.** Implement the correct solution from the plan. **Fix everything you see** — if you open a file and find pre-existing issues, fix them.
 
-Implement the task following the approved plan. Key rules:
-- Follow all conventions from CLAUDE.md (resolver rules, component architecture, i18n, etc.)
-- Follow patterns from the relevant coding skills (Go, TypeScript, React, etc.)
-- Write clean, production-quality code — not prototypes
-- Stay within the scope of THIS task only
+Invoke the Developer agent:
+- Read the Developer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/developer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Input: task brief, approved plan, Tester output (FILES_MODIFIED, PLANNED_INTERFACES) if BDD was run
+- Goal: implement production code + unit tests per the plan, making the failing BDD tests pass
+- Scope: production code + unit tests. Do NOT modify `bdd/features/` files. Do NOT implement BDD step definitions (Tester already did that). May adjust minor step definition details in `bdd/steps/` (CSS selector typo, API path mismatch).
+- The Developer discovers stack-specific coding and testing skills at runtime
 
-## Step 5: Write Tests
+## Step 7: GREEN GATE
 
-Write tests for the code you created or modified:
-- Place test files in `__tests__/` sibling directories (frontend) or alongside the code (Go)
-- Follow existing test patterns in the codebase
-- Cover the acceptance criteria from the task
-- Include edge cases and error scenarios
-- If BDD scenarios exist for this task (tagged `@task-{ID}`): (1) Locate step definition files in bdd/steps/ with TODO: implement step bodies for matching scenarios. (2) Implement those bodies with real assertions using the detected BDD framework and patterns from bdd/CLAUDE.md. (3) Do NOT create new step definitions or modify scenario structure. (4) After implementing step definitions, write unit tests as normal. If no BDD scenarios exist, write unit tests only.
+Run BDD tests inline via Bash (same command as Step 5):
+```bash
+behave --tags=@task-{ID} bdd/features/   # or cucumber-js/godog per bdd/CLAUDE.md
+```
 
-## Step 6: Run Tests
+- `EXIT == 0` (tests pass): Proceed to Step 8.
+- `EXIT != 0` (tests fail): Send failure output to Developer agent for fixes. Max 3 cycles, then stop and report failure to user.
 
-Run the test suite to verify everything passes:
-- Run the specific tests you wrote
-- Run the broader test suite for affected areas
-- Run BDD tests scoped to the current task's tag: `--tags=@task-{ID}`
-- Run formatter on changed files and fix any issues
-- Run linter on changed files and fix any issues
-- If tests fail, fix the code and re-run until green
-- Do NOT skip failing tests or mark them as expected failures
+If BDD was skipped (no scenarios), skip this gate and proceed to Step 8.
 
-## Step 7: Update Progress
+## Step 8: REGRESSION GATE
 
-Run this **immediately** after Steps 3–6 pass. Do NOT defer these updates.
+Run sequentially:
+
+1. **Full feature BDD suite** (if BDD is configured): `--tags=@uc-{UC-ID}`
+2. **Unit tests** for affected areas
+3. **Formatter** on changed files — fix any issues
+4. **Linter** on changed files — fix any issues
+
+All must pass. If any fail, send failures to the Developer agent for fixes. Max 3 cycles, then stop and report failure to user.
+
+## Step 9: Review Gate
+
+> Remember: **Fix everything you see.** All issues found here must be fixed — including pre-existing ones. Zero warnings, zero errors, zero failing tests.
+
+Launch 2 parallel sub-agents using the Task tool in a single message:
+
+**Agent 1 — Reviewer** (invoke the Reviewer agent):
+- Read the Reviewer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`
+- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
+- Provide all FILES_CREATED and FILES_MODIFIED from Developer output (and Tester output if applicable)
+- The Reviewer discovers stack-specific coding skills at runtime for convention checking
+- Return the Reviewer's standard output format (REVIEW_STATUS, VERDICT, FINDINGS)
+
+**Agent 2 — README updater** (subagent_type: `general-purpose`):
+- Prompt: Read the code-documentation skill at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/SKILL.md` and the README template at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/references/readme-template.md`. Identify all directories where files were **created** or **deleted** during this task (provide the list). For each such directory (skip `node_modules/`, `dist/`, `build/`, `coverage/`, `vendor/`, `.git/`, `__tests__/`, `prd/`, asset-only directories):
+  - If `README.md` exists: read it + the directory's files, determine what updates are needed (file listing, diagrams, last-updated date)
+  - If `README.md` does not exist: read all files in the directory, prepare full README content following the template
+  Return:
+  ```
+  README_ACTIONS:
+  - Action: UPDATE | CREATE | NONE
+    Directory: {path}
+    Content: {full README content if CREATE, or specific updates if UPDATE}
+  ```
+
+After both agents return:
+1. Write README content from Agent 2 (CREATE new files, UPDATE existing ones)
+2. If Reviewer VERDICT is APPROVE (no CRITICAL/WARNING findings) -> proceed to Step 10
+3. If Reviewer found CRITICAL or WARNING issues:
+   a. Send FINDINGS to the Developer agent to fix (same invocation as Step 6, with FINDINGS as additional input)
+   b. After Developer fixes, re-run tests (Step 8 logic)
+   c. Re-run Reviewer on updated files (standalone, no README updater)
+   d. Max 3 fix cycles. If the review still has CRITICAL issues after 3 cycles, escalate to user via AskUserQuestion.
+
+## Step 10: Update Progress
+
+Run this only after ALL gates (Steps 5, 7, 8, 9) have passed. Do NOT defer these updates.
 
 1. **Update tasks.md**: Mark the sub-task checkbox as complete. Add completion notes:
    ```
@@ -200,55 +258,20 @@ Run this **immediately** after Steps 3–6 pass. Do NOT defer these updates.
      - Changelog: [20260214-2200-changelog-UC-0Fcy-001--1.1.md](specs/20260212-1456-console_authentication/plans/20260214-2200-changelog-UC-0Fcy-001--1.1.md)
    ```
 
-After updating progress, proceed to Step 8 (Quality Gate), then stop.
+After updating progress, proceed to Step 11 (Commit).
 
-## Step 8: Review Gate
-
-> Remember: **Fix everything you see.** All issues found here must be fixed — including pre-existing ones. Zero warnings, zero errors, zero failing tests.
-
-Launch 2 parallel sub-agents using the Task tool in a single message:
-
-**Agent 1 — Reviewer** (invoke the Reviewer agent):
-- Read the Reviewer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/reviewer.md`
-- Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
-- Provide all FILES_CREATED and FILES_MODIFIED from Developer output
-- The Reviewer discovers stack-specific coding skills at runtime for convention checking
-- Return the Reviewer's standard output format (REVIEW_STATUS, VERDICT, FINDINGS)
-
-**Agent 2 — README updater** (subagent_type: `general-purpose`):
-- Prompt: Read the code-documentation skill at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/SKILL.md` and the README template at `${CLAUDE_PLUGIN_ROOT}/skills/code-documentation/references/readme-template.md`. Identify all directories where files were **created** or **deleted** during this task (provide the list). For each such directory (skip `node_modules/`, `dist/`, `build/`, `coverage/`, `vendor/`, `.git/`, `__tests__/`, `prd/`, asset-only directories):
-  - If `README.md` exists: read it + the directory's files, determine what updates are needed (file listing, diagrams, last-updated date)
-  - If `README.md` does not exist: read all files in the directory, prepare full README content following the template
-  Return:
-  ```
-  README_ACTIONS:
-  - Action: UPDATE | CREATE | NONE
-    Directory: {path}
-    Content: {full README content if CREATE, or specific updates if UPDATE}
-  ```
-
-After both agents return:
-1. Write README content from Agent 2 (CREATE new files, UPDATE existing ones)
-2. If Reviewer VERDICT is APPROVE (no CRITICAL/WARNING findings) -> proceed to Step 9
-3. If Reviewer found CRITICAL or WARNING issues:
-   a. Send FINDINGS to the Developer agent to fix (same invocation as Step 4, with FINDINGS as additional input)
-   b. After Developer fixes, re-run tests (Step 6 logic)
-   c. Re-run Reviewer on updated files (standalone, no README updater)
-   d. Max 3 fix cycles. If the review still has CRITICAL issues after 3 cycles, escalate to user via AskUserQuestion.
-4. Run the full feature BDD suite: `--tags=@uc-{UC-ID}`. If tests fail, fix and re-run.
-
-## Step 9: Commit
+## Step 11: Commit
 
 Launch the Committer agent using the Task tool:
 - Read the Committer agent definition at `${CLAUDE_PLUGIN_ROOT}/agents/committer.md`
 - Follow the invocation template from `${CLAUDE_PLUGIN_ROOT}/skills/agent-coordination/references/invocation-template.md`
-- Provide: task ID, task title, feature name, UC ID, accumulated FILES_CREATED + FILES_MODIFIED (from Developer, README updater, and any fix-cycle changes)
+- Provide: task ID, task title, feature name, UC ID, accumulated FILES_CREATED + FILES_MODIFIED (from Tester, Developer, README updater, and any fix-cycle changes)
 
 After the Committer returns:
 1. If COMMIT_STATUS is SUCCESS -> report commit hash and message to user
 2. If COMMIT_STATUS is HOOK_FAILURE:
    a. Send HOOK_OUTPUT to the Developer agent to fix the issues
-   b. After Developer fixes, re-run Review Gate (Step 8) then Committer (Step 9)
+   b. After Developer fixes, re-run Review Gate (Step 9) then Committer (Step 11)
    c. Max 3 hook-failure cycles. If commit still fails after 3 cycles, escalate to user via AskUserQuestion.
 3. If COMMIT_STATUS is ERROR -> report error to user and stop
 
@@ -264,6 +287,6 @@ When done, tell the user what was completed (include commit hash) and suggest: "
 
 ## Rules
 
-- Use AskUserQuestion for ALL user interaction. Never ask questions as plain text.
+- Use AskUserQuestion only for genuinely blocking ambiguity (Step 2), dependency warnings (Step 1), and escalations after max retry cycles. Never ask questions as plain text.
 - Follow all project conventions from CLAUDE.md.
 - Do not use the word "comprehensive" in any document.

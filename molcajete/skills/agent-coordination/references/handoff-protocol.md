@@ -9,16 +9,82 @@ Each agent in a chain receives:
 2. The output of the previous agent (structured result)
 3. Cumulative file lists (so later agents know what was created/modified)
 
-## Pattern 1: Developer -> Reviewer -> Committer
+## Pattern 1: Tester -> Developer -> Reviewer -> Committer
 
-Used by: `/m:dev`, `/m:fix`
+Used by: `/m:dev`
+
+```
+Step 1: Command gathers context (task brief, plan, BDD scenarios)
+        |
+Step 2: Command writes plan autonomously (no user approval)
+        |
+Step 3: Launch Tester agent (RED PHASE)
+        - Input: task brief + plan (with planned interfaces) + step def TODOs
+        - Output: FILES_MODIFIED (bdd/steps/ only), STEPS_IMPLEMENTED
+        - Boundary: NO production code
+        |
+Step 4: RED GATE (inline Bash)
+        - Run BDD: --tags=@task-{ID}
+        - Expected: EXIT != 0 (tests fail — production code doesn't exist)
+        |
+Step 5: Launch Developer agent (GREEN PHASE)
+        - Input: task brief + plan + Tester output
+        - Output: FILES_CREATED, FILES_MODIFIED, TESTS_WRITTEN
+        - Boundary: NO bdd/features/ changes, minor bdd/steps/ adjustments OK
+        |
+Step 6: GREEN GATE (inline Bash)
+        - Run BDD: --tags=@task-{ID}
+        - Expected: EXIT == 0 (tests pass)
+        - If fail: Developer fixes -> re-run (max 3 cycles)
+        |
+Step 7: REGRESSION GATE (inline Bash)
+        - Run BDD: --tags=@uc-{UC-ID} + unit tests + lint
+        - All must pass. Fix cycles via Developer (max 3).
+        |
+Step 8: Launch Reviewer + README updater in parallel
+        - Fix cycles as before (max 3)
+        |
+Step 9: Update progress (only after all gates pass)
+        |
+Step 10: Launch Committer
+```
+
+### Context Accumulation
+
+```
+After Tester:
+  FILES_MODIFIED: [bdd/steps/gameplay_steps.py]
+
+After Developer:
+  FILES_CREATED: [src/game.ts, src/game.test.ts]
+  FILES_MODIFIED: [src/app.ts]
+
+After README updater:
+  FILES_CREATED: [pkg/auth/README.md]
+
+Committer receives: all files from Tester + Developer + README updater
+```
+
+### Failure at Any Step
+
+- Tester fails -> stop chain, report to user
+- RED GATE passes (tests unexpectedly pass) -> re-invoke Tester to strengthen assertions (max 2 retries), then skip BDD enforcement
+- Developer fails -> stop chain, report to user
+- GREEN GATE fails -> Developer fixes, re-run (max 3 cycles), then stop and report
+- REGRESSION GATE fails -> Developer fixes, re-run (max 3 cycles), then stop and report
+- Reviewer finds CRITICAL/WARNING issues -> Developer fixes, re-run Reviewer (max 3 cycles), then escalate to user
+- Committer hook failure -> Developer fixes, re-run Reviewer + Committer (max 3 cycles), then escalate to user
+
+## Pattern 1b: Developer -> Reviewer -> Committer
+
+Used by: `/m:fix`
 
 ```
 Step 1: Command gathers context (task brief, plan, BDD scenarios)
         |
 Step 2: Launch Developer agent
         - Input: task brief + approved plan
-        - Output: FILES_CREATED, FILES_MODIFIED, KEY_DECISIONS, TESTS_WRITTEN, BDD_TASK_STATUS, FORMAT_STATUS, LINT_STATUS
+        - Output: FILES_CREATED, FILES_MODIFIED, KEY_DECISIONS, TESTS_WRITTEN, FORMAT_STATUS, LINT_STATUS
         |
 Step 3: Launch Reviewer + README updater in parallel
         - Reviewer input: all files from Developer output
@@ -37,29 +103,6 @@ Step 6: Process Committer output
         - SUCCESS -> done
         - HOOK_FAILURE -> Developer fixes -> Reviewer -> Committer (max 3 cycles)
 ```
-
-### Context Accumulation
-
-The Developer produces all code and test files. The Reviewer receives the full file list. The Committer receives the accumulated file list from all agents:
-
-```
-After Developer:
-  FILES_CREATED: [a.go, b.go, a_test.go, b_test.go]
-  FILES_MODIFIED: [c.go]
-
-Reviewer receives: all 5 files above
-
-After README updater:
-  FILES_CREATED: [pkg/auth/README.md]
-
-Committer receives: all 6 files (Developer + README updater output)
-```
-
-### Failure at Any Step
-
-- Developer fails -> stop chain, report to user
-- Reviewer finds CRITICAL/WARNING issues -> Developer fixes, re-run Reviewer (max 3 cycles), then escalate to user
-- Committer hook failure -> Developer fixes, re-run Reviewer + Committer (max 3 cycles), then escalate to user
 
 ## Pattern 2: Standalone Agent
 

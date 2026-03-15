@@ -20,8 +20,9 @@ Protocol for commands to invoke designated agents and coordinate handoffs betwee
 - A command needs requirements or spec writing from the Spec Writer agent
 - A command needs BDD scenario generation from the BDD Analyst agent
 - A command needs research or impact analysis from the Researcher agent
+- A command needs BDD step definitions implemented by the Tester agent
 - A command needs to commit completed work via the Committer agent
-- A command needs to chain multiple agents in sequence (e.g., Developer -> Reviewer -> Committer)
+- A command needs to chain multiple agents in sequence (e.g., Tester -> Developer -> Reviewer -> Committer)
 - A command needs BDD environment configuration from the BDD Setup agent
 
 ## Agent Roster
@@ -33,6 +34,7 @@ Protocol for commands to invoke designated agents and coordinate handoffs betwee
 | Spec Writer | `${CLAUDE_PLUGIN_ROOT}/agents/spec-writer.md` | opus | Writes requirements, specs, task breakdowns |
 | BDD Analyst | `${CLAUDE_PLUGIN_ROOT}/agents/bdd-analyst.md` | opus | Translates requirements into Gherkin scenarios |
 | Researcher | `${CLAUDE_PLUGIN_ROOT}/agents/researcher.md` | sonnet | Deep research, explanations, impact analysis |
+| Tester | `${CLAUDE_PLUGIN_ROOT}/agents/tester.md` | sonnet | Implements BDD step definitions from approved plans |
 | Committer | `${CLAUDE_PLUGIN_ROOT}/agents/committer.md` | sonnet | Stages files and commits with proper message format |
 | BDD Setup | `${CLAUDE_PLUGIN_ROOT}/agents/bdd-setup.md` | sonnet | Detects tech stack and configures BDD environment |
 
@@ -57,7 +59,8 @@ See [references/handoff-protocol.md](./references/handoff-protocol.md) for stand
 
 | Chain | Used By | Pattern |
 |-------|---------|---------|
-| Developer -> Reviewer -> Committer | `/m:dev`, `/m:fix` | Implementation, review with fix loop, then commit with hook-failure loop |
+| Tester(red) -> RED GATE -> Developer(green) -> GREEN GATE -> REGRESSION GATE -> Reviewer -> Committer | `/m:dev` | BDD red-green with inline gates |
+| Developer -> Reviewer -> Committer | `/m:fix` | Implementation, review with fix loop, then commit with hook-failure loop |
 | BDD Analyst (standalone) | `/m:stories` | Scenario generation from requirements |
 | Reviewer (standalone) | `/m:review` | Read-only code review |
 | Spec Writer (standalone) | `/m:feature`, `/m:spec`, `/m:tasks` | Document generation |
@@ -79,6 +82,7 @@ Agents that support runtime skill discovery follow this procedure:
 | Agent | Pattern | Example Matches |
 |-------|---------|-----------------|
 | Developer | `*-writing-code/SKILL.md`, `*-testing/SKILL.md` | `go-writing-code/SKILL.md`, `go-testing/SKILL.md`, `typescript-writing-code/SKILL.md` |
+| Tester | `*-testing/SKILL.md` | `go-testing/SKILL.md`, `typescript-testing/SKILL.md` |
 | Reviewer | `*-writing-code/SKILL.md` | Same as Developer's writing-code skills (for convention checking) |
 
 ## Failure Handling

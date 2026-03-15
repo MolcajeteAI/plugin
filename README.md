@@ -287,8 +287,8 @@ For features with multiple tasks, `/m:run` orchestrates parallel execution:
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `MOLCAJETE_MAX_PARALLEL` | 3 | Maximum concurrent task sessions |
-| `MOLCAJETE_TASK_TIMEOUT` | 600 | Timeout per task in seconds |
+| `MOLCAJETE_MAX_PARALLEL` | 1 | Maximum concurrent task sessions |
+| `MOLCAJETE_TASK_TIMEOUT` | 900 | Timeout per task in seconds |
 
 ### Prerequisites
 

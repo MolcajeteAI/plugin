@@ -8,12 +8,12 @@ set -euo pipefail
 # by dependencies, and dispatches up to N tasks concurrently per level.
 #
 # Environment:
-#   MOLCAJETE_MAX_PARALLEL - max concurrent tasks per level (default: 3)
-#   MOLCAJETE_TASK_TIMEOUT - timeout per task in seconds (default: 600)
+#   MOLCAJETE_MAX_PARALLEL - max concurrent tasks per level (default: 1)
+#   MOLCAJETE_TASK_TIMEOUT - timeout per task in seconds (default: 900)
 
 SPEC_FOLDER="${1:?Usage: dispatch.sh <spec-folder-path>}"
 TASKS_JSON="${SPEC_FOLDER}/tasks.json"
-MAX_PARALLEL="${MOLCAJETE_MAX_PARALLEL:-3}"
+MAX_PARALLEL="${MOLCAJETE_MAX_PARALLEL:-1}"
 TIMEOUT="${MOLCAJETE_TASK_TIMEOUT:-900}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPTS_DIR/.." && pwd)"
@@ -132,7 +132,7 @@ dispatch_task() {
 
   local output
   local exit_code=0
-  output=$(unset CLAUDECODE; cd "$worktree_path" && timeout "${TIMEOUT}s" claude --dangerously-skip-permissions --model claude-opus-4-6 -p "$dev_prompt" --output-format json 2>&1) || exit_code=$?
+  output=$(unset CLAUDECODE; cd "$worktree_path" && timeout "${TIMEOUT}s" claude --dangerously-skip-permissions -p "$dev_prompt" --output-format json 2>&1) || exit_code=$?
 
   if [[ $exit_code -eq 0 ]]; then
     log "Task $task_id completed successfully"

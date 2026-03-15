@@ -69,7 +69,7 @@ Display a summary table:
 | Pending | {count} |
 | Dependency levels | {count} |
 | BDD scenarios | {available/not available} |
-| Max parallel | {MOLCAJETE_MAX_PARALLEL or 3} |
+| Max parallel | {MOLCAJETE_MAX_PARALLEL or 1} |
 
 Use AskUserQuestion:
 - Question: "Ready to launch the coordinated build?"
