@@ -86,24 +86,15 @@ get_pending_tasks() {
   jq -r '.tasks[] | select(.status == "pending") | .id' "$TASKS_JSON"
 }
 
-# Check if all dependencies of a task are completed
+# Check if all dependencies of a task are completed (single jq call, no temp files)
 deps_met() {
   local task_id="$1"
-  local deps
-  deps=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .dependencies[]?' "$TASKS_JSON")
-
-  if [[ -z "$deps" ]]; then
-    return 0
-  fi
-
-  while IFS= read -r dep; do
-    local dep_status
-    dep_status=$(jq -r --arg id "$dep" '.tasks[] | select(.id == $id) | .status' "$TASKS_JSON")
-    if [[ "$dep_status" != "completed" ]]; then
-      return 1
-    fi
-  done <<< "$deps"
-  return 0
+  jq -e --arg id "$task_id" '
+    (.tasks[] | select(.id == $id) | .dependencies // []) as $deps |
+    if ($deps | length) == 0 then true
+    else [.tasks[] | select(.id == ($deps[])) | .status == "completed"] | all
+    end
+  ' "$TASKS_JSON" >/dev/null 2>&1
 }
 
 # Update task status in tasks.json
@@ -162,8 +153,24 @@ dispatch_task() {
   local exit_code=0
   output=$(unset CLAUDECODE; cd "$worktree_path" && timeout "${TIMEOUT}s" claude --dangerously-skip-permissions -p "$dev_prompt" --output-format json 2>&1) || exit_code=$?
 
+  # Log raw agent output for diagnosis
+  local log_file="${LOG_DIR}/${task_id//\//-}-$(date -u +%Y%m%d-%H%M%S).log"
+  echo "$output" > "$log_file"
+  log "Agent output logged to $log_file"
+
   if [[ $exit_code -eq 0 ]]; then
-    log "Task $task_id completed successfully"
+    # Verify the agent actually committed work on the worktree branch
+    local new_commits
+    new_commits=$(git -C "$PROJECT_DIR" log "HEAD..${branch_name}" --oneline 2>/dev/null || true)
+
+    if [[ -z "$new_commits" ]]; then
+      error "Task $task_id agent exited 0 but produced no commits on $branch_name"
+      update_task "$task_id" "status" "failed"
+      update_task "$task_id" "error" "no_commits"
+      return 1
+    fi
+
+    log "Task $task_id completed successfully ($(echo "$new_commits" | wc -l | tr -d ' ') commit(s))"
 
     # Extract commit hash from output if available
     local commit_hash
@@ -238,6 +245,15 @@ retry_task() {
 log "Starting coordinated build for $SPEC_FOLDER"
 log "Max parallel: $MAX_PARALLEL | Timeout: ${TIMEOUT}s | Max retries: $MAX_RETRIES"
 
+# Reset non-completed tasks from previous runs back to pending
+reset_count=$(jq '[.tasks[] | select(.status != "completed" and .status != "pending")] | length' "$TASKS_JSON")
+if [[ $reset_count -gt 0 ]]; then
+  log "Resetting $reset_count non-completed tasks from previous run"
+  tmp=$(mktemp)
+  jq '(.tasks[] | select(.status != "completed")) |= (.status = "pending" | .error = null | .retries = 0)' "$TASKS_JSON" > "$tmp" \
+    && mv "$tmp" "$TASKS_JSON"
+fi
+
 completed_count=$(jq '[.tasks[] | select(.status == "completed")] | length' "$TASKS_JSON")
 total_count=$(jq '.tasks | length' "$TASKS_JSON")
 log "Progress: $completed_count/$total_count tasks completed"
@@ -295,19 +311,32 @@ while true; do
     task_id="${dispatched_ids[$i]}"
 
     if [[ $local_exit -ne 0 ]]; then
-      # Check retry eligibility
-      retries=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .retries' "$TASKS_JSON")
-
       if [[ $local_exit -eq 3 ]]; then
         log "Spend limit detected. Pausing pipeline."
         SHUTDOWN=1
         break
-      elif [[ $retries -lt $MAX_RETRIES ]]; then
-        log "Retrying $task_id (attempt $((retries + 1)))"
-        retry_task "$task_id" "$((retries + 1))" &
-        wait $! || true
-      else
-        log "Task $task_id failed after $MAX_RETRIES retries. Skipping."
+      fi
+
+      # Retry loop up to MAX_RETRIES
+      retries=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .retries // 0' "$TASKS_JSON")
+      while [[ $retries -lt $MAX_RETRIES ]]; do
+        retries=$((retries + 1))
+        log "Retrying $task_id (attempt $retries)"
+        retry_exit=0
+        retry_task "$task_id" "$retries" || retry_exit=$?
+        if [[ $retry_exit -eq 0 ]]; then
+          break
+        elif [[ $retry_exit -eq 3 ]]; then
+          log "Spend limit detected. Pausing pipeline."
+          SHUTDOWN=1
+          break
+        fi
+      done
+      if [[ $retries -ge $MAX_RETRIES ]]; then
+        task_status=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .status' "$TASKS_JSON")
+        if [[ "$task_status" == "failed" ]]; then
+          log "Task $task_id failed after $MAX_RETRIES retries. Skipping."
+        fi
       fi
     fi
   done
