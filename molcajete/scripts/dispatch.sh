@@ -20,17 +20,30 @@ PLUGIN_ROOT="$(cd "$SCRIPTS_DIR/.." && pwd)"
 MAX_RETRIES=2
 SHUTDOWN=0
 
-# Derive project directory and worktree base
+# Derive project directory and worktree base (inside project, gitignored)
 PROJECT_DIR=$(git -C "$SPEC_FOLDER" rev-parse --show-toplevel)
-WORKTREE_BASE="${PROJECT_DIR}--molcajete"
-mkdir -p "$WORKTREE_BASE"
+WORKTREE_BASE="${PROJECT_DIR}/.molcajete/worktrees"
+LOG_DIR="${PROJECT_DIR}/.molcajete/logs"
+mkdir -p "$WORKTREE_BASE" "$LOG_DIR"
+
+# Ensure worktree directory is gitignored
+if ! grep -qxF '/.molcajete/' "${PROJECT_DIR}/.gitignore" 2>/dev/null; then
+  echo '/.molcajete/' >> "${PROJECT_DIR}/.gitignore"
+fi
+
+# Commit housekeeping files so worktrees get a clean snapshot
+git -C "$PROJECT_DIR" add "$TASKS_JSON" "${PROJECT_DIR}/.gitignore"
+if ! git -C "$PROJECT_DIR" diff --cached --quiet 2>/dev/null; then
+  spec_name=$(basename "$SPEC_FOLDER")
+  git -C "$PROJECT_DIR" commit -m "chore: bootstrap dispatch for ${spec_name}"
+fi
 
 # Build the dev command prompt from dev.md with resolved paths
 build_dev_prompt() {
   local task_id="$1"
   local prompt
   # Read dev.md and strip YAML frontmatter (BSD sed compatible)
-  prompt=$(awk 'BEGIN{c=0} /^---$/{c++; next} c>=2{print}' "$PLUGIN_ROOT/commands/dev.md")
+  prompt=$(awk 'BEGIN{c=0} /^---$/{c++; next} c>=2{print}' "$PLUGIN_ROOT/commands/dev-run.md")
   # Substitute variables
   prompt="${prompt//\$ARGUMENTS/$task_id}"
   prompt="${prompt//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
