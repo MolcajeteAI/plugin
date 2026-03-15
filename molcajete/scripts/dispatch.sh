@@ -24,6 +24,7 @@ SHUTDOWN=0
 PROJECT_DIR=$(git -C "$SPEC_FOLDER" rev-parse --show-toplevel)
 WORKTREE_BASE="${PROJECT_DIR}/.molcajete/worktrees"
 LOG_DIR="${PROJECT_DIR}/.molcajete/logs"
+MERGE_LOCK="${PROJECT_DIR}/.molcajete/merge.lock"
 mkdir -p "$WORKTREE_BASE" "$LOG_DIR"
 
 # Ensure worktree directory is gitignored
@@ -38,6 +39,17 @@ if ! git -C "$PROJECT_DIR" diff --cached --quiet 2>/dev/null; then
   git -C "$PROJECT_DIR" commit -m "chore: bootstrap dispatch for ${spec_name}"
 fi
 
+# Merge lock helpers -- serialize merges to avoid git lock contention
+acquire_merge_lock() {
+  while ! mkdir "$MERGE_LOCK" 2>/dev/null; do
+    sleep 1
+  done
+}
+
+release_merge_lock() {
+  rmdir "$MERGE_LOCK" 2>/dev/null || true
+}
+
 # Build the dev command prompt from dev.md with resolved paths
 build_dev_prompt() {
   local task_id="$1"
@@ -50,7 +62,10 @@ build_dev_prompt() {
   echo "$prompt"
 }
 
-trap 'echo ""; echo "[coordinator] Received shutdown signal. Preserving worktrees and saving state."; SHUTDOWN=1' INT TERM
+# Clean up stale merge lock from previous runs
+rmdir "$MERGE_LOCK" 2>/dev/null || true
+
+trap 'echo ""; echo "[coordinator] Received shutdown signal. Preserving worktrees and saving state."; SHUTDOWN=1; rmdir "$MERGE_LOCK" 2>/dev/null || true' INT TERM
 
 log() { echo "[coordinator] $*"; }
 error() { echo "[coordinator] ERROR: $*" >&2; }
@@ -149,13 +164,28 @@ dispatch_task() {
 
   if [[ $exit_code -eq 0 ]]; then
     log "Task $task_id completed successfully"
-    update_task "$task_id" "status" "merge_pending"
 
     # Extract commit hash from output if available
     local commit_hash
     commit_hash=$(echo "$output" | jq -r '.commit_hash // empty' 2>/dev/null || true)
     if [[ -n "$commit_hash" ]]; then
       update_task "$task_id" "commit" "$commit_hash"
+    fi
+
+    # Acquire lock, merge, release -- serializes merges across parallel tasks
+    acquire_merge_lock
+    local merge_exit=0
+    bash "$SCRIPTS_DIR/merge.sh" "$worktree_name" "$PROJECT_DIR" 2>&1 || merge_exit=$?
+    release_merge_lock
+
+    if [[ $merge_exit -eq 0 ]]; then
+      update_task "$task_id" "status" "completed"
+      log "Task $task_id merged successfully"
+    else
+      error "Merge failed for $task_id. Worktree preserved at $worktree_name"
+      update_task "$task_id" "status" "failed"
+      update_task "$task_id" "error" "merge_conflict"
+      return 1
     fi
   elif [[ $exit_code -eq 124 ]]; then
     error "Task $task_id timed out after ${TIMEOUT}s"
@@ -282,22 +312,6 @@ while true; do
     fi
   done
 
-  # Sequential merge phase -- one at a time to avoid git lock contention
-  for task_id in "${dispatched_ids[@]}"; do
-    task_status=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .status' "$TASKS_JSON")
-    [[ "$task_status" != "merge_pending" ]] && continue
-
-    worktree_name="task-${task_id//\//-}"
-    log "Merging worktree for $task_id"
-
-    if bash "$SCRIPTS_DIR/merge.sh" "$worktree_name" "$PROJECT_DIR" 2>&1; then
-      update_task "$task_id" "status" "completed"
-    else
-      error "Merge failed for $task_id. Worktree preserved at $worktree_name"
-      update_task "$task_id" "status" "failed"
-      update_task "$task_id" "error" "merge_conflict"
-    fi
-  done
 done
 
 # Final status
