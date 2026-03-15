@@ -1,61 +1,67 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Merge a worktree branch into the current branch
+# Merge a worktree branch into the current branch (rebase + fast-forward)
 # Usage: merge.sh <worktree-name> [project-dir]
 #
-# If merge conflicts occur, attempts LLM-assisted resolution.
+# Rebases the worktree branch onto the current branch first, resolving
+# conflicts with LLM assistance if needed, then fast-forward merges.
 
 WORKTREE_NAME="${1:?Usage: merge.sh <worktree-name> [project-dir]}"
 PROJECT_DIR="${2:-.}"
 BRANCH_NAME="worktree-$WORKTREE_NAME"
-WORKTREE_BASE="${PROJECT_DIR}--molcajete"
+WORKTREE_BASE="${PROJECT_DIR}/.molcajete/worktrees"
 WORKTREE_PATH="$WORKTREE_BASE/$WORKTREE_NAME"
 
 log() { echo "[merge] $*"; }
 error() { echo "[merge] ERROR: $*" >&2; }
 
-# Attempt merge
-log "Merging branch $BRANCH_NAME into $(git -C "$PROJECT_DIR" branch --show-current)"
-merge_stderr=$(mktemp)
-if git -C "$PROJECT_DIR" merge "$BRANCH_NAME" --no-edit 2>"$merge_stderr"; then
-  rm -f "$merge_stderr"
-  log "Merge successful"
-else
-  merge_error=$(cat "$merge_stderr")
-  rm -f "$merge_stderr"
+BASE_BRANCH=$(git -C "$PROJECT_DIR" branch --show-current)
+log "Rebasing $BRANCH_NAME onto $BASE_BRANCH, then fast-forward merge"
 
-  # Get conflict files
-  conflict_files=$(git -C "$PROJECT_DIR" diff --name-only --diff-filter=U 2>/dev/null || true)
+# Step 1: Rebase worktree branch onto the current branch
+rebase_stderr=$(mktemp)
+if git -C "$WORKTREE_PATH" rebase "$BASE_BRANCH" 2>"$rebase_stderr"; then
+  rm -f "$rebase_stderr"
+  log "Rebase successful"
+else
+  rebase_error=$(cat "$rebase_stderr")
+  rm -f "$rebase_stderr"
+
+  # Check for conflicts
+  conflict_files=$(git -C "$WORKTREE_PATH" diff --name-only --diff-filter=U 2>/dev/null || true)
 
   if [[ -z "$conflict_files" ]]; then
-    error "Merge failed (not a conflict): $merge_error"
-    git -C "$PROJECT_DIR" merge --abort 2>/dev/null || true
+    error "Rebase failed (not a conflict): $rebase_error"
+    git -C "$WORKTREE_PATH" rebase --abort 2>/dev/null || true
     exit 1
   fi
 
-  log "Merge conflict detected. Attempting LLM-assisted resolution."
+  log "Rebase conflict detected. Attempting LLM-assisted resolution."
 
-  # Attempt resolution via claude
-  resolution_prompt="Resolve the following git merge conflicts. For each file, choose the correct resolution that preserves both changes where possible. Files with conflicts: $conflict_files"
+  resolution_prompt="Resolve the following git rebase conflicts. For each file, choose the correct resolution that preserves both changes where possible. After resolving, run: git add <files> && git rebase --continue. Files with conflicts: $conflict_files"
 
-  if (cd "$PROJECT_DIR" && claude -p "$resolution_prompt" --output-format json 2>/dev/null); then
-    # Check if conflicts are resolved
-    remaining=$(git -C "$PROJECT_DIR" diff --name-only --diff-filter=U 2>/dev/null || true)
-    if [[ -z "$remaining" ]]; then
-      git -C "$PROJECT_DIR" add -A
-      git -C "$PROJECT_DIR" commit --no-edit
-      log "Conflicts resolved and committed"
-    else
-      error "Some conflicts remain unresolved: $remaining"
-      git -C "$PROJECT_DIR" merge --abort 2>/dev/null || true
+  if (cd "$WORKTREE_PATH" && unset CLAUDECODE && claude --dangerously-skip-permissions -p "$resolution_prompt" --output-format json 2>/dev/null); then
+    # Verify rebase completed
+    if git -C "$WORKTREE_PATH" rebase --show-current-patch &>/dev/null; then
+      error "Rebase still in progress after LLM resolution"
+      git -C "$WORKTREE_PATH" rebase --abort 2>/dev/null || true
       exit 1
     fi
+    log "Conflicts resolved, rebase complete"
   else
     error "LLM-assisted resolution failed"
-    git -C "$PROJECT_DIR" merge --abort 2>/dev/null || true
+    git -C "$WORKTREE_PATH" rebase --abort 2>/dev/null || true
     exit 1
   fi
+fi
+
+# Step 2: Fast-forward merge
+if git -C "$PROJECT_DIR" merge --ff-only "$BRANCH_NAME" 2>&1; then
+  log "Fast-forward merge successful"
+else
+  error "Fast-forward merge failed — rebase did not produce a linear history"
+  exit 1
 fi
 
 # Clean up worktree and branch
