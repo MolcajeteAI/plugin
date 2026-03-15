@@ -14,6 +14,7 @@
     "./commands/copy.md",
     "./commands/debug.md",
     "./commands/dev.md",
+    "./commands/dev-run.md",
     "./commands/doc.md",
     "./commands/feature.md",
     "./commands/fix.md",
