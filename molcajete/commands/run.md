@@ -32,22 +32,38 @@ Parse `tasks.md` and generate `prd/specs/{folder}/tasks.json` with this schema:
 {
   "spec": "{folder-name}",
   "generated": "{ISO-8601 timestamp}",
-  "tasks": [
+  "timeout": 897,
+  "use_cases": [
     {
-      "id": "UC-{tag}-NNN/N.M",
-      "title": "{task title}",
-      "uc": "UC-{tag}-NNN",
-      "complexity": {points},
-      "dependencies": ["UC-{tag}-NNN/N.M", ...],
-      "status": "pending | completed | in_progress | failed",
+      "id": "UC-{tag}-NNN",
+      "title": "Use case title",
+      "phase": "pending",
       "retries": 0,
-      "worktree": null,
-      "commit": null,
-      "error": null
+      "error": null,
+      "subtasks": [
+        {
+          "id": "UC-{tag}-NNN/N.M",
+          "title": "Subtask title",
+          "complexity": "{points}",
+          "dependencies": ["UC-{tag}-NNN/N.M"],
+          "status": "pending | completed | in_progress | failed",
+          "retries": 0,
+          "worktree": null,
+          "commit": null,
+          "error": null
+        }
+      ]
     }
   ]
 }
 ```
+
+### Schema Notes
+
+- Subtasks are nested under their parent UC (no flat `tasks[]` array).
+- Each UC has a `phase` field tracking the pipeline stage: `pending | planning | bdd_writing | implementing | validating | completed | failed`.
+- The `timeout` field at root level is fixed at 897 seconds.
+- Set all UC phases to `"pending"` and all subtask statuses to `"pending"` (or `"completed"` for `[x]` checkboxes).
 
 ### Parsing Rules
 
@@ -56,6 +72,7 @@ Parse `tasks.md` and generate `prd/specs/{folder}/tasks.json` with this schema:
 - Extract complexity from `- Complexity: {N}` sub-bullets.
 - Extract dependencies from `- Dependencies: {list}` sub-bullets. Parse comma-separated task IDs.
 - Combine UC heading ID with task number: `UC-{tag}-NNN` + `/N.M`.
+- Group subtasks under their UC heading. Extract UC ID and title from the heading.
 
 ## Step 4: Present Summary
 
@@ -64,12 +81,19 @@ Display a summary table:
 | Metric | Value |
 |--------|-------|
 | Spec folder | {path} |
-| Total tasks | {count} |
+| Use cases | {count} |
+| Total subtasks | {count} |
 | Completed | {count} |
 | Pending | {count} |
-| Dependency levels | {count} |
 | BDD scenarios | {available/not available} |
-| Max parallel | {MOLCAJETE_MAX_PARALLEL or 1} |
+| Timeout | 897s |
+| Max parallel UCs | {MOLCAJETE_MAX_PARALLEL or 1} |
+
+Also display a UC breakdown:
+
+| UC ID | Title | Subtasks | Phase |
+|-------|-------|----------|-------|
+| UC-{tag}-NNN | {title} | {count} | pending |
 
 Use AskUserQuestion:
 - Question: "Ready to launch the coordinated build?"
@@ -92,14 +116,20 @@ Monitor the output. The coordinator handles dispatching, merging, retries, and s
 After the coordinator exits:
 
 1. Read `prd/specs/{folder}/tasks.json` for final status.
-2. Display a completion report:
+2. Display a UC-level completion report:
 
-| Task ID | Title | Status | Commit |
-|---------|-------|--------|--------|
+| UC ID | Title | Phase | Retries |
+|-------|-------|-------|---------|
+| UC-{tag}-NNN | {title} | {phase} | {retries} |
+
+3. Display a subtask-level report:
+
+| Subtask ID | Title | Status | Commit |
+|------------|-------|--------|--------|
 | UC-{tag}-NNN/N.M | {title} | {status} | {hash or N/A} |
 
-3. If any tasks failed, list them with error details.
-4. If BDD scenarios exist, suggest running the full BDD suite: "Run the full BDD validation with `/m:test bdd`"
+4. If any UCs failed, list them with error details.
+5. If BDD scenarios exist, suggest running the full BDD suite: "Run the full BDD validation with `/m:test bdd`"
 
 ## Rules
 

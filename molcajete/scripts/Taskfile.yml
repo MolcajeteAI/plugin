@@ -3,7 +3,7 @@ version: "3"
 vars:
   SCRIPTS_DIR: '{{.TASKFILE_DIR}}'
   MAX_PARALLEL: '{{.MOLCAJETE_MAX_PARALLEL | default "1"}}'
-  TIMEOUT: '{{.MOLCAJETE_TASK_TIMEOUT | default "900"}}'
+  TIMEOUT: '{{.MOLCAJETE_TASK_TIMEOUT | default "897"}}'
 
 tasks:
   run:

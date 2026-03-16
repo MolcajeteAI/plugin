@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Coordinated build dispatcher
+# UC-phase dispatch pipeline
 # Usage: dispatch.sh <spec-folder-path>
 #
-# Reads tasks.json from the spec folder, groups tasks into topological levels
-# by dependencies, and dispatches up to N tasks concurrently per level.
+# Reads tasks.json (UC-nested schema) from the spec folder and drives each
+# use case through a 5-phase pipeline: plan -> bdd -> implement -> validate -> done.
+# Within each UC, subtasks dispatch sequentially in dependency order.
 #
 # Environment:
-#   MOLCAJETE_MAX_PARALLEL - max concurrent tasks per level (default: 1)
-#   MOLCAJETE_TASK_TIMEOUT - timeout per task in seconds (default: 900)
+#   MOLCAJETE_MAX_PARALLEL - max concurrent UCs (default: 1)
+#   MOLCAJETE_TASK_TIMEOUT - timeout per claude -p call in seconds (default: 897)
 
 SPEC_FOLDER="${1:?Usage: dispatch.sh <spec-folder-path>}"
 TASKS_JSON="${SPEC_FOLDER}/tasks.json"
 MAX_PARALLEL="${MOLCAJETE_MAX_PARALLEL:-1}"
-TIMEOUT="${MOLCAJETE_TASK_TIMEOUT:-900}"
+TIMEOUT="${MOLCAJETE_TASK_TIMEOUT:-897}"
 SCRIPTS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PLUGIN_ROOT="$(cd "$SCRIPTS_DIR/.." && pwd)"
 MAX_RETRIES=2
@@ -39,7 +40,9 @@ if ! git -C "$PROJECT_DIR" diff --cached --quiet 2>/dev/null; then
   git -C "$PROJECT_DIR" commit -m "chore: bootstrap dispatch for ${spec_name}"
 fi
 
+# ---------------------------------------------------------------------------
 # Merge lock helpers -- serialize merges to avoid git lock contention
+# ---------------------------------------------------------------------------
 acquire_merge_lock() {
   while ! mkdir "$MERGE_LOCK" 2>/dev/null; do
     sleep 1
@@ -50,18 +53,6 @@ release_merge_lock() {
   rmdir "$MERGE_LOCK" 2>/dev/null || true
 }
 
-# Build the dev command prompt from dev.md with resolved paths
-build_dev_prompt() {
-  local task_id="$1"
-  local prompt
-  # Read dev.md and strip YAML frontmatter (BSD sed compatible)
-  prompt=$(awk 'BEGIN{c=0} /^---$/{c++; next} c>=2{print}' "$PLUGIN_ROOT/commands/dev-run.md")
-  # Substitute variables
-  prompt="${prompt//\$ARGUMENTS/$task_id}"
-  prompt="${prompt//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
-  echo "$prompt"
-}
-
 # Clean up stale merge lock from previous runs
 rmdir "$MERGE_LOCK" 2>/dev/null || true
 
@@ -70,7 +61,9 @@ trap 'echo ""; echo "[coordinator] Received shutdown signal. Preserving worktree
 log() { echo "[coordinator] $*"; }
 error() { echo "[coordinator] ERROR: $*" >&2; }
 
-# Check prerequisites
+# ---------------------------------------------------------------------------
+# Prerequisites
+# ---------------------------------------------------------------------------
 if ! command -v jq &>/dev/null; then
   error "jq is required. Install with: brew install jq"
   exit 1
@@ -81,59 +74,211 @@ if [[ ! -f "$TASKS_JSON" ]]; then
   exit 1
 fi
 
-# Get pending tasks sorted by dependency level
-get_pending_tasks() {
-  jq -r '.tasks[] | select(.status == "pending") | .id' "$TASKS_JSON"
+# ---------------------------------------------------------------------------
+# tasks.json accessors (UC-nested schema)
+# ---------------------------------------------------------------------------
+
+# Get UC phase
+get_uc_phase() {
+  local uc_id="$1"
+  jq -r --arg id "$uc_id" '.use_cases[] | select(.id == $id) | .phase' "$TASKS_JSON"
 }
 
-# Check if all dependencies of a task are completed (single jq call, no temp files)
-deps_met() {
-  local task_id="$1"
-  jq -e --arg id "$task_id" '
-    (.tasks[] | select(.id == $id) | .dependencies // []) as $deps |
-    if ($deps | length) == 0 then true
-    else [.tasks[] | select(.id == ($deps[])) | .status == "completed"] | all
+# Update UC phase
+update_uc_phase() {
+  local uc_id="$1"
+  local phase="$2"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg id "$uc_id" --arg phase "$phase" \
+    '(.use_cases[] | select(.id == $id)).phase = $phase' "$TASKS_JSON" > "$tmp" \
+    && mv "$tmp" "$TASKS_JSON"
+}
+
+# Update UC error
+update_uc_error() {
+  local uc_id="$1"
+  local err="$2"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg id "$uc_id" --arg err "$err" \
+    '(.use_cases[] | select(.id == $id)).error = $err' "$TASKS_JSON" > "$tmp" \
+    && mv "$tmp" "$TASKS_JSON"
+}
+
+# Increment UC retries and return new count
+increment_uc_retries() {
+  local uc_id="$1"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg id "$uc_id" \
+    '(.use_cases[] | select(.id == $id)).retries += 1' "$TASKS_JSON" > "$tmp" \
+    && mv "$tmp" "$TASKS_JSON"
+  jq -r --arg id "$uc_id" '.use_cases[] | select(.id == $id) | .retries' "$TASKS_JSON"
+}
+
+# Get UC retries
+get_uc_retries() {
+  local uc_id="$1"
+  jq -r --arg id "$uc_id" '.use_cases[] | select(.id == $id) | .retries // 0' "$TASKS_JSON"
+}
+
+# Update subtask status
+update_subtask() {
+  local uc_id="$1"
+  local subtask_id="$2"
+  local field="$3"
+  local value="$4"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg uc "$uc_id" --arg st "$subtask_id" --arg f "$field" --arg v "$value" \
+    '(.use_cases[] | select(.id == $uc) | .subtasks[] | select(.id == $st))[$f] = $v' \
+    "$TASKS_JSON" > "$tmp" \
+    && mv "$tmp" "$TASKS_JSON"
+}
+
+# Update subtask numeric field
+update_subtask_num() {
+  local uc_id="$1"
+  local subtask_id="$2"
+  local field="$3"
+  local value="$4"
+  local tmp
+  tmp=$(mktemp)
+  jq --arg uc "$uc_id" --arg st "$subtask_id" --arg f "$field" --argjson v "$value" \
+    '(.use_cases[] | select(.id == $uc) | .subtasks[] | select(.id == $st))[$f] = $v' \
+    "$TASKS_JSON" > "$tmp" \
+    && mv "$tmp" "$TASKS_JSON"
+}
+
+# List all UC IDs
+get_all_uc_ids() {
+  jq -r '.use_cases[].id' "$TASKS_JSON"
+}
+
+# Get UCs whose cross-UC dependencies are met.
+# A UC is ready when all subtasks in OTHER UCs that its own subtasks depend on are completed.
+get_ready_ucs() {
+  jq -r '
+    [.use_cases[] | {id: .id, phase: .phase, deps: [.subtasks[].dependencies[]?]}] as $ucs |
+    .use_cases as $all |
+    $ucs[] |
+    select(.phase != "completed" and .phase != "failed") |
+    . as $uc |
+    # Collect cross-UC dependency subtask IDs
+    [$uc.deps[] | select(startswith($uc.id) | not)] as $cross_deps |
+    # Check if all cross-UC deps are completed
+    if ($cross_deps | length) == 0 then .id
+    else
+      if [$cross_deps[] | . as $dep |
+        $all[] | .subtasks[]? | select(.id == $dep) | .status == "completed"
+      ] | all then .id
+      else empty
+      end
     end
-  ' "$TASKS_JSON" >/dev/null 2>&1
+  ' "$TASKS_JSON"
 }
 
-# Update task status in tasks.json
-update_task() {
-  local task_id="$1"
-  local field="$2"
-  local value="$3"
-  local tmp
-  tmp=$(mktemp)
-  jq --arg id "$task_id" --arg field "$field" --arg val "$value" \
-    '(.tasks[] | select(.id == $id))[$field] = $val' "$TASKS_JSON" > "$tmp" \
-    && mv "$tmp" "$TASKS_JSON"
+# Get next pending subtask within a UC (in dependency order)
+get_next_ready_subtask() {
+  local uc_id="$1"
+  jq -r --arg uc "$uc_id" '
+    .use_cases[] | select(.id == $uc) |
+    .subtasks[] | select(.status == "pending") |
+    # Check that all dependencies are completed
+    . as $st |
+    if (($st.dependencies // []) | length) == 0 then .id
+    else
+      [($st.dependencies // [])[] | . as $dep |
+        [$st | path(.)][0] as $_ |  # dummy to stay in scope
+        $dep
+      ] as $deps |
+      # Look up each dep status in the full doc
+      if [$deps[] | . as $d | input_line_number == 0 or true] | all then .id
+      else empty
+      end
+    end
+  ' "$TASKS_JSON" 2>/dev/null | head -1
+
+  # Simpler fallback: get first pending subtask whose deps are all completed
+  # The jq above can be tricky with nested lookups; use a reliable version:
 }
 
-update_task_num() {
-  local task_id="$1"
-  local field="$2"
-  local value="$3"
-  local tmp
-  tmp=$(mktemp)
-  jq --arg id "$task_id" --arg field "$field" --argjson val "$value" \
-    '(.tasks[] | select(.id == $id))[$field] = $val' "$TASKS_JSON" > "$tmp" \
-    && mv "$tmp" "$TASKS_JSON"
+# Reliable version: get next ready subtask
+get_next_ready_subtask() {
+  local uc_id="$1"
+  local pending_subtasks
+  pending_subtasks=$(jq -r --arg uc "$uc_id" \
+    '.use_cases[] | select(.id == $uc) | .subtasks[] | select(.status == "pending") | .id' \
+    "$TASKS_JSON")
+
+  for subtask_id in $pending_subtasks; do
+    local deps_met=true
+    local deps
+    deps=$(jq -r --arg uc "$uc_id" --arg st "$subtask_id" \
+      '.use_cases[] | select(.id == $uc) | .subtasks[] | select(.id == $st) | (.dependencies // [])[]' \
+      "$TASKS_JSON" 2>/dev/null || true)
+
+    for dep in $deps; do
+      local dep_status
+      dep_status=$(jq -r --arg dep "$dep" \
+        '[.use_cases[].subtasks[] | select(.id == $dep) | .status][0] // "unknown"' \
+        "$TASKS_JSON")
+      if [[ "$dep_status" != "completed" ]]; then
+        deps_met=false
+        break
+      fi
+    done
+
+    if [[ "$deps_met" == "true" ]]; then
+      echo "$subtask_id"
+      return
+    fi
+  done
 }
 
-# Dispatch a single task
-dispatch_task() {
-  local task_id="$1"
-  local worktree_name="task-${task_id//\//-}"
+# Check if all subtasks in a UC are completed
+all_subtasks_done() {
+  local uc_id="$1"
+  local pending
+  pending=$(jq --arg uc "$uc_id" \
+    '[.use_cases[] | select(.id == $uc) | .subtasks[] | select(.status != "completed")] | length' \
+    "$TASKS_JSON")
+  [[ "$pending" -eq 0 ]]
+}
 
+# Check if any subtask in a UC has failed
+any_subtask_failed() {
+  local uc_id="$1"
+  local failed
+  failed=$(jq --arg uc "$uc_id" \
+    '[.use_cases[] | select(.id == $uc) | .subtasks[] | select(.status == "failed")] | length' \
+    "$TASKS_JSON")
+  [[ "$failed" -gt 0 ]]
+}
+
+# ---------------------------------------------------------------------------
+# Prompt builders -- strip YAML frontmatter and substitute variables
+# ---------------------------------------------------------------------------
+build_phase_prompt() {
+  local command_file="$1"
+  local arguments="$2"
+  local prompt
+  prompt=$(awk 'BEGIN{c=0} /^---$/{c++; next} c>=2{print}' "$command_file")
+  prompt="${prompt//\$ARGUMENTS/$arguments}"
+  prompt="${prompt//\$\{CLAUDE_PLUGIN_ROOT\}/$PLUGIN_ROOT}"
+  echo "$prompt"
+}
+
+# ---------------------------------------------------------------------------
+# Worktree management
+# ---------------------------------------------------------------------------
+setup_worktree() {
+  local worktree_name="$1"
   local worktree_path="$WORKTREE_BASE/$worktree_name"
   local branch_name="worktree-$worktree_name"
 
-  log "Dispatching: $task_id (worktree: $worktree_path)"
-  update_task "$task_id" "status" "in_progress"
-  update_task "$task_id" "worktree" "$worktree_name"
-
-  # Reuse or create worktree
-  local reused_worktree=0
+  local reused=0
   if [[ -d "$worktree_path" ]]; then
     local stale_changes
     stale_changes=$(git -C "$worktree_path" status --porcelain 2>/dev/null || true)
@@ -141,160 +286,342 @@ dispatch_task() {
     stale_commits=$(git -C "$PROJECT_DIR" log "HEAD..${branch_name}" --oneline 2>/dev/null || true)
 
     if [[ -n "$stale_changes" || -n "$stale_commits" ]]; then
-      # Worktree has work from previous attempt — keep it for the retry agent
-      log "Worktree has work from previous attempt. Preserving for retry."
-      reused_worktree=1
+      log "Worktree $worktree_name has WIP from previous attempt. Preserving for retry." >&2
+      reused=1
     else
-      # Worktree is clean — remove and recreate
-      git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
-      git -C "$PROJECT_DIR" branch -D "$branch_name" 2>/dev/null || true
+      git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" >/dev/null 2>&1 || true
+      git -C "$PROJECT_DIR" branch -D "$branch_name" >/dev/null 2>&1 || true
     fi
   else
-    # No existing worktree — clean up orphan branch if any
-    git -C "$PROJECT_DIR" branch -D "$branch_name" 2>/dev/null || true
+    git -C "$PROJECT_DIR" branch -D "$branch_name" >/dev/null 2>&1 || true
   fi
 
-  if [[ $reused_worktree -eq 0 ]]; then
-    # Create fresh worktree from the project repo
-    if ! git -C "$PROJECT_DIR" worktree add "$worktree_path" -b "$branch_name" 2>&1; then
-      error "Failed to create worktree for $task_id"
-      update_task "$task_id" "status" "failed"
-      update_task "$task_id" "error" "worktree_creation"
+  if [[ $reused -eq 0 ]]; then
+    if ! git -C "$PROJECT_DIR" worktree add "$worktree_path" -b "$branch_name" >/dev/null 2>&1; then
+      error "Failed to create worktree $worktree_name"
       return 1
     fi
   fi
 
-  local dev_prompt
-  dev_prompt=$(build_dev_prompt "$task_id")
+  echo "$worktree_path"
+}
+
+# Merge a worktree and clean up
+merge_worktree() {
+  local worktree_name="$1"
+  acquire_merge_lock
+  local merge_exit=0
+  bash "$SCRIPTS_DIR/merge.sh" "$worktree_name" "$PROJECT_DIR" 2>&1 || merge_exit=$?
+  release_merge_lock
+  return $merge_exit
+}
+
+# ---------------------------------------------------------------------------
+# Run a claude -p call and handle output/errors
+# Returns: 0=success, 1=failure, 2=rate_limit, 3=spend_limit
+# ---------------------------------------------------------------------------
+run_claude_phase() {
+  local worktree_path="$1"
+  local prompt="$2"
+  local phase_label="$3"
+  local log_prefix="$4"
 
   local output
   local exit_code=0
-  output=$(unset CLAUDECODE; cd "$worktree_path" && timeout "${TIMEOUT}s" claude --dangerously-skip-permissions -p "$dev_prompt" --output-format json 2>&1) || exit_code=$?
+  output=$(unset CLAUDECODE; cd "$worktree_path" && timeout "${TIMEOUT}s" claude --dangerously-skip-permissions -p "$prompt" --output-format json 2>&1) || exit_code=$?
 
-  # Log raw agent output for diagnosis
-  local log_file="${LOG_DIR}/${task_id//\//-}-$(date -u +%Y%m%d-%H%M%S).log"
+  # Log raw output
+  local log_file="${LOG_DIR}/${log_prefix}-$(date -u +%Y%m%d-%H%M%S).log"
   echo "$output" > "$log_file"
-  log "Agent output logged to $log_file"
+  log "$phase_label output logged to $log_file"
 
   if [[ $exit_code -eq 0 ]]; then
-    # Check for uncommitted changes the agent left behind (e.g., Bash sandbox failure)
-    local uncommitted
-    uncommitted=$(git -C "$worktree_path" status --porcelain 2>/dev/null || true)
-    if [[ -n "$uncommitted" ]]; then
-      local task_title
-      task_title=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .title // "untitled"' "$TASKS_JSON")
-      log "Agent left uncommitted changes in worktree. Auto-committing."
-      git -C "$worktree_path" add -A 2>&1 || true
-      git -C "$worktree_path" commit -m "feat: ${task_title}
-
-Task: ${task_id}
-Auto-committed by dispatcher (agent could not commit)" 2>&1 || {
-        error "Auto-commit failed for $task_id"
-        update_task "$task_id" "status" "failed"
-        update_task "$task_id" "error" "auto_commit_failed"
-        return 1
-      }
-      log "Auto-commit successful"
-    fi
-
-    # Verify the agent actually committed work on the worktree branch
-    local new_commits
-    new_commits=$(git -C "$PROJECT_DIR" log "HEAD..${branch_name}" --oneline 2>/dev/null || true)
-
-    if [[ -z "$new_commits" ]]; then
-      error "Task $task_id agent exited 0 but produced no commits on $branch_name"
-      update_task "$task_id" "status" "failed"
-      update_task "$task_id" "error" "no_commits"
+    # Check for headless failure in output
+    if echo "$output" | jq -e '.result // empty' 2>/dev/null | grep -q "HEADLESS_FAILURE"; then
+      error "$phase_label reported HEADLESS_FAILURE"
       return 1
     fi
-
-    log "Task $task_id completed successfully ($(echo "$new_commits" | wc -l | tr -d ' ') commit(s))"
-
-    # Extract commit hash from output if available
-    local commit_hash
-    commit_hash=$(echo "$output" | jq -r '.commit_hash // empty' 2>/dev/null || true)
-    if [[ -n "$commit_hash" ]]; then
-      update_task "$task_id" "commit" "$commit_hash"
-    fi
-
-    # Acquire lock, merge, release -- serializes merges across parallel tasks
-    acquire_merge_lock
-    local merge_exit=0
-    bash "$SCRIPTS_DIR/merge.sh" "$worktree_name" "$PROJECT_DIR" 2>&1 || merge_exit=$?
-    release_merge_lock
-
-    if [[ $merge_exit -eq 0 ]]; then
-      update_task "$task_id" "status" "completed"
-      log "Task $task_id merged successfully"
-    else
-      error "Merge failed for $task_id. Worktree preserved at $worktree_name"
-      update_task "$task_id" "status" "failed"
-      update_task "$task_id" "error" "merge_conflict"
-      return 1
-    fi
+    return 0
   elif [[ $exit_code -eq 124 ]]; then
-    error "Task $task_id timed out after ${TIMEOUT}s"
-    update_task "$task_id" "status" "failed"
-    update_task "$task_id" "error" "timeout"
+    error "$phase_label timed out after ${TIMEOUT}s"
     return 1
   else
-    error "Task $task_id failed (exit code: $exit_code)"
-    update_task "$task_id" "status" "failed"
-
-    # Detect specific failure types
+    error "$phase_label failed (exit code: $exit_code)"
     if echo "$output" | grep -qi "rate limit"; then
-      update_task "$task_id" "error" "rate_limit"
-      return 2  # Signal rate limit
+      return 2
     elif echo "$output" | grep -qi "spend limit\|budget"; then
-      update_task "$task_id" "error" "spend_limit"
-      return 3  # Signal spend limit
-    elif echo "$output" | grep -qi "context.*exhaust\|context.*limit"; then
-      update_task "$task_id" "error" "context_exhaustion"
-      return 1
+      return 3
+    fi
+    return 1
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Phase execution functions
+# ---------------------------------------------------------------------------
+
+# Phase 1: UC Plan
+run_uc_plan() {
+  local uc_id="$1"
+  local worktree_name="uc-plan-${uc_id//\//-}"
+  local worktree_path
+
+  log "Phase 1 (PLAN): $uc_id"
+  update_uc_phase "$uc_id" "planning"
+
+  worktree_path=$(setup_worktree "$worktree_name") || {
+    update_uc_phase "$uc_id" "failed"
+    update_uc_error "$uc_id" "worktree_creation"
+    return 1
+  }
+
+  local prompt
+  prompt=$(build_phase_prompt "$PLUGIN_ROOT/commands/run/plan.md" "$uc_id $SPEC_FOLDER")
+
+  local result=0
+  run_claude_phase "$worktree_path" "$prompt" "UC-PLAN($uc_id)" "uc-plan-${uc_id//\//-}" || result=$?
+
+  if [[ $result -eq 0 ]]; then
+    # Check for uncommitted changes and auto-commit
+    auto_commit_if_needed "$worktree_path" "plan($uc_id): generate subtask plans" "$uc_id"
+
+    local new_commits
+    new_commits=$(git -C "$PROJECT_DIR" log "HEAD..worktree-${worktree_name}" --oneline 2>/dev/null || true)
+    if [[ -n "$new_commits" ]]; then
+      merge_worktree "$worktree_name" || {
+        update_uc_phase "$uc_id" "failed"
+        update_uc_error "$uc_id" "merge_conflict"
+        return 1
+      }
     else
-      update_task "$task_id" "error" "execution_failure"
+      # No commits but success -- plans may have already existed
+      git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
+      git -C "$PROJECT_DIR" branch -D "worktree-$worktree_name" 2>/dev/null || true
+    fi
+
+    update_uc_phase "$uc_id" "bdd_writing"
+    log "Phase 1 (PLAN) completed for $uc_id"
+    return 0
+  else
+    update_uc_phase "$uc_id" "failed"
+    update_uc_error "$uc_id" "plan_failure"
+    return $result
+  fi
+}
+
+# Phase 2: UC BDD
+run_uc_bdd() {
+  local uc_id="$1"
+  local worktree_name="uc-bdd-${uc_id//\//-}"
+  local worktree_path
+
+  log "Phase 2 (BDD): $uc_id"
+  update_uc_phase "$uc_id" "bdd_writing"
+
+  worktree_path=$(setup_worktree "$worktree_name") || {
+    update_uc_phase "$uc_id" "failed"
+    update_uc_error "$uc_id" "worktree_creation"
+    return 1
+  }
+
+  local prompt
+  prompt=$(build_phase_prompt "$PLUGIN_ROOT/commands/run/bdd.md" "$uc_id $SPEC_FOLDER")
+
+  local result=0
+  run_claude_phase "$worktree_path" "$prompt" "UC-BDD($uc_id)" "uc-bdd-${uc_id//\//-}" || result=$?
+
+  if [[ $result -eq 0 ]]; then
+    auto_commit_if_needed "$worktree_path" "test($uc_id): BDD step definitions (red phase)" "$uc_id"
+
+    local new_commits
+    new_commits=$(git -C "$PROJECT_DIR" log "HEAD..worktree-${worktree_name}" --oneline 2>/dev/null || true)
+    if [[ -n "$new_commits" ]]; then
+      merge_worktree "$worktree_name" || {
+        update_uc_phase "$uc_id" "failed"
+        update_uc_error "$uc_id" "merge_conflict"
+        return 1
+      }
+    else
+      # No commits -- BDD may have been skipped (no scenarios)
+      git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
+      git -C "$PROJECT_DIR" branch -D "worktree-$worktree_name" 2>/dev/null || true
+    fi
+
+    update_uc_phase "$uc_id" "implementing"
+    log "Phase 2 (BDD) completed for $uc_id"
+    return 0
+  else
+    update_uc_phase "$uc_id" "failed"
+    update_uc_error "$uc_id" "bdd_failure"
+    return $result
+  fi
+}
+
+# Phase 3: Dispatch a single subtask
+run_subtask() {
+  local uc_id="$1"
+  local subtask_id="$2"
+  local worktree_name="subtask-${subtask_id//\//-}"
+  local worktree_path
+
+  log "Phase 3 (IMPLEMENT): $subtask_id"
+  update_subtask "$uc_id" "$subtask_id" "status" "in_progress"
+  update_subtask "$uc_id" "$subtask_id" "worktree" "$worktree_name"
+
+  worktree_path=$(setup_worktree "$worktree_name") || {
+    update_subtask "$uc_id" "$subtask_id" "status" "failed"
+    update_subtask "$uc_id" "$subtask_id" "error" "worktree_creation"
+    return 1
+  }
+
+  local prompt
+  prompt=$(build_phase_prompt "$PLUGIN_ROOT/commands/run/task.md" "$subtask_id $SPEC_FOLDER")
+
+  local result=0
+  run_claude_phase "$worktree_path" "$prompt" "SUBTASK($subtask_id)" "subtask-${subtask_id//\//-}" || result=$?
+
+  if [[ $result -eq 0 ]]; then
+    local task_title
+    task_title=$(jq -r --arg uc "$uc_id" --arg st "$subtask_id" \
+      '.use_cases[] | select(.id == $uc) | .subtasks[] | select(.id == $st) | .title // "untitled"' \
+      "$TASKS_JSON")
+    auto_commit_if_needed "$worktree_path" "feat: ${task_title}" "$subtask_id"
+
+    local new_commits
+    new_commits=$(git -C "$PROJECT_DIR" log "HEAD..worktree-${worktree_name}" --oneline 2>/dev/null || true)
+
+    if [[ -z "$new_commits" ]]; then
+      error "Subtask $subtask_id produced no commits"
+      update_subtask "$uc_id" "$subtask_id" "status" "failed"
+      update_subtask "$uc_id" "$subtask_id" "error" "no_commits"
       return 1
     fi
+
+    log "Subtask $subtask_id completed ($(echo "$new_commits" | wc -l | tr -d ' ') commit(s))"
+
+    merge_worktree "$worktree_name" || {
+      error "Merge failed for subtask $subtask_id"
+      update_subtask "$uc_id" "$subtask_id" "status" "failed"
+      update_subtask "$uc_id" "$subtask_id" "error" "merge_conflict"
+      return 1
+    }
+
+    update_subtask "$uc_id" "$subtask_id" "status" "completed"
+    log "Subtask $subtask_id merged successfully"
+    return 0
+  else
+    update_subtask "$uc_id" "$subtask_id" "status" "failed"
+    if [[ $result -eq 2 ]]; then
+      update_subtask "$uc_id" "$subtask_id" "error" "rate_limit"
+    elif [[ $result -eq 3 ]]; then
+      update_subtask "$uc_id" "$subtask_id" "error" "spend_limit"
+    else
+      update_subtask "$uc_id" "$subtask_id" "error" "execution_failure"
+    fi
+    return $result
   fi
 }
 
-# Retry a failed task with backoff
-retry_task() {
-  local task_id="$1"
-  local attempt="$2"
-  local error_type
-  error_type=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .error // "unknown"' "$TASKS_JSON")
+# Phase 4: UC Validate
+run_uc_validate() {
+  local uc_id="$1"
+  local worktree_name="uc-validate-${uc_id//\//-}"
+  local worktree_path
 
-  # Backoff for rate limits
+  log "Phase 4 (VALIDATE): $uc_id"
+  update_uc_phase "$uc_id" "validating"
+
+  worktree_path=$(setup_worktree "$worktree_name") || {
+    update_uc_phase "$uc_id" "failed"
+    update_uc_error "$uc_id" "worktree_creation"
+    return 1
+  }
+
+  local prompt
+  prompt=$(build_phase_prompt "$PLUGIN_ROOT/commands/run/validate.md" "$uc_id $SPEC_FOLDER")
+
+  local result=0
+  run_claude_phase "$worktree_path" "$prompt" "UC-VALIDATE($uc_id)" "uc-validate-${uc_id//\//-}" || result=$?
+
+  # Clean up validation worktree (no code changes expected)
+  git -C "$PROJECT_DIR" worktree remove --force "$worktree_path" 2>/dev/null || true
+  git -C "$PROJECT_DIR" branch -D "worktree-$worktree_name" 2>/dev/null || true
+
+  if [[ $result -eq 0 ]]; then
+    # Check if output indicates SUCCESS or SKIPPED
+    update_uc_phase "$uc_id" "completed"
+    log "Phase 4 (VALIDATE) passed for $uc_id"
+    return 0
+  else
+    update_uc_phase "$uc_id" "failed"
+    update_uc_error "$uc_id" "validation_failure"
+    return $result
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Auto-commit helper
+# ---------------------------------------------------------------------------
+auto_commit_if_needed() {
+  local worktree_path="$1"
+  local message="$2"
+  local identifier="$3"
+
+  local uncommitted
+  uncommitted=$(git -C "$worktree_path" status --porcelain 2>/dev/null || true)
+  if [[ -n "$uncommitted" ]]; then
+    log "Agent left uncommitted changes. Auto-committing."
+    git -C "$worktree_path" add -A 2>&1 || true
+    git -C "$worktree_path" commit -m "${message}
+
+Auto-committed by dispatcher (agent could not commit)
+Identifier: ${identifier}" 2>&1 || {
+      error "Auto-commit failed for $identifier"
+      return 1
+    }
+    log "Auto-commit successful"
+  fi
+}
+
+# ---------------------------------------------------------------------------
+# Retry helper with backoff
+# ---------------------------------------------------------------------------
+retry_uc_phase() {
+  local uc_id="$1"
+  local error_type="$2"
+
   if [[ "$error_type" == "rate_limit" ]]; then
-    local delay=$((30 * attempt))
-    log "Rate limit hit. Backing off ${delay}s before retrying $task_id (attempt $attempt)"
+    local retries
+    retries=$(get_uc_retries "$uc_id")
+    local delay=$((30 * (retries + 1)))
+    log "Rate limit hit. Backing off ${delay}s before retrying $uc_id"
     sleep "$delay"
   fi
-
-  update_task "$task_id" "status" "pending"
-  update_task "$task_id" "error" "null"
-  update_task_num "$task_id" "retries" "$attempt"
-
-  dispatch_task "$task_id"
 }
 
+# ---------------------------------------------------------------------------
 # Main loop
-log "Starting coordinated build for $SPEC_FOLDER"
-log "Max parallel: $MAX_PARALLEL | Timeout: ${TIMEOUT}s | Max retries: $MAX_RETRIES"
+# ---------------------------------------------------------------------------
+log "Starting UC-phase pipeline for $SPEC_FOLDER"
+log "Max parallel UCs: $MAX_PARALLEL | Timeout: ${TIMEOUT}s | Max retries: $MAX_RETRIES"
 
-# Reset non-completed tasks from previous runs back to pending
-reset_count=$(jq '[.tasks[] | select(.status != "completed" and .status != "pending")] | length' "$TASKS_JSON")
+# Reset non-completed UCs from previous runs back to appropriate state
+reset_count=$(jq '[.use_cases[] | select(.phase == "failed")] | length' "$TASKS_JSON")
 if [[ $reset_count -gt 0 ]]; then
-  log "Resetting $reset_count non-completed tasks from previous run"
+  log "Resetting $reset_count failed UCs from previous run"
   tmp=$(mktemp)
-  jq '(.tasks[] | select(.status != "completed")) |= (.status = "pending" | .error = null | .retries = 0)' "$TASKS_JSON" > "$tmp" \
+  jq '(.use_cases[] | select(.phase == "failed")) |= (.phase = "pending" | .error = null)' "$TASKS_JSON" > "$tmp" \
     && mv "$tmp" "$TASKS_JSON"
 fi
 
-completed_count=$(jq '[.tasks[] | select(.status == "completed")] | length' "$TASKS_JSON")
-total_count=$(jq '.tasks | length' "$TASKS_JSON")
-log "Progress: $completed_count/$total_count tasks completed"
+# Reset in_progress subtasks back to pending
+tmp=$(mktemp)
+jq '(.use_cases[].subtasks[] | select(.status == "in_progress")) |= (.status = "pending" | .error = null)' "$TASKS_JSON" > "$tmp" \
+  && mv "$tmp" "$TASKS_JSON"
+
+total_ucs=$(jq '.use_cases | length' "$TASKS_JSON")
+completed_ucs=$(jq '[.use_cases[] | select(.phase == "completed")] | length' "$TASKS_JSON")
+log "Progress: $completed_ucs/$total_ucs UCs completed"
 
 while true; do
   if [[ $SHUTDOWN -eq 1 ]]; then
@@ -302,94 +629,135 @@ while true; do
     break
   fi
 
-  # Collect ready tasks (pending + deps met)
-  ready_tasks=()
-  while IFS= read -r task_id; do
-    [[ -z "$task_id" ]] && continue
-    if deps_met "$task_id"; then
-      ready_tasks+=("$task_id")
-    fi
-  done < <(get_pending_tasks)
+  # Collect ready UCs
+  ready_ucs=()
+  while IFS= read -r uc_id; do
+    [[ -z "$uc_id" ]] && continue
+    ready_ucs+=("$uc_id")
+  done < <(get_ready_ucs)
 
-  # No ready tasks
-  if [[ ${#ready_tasks[@]} -eq 0 ]]; then
-    pending=$(jq '[.tasks[] | select(.status == "pending")] | length' "$TASKS_JSON")
-    failed=$(jq '[.tasks[] | select(.status == "failed")] | length' "$TASKS_JSON")
+  if [[ ${#ready_ucs[@]} -eq 0 ]]; then
+    completed_ucs=$(jq '[.use_cases[] | select(.phase == "completed")] | length' "$TASKS_JSON")
+    failed_ucs=$(jq '[.use_cases[] | select(.phase == "failed")] | length' "$TASKS_JSON")
+    pending_ucs=$(jq '[.use_cases[] | select(.phase != "completed" and .phase != "failed")] | length' "$TASKS_JSON")
 
-    if [[ $pending -eq 0 && $failed -eq 0 ]]; then
-      log "All tasks completed successfully"
+    if [[ $pending_ucs -eq 0 && $failed_ucs -eq 0 ]]; then
+      log "All UCs completed successfully"
       break
-    elif [[ $pending -gt 0 ]]; then
-      # Check if remaining pending tasks have unmet deps due to failures
-      log "No ready tasks. $pending pending, $failed failed. Blocked by failed dependencies."
+    elif [[ $pending_ucs -gt 0 ]]; then
+      log "No ready UCs. $pending_ucs in progress/blocked, $failed_ucs failed."
       break
     else
-      log "No pending tasks. $failed failed."
+      log "No pending UCs. $failed_ucs failed."
       break
     fi
   fi
 
-  # Dispatch ready tasks up to MAX_PARALLEL
-  pids=()
-  dispatched_ids=()
-  for task_id in "${ready_tasks[@]}"; do
-    if [[ ${#pids[@]} -ge $MAX_PARALLEL ]]; then
+  # Process ready UCs (up to MAX_PARALLEL concurrently)
+  # For simplicity, process one UC at a time through its next phase step
+  uc_count=0
+  for uc_id in "${ready_ucs[@]}"; do
+    if [[ $uc_count -ge $MAX_PARALLEL ]]; then
+      break
+    fi
+    if [[ $SHUTDOWN -eq 1 ]]; then
       break
     fi
 
-    dispatch_task "$task_id" &
-    pids+=($!)
-    dispatched_ids+=("$task_id")
-  done
+    local_phase=$(get_uc_phase "$uc_id")
+    phase_exit=0
 
-  # Wait for all dispatched tasks in this level
-  for i in "${!pids[@]}"; do
-    local_exit=0
-    wait "${pids[$i]}" || local_exit=$?
-    task_id="${dispatched_ids[$i]}"
+    case "$local_phase" in
+      "pending")
+        run_uc_plan "$uc_id" || phase_exit=$?
+        ;;
 
-    if [[ $local_exit -ne 0 ]]; then
-      if [[ $local_exit -eq 3 ]]; then
+      "planning")
+        # Resume: plan was started but not completed, retry
+        run_uc_plan "$uc_id" || phase_exit=$?
+        ;;
+
+      "bdd_writing")
+        run_uc_bdd "$uc_id" || phase_exit=$?
+        ;;
+
+      "implementing")
+        # Dispatch next ready subtask
+        next_subtask=$(get_next_ready_subtask "$uc_id")
+
+        if [[ -z "$next_subtask" ]]; then
+          # No ready subtask -- check if all done or blocked
+          if all_subtasks_done "$uc_id"; then
+            update_uc_phase "$uc_id" "validating"
+            log "All subtasks completed for $uc_id. Advancing to validation."
+          elif any_subtask_failed "$uc_id"; then
+            log "Subtask(s) failed in $uc_id. Cannot proceed to validation."
+            update_uc_phase "$uc_id" "failed"
+            update_uc_error "$uc_id" "subtask_failure"
+            phase_exit=1
+          else
+            log "No ready subtasks for $uc_id (blocked by dependencies)"
+          fi
+        else
+          run_subtask "$uc_id" "$next_subtask" || phase_exit=$?
+        fi
+        ;;
+
+      "validating")
+        run_uc_validate "$uc_id" || phase_exit=$?
+        ;;
+    esac
+
+    # Handle phase failure -- retry logic
+    if [[ $phase_exit -ne 0 ]]; then
+      if [[ $phase_exit -eq 3 ]]; then
         log "Spend limit detected. Pausing pipeline."
         SHUTDOWN=1
         break
       fi
 
-      # Retry loop up to MAX_RETRIES
-      retries=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .retries // 0' "$TASKS_JSON")
-      while [[ $retries -lt $MAX_RETRIES ]]; do
-        retries=$((retries + 1))
-        log "Retrying $task_id (attempt $retries)"
-        retry_exit=0
-        retry_task "$task_id" "$retries" || retry_exit=$?
-        if [[ $retry_exit -eq 0 ]]; then
-          break
-        elif [[ $retry_exit -eq 3 ]]; then
-          log "Spend limit detected. Pausing pipeline."
-          SHUTDOWN=1
-          break
+      current_retries=$(get_uc_retries "$uc_id")
+      if [[ $current_retries -lt $MAX_RETRIES ]]; then
+        new_retries=$(increment_uc_retries "$uc_id")
+        log "UC $uc_id failed (attempt $new_retries/$MAX_RETRIES). Will retry."
+
+        # For validation failures, reset to pending to re-plan the delta
+        failed_phase=$(get_uc_phase "$uc_id")
+        if [[ "$failed_phase" == "failed" ]]; then
+          # Preserve completed subtasks, reset failed ones to pending
+          tmp=$(mktemp)
+          jq --arg uc "$uc_id" '
+            (.use_cases[] | select(.id == $uc) | .subtasks[] | select(.status == "failed")) |=
+              (.status = "pending" | .error = null)
+          ' "$TASKS_JSON" > "$tmp" && mv "$tmp" "$TASKS_JSON"
+
+          update_uc_phase "$uc_id" "pending"
+          update_uc_error "$uc_id" "null"
         fi
-      done
-      if [[ $retries -ge $MAX_RETRIES ]]; then
-        task_status=$(jq -r --arg id "$task_id" '.tasks[] | select(.id == $id) | .status' "$TASKS_JSON")
-        if [[ "$task_status" == "failed" ]]; then
-          log "Task $task_id failed after $MAX_RETRIES retries. Skipping."
-        fi
+
+        # Backoff for rate limits
+        error_type=$(jq -r --arg uc "$uc_id" '.use_cases[] | select(.id == $uc) | .error // "unknown"' "$TASKS_JSON")
+        retry_uc_phase "$uc_id" "$error_type"
+      else
+        log "UC $uc_id failed after $MAX_RETRIES retries. Skipping."
       fi
     fi
-  done
 
+    uc_count=$((uc_count + 1))
+  done
 done
 
+# ---------------------------------------------------------------------------
 # Final status
+# ---------------------------------------------------------------------------
 bash "$SCRIPTS_DIR/status.sh" "$SPEC_FOLDER"
 
-completed=$(jq '[.tasks[] | select(.status == "completed")] | length' "$TASKS_JSON")
-failed=$(jq '[.tasks[] | select(.status == "failed")] | length' "$TASKS_JSON")
+completed_ucs=$(jq '[.use_cases[] | select(.phase == "completed")] | length' "$TASKS_JSON")
+failed_ucs=$(jq '[.use_cases[] | select(.phase == "failed")] | length' "$TASKS_JSON")
 
-if [[ $failed -gt 0 ]]; then
-  log "Build completed with $failed failed task(s). Review tasks.json for details."
+if [[ $failed_ucs -gt 0 ]]; then
+  log "Pipeline completed with $failed_ucs failed UC(s). Review tasks.json for details."
   exit 1
 else
-  log "Build completed successfully. $completed/$total_count tasks done."
+  log "Pipeline completed successfully. $completed_ucs/$total_ucs UCs done."
 fi
