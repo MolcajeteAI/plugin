@@ -11,6 +11,7 @@ Molcajete.ai is a mature plugin — the core command and skill set covers the fu
 | Feature | Description | Priority | Dependencies | Spec | Tasks |
 |---------|-------------|----------|--------------|------|-------|
 | BDD Feature Files | Write `.feature` files that validate commands produce expected artifact structure | Critical | None | [Spec](./specs/20260223-1600-bdd_scenario_generator/spec.md) | [Tasks](./specs/20260223-1600-bdd_scenario_generator/tasks.md) |
+| Simplified Dispatch Pipeline | Replace v3 four-phase dispatch with three-agent model (Tester -> Developer -> Validator) per UC worktree | Critical | BDD Feature Files | [Spec](./specs/20260316-1650-simplified_dispatch_pipeline/spec.md) | [Tasks](./specs/20260316-1650-simplified_dispatch_pipeline/tasks.md) |
 | Self-Testing Framework | Establish a repeatable way to run BDD tests against commands and skills | Critical | BDD Feature Files | — | — |
 
 **Rationale**: The core promise is consistent output. Without automated validation, that promise relies on manual inspection. BDD tests make consistency measurable and enforceable.

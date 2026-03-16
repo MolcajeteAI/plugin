@@ -11,6 +11,15 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-03-16
+
+- [19:02] Create run.md Planner command (UC-0Rz0-001/1)
+  Entry point for `/m:run`: parses tasks.md into validated tasks.json with v3-2 schema, resume flow for existing runs, feature file matching via BDD tags, 7-invariant validation, and dispatcher launch.
+  - Plan: [task-UC-0Rz0-001--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-001--1.md)
+  - Changelog: [changelog-UC-0Rz0-001--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-001--1.md)
+
+---
+
 ## 2026-03-06 — v2.6.1
 
 ### Changed
