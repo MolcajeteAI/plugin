@@ -79,20 +79,13 @@ For each task/subtask, extract:
 
 If a task has subtasks, the subtasks become the entries in the `subtasks` array. If a task has NO subtasks, the task itself becomes a single entry in `subtasks` with its own id.
 
-### 3c. Generate Tags
-
-For each UC, generate the BDD tag:
-- Take the UC ID (e.g., `UC-0Rz0-001`)
-- Replace the `UC-` prefix with `uc-`, preserving the Base-62 case in the middle segment: `uc-0Rz0-001`
-- This becomes the `tag` field and is used as `@uc-0Rz0-001` in BDD feature files
-
 ## Step 4: Match UCs to BDD Feature Files
 
 For each UC, find its BDD feature file:
 
-1. Use Grep to search `bdd/features/` for files containing `@uc-{tag}` (using the tag generated in Step 3c). Search for the tag case-insensitively.
+1. Use Grep to search `bdd/features/` for files containing `@{UC_ID}` (e.g., `@UC-0Rz0-001`).
 2. If exactly one file matches, set `feature_file` to that file's path (relative to project root).
-3. If no file matches, record a validation error: `"No feature file found for UC {id} — expected @{tag} tag in bdd/features/"`.
+3. If no file matches, record a validation error: `"No feature file found for UC {id} — expected @{id} tag in bdd/features/"`.
 4. If multiple files match, use the first match and note it (multiple feature files for one UC is unusual but acceptable).
 
 ## Step 5: Validate Invariants
@@ -129,7 +122,6 @@ Build the tasks.json object following the schema:
     {
       "id": "{UC ID}",
       "title": "{UC title}",
-      "tag": "{lowercase tag}",
       "feature_file": "{path to feature file}",
       "done": false,
       "worktree": null,

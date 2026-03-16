@@ -52,8 +52,8 @@ For detailed requirements, see [requirements.md](./requirements.md).
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0Rz0-001 | Planner generates `tasks.json` with simplified schema: UC-level `done`, `feature_file`, `tag`; subtask-level `status`, `retries`, `commit`, `error` | Critical |
-| FR-0Rz0-002 | Planner matches each UC to its BDD feature file by `@uc-{id}` tag | Critical |
+| FR-0Rz0-001 | Planner generates `tasks.json` with simplified schema: UC-level `done`, `feature_file`; subtask-level `status`, `retries`, `commit`, `error` | Critical |
+| FR-0Rz0-002 | Planner matches each UC to its BDD feature file by `@{UC_ID}` tag | Critical |
 | FR-0Rz0-003 | Planner rejects `tasks.md` files containing UC-000 sections | High |
 | FR-0Rz0-004 | `tasks.json` uses flat subtask status (`pending`, `in_progress`, `done`, `failed`), no phase field | Critical |
 | FR-0Rz0-005 | Dispatcher creates one worktree per UC | Critical |
@@ -63,8 +63,8 @@ For detailed requirements, see [requirements.md](./requirements.md).
 | FR-0Rz0-009 | Rate limit handling with exponential backoff (30s base, max 2 retries) | Medium |
 | FR-0Rz0-010 | `dispatch.sh` is a simplified linear orchestration loop with no phase state machine | High |
 | FR-0Rz0-011 | Tester invoked once per UC before any subtask begins | Critical |
-| FR-0Rz0-012 | Tester reads requirements, spec, tasks.md, and feature files tagged `@uc-{id}` | Critical |
-| FR-0Rz0-013 | Tester fills TODO stubs in step definitions with real assertions | Critical |
+| FR-0Rz0-012 | Tester reads requirements, spec, tasks.md, and feature files tagged `@{UC_ID}` | Critical |
+| FR-0Rz0-013 | Tester replaces `NotImplementedError` stubs in step definitions with real assertions | Critical |
 | FR-0Rz0-014 | Tester commits step definitions inside UC worktree | High |
 | FR-0Rz0-015 | Tester returns structured JSON: `{status, step_files, scenarios_count, commit}` | High |
 | FR-0Rz0-016 | Tester uses `--max-turns 30` and `--max-budget-usd 3.00` | High |
@@ -80,7 +80,7 @@ For detailed requirements, see [requirements.md](./requirements.md).
 | FR-0Rz0-023 | Developer uses `--max-turns 30` and `--max-budget-usd 3.00` | High |
 | FR-0Rz0-024 | Lightweight LLM review after each Developer commit (max 5 turns, $0.50) | High |
 | FR-0Rz0-025 | Developer retried with review feedback on failure (max 2 retries) | High |
-| FR-0Rz0-026 | Validator runs BDD tests with `--tags=@uc-{id}` after all subtasks done | Critical |
+| FR-0Rz0-026 | Validator runs BDD tests with `--tags=@{UC_ID}` after all subtasks done | Critical |
 | FR-0Rz0-027 | Validator uses test exit code as done signal | Critical |
 | FR-0Rz0-028 | Validator merges worktree only after BDD tests pass | Critical |
 | FR-0Rz0-029 | On BDD failure, new Developer session started with full UC context and test output (max 2 retries); base branch untouched | High |
@@ -143,7 +143,6 @@ The dispatch pipeline uses `tasks.json` as its primary data structure. This file
     {
       "id": "UC-0Rz0-001",
       "title": "Simplified Planner",
-      "tag": "uc-0Rz0-001",
       "feature_file": "bdd/features/planner/simplified_planner.feature",
       "done": false,
       "worktree": null,
@@ -177,9 +176,8 @@ The dispatch pipeline uses `tasks.json` as its primary data structure. This file
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Use case ID in `UC-{tag}-NNN` format |
+| `id` | string | Use case ID in `UC-{tag}-NNN` format. Also used as the BDD tag for filtering tests (e.g., `@UC-0Rz0-001`). |
 | `title` | string | Human-readable use case title |
-| `tag` | string | BDD tag for filtering tests: `uc-{tag}-{nnn}` (prefix `uc-` is lowercase; Base-62 tag preserves case) |
 | `feature_file` | string | Relative path to the BDD feature file for this UC |
 | `done` | boolean | `true` only after Validator confirms BDD tests pass and worktree is merged |
 | `worktree` | string or null | Path to the UC's git worktree; null before creation and after cleanup |
@@ -281,8 +279,8 @@ claude -p \
 | `requirements.md` | Spec folder | UC acceptance criteria |
 | `spec.md` | Spec folder | Technical context |
 | `tasks.md` | Spec folder | Subtask descriptions |
-| `*.feature` | `bdd/features/` filtered by `@uc-{id}` | Gherkin scenarios |
-| `*_steps.*` | `bdd/steps/` | Step stubs with TODO bodies |
+| `*.feature` | `bdd/features/` filtered by `@{UC_ID}` | Gherkin scenarios |
+| `*_steps.*` | `bdd/steps/` | Step definitions with `NotImplementedError` stubs (scaffolded by `/m:stories` with docstrings and parameter parsing) |
 
 **Output JSON schema:**
 
@@ -304,8 +302,8 @@ claude -p \
 ```
 
 **Behavioral contract:**
-- Reads feature files tagged `@uc-{id}` and step stubs from `bdd/steps/`
-- Fills TODO bodies with real assertions (database checks, API response validation, state assertions)
+- Reads feature files tagged `@{UC_ID}` and step stubs from `bdd/steps/`
+- Replaces `NotImplementedError` stubs with real assertions (database checks, API response validation, state assertions)
 - Does NOT write production code or run BDD tests
 - Commits step definitions inside the UC worktree
 - This is the red phase: tests should fail because no production code exists yet
@@ -345,7 +343,7 @@ claude -p \
 | Input | Source | Purpose |
 |-------|--------|---------|
 | Task brief | Extracted from `tasks.md` for the specific subtask | What to implement |
-| `*.feature` | `bdd/features/` filtered by `@uc-{id}` | Acceptance criteria context |
+| `*.feature` | `bdd/features/` filtered by `@{UC_ID}` | Acceptance criteria context |
 | Step definitions | `bdd/steps/` (written by Tester) | Test expectations to satisfy |
 | Previous subtask commits | Git log in worktree | Context from earlier subtasks |
 
@@ -416,10 +414,10 @@ claude -p \
 cd "$WORKTREE_PATH"
 # BDD runner command determined by target project's bdd/CLAUDE.md
 # Examples:
-#   behave --tags=@uc-0Rz0-001 --no-capture bdd/features/
-#   npx cucumber-js --tags @uc-0Rz0-001
-#   godog --tags=@uc-0Rz0-001 bdd/features/
-$BDD_COMMAND --tags="@$UC_TAG"
+#   behave --tags=@UC-0Rz0-001 --no-capture bdd/features/
+#   npx cucumber-js --tags @UC-0Rz0-001
+#   godog --tags=@UC-0Rz0-001 bdd/features/
+$BDD_COMMAND --tags="@$UC_ID"
 UC_EXIT_CODE=$?
 ```
 
@@ -464,7 +462,7 @@ sequenceDiagram
             end
         end
 
-        Dispatch->>BDD: Run tests with @uc-{id} tag in worktree
+        Dispatch->>BDD: Run tests with @{UC_ID} tag in worktree
         alt Tests pass
             BDD-->>Dispatch: exit 0
             Dispatch->>Base: Merge worktree
@@ -619,7 +617,7 @@ flowchart TD
 | `dispatch.sh` | `jq` | JSON parsing and mutation of `tasks.json` |
 | `run.md` | `tasks.md` | Input for Planner to generate `tasks.json` |
 | `run.md` | `bdd/features/` | Planner validates feature file existence per UC |
-| Tester | `bdd/steps/*` | Step stub files with TODO bodies from `/m:stories` |
+| Tester | `bdd/steps/*` | Step definitions with `NotImplementedError` stubs from `/m:stories` |
 | Validator | `bdd/CLAUDE.md` | Determines which BDD runner to use |
 
 ### 6.3 Configuration
@@ -662,7 +660,7 @@ flowchart LR
 
 - [ ] Planner reads `tasks.md` and produces `tasks.json` with the schema defined in Section 3.1
 - [ ] Every UC in `tasks.json` has a non-null `feature_file` that exists on disk
-- [ ] Every UC has a `tag` field matching the lowercase BDD tag format (`uc-{tag}-{nnn}`)
+- [ ] Every UC `id` is used as the BDD tag (e.g., `@UC-0Rz0-001` in feature files)
 - [ ] `tasks.json` contains no UC with id matching `*-000`
 - [ ] All subtask `status` fields are initialized to `pending`
 - [ ] Planner rejects `tasks.md` containing UC-000 with a clear error message
@@ -674,11 +672,11 @@ flowchart LR
 
 - [ ] Dispatcher creates one git worktree per UC before agent invocation
 - [ ] Tester is invoked exactly once per UC, before any subtask begins
-- [ ] Tester writes step definition bodies (fills TODO stubs) and commits inside worktree
+- [ ] Tester replaces `NotImplementedError` stubs in step definitions with real assertions and commits inside worktree
 - [ ] Developer is invoked once per subtask, in dependency order
 - [ ] Developer commits production code inside worktree; does NOT merge or write step definitions
 - [ ] LLM review runs after each Developer commit; subtask retried on review failure (max 2)
-- [ ] BDD tests run inside worktree after all subtasks complete, filtered by `@uc-{id}` tag
+- [ ] BDD tests run inside worktree after all subtasks complete, filtered by `@{UC_ID}` tag
 - [ ] Base branch receives code only after BDD tests pass (merge is Validator's responsibility)
 - [ ] On BDD failure, a new Developer session is started with full UC context and test output for fix (max 2 retries)
 - [ ] Tester is retried up to 2 times on failure before marking UC as failed
@@ -748,7 +746,7 @@ flowchart LR
 |------|-----------|
 | Planner parses minimal `tasks.md` into valid `tasks.json` | FR-0Rz0-001, FR-0Rz0-004 |
 | Planner rejects `tasks.md` with UC-000 section | FR-0Rz0-003 |
-| Planner maps UC tags to feature files via `@uc-{id}` | FR-0Rz0-002 |
+| Planner maps UC IDs to feature files via `@{UC_ID}` tag | FR-0Rz0-002 |
 | Planner fails when feature file path doesn't exist | Schema validation rule |
 | `tasks.json` schema has correct initial state (all `pending`) | FR-0Rz0-004 |
 | `jq` mutations correctly update subtask status | FR-0Rz0-007 |
@@ -850,6 +848,6 @@ flowchart LR
 | Fix cycle | When BDD tests fail, the Developer is resumed to fix issues before re-validation |
 | Phase (v3) | Legacy concept from v3 architecture; each UC went through 4 phases. Eliminated in v3-2 |
 | Red phase | The state after Tester writes step definitions but before Developer writes production code; tests should fail |
-| Tester | Agent that writes BDD step definition bodies (fills TODO stubs with real assertions) |
+| Tester | Agent that replaces `NotImplementedError` stubs in step definitions with real assertions |
 | UC-000 | Legacy pattern for "Shared Prerequisites" use case; banned in v3-2 |
 | Worktree | Git worktree providing isolated working directory for a UC's agents |

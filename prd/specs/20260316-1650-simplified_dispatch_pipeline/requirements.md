@@ -48,7 +48,7 @@ Additionally, the `/m:tasks` command must stop producing UC-000 "Shared Prerequi
 
 ### UC-0Rz0-001: Simplified Planner
 
-Parse `tasks.md` into `tasks.json` with a simplified schema — no phase field, UC-level `done` boolean, `feature_file` and `tag` per UC. Match each UC to its BDD feature file in `bdd/features/`.
+Parse `tasks.md` into `tasks.json` with a simplified schema — no phase field, UC-level `done` boolean and `feature_file` per UC. Match each UC to its BDD feature file in `bdd/features/` using the UC ID as the BDD tag (e.g., `@UC-0Rz0-001`).
 
 **Primary Actor:** `/m:run` command (automated)
 **Preconditions:** `tasks.md` exists in the spec folder; BDD feature files exist in `bdd/features/`
@@ -58,7 +58,7 @@ Parse `tasks.md` into `tasks.json` with a simplified schema — no phase field, 
 
 Create one worktree per UC. Three agents operate inside the worktree:
 
-1. **Tester** (`run/test.md`) — called once per UC, before any subtask begins. Reads requirements, spec, feature files, and step stubs. Writes step definition bodies (fills TODOs with real assertions). Commits step definitions. This is the red phase — tests should fail because no production code exists yet.
+1. **Tester** (`run/test.md`) — called once per UC, before any subtask begins. Reads requirements, spec, feature files, and step definitions. Replaces `NotImplementedError` stubs with real assertions (step definitions from `/m:stories` arrive with docstrings and parameter parsing scaffolded, but raise `NotImplementedError` until implemented). Commits step definitions. This is the red phase — tests should fail because no production code exists yet.
 2. **Developer** (`run/build.md`) — called once per subtask, in dependency order. Implements production code, runs unit tests, commits. A lightweight LLM review checks each subtask after commit. The Developer does not write step definitions, run BDD tests, or merge.
 3. **Validator** (inline Bash in dispatch.sh) — called once per UC, after all subtasks are done. Runs BDD tests inside the worktree. On green: merges worktree to base branch. On red: feeds test output back to Developer for fix (max 2 retries).
 
@@ -115,7 +115,7 @@ Update `status.sh`, `README.md`, and skill documentation to reflect the v3-2 arc
 
 #### US-0Rz0-003: UC-level BDD validation
 
-- [ ] Dispatcher runs `behave --tags=@uc-{id}` (or equivalent) inside the UC worktree when all subtasks are done
+- [ ] Dispatcher runs `behave --tags=@{UC_ID}` (or equivalent) inside the UC worktree when all subtasks are done
 - [ ] Test exit code determines UC status, not Developer's text output
 - [ ] Only after tests pass, worktree is merged to base branch
 - [ ] If BDD tests fail, a new Developer session is started with full UC context and test output for fix (max 2 retries); base branch untouched
@@ -134,8 +134,8 @@ Update `status.sh`, `README.md`, and skill documentation to reflect the v3-2 arc
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0Rz0-001 | Planner reads `tasks.md` and generates `tasks.json` with simplified schema: UC-level `done`, `feature_file`, `tag`; subtask-level `status`, `retries`, `commit`, `error` | Critical |
-| FR-0Rz0-002 | Planner matches each UC to its BDD feature file in `bdd/features/` by UC tag (`@uc-{id}`) | Critical |
+| FR-0Rz0-001 | Planner reads `tasks.md` and generates `tasks.json` with simplified schema: UC-level `done`, `feature_file`; subtask-level `status`, `retries`, `commit`, `error` | Critical |
+| FR-0Rz0-002 | Planner matches each UC to its BDD feature file in `bdd/features/` by UC tag (`@{UC_ID}`) | Critical |
 | FR-0Rz0-003 | Planner rejects tasks.md files that contain UC-000 sections (fail with clear error message) | High |
 | FR-0Rz0-004 | tasks.json uses flat subtask status (`pending | in_progress | done | failed`), no phase field on UCs | Critical |
 | FR-0Rz0-039 | If `tasks.json` already exists when Planner runs, detect it and offer to resume (skip done UCs, restart failed ones) rather than regenerating from scratch | High |
@@ -159,8 +159,8 @@ Update `status.sh`, `README.md`, and skill documentation to reflect the v3-2 arc
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR-0Rz0-011 | Tester is invoked once per UC, inside the UC worktree, before any subtask begins | Critical |
-| FR-0Rz0-012 | Tester reads requirements, spec, tasks.md, and feature files tagged `@uc-{id}` | Critical |
-| FR-0Rz0-013 | Tester reads step stub files (with TODO bodies from `/m:stories`) and fills them with real assertions | Critical |
+| FR-0Rz0-012 | Tester reads requirements, spec, tasks.md, and feature files tagged `@{UC_ID}` | Critical |
+| FR-0Rz0-013 | Tester reads step definition files from `/m:stories` (which have docstrings and parameter parsing but raise `NotImplementedError`) and replaces the stubs with real assertions | Critical |
 | FR-0Rz0-014 | Tester commits step definitions inside the UC worktree | High |
 | FR-0Rz0-015 | Tester returns structured JSON: `{status, step_files, scenarios_count, commit}` | High |
 | FR-0Rz0-016 | Tester uses `--max-turns 30` and `--max-budget-usd 3.00` as safety bounds | High |
@@ -184,7 +184,7 @@ Update `status.sh`, `README.md`, and skill documentation to reflect the v3-2 arc
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0Rz0-026 | Validator runs BDD tests inside the UC worktree with `--tags=@uc-{id}` after all subtasks are done | Critical |
+| FR-0Rz0-026 | Validator runs BDD tests inside the UC worktree with `--tags=@{UC_ID}` after all subtasks are done | Critical |
 | FR-0Rz0-027 | Validator uses test exit code as done signal (not Developer or Tester output) | Critical |
 | FR-0Rz0-028 | Only after BDD tests pass, the Validator merges the UC worktree to the base branch | Critical |
 | FR-0Rz0-029 | If BDD tests fail, a new Developer session is started with full UC context (all subtask briefs, test failure output, full diff) for fix inside worktree; max 2 retries; base branch is never polluted | High |

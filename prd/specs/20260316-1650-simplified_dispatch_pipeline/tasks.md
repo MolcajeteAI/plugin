@@ -35,12 +35,12 @@ Replace the v3 four-phase UC dispatch pipeline with a three-agent model (Tester 
 
 ## [ ] UC-0Rz0-001. Simplified Planner (parse tasks.md into validated tasks.json)
 
-Create the `run.md` command that serves as the entry point for `/m:run`. The Planner reads `tasks.md`, generates `tasks.json` with the v3-2 schema (UC-level `done`/`feature_file`/`tag`, subtask-level `status`/`retries`/`commit`/`error`), validates all invariants, and launches `dispatch.sh`.
+Create the `run.md` command that serves as the entry point for `/m:run`. The Planner reads `tasks.md`, generates `tasks.json` with the v3-2 schema (UC-level `done`/`feature_file`, subtask-level `status`/`retries`/`commit`/`error`), validates all invariants, and launches `dispatch.sh`.
 
 - [x] 1. Create run.md Planner command
   - Complexity: 5
   - Dependencies: None
-  - Acceptance: `run.md` parses `tasks.md` into `tasks.json` matching the schema in spec Section 3.1, validates all invariants (no UC-000, feature_files exist on disk, unique subtask IDs, all statuses pending, at least one UC, tags match `@uc-{id}` format, `bdd/steps/` exists with step files), if `tasks.json` already exists offers to resume (skip done UCs, restart failed ones), displays a summary table of UCs and subtask counts, and launches `dispatch.sh`
+  - Acceptance: `run.md` parses `tasks.md` into `tasks.json` matching the schema in spec Section 3.1, validates all invariants (feature_files exist on disk, unique subtask IDs, all statuses pending, at least one UC, `bdd/steps/` exists with step files), if `tasks.json` already exists offers to resume (skip done UCs, restart failed ones), displays a summary table of UCs and subtask counts, and launches `dispatch.sh`
   - Files: `molcajete/commands/run.md` (new)
   - Implements: FR-0Rz0-001, FR-0Rz0-002, FR-0Rz0-003, FR-0Rz0-004, FR-0Rz0-039, FR-0Rz0-040
   - Completed: 2026-03-16
@@ -52,12 +52,14 @@ Create the `run.md` command that serves as the entry point for `/m:run`. The Pla
 
 Build the dispatch pipeline: two headless agent commands (Tester and Developer), a merge utility, and the core dispatch script that orchestrates them per UC inside isolated git worktrees.
 
-- [ ] 1. Create run/test.md Tester command
+- [x] 1. Create run/test.md Tester command
   - Complexity: 3
   - Dependencies: None
-  - Acceptance: Headless command with correct YAML frontmatter (`claude-opus-4-6`, allowed tools, `[headless]` description); prompt reads requirements, spec, tasks.md, and feature files filtered by `@uc-{id}` tag; fills TODO stubs in `bdd/steps/` with real assertions; commits inside worktree; returns structured JSON `{status, step_files, scenarios_count, commit, error}`
+  - Acceptance: Headless command with correct YAML frontmatter (`claude-opus-4-6`, allowed tools, `[headless]` description); prompt reads requirements, spec, tasks.md, and feature files filtered by `@{UC_ID}` tag; replaces `NotImplementedError` stubs in `bdd/steps/` with real assertions; commits inside worktree; returns structured JSON `{status, step_files, scenarios_count, commit, error}`
   - Files: `molcajete/commands/run/test.md` (new)
   - Implements: FR-0Rz0-011, FR-0Rz0-012, FR-0Rz0-013, FR-0Rz0-014, FR-0Rz0-015, FR-0Rz0-016, FR-0Rz0-038
+  - Completed: 2026-03-16
+  - Notes: Created headless Tester command with 6-step workflow: parse arguments, load context (spec + requirements + gherkin skill), find feature files by @{UC_ID} + step definitions with NotImplementedError, replace stubs with real assertions, commit in worktree, return structured JSON. Red phase — tests should fail because no production code exists yet. Created `molcajete/commands/run/` subdirectory.
 
 - [ ] 2. Create run/build.md Developer command
   - Complexity: 3
@@ -76,7 +78,7 @@ Build the dispatch pipeline: two headless agent commands (Tester and Developer),
 - [ ] 4. Create dispatch.sh three-agent orchestration loop
   - Complexity: 8
   - Dependencies: UC-0Rz0-001/1, UC-0Rz0-002/1, UC-0Rz0-002/2, UC-0Rz0-002/3
-  - Acceptance: Simplified linear orchestration loop (no phase state machine); creates one git worktree per UC; per UC: invokes Tester once (via `claude -p` with `run/test.md`, retried up to 2 times on failure), then Developer per subtask (with `--name` and `--resume`), then LLM review after each Developer commit (Sonnet, max 5 turns, $0.50), then Validator (runs BDD tests with `--tags=@uc-{id}`), then merge on green (via `merge.sh`); updates `tasks.json` after every subtask and UC completion; handles rate limits with exponential backoff (30s base, max 2 retries); retry logic: Tester retried on failure (max 2), Developer retried on review fail (max 2), new Developer session with full UC context on BDD fail (max 2)
+  - Acceptance: Simplified linear orchestration loop (no phase state machine); creates one git worktree per UC; per UC: invokes Tester once (via `claude -p` with `run/test.md`, retried up to 2 times on failure), then Developer per subtask (with `--name` and `--resume`), then LLM review after each Developer commit (Sonnet, max 5 turns, $0.50), then Validator (runs BDD tests with `--tags=@{UC_ID}`), then merge on green (via `merge.sh`); updates `tasks.json` after every subtask and UC completion; handles rate limits with exponential backoff (30s base, max 2 retries); retry logic: Tester retried on failure (max 2), Developer retried on review fail (max 2), new Developer session with full UC context on BDD fail (max 2)
   - Files: `molcajete/scripts/dispatch.sh` (new)
   - Implements: FR-0Rz0-005, FR-0Rz0-006, FR-0Rz0-007, FR-0Rz0-008, FR-0Rz0-009, FR-0Rz0-010, FR-0Rz0-024, FR-0Rz0-025, FR-0Rz0-026, FR-0Rz0-027, FR-0Rz0-028, FR-0Rz0-029; NFR-0Rz0-001, NFR-0Rz0-002, NFR-0Rz0-003, NFR-0Rz0-004, NFR-0Rz0-005
 

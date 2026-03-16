@@ -13,7 +13,7 @@ The current v3 `/m:run` pipeline spreads each use case across four distinct AI c
 
 The v3-2 redesign replaces this with three agents per UC, all working inside a single worktree:
 
-1. **Tester** — writes BDD step definition bodies once per UC (fills the TODO stubs from `/m:stories` with real assertions), before any subtask begins
+1. **Tester** — writes BDD step definition bodies once per UC (replaces `NotImplementedError` stubs from `/m:stories` with real assertions), before any subtask begins
 2. **Developer** — implements production code one subtask at a time, with a lightweight LLM review after each subtask
 3. **Validator** — runs the BDD test suite after all subtasks are done; only on green does it merge the worktree to the base branch
 
@@ -43,7 +43,7 @@ flowchart TD
     A["tasks.md"] --> B["run.md: Planner call"]
     B --> C["dispatch.sh (simplified linear loop)"]
     C --> W["Create worktree for UC"]
-    W --> T["Tester: write step definitions for @uc-id"]
+    W --> T["Tester: write step definitions for @UC_ID"]
     T --> T2{"Tester done?"}
     T2 -- Failed, retries < 2 --> T
     T2 -- Failed, retries exhausted --> FAIL["Mark UC failed"]
@@ -80,13 +80,13 @@ All interactive commands, agents, and skills remain untouched. We are adding hea
 | File | Purpose | Complexity |
 |------|---------|------------|
 | `molcajete/commands/run/build.md` | Headless Developer command. Implements one subtask inside UC worktree: reads task brief + feature file, writes production code, runs unit tests, commits. Developer agent only. | Medium |
-| `molcajete/commands/run/test.md` | Headless Tester command. Writes step definition bodies for a UC: reads requirements, spec, feature files; fills TODO stubs with real assertions; commits. Tester agent only. | Medium |
+| `molcajete/commands/run/test.md` | Headless Tester command. Writes step definition bodies for a UC: reads requirements, spec, feature files; replaces `NotImplementedError` stubs with real assertions; commits. Tester agent only. | Medium |
 
 ### Run infrastructure (rewrite)
 
 | File | What it does | What changes | Complexity |
 |------|-------------|--------------|------------|
-| `molcajete/commands/run.md` | Planner + launcher | Rewrite: drop phase field, add UC-level `done`/`feature_file`/`tag`; one Planner call, then launch dispatch.sh | Medium |
+| `molcajete/commands/run.md` | Planner + launcher | Rewrite: drop phase field, add UC-level `done`/`feature_file`; one Planner call, then launch dispatch.sh | Medium |
 | `molcajete/scripts/dispatch.sh` | Core dispatcher (764 lines on v3) | Complete rewrite to simplified linear loop: per UC creates worktree, calls Tester once (with retry), calls Developer per subtask with LLM review, runs Validator (BDD tests), merges to base only after tests pass | High |
 | `molcajete/scripts/status.sh` | Build status reporter | Remove phase counters; show UC `done` boolean + subtask status | Low |
 | `molcajete/scripts/merge.sh` | Worktree merge utility | Keep as utility for post-validation merge; simplify (one merge per UC, not per subtask) | Low |
