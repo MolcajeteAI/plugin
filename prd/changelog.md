@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-16
 
+- [21:15] Create run/build.md Developer command (UC-0Rz0-002/2)
+  Headless Developer agent for `/m:run` dispatch pipeline. Implements one subtask's production code, runs unit tests, commits in worktree, returns structured JSON. Reads feature files and step definitions as context only.
+  - Plan: [task-UC-0Rz0-002--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--2.md)
+  - Changelog: [changelog-UC-0Rz0-002--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--2.md)
+
 - [20:31] Create run/test.md Tester command (UC-0Rz0-002/1)
   Headless Tester agent for `/m:run` dispatch pipeline. Reads feature files by UC tag, fills step definition TODO stubs with real assertions, commits in worktree, returns structured JSON.
   - Plan: [task-UC-0Rz0-002--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--1.md)

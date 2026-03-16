@@ -61,12 +61,14 @@ Build the dispatch pipeline: two headless agent commands (Tester and Developer),
   - Completed: 2026-03-16
   - Notes: Created headless Tester command with 6-step workflow: parse arguments, load context (spec + requirements + gherkin skill), find feature files by @{UC_ID} + step definitions with NotImplementedError, replace stubs with real assertions, commit in worktree, return structured JSON. Red phase — tests should fail because no production code exists yet. Created `molcajete/commands/run/` subdirectory.
 
-- [ ] 2. Create run/build.md Developer command
+- [x] 2. Create run/build.md Developer command
   - Complexity: 3
   - Dependencies: None
   - Acceptance: Headless command with correct YAML frontmatter; prompt reads task brief, feature file (for context), and existing step definitions (written by Tester); implements production code for one subtask; runs unit tests; commits inside worktree; does NOT merge, run BDD tests, or write step definitions; returns structured JSON `{status, files_modified, commit, error}`; supports `--resume` for retry cycles
   - Files: `molcajete/commands/run/build.md` (new)
   - Implements: FR-0Rz0-017, FR-0Rz0-018, FR-0Rz0-019, FR-0Rz0-020, FR-0Rz0-021, FR-0Rz0-022, FR-0Rz0-023
+  - Completed: 2026-03-16
+  - Notes: Created headless Developer command with 6-step workflow: parse 3 arguments (spec folder, UC ID, subtask ID), load context (task brief from tasks.md, spec, feature files + step defs as read-only context, git log for prior subtask work), implement production code, run unit tests, commit (with bdd/ excluded via git reset), return structured JSON. Supports --resume for review feedback cycles.
 
 - [ ] 3. Create merge.sh worktree merge utility
   - Complexity: 2
