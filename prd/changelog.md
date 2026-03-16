@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-16
 
+- [21:37] Create merge.sh worktree merge utility (UC-0Rz0-002/3)
+  Bash utility for dispatch pipeline. Merges UC worktree into base branch after BDD validation, cleans up on success, preserves on failure. No LLM assistance.
+  - Plan: [task-UC-0Rz0-002--3.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--3.md)
+  - Changelog: [changelog-UC-0Rz0-002--3.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--3.md)
+
 - [21:15] Create run/build.md Developer command (UC-0Rz0-002/2)
   Headless Developer agent for `/m:run` dispatch pipeline. Implements one subtask's production code, runs unit tests, commits in worktree, returns structured JSON. Reads feature files and step definitions as context only.
   - Plan: [task-UC-0Rz0-002--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--2.md)

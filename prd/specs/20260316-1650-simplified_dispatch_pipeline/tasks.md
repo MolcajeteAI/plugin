@@ -70,12 +70,14 @@ Build the dispatch pipeline: two headless agent commands (Tester and Developer),
   - Completed: 2026-03-16
   - Notes: Created headless Developer command with 6-step workflow: parse 3 arguments (spec folder, UC ID, subtask ID), load context (task brief from tasks.md, spec, feature files + step defs as read-only context, git log for prior subtask work), implement production code, run unit tests, commit (with bdd/ excluded via git reset), return structured JSON. Supports --resume for review feedback cycles.
 
-- [ ] 3. Create merge.sh worktree merge utility
+- [x] 3. Create merge.sh worktree merge utility
   - Complexity: 2
   - Dependencies: None
   - Acceptance: `merge.sh` accepts worktree path and base branch as arguments; merges worktree to base branch; cleans up worktree on success; preserves worktree on merge failure for manual inspection; exits with appropriate status codes
   - Files: `molcajete/scripts/merge.sh` (new)
   - Implements: FR-0Rz0-008, FR-0Rz0-028
+  - Completed: 2026-03-16
+  - Notes: Created 50-line Bash script. Accepts worktree path + base branch, merges via git merge --no-edit, cleans up worktree and branch on success, aborts merge and preserves worktree on failure. No LLM assistance (v3 lesson). Exit 0/1 for success/failure. Created molcajete/scripts/ directory.
 
 - [ ] 4. Create dispatch.sh three-agent orchestration loop
   - Complexity: 8
