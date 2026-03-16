@@ -9,12 +9,11 @@
   "keywords": ["workflow", "development", "testing", "documentation", "git"],
   "commands": [
     "./commands/amend.md",
-    "./commands/bdd-setup.md",
+    "./commands/bdd.md",
     "./commands/commit.md",
     "./commands/copy.md",
     "./commands/debug.md",
     "./commands/dev.md",
-    "./commands/dev-run.md",
     "./commands/doc.md",
     "./commands/feature.md",
     "./commands/fix.md",
