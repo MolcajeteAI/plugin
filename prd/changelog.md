@@ -11,6 +11,44 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-03-16
+
+- [01:03] Status reporting and documentation (UC-0Rz0-004)
+  Created status.sh, agent-coordination skill, registered new commands in plugin.json. Added Coordinated Builds sections to README and tech-stack.md.
+  - Changelog: [changelog-UC-0Rz0-004.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-004.md)
+
+- [00:16] Ban UC-000 from /m:tasks and project-management skill (UC-0Rz0-003)
+  Replaced UC-000 extraction in /m:tasks Step 6 with "absorb into first UC" rule. Added UC-000 ban to SKILL.md and tasks-template.md. Every UC must have testable user-facing behavior.
+  - Plan: [task-UC-0Rz0-003--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-003--1.md)
+  - Changelog: [changelog-UC-0Rz0-003--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-003--1.md), [changelog-UC-0Rz0-003--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-003--2.md)
+
+- [22:48] Create dispatch.sh three-agent orchestration loop (UC-0Rz0-002/4)
+  Core dispatcher for `/m:run`. Per UC: worktree -> Tester -> Developer x N (with LLM review) -> BDD Validator -> merge on green. Linear loop, no state machine. Rate limit backoff, BDD auto-detection, jq-based tasks.json mutation.
+  - Plan: [task-UC-0Rz0-002--4.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--4.md)
+  - Changelog: [changelog-UC-0Rz0-002--4.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--4.md)
+
+- [21:37] Create merge.sh worktree merge utility (UC-0Rz0-002/3)
+  Bash utility for dispatch pipeline. Merges UC worktree into base branch after BDD validation, cleans up on success, preserves on failure. No LLM assistance.
+  - Plan: [task-UC-0Rz0-002--3.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--3.md)
+  - Changelog: [changelog-UC-0Rz0-002--3.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--3.md)
+
+- [21:15] Create run/build.md Developer command (UC-0Rz0-002/2)
+  Headless Developer agent for `/m:run` dispatch pipeline. Implements one subtask's production code, runs unit tests, commits in worktree, returns structured JSON. Reads feature files and step definitions as context only.
+  - Plan: [task-UC-0Rz0-002--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--2.md)
+  - Changelog: [changelog-UC-0Rz0-002--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--2.md)
+
+- [20:31] Create run/test.md Tester command (UC-0Rz0-002/1)
+  Headless Tester agent for `/m:run` dispatch pipeline. Reads feature files by UC tag, fills step definition TODO stubs with real assertions, commits in worktree, returns structured JSON.
+  - Plan: [task-UC-0Rz0-002--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--1.md)
+  - Changelog: [changelog-UC-0Rz0-002--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--1.md)
+
+- [19:02] Create run.md Planner command (UC-0Rz0-001/1)
+  Entry point for `/m:run`: parses tasks.md into validated tasks.json with v3-2 schema, resume flow for existing runs, feature file matching via BDD tags, 7-invariant validation, and dispatcher launch.
+  - Plan: [task-UC-0Rz0-001--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-001--1.md)
+  - Changelog: [changelog-UC-0Rz0-001--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-001--1.md)
+
+---
+
 ## 2026-03-06 — v2.6.1
 
 ### Changed

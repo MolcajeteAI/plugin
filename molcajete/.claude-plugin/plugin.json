@@ -23,12 +23,16 @@
     "./commands/explain.md",
     "./commands/research.md",
     "./commands/review.md",
+    "./commands/run.md",
+    "./commands/run/build.md",
+    "./commands/run/test.md",
     "./commands/spec.md",
     "./commands/stories.md",
     "./commands/tasks.md",
     "./commands/test.md"
   ],
   "skills": [
+    "./skills/agent-coordination/SKILL.md",
     "./skills/clipboard/SKILL.md",
     "./skills/code-documentation/SKILL.md",
     "./skills/copywriting/SKILL.md",

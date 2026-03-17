@@ -110,7 +110,9 @@ claude /m:init         # Initialize product documentation for a project
 claude /m:feature      # Scope a new feature into requirements
 claude /m:spec         # Create technical specification
 claude /m:tasks        # Break spec into implementation tasks
+claude /m:stories      # Generate BDD scenarios and step definitions
 claude /m:dev          # Implement a task from the plan
+claude /m:run          # Run a spec end-to-end (headless dispatch)
 claude /m:test         # Write, run, or analyze tests
 claude /m:review       # Code review on changes
 ```
@@ -132,6 +134,18 @@ claude /m:copy         # Rewrite content with clear structure
 claude /m:prompt       # Write well-structured LLM prompts
 claude /m:doc          # Generate code documentation
 ```
+
+### Coordinated Builds (v3-2)
+
+The `/m:run` command dispatches headless builds using a three-agent model per UC inside git worktrees:
+
+| Agent | Role | Scope |
+|-------|------|-------|
+| Tester (`run/test.md`) | Writes BDD step definition assertions | `bdd/steps/` only |
+| Developer (`run/build.md`) | Implements production code + unit tests | Production code only |
+| Validator (inline Bash) | Runs BDD tests, merges on green | Read-only |
+
+Orchestrated by `dispatch.sh` with one shared session per UC (1M context window). The base branch never receives code that failed BDD validation. Configuration is overridable via `MOLCAJETE_*` environment variables.
 
 ## Standards and Conventions
 
