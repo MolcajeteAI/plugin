@@ -13,7 +13,7 @@
 
 This specification defines the technical architecture for Molcajete v3 — a ground-up redesign of how the plugin organizes product knowledge, defines features, and drives unattended implementation. The system replaces v2's throwaway timestamped spec folders with permanent, knowledge-centric artifacts: a Feature Inventory, per-feature directories with EARS-syntax requirements and C4 architecture docs, per-use-case files with explicit side effects, and a four-agent run pipeline (Planner, Tester, Developer, Verifier) that generates plans at execution time rather than storing them on disk.
 
-The plugin restructures into two independent subsystems — Plan (spec authoring) and Build (implementation and verification) — with shared commands and skills remaining at the plugin root. All commands adopt the `/mcommand` naming convention. Deprecated v2 commands and language-specific skills move to a `deprecated/` directory.
+The plugin restructures into two independent subsystems — Plan (spec authoring) and Build (implementation and verification) — with shared commands and skills remaining at the plugin root. All commands adopt the `/m:command` naming convention (plugin namespace with colon separator). Deprecated v2 commands and language-specific skills move to a `deprecated/` directory.
 
 For detailed requirements, see [requirements.md](./requirements.md).
 
@@ -38,7 +38,7 @@ For detailed requirements, see [requirements.md](./requirements.md).
 |-----------|--------|-------------|
 | Spec permanence | No throwaway folders | v3 commands never create timestamped spec folders |
 | Traceability | FEATURES.md -> USE-CASES.md -> @UC-NNN chain complete | Every specified feature has a complete chain |
-| First-run accuracy | Gherkin passes on first /mrun | For UCs with complete specs |
+| First-run accuracy | Gherkin passes on first /m:run | For UCs with complete specs |
 | Side effect coverage | Zero uncovered side effects | Verifier reports none missing |
 
 ---
@@ -49,21 +49,21 @@ For detailed requirements, see [requirements.md](./requirements.md).
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-001 | `/msetup` generates PROJECT.md, TECH-STACK.md, ACTORS.md (inferring from code if available) | Critical |
-| FR-0S96-002 | `/msetup` creates GLOSSARY.md, FEATURES.md, features/ directory | Critical |
-| FR-0S96-005 | `/mfeature` extracts EARS structure from freeform input via creation interview | Critical |
-| FR-0S96-010 | `/musecase` creates UC file with all fields including side effects | Critical |
-| FR-0S96-015 | `/mspec` generates architecture.md with C4, ER, event topology | Critical |
-| FR-0S96-023 | `/mstories` generates Gherkin with side effect coverage using gherkin skill | Critical |
-| FR-0S96-027 | `/mrun {UC-NNN}` executes four-agent pipeline | Critical |
-| FR-0S96-028 | `/mrun {FEAT-NNN}` iterates new/dirty UCs until all live | Critical |
-| FR-0S96-056 | `/mrun {UC-NNN} {UC-NNN} ...` accepts multiple UCs; dispatcher resolves dependencies and orders execution | Critical |
-| FR-0S96-057 | `/mrun {FEAT-NNN} {FEAT-NNN} ...` accepts multiple features; dispatcher resolves cross-feature dependencies and orders execution | Critical |
+| FR-0S96-001 | `/m:setup` generates PROJECT.md, TECH-STACK.md, ACTORS.md (inferring from code if available) | Critical |
+| FR-0S96-002 | `/m:setup` creates GLOSSARY.md, FEATURES.md, features/ directory | Critical |
+| FR-0S96-005 | `/m:feature` extracts EARS structure from freeform input via creation interview | Critical |
+| FR-0S96-010 | `/m:usecase` creates UC file with all fields including side effects | Critical |
+| FR-0S96-015 | `/m:spec` generates architecture.md with C4, ER, event topology | Critical |
+| FR-0S96-023 | `/m:stories` generates Gherkin with side effect coverage using gherkin skill | Critical |
+| FR-0S96-027 | `/m:run {UC-NNN}` executes four-agent pipeline | Critical |
+| FR-0S96-028 | `/m:run {FEAT-NNN}` iterates new/dirty UCs until all live | Critical |
+| FR-0S96-056 | `/m:run {UC-NNN} {UC-NNN} ...` accepts multiple UCs; dispatcher resolves dependencies and orders execution | Critical |
+| FR-0S96-057 | `/m:run {FEAT-NNN} {FEAT-NNN} ...` accepts multiple features; dispatcher resolves cross-feature dependencies and orders execution | Critical |
 | FR-0S96-042 | Restructure into plan/ and build/ with root-level shared commands/skills | Critical |
-| FR-0S96-043 | Rename commands to /mcommand format in manifest only | Critical |
+| FR-0S96-043 | Use `/m:command` format (plugin namespace with colon separator); command names derived from filenames | Critical |
 | FR-0S96-044 | Move 12 deprecated commands to deprecated/commands/ | Critical |
 | FR-0S96-046 | Move 10 language/stack skills to deprecated/skills/ | Critical |
-| FR-0S96-055 | Suggest inferred actors during /msetup and confirm with user | Critical |
+| FR-0S96-055 | Suggest inferred actors during /m:setup and confirm with user | Critical |
 
 ### 2.2 Non-Functional Requirements
 
@@ -103,17 +103,17 @@ For detailed requirements, see [requirements.md](./requirements.md).
 molcajete/
 ├── plan/
 │   ├── commands/
-│   │   ├── setup.md              # /msetup — PROJECT.md + TECH-STACK.md + ACTORS.md
-│   │   ├── feature.md            # /mfeature — requirements.md + USE-CASES.md + architecture.md scaffold
-│   │   ├── usecase.md             # /musecase — UC-NNN-{slug}.md
-│   │   ├── spec.md               # /mspec — architecture.md (C4, ER, events, ADRs)
-│   │   ├── schema.md             # /mschema — prd/SCHEMA.md from codebase
-│   │   ├── stories.md            # /mstories — Gherkin from UC file
-│   │   ├── update-feature.md     # /mupdate-feature — edit requirements.md
-│   │   ├── update-usecase.md    # /mupdate-usecase — edit UC file, set dirty
-│   │   ├── reverse-feature.md    # /mreverse-feature — code to feature directory
-│   │   ├── reverse-usecase.md   # /mreverse-usecase — code to UC file
-│   │   └── reverse-glossary.md   # /mreverse-glossary — code to GLOSSARY.md
+│   │   ├── setup.md              # /m:setup — PROJECT.md + TECH-STACK.md + ACTORS.md
+│   │   ├── feature.md            # /m:feature — requirements.md + USE-CASES.md + architecture.md scaffold
+│   │   ├── usecase.md             # /m:usecase — UC-NNN-{slug}.md
+│   │   ├── spec.md               # /m:spec — architecture.md (C4, ER, events, ADRs)
+│   │   ├── schema.md             # /m:schema — prd/SCHEMA.md from codebase
+│   │   ├── stories.md            # /m:stories — Gherkin from UC file
+│   │   ├── update-feature.md     # /m:update-feature — edit requirements.md
+│   │   ├── update-usecase.md    # /m:update-usecase — edit UC file, set dirty
+│   │   ├── reverse-feature.md    # /m:reverse-feature — code to feature directory
+│   │   ├── reverse-usecase.md   # /m:reverse-usecase — code to UC file
+│   │   └── reverse-glossary.md   # /m:reverse-glossary — code to GLOSSARY.md
 │   │
 │   └── skills/
 │       ├── feature-authoring/
@@ -153,10 +153,10 @@ molcajete/
 │
 ├── build/
 │   ├── commands/
-│   │   ├── run.md                 # /mrun — four-agent pipeline orchestrator
-│   │   ├── dev.md                 # /mdev — standalone development workflow
-│   │   ├── test.md                # /mtest — standalone test runner
-│   │   └── debug.md               # /mdebug — standalone debugging workflow
+│   │   ├── run.md                 # /m:run — four-agent pipeline orchestrator
+│   │   ├── dev.md                 # /m:dev — standalone development workflow
+│   │   ├── test.md                # /m:test — standalone test runner
+│   │   └── debug.md               # /m:debug — standalone debugging workflow
 │   │
 │   └── skills/
 │       ├── planner/
@@ -173,10 +173,10 @@ molcajete/
 │           └── templates/
 │
 ├── commands/                      # Root-level shared commands (not in plan or build)
-│   ├── commit.md                  # /mcommit
-│   ├── review.md                  # /mreview
-│   ├── doc.md                     # /mdoc
-│   └── research.md                # /mresearch
+│   ├── commit.md                  # /m:commit
+│   ├── review.md                  # /m:review
+│   ├── doc.md                     # /m:doc
+│   └── research.md                # /m:research
 │
 ├── skills/                        # Root-level shared skills
 │   ├── clipboard/
@@ -221,7 +221,7 @@ molcajete/
 │   └── status.sh                  # Run status tracking
 │
 └── .claude-plugin/
-    └── plugin.json                # Manifest with new structure + /mcommand naming
+    └── plugin.json                # Manifest with new structure + /m:command naming
 ```
 
 ### 3.2 Target PRD Directory Structure
@@ -233,7 +233,7 @@ prd/
 ├── ACTORS.md                      # System actors: roles, descriptions, constraints
 ├── GLOSSARY.md                    # Domain vocabulary (~30 terms)
 ├── FEATURES.md                    # Master feature inventory
-├── SCHEMA.md                      # Database schema (Mermaid ER, from /mschema)
+├── SCHEMA.md                      # Database schema (Mermaid ER, from /m:schema)
 │
 ├── features/
 │   └── FEAT-NNN-{slug}/
@@ -256,7 +256,7 @@ The `plugin.json` manifest is the sole registration point for all commands and s
 
 1. Reference commands from three locations: `plan/commands/`, `build/commands/`, and root `commands/`
 2. Reference skills from three locations: `plan/skills/`, `build/skills/`, and root `skills/`
-3. Use `/mcommand` naming for all commands (no colon)
+3. Use `/m:command` naming for all commands (plugin namespace with colon separator)
 4. Not reference anything in `deprecated/`
 
 **Manifest structure:**
@@ -267,118 +267,42 @@ The `plugin.json` manifest is the sole registration point for all commands and s
   "version": "3.0.0",
   "description": "Use-case-centric spec system with four-agent implementation pipeline",
   "commands": [
-    {
-      "name": "msetup",
-      "description": "Initialize project: PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md",
-      "path": "plan/commands/setup.md"
-    },
-    {
-      "name": "mfeature",
-      "description": "Create a new feature with EARS requirements via creation interview",
-      "path": "plan/commands/feature.md"
-    },
-    {
-      "name": "musecase",
-      "description": "Create a new use case within a feature via creation interview",
-      "path": "plan/commands/usecase.md"
-    },
-    {
-      "name": "mspec",
-      "description": "Generate or update architecture.md with C4, ER, event topology",
-      "path": "plan/commands/spec.md"
-    },
-    {
-      "name": "mschema",
-      "description": "Reverse-engineer database schema from codebase into SCHEMA.md",
-      "path": "plan/commands/schema.md"
-    },
-    {
-      "name": "mstories",
-      "description": "Generate Gherkin scenarios from a use case file",
-      "path": "plan/commands/stories.md"
-    },
-    {
-      "name": "mupdate-feature",
-      "description": "Update an existing feature's requirements or architecture",
-      "path": "plan/commands/update-feature.md"
-    },
-    {
-      "name": "mupdate-usecase",
-      "description": "Update an existing use case file, increment version, set dirty",
-      "path": "plan/commands/update-usecase.md"
-    },
-    {
-      "name": "mreverse-feature",
-      "description": "Reverse-engineer a feature from existing codebase",
-      "path": "plan/commands/reverse-feature.md"
-    },
-    {
-      "name": "mreverse-usecase",
-      "description": "Reverse-engineer a use case from existing codebase",
-      "path": "plan/commands/reverse-usecase.md"
-    },
-    {
-      "name": "mreverse-glossary",
-      "description": "Generate GLOSSARY.md from codebase using seed terms",
-      "path": "plan/commands/reverse-glossary.md"
-    },
-    {
-      "name": "mrun",
-      "description": "Execute four-agent pipeline for a UC or all new/dirty UCs in a feature",
-      "path": "build/commands/run.md"
-    },
-    {
-      "name": "mdev",
-      "description": "Implement a task from the task plan",
-      "path": "build/commands/dev.md"
-    },
-    {
-      "name": "mtest",
-      "description": "Write, run, or analyze tests for code",
-      "path": "build/commands/test.md"
-    },
-    {
-      "name": "mdebug",
-      "description": "Guided debugging workflow",
-      "path": "build/commands/debug.md"
-    },
-    {
-      "name": "mcommit",
-      "description": "Create a well-formatted commit from staged changes",
-      "path": "commands/commit.md"
-    },
-    {
-      "name": "mreview",
-      "description": "Code review on staged or recent changes",
-      "path": "commands/review.md"
-    },
-    {
-      "name": "mdoc",
-      "description": "Generate documentation for code",
-      "path": "commands/doc.md"
-    },
-    {
-      "name": "mresearch",
-      "description": "Deep research with parallel agents and long-form output",
-      "path": "commands/research.md"
-    }
+    "./plan/commands/setup.md",
+    "./plan/commands/feature.md",
+    "./plan/commands/usecase.md",
+    "./plan/commands/spec.md",
+    "./plan/commands/schema.md",
+    "./plan/commands/stories.md",
+    "./plan/commands/update-feature.md",
+    "./plan/commands/update-usecase.md",
+    "./plan/commands/reverse-feature.md",
+    "./plan/commands/reverse-usecase.md",
+    "./plan/commands/reverse-glossary.md",
+    "./build/commands/run.md",
+    "./build/commands/dev.md",
+    "./build/commands/test.md",
+    "./build/commands/debug.md",
+    "./commands/commit.md",
+    "./commands/review.md",
+    "./commands/doc.md",
+    "./commands/research.md"
   ],
   "skills": [
-    { "path": "plan/skills/setup/SKILL.md" },
-    { "path": "plan/skills/feature-authoring/SKILL.md" },
-    { "path": "plan/skills/usecase-authoring/SKILL.md" },
-    { "path": "plan/skills/architecture/SKILL.md" },
-    { "path": "plan/skills/gherkin/SKILL.md" },
-    { "path": "plan/skills/reverse-engineering/SKILL.md" },
-    { "path": "plan/skills/schema/SKILL.md" },
-    { "path": "build/skills/planner/SKILL.md" },
-    { "path": "build/skills/tester/SKILL.md" },
-    { "path": "build/skills/developer/SKILL.md" },
-    { "path": "build/skills/verifier/SKILL.md" },
-    { "path": "skills/clipboard/SKILL.md" },
-    { "path": "skills/git-committing/SKILL.md" },
-    { "path": "skills/code-documentation/SKILL.md" },
-    { "path": "skills/research-methods/SKILL.md" }
+    "./plan/skills/setup/SKILL.md",
+    "./plan/skills/feature-authoring/SKILL.md",
+    "./plan/skills/usecase-authoring/SKILL.md",
+    "./plan/skills/architecture/SKILL.md",
+    "./plan/skills/reverse-engineering/SKILL.md",
+    "./plan/skills/schema/SKILL.md",
+    "./build/skills/planner/SKILL.md",
+    "./build/skills/tester/SKILL.md",
+    "./build/skills/developer/SKILL.md",
+    "./build/skills/verifier/SKILL.md",
+    "./skills/gherkin/SKILL.md",
+    "./skills/clipboard/SKILL.md",
+    "./skills/git-committing/SKILL.md",
+    "./skills/code-documentation/SKILL.md",
+    "./skills/research-methods/SKILL.md"
   ]
 }
 ```
@@ -472,7 +396,7 @@ it solves. Keep it brief — this is context, not a business plan.}
 - `specified` -- All use case files written; architecture.md complete
 - `building` -- Active implementation in progress
 - `live` -- In production, maintained
-- `dirty` -- Spec updated but code has not caught up yet (needs /mrun)
+- `dirty` -- Spec updated but code has not caught up yet (needs /m:run)
 - `deprecated` -- No longer active; retained for audit trail
 
 ## Features
@@ -656,7 +580,7 @@ to achieve {quality}, accepting {tradeoff}.
 ```markdown
 # Database Schema
 
-> Project-level database schema reverse-engineered from codebase via /mschema.
+> Project-level database schema reverse-engineered from codebase via /m:schema.
 > Last generated: {YYYY-MM-DD}
 
 ## Entity Relationship Diagram
@@ -701,7 +625,7 @@ argument-hint: "{usage hint shown to user}"
 
 ### 5.2 Plan Commands
 
-#### /msetup
+#### /m:setup
 
 | Field | Value |
 |-------|-------|
@@ -722,7 +646,7 @@ argument-hint: "{usage hint shown to user}"
 
 ```mermaid
 flowchart TD
-    A["User runs /msetup"] --> B{"prd/PROJECT.md exists?"}
+    A["User runs /m:setup"] --> B{"prd/PROJECT.md exists?"}
     B -->|Yes| C["Ask: regenerate?"]
     B -->|No| D["Interview: project description"]
     C -->|Yes| D
@@ -738,7 +662,7 @@ flowchart TD
     K --> Z
 ```
 
-#### /mfeature
+#### /m:feature
 
 | Field | Value |
 |-------|-------|
@@ -755,7 +679,7 @@ flowchart TD
 5. After all sections reviewed, assign `FEAT-NNN-slug` ID (next sequential number from FEATURES.md).
 6. Write all files. Register in FEATURES.md with status `scoped`.
 
-#### /musecase
+#### /m:usecase
 
 | Field | Value |
 |-------|-------|
@@ -771,7 +695,7 @@ flowchart TD
 4. Assign UC-NNN ID (next sequential within feature's USE-CASES.md).
 5. Write UC file with YAML frontmatter. Update USE-CASES.md.
 
-#### /mspec
+#### /m:spec
 
 | Field | Value |
 |-------|-------|
@@ -791,7 +715,7 @@ flowchart TD
 8. Generate state transition diagram if entities have lifecycle states.
 9. Add ADR section for non-obvious architectural decisions.
 
-#### /mschema
+#### /m:schema
 
 | Field | Value |
 |-------|-------|
@@ -807,7 +731,7 @@ flowchart TD
 4. Write invariants for each table.
 5. Always reverse-engineers from code — no "create from scratch" mode.
 
-#### /mstories
+#### /m:stories
 
 | Field | Value |
 |-------|-------|
@@ -829,7 +753,7 @@ flowchart TD
 | Fit criteria | Measurable `Then` assertions |
 | FEAT-NNN + UC-NNN | `@FEAT-NNN @UC-NNN` tags on every scenario |
 
-#### /mupdate-feature
+#### /m:update-feature
 
 | Field | Value |
 |-------|-------|
@@ -840,7 +764,7 @@ flowchart TD
 
 **Behavior:** Read current state, propose diff, apply after user review. No creation interview. Does not change feature lifecycle status.
 
-#### /mupdate-usecase
+#### /m:update-usecase
 
 | Field | Value |
 |-------|-------|
@@ -851,7 +775,7 @@ flowchart TD
 
 **Behavior:** Read current UC, propose diff, increment `version:` in frontmatter, set `status: dirty`, update USE-CASES.md status column. No creation interview.
 
-#### /mreverse-feature, /mreverse-usecase, /mreverse-glossary
+#### /m:reverse-feature, /m:reverse-usecase, /m:reverse-glossary
 
 | Field | Value |
 |-------|-------|
@@ -864,7 +788,7 @@ flowchart TD
 
 ### 5.3 Build Commands
 
-#### /mrun
+#### /m:run
 
 | Field | Value |
 |-------|-------|
@@ -877,11 +801,11 @@ flowchart TD
 
 | Mode | Example | Behavior |
 |------|---------|----------|
-| Single UC | `/mrun UC-001` | Run four-agent pipeline for one UC |
-| Multiple UCs | `/mrun UC-001 UC-003 UC-002` | Dispatcher resolves dependencies, orders execution, runs pipeline for each |
-| Single feature | `/mrun FEAT-001` | Expand to all new/dirty UCs in FEAT-001, resolve dependencies, run pipeline for each |
-| Multiple features | `/mrun FEAT-001 FEAT-003` | Expand all new/dirty UCs across both features, resolve cross-feature dependencies, run pipeline for each |
-| Mixed | `/mrun FEAT-001 UC-007` | Expand feature to UCs, merge with explicit UCs, resolve dependencies, run pipeline for each |
+| Single UC | `/m:run UC-001` | Run four-agent pipeline for one UC |
+| Multiple UCs | `/m:run UC-001 UC-003 UC-002` | Dispatcher resolves dependencies, orders execution, runs pipeline for each |
+| Single feature | `/m:run FEAT-001` | Expand to all new/dirty UCs in FEAT-001, resolve dependencies, run pipeline for each |
+| Multiple features | `/m:run FEAT-001 FEAT-003` | Expand all new/dirty UCs across both features, resolve cross-feature dependencies, run pipeline for each |
+| Mixed | `/m:run FEAT-001 UC-007` | Expand feature to UCs, merge with explicit UCs, resolve dependencies, run pipeline for each |
 
 **Dependency resolution:** The dispatcher does NOT execute in the order the user provides. It reads all target UCs, builds a dependency graph from UC preconditions and architecture.md references (e.g., UC-002 depends on tables created by UC-001), topologically sorts them, and executes in dependency order. If a cycle is detected, the dispatcher reports it to the user and stops.
 
@@ -1023,7 +947,7 @@ Each UC in the pipeline runs in its own git worktree (carried over from v2):
 
 ```mermaid
 sequenceDiagram
-    participant Run as "/mrun"
+    participant Run as "/m:run"
     participant Git as "Git"
     participant WT as "Worktree"
     participant Agents as "Pipeline"
@@ -1050,13 +974,13 @@ sequenceDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> backlog : "idea captured"
-    backlog --> scoped : "/mfeature creates requirements.md"
+    backlog --> scoped : "/m:feature creates requirements.md"
     scoped --> specified : "all UC files written + architecture.md complete"
-    specified --> building : "/mrun started"
+    specified --> building : "/m:run started"
     building --> live : "all UCs pass verification"
     live --> dirty : "UC or requirements updated"
-    dirty --> specified : "re-spec with /mspec"
-    specified --> building : "/mrun started"
+    dirty --> specified : "re-spec with /m:spec"
+    specified --> building : "/m:run started"
     live --> deprecated : "feature no longer active"
     building --> dirty : "spec changed during build"
 ```
@@ -1068,10 +992,10 @@ stateDiagram-v2
     [*] --> backlog : "UC added to USE-CASES.md"
     backlog --> scoped : "UC file created with fields"
     scoped --> specified : "all fields populated + fit criteria"
-    specified --> building : "/mrun pipeline started"
+    specified --> building : "/m:run pipeline started"
     building --> live : "Verifier approves"
-    live --> dirty : "/mupdate-usecase changes spec"
-    dirty --> building : "/mrun re-runs pipeline"
+    live --> dirty : "/m:update-usecase changes spec"
+    dirty --> building : "/m:run re-runs pipeline"
     live --> deprecated : "superseded by new UC"
 ```
 
@@ -1080,12 +1004,12 @@ stateDiagram-v2
 | From | To | Triggered By |
 |------|----|-------------|
 | (new) | backlog | Row added to USE-CASES.md |
-| backlog | scoped | `/musecase` creates UC file |
+| backlog | scoped | `/m:usecase` creates UC file |
 | scoped | specified | All UC fields populated, fit criteria written |
-| specified | building | `/mrun` starts pipeline |
+| specified | building | `/m:run` starts pipeline |
 | building | live | Verifier passes with no gaps |
-| live | dirty | `/mupdate-usecase` modifies UC file |
-| dirty | building | `/mrun` re-runs pipeline |
+| live | dirty | `/m:update-usecase` modifies UC file |
+| dirty | building | `/m:run` re-runs pipeline |
 | any | deprecated | Manual status change |
 
 ---
@@ -1096,7 +1020,7 @@ stateDiagram-v2
 
 Format: `FEAT-NNN-slug`
 
-- `NNN` is a sequential 3-digit number (001, 002, ...), assigned by `/mfeature` from the next available number in FEATURES.md
+- `NNN` is a sequential 3-digit number (001, 002, ...), assigned by `/m:feature` from the next available number in FEATURES.md
 - `slug` is lowercase, hyphens, derived from feature name (e.g., `authentication`, `commit-orchestration`)
 - IDs are never reused, never deleted
 - The full ID is the `id` field in the feature's `requirements.md` frontmatter
@@ -1105,7 +1029,7 @@ Format: `FEAT-NNN-slug`
 
 Format: `UC-NNN` (within a feature)
 
-- `NNN` is a sequential 3-digit number (001, 002, ...), assigned by `/musecase` from the next available number in the feature's USE-CASES.md
+- `NNN` is a sequential 3-digit number (001, 002, ...), assigned by `/m:usecase` from the next available number in the feature's USE-CASES.md
 - The full reference includes the feature: `FEAT-001-auth/UC-001`
 - The `tag` field in UC frontmatter is `@UC-NNN` for Gherkin filtering
 - The filename is `UC-NNN-{slug}.md`
@@ -1133,7 +1057,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### UC-0S96-001: Set Up Project Foundation
 
-- [ ] `/msetup` generates PROJECT.md with 1-2 paragraph description
+- [ ] `/m:setup` generates PROJECT.md with 1-2 paragraph description
 - [ ] Generates TECH-STACK.md with languages, frameworks, data, infrastructure
 - [ ] Generates ACTORS.md with roles, descriptions, constraints
 - [ ] Infers tech stack from codebase when present, confirms with user
@@ -1146,7 +1070,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### UC-0S96-002: Create Feature
 
-- [ ] `/mfeature` accepts freeform text and extracts EARS-syntax requirements
+- [ ] `/m:feature` accepts freeform text and extracts EARS-syntax requirements
 - [ ] Creation interview presents each section for user review
 - [ ] Generates requirements.md with Non-Goals as second section
 - [ ] All FRs use EARS syntax with Fit Criteria
@@ -1157,7 +1081,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### UC-0S96-003: Create Use Case
 
-- [ ] `/musecase` accepts FEAT-NNN and freeform text
+- [ ] `/m:usecase` accepts FEAT-NNN and freeform text
 - [ ] Validates FEAT-NNN exists in FEATURES.md
 - [ ] Creation interview presents each UC section for review
 - [ ] Writes UC file with all fields: preconditions, trigger, main flow, postconditions, side effects (including non-side-effects), alternative flows, fit criteria
@@ -1167,7 +1091,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### UC-0S96-004: Create or Update Architecture
 
-- [ ] `/mspec` reads requirements.md and all UC files for the feature
+- [ ] `/m:spec` reads requirements.md and all UC files for the feature
 - [ ] Generates C4 System Context (L1) Mermaid diagram
 - [ ] Generates C4 Container View (L2) Mermaid diagram
 - [ ] Generates ER diagram with field constraints
@@ -1180,14 +1104,14 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### UC-0S96-005: Generate Database Schema
 
-- [ ] `/mschema` scans codebase for migrations, ORM definitions, model files
+- [ ] `/m:schema` scans codebase for migrations, ORM definitions, model files
 - [ ] Generates prd/SCHEMA.md with Mermaid ER diagram
 - [ ] Includes table, column, type, constraint, invariant detail
 - [ ] Always reverse-engineers from code (no create-from-scratch mode)
 
 ### UC-0S96-006: Generate Gherkin Stories
 
-- [ ] `/mstories` reads UC file and references gherkin skill
+- [ ] `/m:stories` reads UC file and references gherkin skill
 - [ ] Generates scenarios with @FEAT-NNN @UC-NNN tags
 - [ ] Every main flow step has scenario coverage
 - [ ] Every alternative flow has at least one scenario
@@ -1197,11 +1121,11 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### UC-0S96-007: Run Four-Agent Pipeline
 
-- [ ] `/mrun {UC-NNN}` executes Planner, Tester, Developer, Verifier in sequence
-- [ ] `/mrun {UC-NNN} {UC-NNN} ...` accepts multiple UCs, resolves dependencies, executes in dependency order
-- [ ] `/mrun {FEAT-NNN}` expands to new/dirty UCs, resolves dependencies, iterates until all live
-- [ ] `/mrun {FEAT-NNN} {FEAT-NNN} ...` accepts multiple features, expands and resolves cross-feature dependencies
-- [ ] `/mrun {FEAT-NNN} {UC-NNN}` accepts mixed input (features + UCs), expands and merges
+- [ ] `/m:run {UC-NNN}` executes Planner, Tester, Developer, Verifier in sequence
+- [ ] `/m:run {UC-NNN} {UC-NNN} ...` accepts multiple UCs, resolves dependencies, executes in dependency order
+- [ ] `/m:run {FEAT-NNN}` expands to new/dirty UCs, resolves dependencies, iterates until all live
+- [ ] `/m:run {FEAT-NNN} {FEAT-NNN} ...` accepts multiple features, expands and resolves cross-feature dependencies
+- [ ] `/m:run {FEAT-NNN} {UC-NNN}` accepts mixed input (features + UCs), expands and merges
 - [ ] Dispatcher builds dependency graph from UC preconditions and architecture references
 - [ ] Dispatcher reports dependency cycle to user and stops if one is detected
 - [ ] Planner reads all relevant spec artifacts and produces in-context plan
@@ -1227,21 +1151,21 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 - [ ] `molcajete/deprecated/skills/` contains 10 deprecated skill directories
 - [ ] No `molcajete/shared/` directory exists
 - [ ] `plugin.json` references all active commands and skills at their new paths
-- [ ] All commands use `/mcommand` naming in manifest
+- [ ] All commands use `/m:command` naming in manifest
 
 ### Edge Cases
 
 | Scenario | Expected Behavior |
 |----------|-------------------|
-| `/msetup` run twice | Ask user if they want to regenerate existing documents |
-| `/mfeature` without `/msetup` first | Error: "Run /msetup first -- PROJECT.md and TECH-STACK.md are required" |
-| `/musecase` with invalid FEAT-NNN | Error: "Feature {FEAT-NNN} not found in FEATURES.md" |
-| `/mrun` on UC with empty fields | Error: "UC-NNN is missing required fields: {list}" |
-| `/mrun FEAT-NNN` with no new/dirty UCs | Message: "All UCs in FEAT-NNN are already live. Nothing to do." |
-| `/mrun UC-001 UC-002` with circular dependency | Error: "Dependency cycle detected between UC-001 and UC-002. Resolve manually." |
-| `/mrun FEAT-001 FEAT-002` with cross-feature UC dependency | Dispatcher orders UCs from both features in correct dependency order |
-| `/mspec` on feature with no UCs | Warning: "No use cases found -- generating architecture scaffold only" |
-| `/mupdate-usecase` on a `live` UC | Set status to `dirty`, increment version. Warn: "This UC is live. Updating will require /mrun to re-implement." |
+| `/m:setup` run twice | Ask user if they want to regenerate existing documents |
+| `/m:feature` without `/m:setup` first | Error: "Run /m:setup first -- PROJECT.md and TECH-STACK.md are required" |
+| `/m:usecase` with invalid FEAT-NNN | Error: "Feature {FEAT-NNN} not found in FEATURES.md" |
+| `/m:run` on UC with empty fields | Error: "UC-NNN is missing required fields: {list}" |
+| `/m:run FEAT-NNN` with no new/dirty UCs | Message: "All UCs in FEAT-NNN are already live. Nothing to do." |
+| `/m:run UC-001 UC-002` with circular dependency | Error: "Dependency cycle detected between UC-001 and UC-002. Resolve manually." |
+| `/m:run FEAT-001 FEAT-002` with cross-feature UC dependency | Dispatcher orders UCs from both features in correct dependency order |
+| `/m:spec` on feature with no UCs | Warning: "No use cases found -- generating architecture scaffold only" |
+| `/m:update-usecase` on a `live` UC | Set status to `dirty`, increment version. Warn: "This UC is live. Updating will require /m:run to re-implement." |
 | Verifier finds gaps | Report gaps with specific references. Do NOT attempt fixes. |
 | Git worktree merge conflict | Preserve worktree, report conflict to user for manual resolution |
 
@@ -1269,7 +1193,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 | Test | Validates |
 |------|-----------|
 | FEATURES.md table parsing | Correctly reads/writes feature rows with all columns |
-| USE-CASES.md index sync | New UC row added on /musecase; status updated on /mupdate-usecase |
+| USE-CASES.md index sync | New UC row added on /m:usecase; status updated on /m:update-usecase |
 | UC frontmatter parsing | Reads/writes id, name, feature, status, version, actor, tag fields |
 | EARS syntax validation | Generated FRs follow When/While/If-Then patterns |
 | Fit Criterion presence | Every FR has an accompanying Fit Criterion |
@@ -1281,12 +1205,12 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 | Test | Validates |
 |------|-----------|
-| /msetup end-to-end | Generates all 5 foundation documents from interview responses |
-| /mfeature end-to-end | Creation interview produces correct requirements.md, USE-CASES.md, architecture.md scaffold |
-| /musecase end-to-end | UC file created with all fields; USE-CASES.md updated |
-| /mstories UC mapping | Gherkin scenarios correctly map from UC fields (preconditions, trigger, side effects) |
-| /mrun single UC | Four agents execute in sequence; Gherkin passes; UC status changes to live |
-| /mrun feature | Iterates new/dirty UCs; skips live UCs; stops when all live |
+| /m:setup end-to-end | Generates all 5 foundation documents from interview responses |
+| /m:feature end-to-end | Creation interview produces correct requirements.md, USE-CASES.md, architecture.md scaffold |
+| /m:usecase end-to-end | UC file created with all fields; USE-CASES.md updated |
+| /m:stories UC mapping | Gherkin scenarios correctly map from UC fields (preconditions, trigger, side effects) |
+| /m:run single UC | Four agents execute in sequence; Gherkin passes; UC status changes to live |
+| /m:run feature | Iterates new/dirty UCs; skips live UCs; stops when all live |
 | Plugin manifest validation | All command paths resolve; all skill paths resolve; no deprecated references |
 
 ### E2E Tests
@@ -1310,7 +1234,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 - [ ] Move 4 shared commands to root `molcajete/commands/` (commit, review, doc, research)
 - [ ] Create `molcajete/deprecated/commands/` and move 12 v2 commands
 - [ ] Create `molcajete/deprecated/skills/` and move 10 language/stack skills
-- [ ] Update `plugin.json` with new paths and `/mcommand` naming
+- [ ] Update `plugin.json` with new paths and `/m:command` naming
 - [ ] Verify all active commands resolve from manifest
 - [ ] Verify no deprecated items referenced in manifest
 
@@ -1332,17 +1256,17 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### Plan Commands (UC-0S96-001 through UC-0S96-012)
 
-- [ ] Write `plan/commands/setup.md` (/msetup)
-- [ ] Write `plan/commands/feature.md` (/mfeature)
-- [ ] Write `plan/commands/usecase.md` (/musecase)
-- [ ] Write `plan/commands/spec.md` (/mspec)
-- [ ] Write `plan/commands/schema.md` (/mschema)
-- [ ] Write `plan/commands/stories.md` (/mstories)
-- [ ] Write `plan/commands/update-feature.md` (/mupdate-feature)
-- [ ] Write `plan/commands/update-usecase.md` (/mupdate-usecase)
-- [ ] Write `plan/commands/reverse-feature.md` (/mreverse-feature)
-- [ ] Write `plan/commands/reverse-usecase.md` (/mreverse-usecase)
-- [ ] Write `plan/commands/reverse-glossary.md` (/mreverse-glossary)
+- [ ] Write `plan/commands/setup.md` (/m:setup)
+- [ ] Write `plan/commands/feature.md` (/m:feature)
+- [ ] Write `plan/commands/usecase.md` (/m:usecase)
+- [ ] Write `plan/commands/spec.md` (/m:spec)
+- [ ] Write `plan/commands/schema.md` (/m:schema)
+- [ ] Write `plan/commands/stories.md` (/m:stories)
+- [ ] Write `plan/commands/update-feature.md` (/m:update-feature)
+- [ ] Write `plan/commands/update-usecase.md` (/m:update-usecase)
+- [ ] Write `plan/commands/reverse-feature.md` (/m:reverse-feature)
+- [ ] Write `plan/commands/reverse-usecase.md` (/m:reverse-usecase)
+- [ ] Write `plan/commands/reverse-glossary.md` (/m:reverse-glossary)
 
 ### Build Skills (UC-0S96-007)
 
@@ -1353,10 +1277,10 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 ### Build Commands (UC-0S96-007)
 
-- [ ] Write `build/commands/run.md` (/mrun with four-agent pipeline)
-- [ ] Update `build/commands/dev.md` (/mdev — path update from v2)
-- [ ] Update `build/commands/test.md` (/mtest — path update from v2)
-- [ ] Update `build/commands/debug.md` (/mdebug — path update from v2)
+- [ ] Write `build/commands/run.md` (/m:run with four-agent pipeline)
+- [ ] Update `build/commands/dev.md` (/m:dev — path update from v2)
+- [ ] Update `build/commands/test.md` (/m:test — path update from v2)
+- [ ] Update `build/commands/debug.md` (/m:debug — path update from v2)
 
 ### Orchestration Scripts
 

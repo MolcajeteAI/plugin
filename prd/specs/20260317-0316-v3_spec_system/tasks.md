@@ -17,8 +17,8 @@ Implements Molcajete v3: restructures the plugin into Plan/Build subsystems, cre
 |-----------|--------|
 | All 19 commands registered and invocable | `plugin.json` resolves every command path |
 | All 15 skills loaded by their respective commands | Skill references in command prompts resolve |
-| Four-agent pipeline runs end-to-end | /mrun executes Planner, Tester, Developer, Verifier for a UC |
-| /mcommand naming | No colon-separated command names in manifest |
+| Four-agent pipeline runs end-to-end | /m:run executes Planner, Tester, Developer, Verifier for a UC |
+| /m:command naming | All commands use `plugin:command` colon-separated format in manifest |
 
 **Estimated Total Effort:** 116 story points
 
@@ -34,7 +34,7 @@ Implements Molcajete v3: restructures the plugin into Plan/Build subsystems, cre
 
 ## [x] UC-0S96-013. Restructure Plugin into Plan/Build
 
-Creates the target directory structure, moves shared commands to root, and updates plugin.json with /mcommand naming. This is the foundation — every other UC depends on the directory layout existing.
+Creates the target directory structure, moves shared commands to root, and updates plugin.json with /m:command naming. This is the foundation — every other UC depends on the directory layout existing.
 
 - [x] 1. Create Plan/Build directory structure
   - Complexity: 2
@@ -58,21 +58,21 @@ Creates the target directory structure, moves shared commands to root, and updat
 - [x] 2. Move shared commands to root and update manifest
   - Complexity: 3
   - Dependencies: UC-0S96-013/1
-  - Acceptance: commit.md, review.md, doc.md, research.md in `molcajete/commands/`; plugin.json references new paths with /mcommand naming for all 19 commands
+  - Acceptance: commit.md, review.md, doc.md, research.md in `molcajete/commands/`; plugin.json references new paths with /m:command naming for all 19 commands
   - Completed: 2026-03-17
-  - Notes: Moved 4 build commands to build/commands/, 2 run sub-agents to build/commands/run/, 12 deprecated to deprecated/commands/, 10 skills to deprecated/skills/. Wrote plugin.json v3.0.0 with 19 commands, 15 skills, /mcommand naming. Created placeholder .md files for plan commands and SKILL.md placeholders for plan/build skills.
+  - Notes: Moved 4 build commands to build/commands/, 2 run sub-agents to build/commands/run/, 12 deprecated to deprecated/commands/, 10 skills to deprecated/skills/. Wrote plugin.json v3.0.0 with 19 commands, 15 skills, /m:command naming. Created placeholder .md files for plan commands and SKILL.md placeholders for plan/build skills.
   - [x] 2.1 Move commit, review, doc, research to `molcajete/commands/` (keep copies, remove from flat set)
     - Complexity: 1
     - Dependencies: UC-0S96-013/1
     - Acceptance: 4 command files at root commands/ path
     - Completed: 2026-03-17
     - Notes: Used git mv to move build commands to build/commands/, deprecated commands to deprecated/commands/, deprecated skills to deprecated/skills/. Root commands/ retains commit, review, doc, research.
-  - [x] 2.2 Write new plugin.json with v3 structure (19 commands, 15 skills, /mcommand naming, correct paths for plan/, build/, root)
+  - [x] 2.2 Write new plugin.json with v3 structure (19 commands, 15 skills, /m:command naming, correct paths for plan/, build/, root)
     - Complexity: 2
     - Dependencies: UC-0S96-013/2.1
     - Acceptance: Manifest parses cleanly; all paths point to existing or soon-to-exist files; no deprecated references
     - Completed: 2026-03-17
-    - Notes: Wrote plugin.json v3.0.0 with object format for commands (name/description/path), flat paths for skills. 6 unlisted workflow skills (agent-coordination, copywriting, dev-workflow, prompting, software-principles, project-management) remain on disk at root skills/ but are not registered in manifest per FR-0S96-047.
+    - Notes: Wrote plugin.json v3.0.0 with string paths for commands (per Claude Code plugin schema), flat paths for skills. 6 unlisted workflow skills (agent-coordination, copywriting, dev-workflow, prompting, software-principles, project-management) remain on disk at root skills/ but are not registered in manifest per FR-0S96-047.
 
 ---
 
@@ -102,16 +102,16 @@ Moves 10 language-specific skills to `molcajete/deprecated/skills/`.
 
 ---
 
-## [x] UC-0S96-001. Set Up Project Foundation (/msetup)
+## [x] UC-0S96-001. Set Up Project Foundation (/m:setup)
 
-Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, and the /msetup command that interviews the user and generates all foundational documents.
+Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, and the /m:setup command that interviews the user and generates all foundational documents.
 
 - [x] 1. Write setup skill and templates
   - Complexity: 5
   - Dependencies: UC-0S96-013/1.1
   - Acceptance: `plan/skills/setup/SKILL.md` exists with interview flow rules, inference patterns, and references to all 5 templates
   - Completed: 2026-03-17
-  - Notes: SKILL.md covers 3-stage interview (project, tech stack, actors), codebase detection tables, confirmation rules, document generation order. Added features-template.md since /msetup creates the initial FEATURES.md per FR-0S96-002.
+  - Notes: SKILL.md covers 3-stage interview (project, tech stack, actors), codebase detection tables, confirmation rules, document generation order. Added features-template.md since /m:setup creates the initial FEATURES.md per FR-0S96-002.
   - [x] 1.1 Write plan/skills/setup/SKILL.md (interview flow, tech stack inference, actor inference rules)
     - Complexity: 3
     - Dependencies: UC-0S96-013/1.1
@@ -125,7 +125,7 @@ Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md,
     - Completed: 2026-03-17
     - Notes: 5 templates created (added features-template.md with status key and empty table). All match spec Section 4 templates.
 
-- [x] 2. Write /msetup command
+- [x] 2. Write /m:setup command
   - Complexity: 5
   - Dependencies: UC-0S96-001/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/setup.md` exists with YAML frontmatter; references setup skill; generates PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md, and prd/features/ directory
@@ -140,37 +140,47 @@ Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md,
 
 ---
 
-## [ ] UC-0S96-002. Create Feature (/mfeature)
+## [x] UC-0S96-002. Create Feature (/m:feature)
 
-Creates the feature-authoring skill with templates for requirements.md, USE-CASES.md, architecture.md scaffold, and FEATURES.md, plus the /mfeature command with creation interview pattern.
+Creates the feature-authoring skill with templates for requirements.md, USE-CASES.md, architecture.md scaffold, and FEATURES.md, plus the /m:feature command with creation interview pattern.
 
-- [ ] 1. Write feature-authoring skill and templates
+- [x] 1. Write feature-authoring skill and templates
   - Complexity: 8
   - Dependencies: UC-0S96-013/1.1
   - Acceptance: `plan/skills/feature-authoring/SKILL.md` exists with EARS syntax rules, Fit Criteria rules, FEATURES.md management rules, and references to all 4 templates
-  - [ ] 1.1 Write plan/skills/feature-authoring/SKILL.md (EARS syntax patterns, Fit Criteria rules, Non-Goals positioning, FEAT-NNN-slug assignment, FEATURES.md row management)
+  - Completed: 2026-03-17
+  - Notes: SKILL.md covers all EARS patterns, Fit Criteria format, Non-Goals-second positioning with LLM rationale, FEAT-NNN-slug assignment from FEATURES.md, creation interview steps, update mode. 4 templates created with uppercase naming.
+  - [x] 1.1 Write plan/skills/feature-authoring/SKILL.md (EARS syntax patterns, Fit Criteria rules, Non-Goals positioning, FEAT-NNN-slug assignment, FEATURES.md row management)
     - Complexity: 5
     - Dependencies: UC-0S96-013/1.1
     - Acceptance: SKILL.md covers all EARS patterns (When/While/If-Then/Complex), Fit Criterion format, Non-Goals as second section, feature lifecycle states
-  - [ ] 1.2 Write templates: requirements-template.md, use-cases-index-template.md, architecture-scaffold-template.md, features-template.md
+    - Completed: 2026-03-17
+    - Notes: EARS table with 5 patterns, Fit Criteria format and rules, Non-Goals positioning with rationale, FEAT-NNN-slug assignment algorithm, FEATURES.md row management, creation interview 3-step flow with AskUserQuestion rule, update mode
+  - [x] 1.2 Write templates: REQUIREMENTS-template.md, USE-CASES-template.md, ARCHITECTURE-template.md, FEATURES-row-template.md
     - Complexity: 3
     - Dependencies: UC-0S96-002/1.1
-    - Acceptance: 4 template files in plan/skills/feature-authoring/templates/ matching spec Section 4.5-4.7 and 4.9
+    - Acceptance: 4 template files in plan/skills/feature-authoring/templates/ matching spec Section 4.6, 4.7, 4.9
+    - Completed: 2026-03-17
+    - Notes: Templates use uppercase naming to match setup skill convention. ARCHITECTURE-template.md uses double-quoted Mermaid labels. FEATURES-row-template.md is row-only (full FEATURES.md belongs to setup skill).
 
-- [ ] 2. Write /mfeature command
+- [x] 2. Write /m:feature command
   - Complexity: 5
   - Dependencies: UC-0S96-002/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/feature.md` exists; references feature-authoring skill; implements creation interview pattern
-  - [ ] 2.1 Write plan/commands/feature.md (YAML frontmatter + prompt with freeform input extraction, section-by-section review, EARS conversion, FEAT-NNN-slug assignment, file generation, FEATURES.md registration)
+  - Completed: 2026-03-17
+  - Notes: 8-step command: load skill, verify prerequisites, load project context, extract from freeform input, 6-section creation interview via AskUserQuestion, assign FEAT-NNN-slug, generate 3 docs from templates + update FEATURES.md
+  - [x] 2.1 Write plan/commands/feature.md (YAML frontmatter + prompt with freeform input extraction, section-by-section review, EARS conversion, FEAT-NNN-slug assignment, file generation, FEATURES.md registration)
     - Complexity: 5
     - Dependencies: UC-0S96-002/1
     - Acceptance: Command accepts freeform text, extracts and presents name/non-goals/actors/FRs(EARS)/NFRs/acceptance, writes requirements.md + USE-CASES.md + architecture.md scaffold, registers in FEATURES.md with status `scoped`
+    - Completed: 2026-03-17
+    - Notes: Replaced placeholder. References feature-authoring skill. Verifies /m:setup prerequisites. Cross-references ACTORS.md for actor selection. FEAT-NNN-slug auto-assigned from FEATURES.md last row.
 
 ---
 
-## [ ] UC-0S96-003. Create Use Case (/musecase)
+## [ ] UC-0S96-003. Create Use Case (/m:usecase)
 
-Creates the usecase-authoring skill with the UC file template and the /musecase command with creation interview.
+Creates the usecase-authoring skill with the UC file template and the /m:usecase command with creation interview.
 
 - [ ] 1. Write usecase-authoring skill and template
   - Complexity: 5
@@ -185,7 +195,7 @@ Creates the usecase-authoring skill with the UC file template and the /musecase 
     - Dependencies: UC-0S96-003/1.1
     - Acceptance: Template in plan/skills/usecase-authoring/templates/ matching spec Section 4.8
 
-- [ ] 2. Write /musecase command
+- [ ] 2. Write /m:usecase command
   - Complexity: 5
   - Dependencies: UC-0S96-003/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/usecase.md` exists; references usecase-authoring skill; implements creation interview
@@ -196,9 +206,9 @@ Creates the usecase-authoring skill with the UC file template and the /musecase 
 
 ---
 
-## [ ] UC-0S96-004. Create or Update Architecture (/mspec)
+## [ ] UC-0S96-004. Create or Update Architecture (/m:spec)
 
-Creates the architecture skill with template and the /mspec command that generates C4 diagrams, ER with invariants, event topology, state transitions, and ADRs.
+Creates the architecture skill with template and the /m:spec command that generates C4 diagrams, ER with invariants, event topology, state transitions, and ADRs.
 
 - [ ] 1. Write architecture skill and template
   - Complexity: 5
@@ -213,7 +223,7 @@ Creates the architecture skill with template and the /mspec command that generat
     - Dependencies: UC-0S96-004/1.1
     - Acceptance: Template in plan/skills/architecture/templates/ matching spec Section 4.9
 
-- [ ] 2. Write /mspec command
+- [ ] 2. Write /m:spec command
   - Complexity: 5
   - Dependencies: UC-0S96-004/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/spec.md` exists; references architecture skill; reads requirements.md + UC files to generate architecture.md
@@ -224,9 +234,9 @@ Creates the architecture skill with template and the /mspec command that generat
 
 ---
 
-## [ ] UC-0S96-005. Generate Database Schema (/mschema)
+## [ ] UC-0S96-005. Generate Database Schema (/m:schema)
 
-Creates the schema skill with template and the /mschema command that reverse-engineers SCHEMA.md from codebase.
+Creates the schema skill with template and the /m:schema command that reverse-engineers SCHEMA.md from codebase.
 
 - [ ] 1. Write schema skill and template
   - Complexity: 3
@@ -241,7 +251,7 @@ Creates the schema skill with template and the /mschema command that reverse-eng
     - Dependencies: UC-0S96-005/1.1
     - Acceptance: Template in plan/skills/schema/templates/ matching spec Section 4.10
 
-- [ ] 2. Write /mschema command
+- [ ] 2. Write /m:schema command
   - Complexity: 3
   - Dependencies: UC-0S96-005/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/schema.md` exists; references schema skill; scans codebase and generates prd/SCHEMA.md with Mermaid ER
@@ -252,9 +262,9 @@ Creates the schema skill with template and the /mschema command that reverse-eng
 
 ---
 
-## [ ] UC-0S96-006. Generate Gherkin Stories (/mstories)
+## [ ] UC-0S96-006. Generate Gherkin Stories (/m:stories)
 
-Creates the plan-side gherkin skill with template and the /mstories command that maps UC fields to Gherkin scenarios.
+Creates the plan-side gherkin skill with template and the /m:stories command that maps UC fields to Gherkin scenarios.
 
 - [ ] 1. Write gherkin skill and template
   - Complexity: 5
@@ -263,13 +273,13 @@ Creates the plan-side gherkin skill with template and the /mstories command that
   - [ ] 1.1 Write plan/skills/gherkin/SKILL.md (UC field to Gherkin mapping: preconditions->Given, trigger->When, postconditions+side-effects->Then/And, non-side-effects->And-no, alternative-flows->failure-scenarios, tag convention @FEAT-NNN @UC-NNN, step definition placeholder rules)
     - Complexity: 3
     - Dependencies: UC-0S96-013/1.1
-    - Acceptance: SKILL.md covers every mapping from spec Section 5.2 /mstories table, tag hierarchy from spec Section 8.4, coverage rules from spec Section 6.3
+    - Acceptance: SKILL.md covers every mapping from spec Section 5.2 /m:stories table, tag hierarchy from spec Section 8.4, coverage rules from spec Section 6.3
   - [ ] 1.2 Write template: feature-file-template.md
     - Complexity: 2
     - Dependencies: UC-0S96-006/1.1
     - Acceptance: Template in plan/skills/gherkin/templates/ with Gherkin feature file structure and tag placeholders
 
-- [ ] 2. Write /mstories command
+- [ ] 2. Write /m:stories command
   - Complexity: 5
   - Dependencies: UC-0S96-006/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/stories.md` exists; references gherkin skill; reads UC file and generates tagged Gherkin with side effect coverage
@@ -280,9 +290,9 @@ Creates the plan-side gherkin skill with template and the /mstories command that
 
 ---
 
-## [ ] UC-0S96-007. Run Four-Agent Pipeline (/mrun)
+## [ ] UC-0S96-007. Run Four-Agent Pipeline (/m:run)
 
-Creates 4 build skills (planner, tester, developer, verifier), the /mrun command, and updates dispatch.sh for the four-agent pipeline with dependency-aware multi-UC/multi-feature support.
+Creates 4 build skills (planner, tester, developer, verifier), the /m:run command, and updates dispatch.sh for the four-agent pipeline with dependency-aware multi-UC/multi-feature support.
 
 - [ ] 1. Write planner skill
   - Complexity: 5
@@ -320,7 +330,7 @@ Creates 4 build skills (planner, tester, developer, verifier), the /mrun command
     - Dependencies: UC-0S96-013/1.2
     - Acceptance: SKILL.md defines all 6 verification checks from spec Section 6.5, gap reporting format, explicit no-auto-fix rule
 
-- [ ] 5. Write /mrun command
+- [ ] 5. Write /m:run command
   - Complexity: 8
   - Dependencies: UC-0S96-007/1, UC-0S96-007/2, UC-0S96-007/3, UC-0S96-007/4, UC-0S96-013/2.2
   - Acceptance: `build/commands/run.md` exists; accepts UC-NNN, FEAT-NNN, or mixed input; dispatches four-agent pipeline per UC in dependency order
@@ -340,11 +350,11 @@ Creates 4 build skills (planner, tester, developer, verifier), the /mrun command
 
 ---
 
-## [ ] UC-0S96-008. Update Feature (/mupdate-feature)
+## [ ] UC-0S96-008. Update Feature (/m:update-feature)
 
-Creates the /mupdate-feature command that reads current requirements.md/architecture.md, proposes changes, and applies after review.
+Creates the /m:update-feature command that reads current requirements.md/architecture.md, proposes changes, and applies after review.
 
-- [ ] 1. Write /mupdate-feature command
+- [ ] 1. Write /m:update-feature command
   - Complexity: 3
   - Dependencies: UC-0S96-002/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/update-feature.md` exists; references feature-authoring skill; reads current state, proposes diff, applies after review; no creation interview
@@ -355,11 +365,11 @@ Creates the /mupdate-feature command that reads current requirements.md/architec
 
 ---
 
-## [ ] UC-0S96-009. Update Use Case (/mupdate-usecase)
+## [ ] UC-0S96-009. Update Use Case (/m:update-usecase)
 
-Creates the /mupdate-usecase command that edits a UC file, increments version, and sets status to dirty.
+Creates the /m:update-usecase command that edits a UC file, increments version, and sets status to dirty.
 
-- [ ] 1. Write /mupdate-usecase command
+- [ ] 1. Write /m:update-usecase command
   - Complexity: 3
   - Dependencies: UC-0S96-003/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/update-usecase.md` exists; references usecase-authoring skill; increments version, sets dirty, updates USE-CASES.md
@@ -370,9 +380,9 @@ Creates the /mupdate-usecase command that edits a UC file, increments version, a
 
 ---
 
-## [ ] UC-0S96-010. Reverse-Engineer Feature from Code (/mreverse-feature)
+## [ ] UC-0S96-010. Reverse-Engineer Feature from Code (/m:reverse-feature)
 
-Creates the reverse-engineering skill and the /mreverse-feature command.
+Creates the reverse-engineering skill and the /m:reverse-feature command.
 
 - [ ] 1. Write reverse-engineering skill
   - Complexity: 5
@@ -383,7 +393,7 @@ Creates the reverse-engineering skill and the /mreverse-feature command.
     - Dependencies: UC-0S96-013/1.1
     - Acceptance: SKILL.md covers scanning approach, extraction patterns, security filtering, output quality expectations
 
-- [ ] 2. Write /mreverse-feature command
+- [ ] 2. Write /m:reverse-feature command
   - Complexity: 5
   - Dependencies: UC-0S96-010/1, UC-0S96-002/1, UC-0S96-003/1, UC-0S96-004/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/reverse-feature.md` exists; references reverse-engineering + feature-authoring + usecase-authoring + architecture skills; generates full feature directory from code
@@ -394,11 +404,11 @@ Creates the reverse-engineering skill and the /mreverse-feature command.
 
 ---
 
-## [ ] UC-0S96-011. Reverse-Engineer Use Case from Code (/mreverse-usecase)
+## [ ] UC-0S96-011. Reverse-Engineer Use Case from Code (/m:reverse-usecase)
 
-Creates the /mreverse-usecase command that generates a single UC file from code analysis.
+Creates the /m:reverse-usecase command that generates a single UC file from code analysis.
 
-- [ ] 1. Write /mreverse-usecase command
+- [ ] 1. Write /m:reverse-usecase command
   - Complexity: 3
   - Dependencies: UC-0S96-010/1, UC-0S96-003/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/reverse-usecase.md` exists; references reverse-engineering + usecase-authoring skills; generates UC file from code
@@ -409,11 +419,11 @@ Creates the /mreverse-usecase command that generates a single UC file from code 
 
 ---
 
-## [ ] UC-0S96-012. Reverse-Engineer Glossary from Code (/mreverse-glossary)
+## [ ] UC-0S96-012. Reverse-Engineer Glossary from Code (/m:reverse-glossary)
 
-Creates the /mreverse-glossary command that generates GLOSSARY.md from seed terms.
+Creates the /m:reverse-glossary command that generates GLOSSARY.md from seed terms.
 
-- [ ] 1. Write /mreverse-glossary command
+- [ ] 1. Write /m:reverse-glossary command
   - Complexity: 3
   - Dependencies: UC-0S96-010/1, UC-0S96-001/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/reverse-glossary.md` exists; references reverse-engineering + setup skills; generates GLOSSARY.md from code
@@ -426,12 +436,12 @@ Creates the /mreverse-glossary command that generates GLOSSARY.md from seed term
 
 ## [ ] UC-0S96-007b. Update Build Utility Commands
 
-Moves /mdev, /mtest, /mdebug to `build/commands/` with path updates and /mcommand naming.
+Moves /m:dev, /m:test, /m:debug to `build/commands/` with path updates and /m:command naming.
 
 - [ ] 1. Move and update build utility commands
   - Complexity: 3
   - Dependencies: UC-0S96-013/2.2
-  - Acceptance: dev.md, test.md, debug.md in `build/commands/`; registered as /mdev, /mtest, /mdebug in manifest
+  - Acceptance: dev.md, test.md, debug.md in `build/commands/`; registered as /m:dev, /m:test, /m:debug in manifest
   - [ ] 1.1 Move dev.md to build/commands/dev.md (update any internal skill references if needed)
     - Complexity: 1
     - Dependencies: UC-0S96-013/1.2
@@ -470,19 +480,19 @@ Start with the infrastructure UCs (013, 014, 015, 016) to establish the director
 graph LR
     A["UC-013: Restructure"] --> B["UC-014: Deprecate Cmds"]
     A --> C["UC-015: Deprecate Skills"]
-    A --> D["UC-001: /msetup"]
-    A --> E["UC-002: /mfeature"]
-    A --> F["UC-003: /musecase"]
-    A --> G["UC-004: /mspec"]
-    A --> H["UC-007: /mrun skills"]
-    D --> I["UC-012: /mreverse-glossary"]
-    E --> J["UC-008: /mupdate-feature"]
-    F --> K["UC-009: /mupdate-usecase"]
-    E --> L["UC-010: /mreverse-feature"]
+    A --> D["UC-001: /m:setup"]
+    A --> E["UC-002: /m:feature"]
+    A --> F["UC-003: /m:usecase"]
+    A --> G["UC-004: /m:spec"]
+    A --> H["UC-007: /m:run skills"]
+    D --> I["UC-012: /m:reverse-glossary"]
+    E --> J["UC-008: /m:update-feature"]
+    F --> K["UC-009: /m:update-usecase"]
+    E --> L["UC-010: /m:reverse-feature"]
     F --> L
     G --> L
-    L --> M["UC-011: /mreverse-usecase"]
-    H --> N["UC-007: /mrun command"]
+    L --> M["UC-011: /m:reverse-usecase"]
+    H --> N["UC-007: /m:run command"]
     N --> O["UC-007: dispatch.sh"]
 ```
 

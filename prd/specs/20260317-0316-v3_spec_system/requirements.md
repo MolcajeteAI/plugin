@@ -13,7 +13,7 @@
 
 Molcajete v3 replaces the old task-centric spec scaffolding (timestamped folders with throwaway `requirements.md`, `spec.md`, `tasks.md`, `impact.md`) with a knowledge-centric system where features and use cases are permanent, verifiable artifacts. Features are constants. Use cases are the variable set that grows. Plans are ephemeral — generated at runtime, not stored on disk.
 
-The plugin restructures from a flat `commands/` and `skills/` directory into two fully independent subsystems: **Plan** (defining what to build) and **Build** (implementing and verifying what Plan defined). Each subsystem owns its own commands and skills with no shared skills between them — duplication is preferred over premature abstraction. All commands are renamed from `/m:command` to `/mcommand` format. Commands and skills not part of either subsystem are moved to a `deprecated/` folder.
+The plugin restructures from a flat `commands/` and `skills/` directory into two fully independent subsystems: **Plan** (defining what to build) and **Build** (implementing and verifying what Plan defined). Each subsystem owns its own commands and skills with no shared skills between them — duplication is preferred over premature abstraction. All commands use the `/m:command` format (plugin namespace with colon separator), as required by the Claude Code plugin system. Commands and skills not part of either subsystem are moved to a `deprecated/` folder.
 
 The new system introduces EARS syntax for requirements, Fit Criteria for verifiability, explicit Side Effects on every use case, C4 architecture diagrams, ER diagrams with invariants, event topology tables, a Feature Inventory (`FEATURES.md`), an Actors catalog (`ACTORS.md`), a domain Glossary (`GLOSSARY.md`), and a four-agent run pipeline (Planner, Tester, Developer, Verifier) that generates plans at execution time.
 
@@ -23,7 +23,7 @@ The new system introduces EARS syntax for requirements, Fit Criteria for verifia
 |--------|-----------|
 | Mission | Directly advances "every developer gets the same high-quality, structured output" by making specs permanent, verifiable, and traceable rather than throwaway scaffolding |
 | Roadmap | Implements the v3 architecture — the primary NOW priority on the roadmap |
-| Success Metrics | First-run implementation accuracy of `/mrun`; time-to-spec for new features; traceability coverage (feature to Gherkin) |
+| Success Metrics | First-run implementation accuracy of `/m:run`; time-to-spec for new features; traceability coverage (feature to Gherkin) |
 
 ### User Value
 
@@ -38,7 +38,7 @@ The new system introduces EARS syntax for requirements, Fit Criteria for verifia
 |-----------|--------|-------------|
 | Spec permanence | Features and use cases persist as living documents, never rebuilt from scratch | No timestamped throwaway folders created by v3 commands |
 | Traceability | Every feature traces to use cases, use cases trace to Gherkin tags | FEATURES.md -> USE-CASES.md -> @UC-NNN tag chain is complete for every specified feature |
-| First-run accuracy | /mrun implements a UC correctly without human intervention | Gherkin scenarios pass on first pipeline run for UCs with complete specs |
+| First-run accuracy | /m:run implements a UC correctly without human intervention | Gherkin scenarios pass on first pipeline run for UCs with complete specs |
 | Side effect coverage | Every UC's declared side effects appear in Gherkin scenarios | Verifier agent reports zero uncovered side effects |
 
 ---
@@ -47,7 +47,7 @@ The new system introduces EARS syntax for requirements, Fit Criteria for verifia
 
 ### UC-0S96-001: Set Up Project Foundation
 
-The user runs `/msetup` on a new or existing project to generate the foundational documents (`PROJECT.md`, `TECH-STACK.md`, and `ACTORS.md`) that all other commands depend on. This UC also includes creating the skill templates for `PROJECT.md`, `TECH-STACK.md`, and `ACTORS.md` that the command uses to generate these documents. During setup, the system interviews the user for actor definitions — if actors can be inferred from the project description or codebase, the system suggests them and asks the user to confirm before writing.
+The user runs `/m:setup` on a new or existing project to generate the foundational documents (`PROJECT.md`, `TECH-STACK.md`, and `ACTORS.md`) that all other commands depend on. This UC also includes creating the skill templates for `PROJECT.md`, `TECH-STACK.md`, and `ACTORS.md` that the command uses to generate these documents. During setup, the system interviews the user for actor definitions — if actors can be inferred from the project description or codebase, the system suggests them and asks the user to confirm before writing.
 
 **Primary Actor:** Developer
 **Preconditions:** No `prd/PROJECT.md` or `prd/TECH-STACK.md` exists yet (or user wants to regenerate them)
@@ -55,15 +55,15 @@ The user runs `/msetup` on a new or existing project to generate the foundationa
 
 ### UC-0S96-002: Create Feature
 
-The user runs `/mfeature` with freeform input to create a new feature entry. The command extracts structure from the input, presents it section-by-section for review (creation interview), and writes `requirements.md`, `USE-CASES.md`, and an `architecture.md` scaffold in `prd/features/{slug}/`. It also registers the feature in `prd/FEATURES.md`. This UC also includes creating the skill templates for `requirements.md`, `USE-CASES.md`, `architecture.md`, and `FEATURES.md` that the command uses to generate these documents.
+The user runs `/m:feature` with freeform input to create a new feature entry. The command extracts structure from the input, presents it section-by-section for review (creation interview), and writes `requirements.md`, `USE-CASES.md`, and an `architecture.md` scaffold in `prd/features/{slug}/`. It also registers the feature in `prd/FEATURES.md`. This UC also includes creating the skill templates for `requirements.md`, `USE-CASES.md`, `architecture.md`, and `FEATURES.md` that the command uses to generate these documents.
 
 **Primary Actor:** Developer
-**Preconditions:** `prd/PROJECT.md` and `prd/TECH-STACK.md` exist; `prd/FEATURES.md` exists (created by `/msetup` or manually)
+**Preconditions:** `prd/PROJECT.md` and `prd/TECH-STACK.md` exist; `prd/FEATURES.md` exists (created by `/m:setup` or manually)
 **Postconditions:** Feature directory exists with `requirements.md` (EARS syntax, Fit Criteria), `USE-CASES.md` (empty or with extracted UCs), `architecture.md` scaffold; `FEATURES.md` has new row with status `scoped`; skill templates for all four documents exist in the plan skills directory
 
 ### UC-0S96-003: Create Use Case
 
-The user runs `/musecase {FEAT-NNN} {input}` to create a new use case file within a feature. The command follows the creation interview pattern — extracts preconditions, trigger, main flow, postconditions, side effects, alternative flows, and fit criteria from the input, then presents each section for review. This UC also includes creating the skill template for use case files that the command uses to generate the UC document.
+The user runs `/m:usecase {FEAT-NNN} {input}` to create a new use case file within a feature. The command follows the creation interview pattern — extracts preconditions, trigger, main flow, postconditions, side effects, alternative flows, and fit criteria from the input, then presents each section for review. This UC also includes creating the skill template for use case files that the command uses to generate the UC document.
 
 **Primary Actor:** Developer
 **Preconditions:** Feature exists in `prd/features/{slug}/`; `USE-CASES.md` exists for that feature
@@ -71,7 +71,7 @@ The user runs `/musecase {FEAT-NNN} {input}` to create a new use case file withi
 
 ### UC-0S96-004: Create or Update Architecture
 
-The user runs `/mspec {FEAT-NNN}` to generate or update `architecture.md` for a feature. The command reads the feature's `requirements.md` and UC files, then produces C4 L1/L2 diagrams, ER diagrams with invariants, event topology table, state transition diagrams, and architecture decision records.
+The user runs `/m:spec {FEAT-NNN}` to generate or update `architecture.md` for a feature. The command reads the feature's `requirements.md` and UC files, then produces C4 L1/L2 diagrams, ER diagrams with invariants, event topology table, state transition diagrams, and architecture decision records.
 
 **Primary Actor:** Developer
 **Preconditions:** Feature exists with at least `requirements.md` populated
@@ -79,7 +79,7 @@ The user runs `/mspec {FEAT-NNN}` to generate or update `architecture.md` for a 
 
 ### UC-0S96-005: Generate Database Schema
 
-The user runs `/mschema` to scan the codebase for migrations, ORM definitions, or model files and generate or update `prd/SCHEMA.md` — the project-level database schema. The schema document uses Mermaid ER diagrams for visual representation. This UC also includes creating the skill template for `SCHEMA.md` that the command uses to generate the document.
+The user runs `/m:schema` to scan the codebase for migrations, ORM definitions, or model files and generate or update `prd/SCHEMA.md` — the project-level database schema. The schema document uses Mermaid ER diagrams for visual representation. This UC also includes creating the skill template for `SCHEMA.md` that the command uses to generate the document.
 
 **Primary Actor:** Developer
 **Preconditions:** Codebase has database-related files (migrations, ORM models, schema definitions)
@@ -87,7 +87,7 @@ The user runs `/mschema` to scan the codebase for migrations, ORM definitions, o
 
 ### UC-0S96-006: Generate Gherkin Stories
 
-The user runs `/mstories {UC-NNN}` to generate Gherkin scenarios from a use case file. The command references the `gherkin` skill (`./skills/gherkin`) for scenario generation rules, tag conventions, and step writing patterns. It reads the UC's preconditions, trigger, main flow, postconditions, side effects, and alternative flows, then produces tagged scenarios with side effect coverage.
+The user runs `/m:stories {UC-NNN}` to generate Gherkin scenarios from a use case file. The command references the `gherkin` skill (`./skills/gherkin`) for scenario generation rules, tag conventions, and step writing patterns. It reads the UC's preconditions, trigger, main flow, postconditions, side effects, and alternative flows, then produces tagged scenarios with side effect coverage.
 
 **Primary Actor:** Developer
 **Preconditions:** UC file exists with all fields populated; parent feature has `architecture.md` (for side effect and data model context); `gherkin` skill exists in the plan skills directory
@@ -95,7 +95,7 @@ The user runs `/mstories {UC-NNN}` to generate Gherkin scenarios from a use case
 
 ### UC-0S96-007: Run Four-Agent Pipeline
 
-The existing `/m:run` command is renamed to `/mrun`, moved to `molcajete/build/commands/`, and updated with three changes: (1) it now accepts one or more `{FEAT-NNN}` and/or `{UC-NNN}` arguments, including mixed input — expanding features to their new/dirty UCs, merging all targets, resolving inter-UC dependencies, and executing in dependency order; (2) the dispatcher builds a dependency graph from UC preconditions and architecture references, topologically sorts it, and executes in the correct order regardless of the order the user provides; (3) it switches from the current three-agent pipeline to a four-agent pipeline — Planner, Tester, Developer, Verifier. The Planner reads all spec artifacts and produces a cohesive implementation plan in context; Tester writes Gherkin scenarios (red phase); Developer implements until all scenarios pass (green phase); Verifier checks feature completeness, FR/NFR compliance, architecture conformance, and side effect coverage.
+The existing `/m:run` command is renamed to `/m:run`, moved to `molcajete/build/commands/`, and updated with three changes: (1) it now accepts one or more `{FEAT-NNN}` and/or `{UC-NNN}` arguments, including mixed input — expanding features to their new/dirty UCs, merging all targets, resolving inter-UC dependencies, and executing in dependency order; (2) the dispatcher builds a dependency graph from UC preconditions and architecture references, topologically sorts it, and executes in the correct order regardless of the order the user provides; (3) it switches from the current three-agent pipeline to a four-agent pipeline — Planner, Tester, Developer, Verifier. The Planner reads all spec artifacts and produces a cohesive implementation plan in context; Tester writes Gherkin scenarios (red phase); Developer implements until all scenarios pass (green phase); Verifier checks feature completeness, FR/NFR compliance, architecture conformance, and side effect coverage.
 
 **Primary Actor:** Developer
 **Preconditions:** UC file(s) exist with all fields populated; `architecture.md` exists; `GLOSSARY.md` exists; `PROJECT.md` and `TECH-STACK.md` exist
@@ -103,7 +103,7 @@ The existing `/m:run` command is renamed to `/mrun`, moved to `molcajete/build/c
 
 ### UC-0S96-008: Update Feature
 
-The user runs `/mupdate-feature {FEAT-NNN} {description}` to modify an existing feature's `requirements.md` and/or `architecture.md`. The command reads the current state, proposes specific changes, and applies them after review.
+The user runs `/m:update-feature {FEAT-NNN} {description}` to modify an existing feature's `requirements.md` and/or `architecture.md`. The command reads the current state, proposes specific changes, and applies them after review.
 
 **Primary Actor:** Developer
 **Preconditions:** Feature exists with `requirements.md`
@@ -111,7 +111,7 @@ The user runs `/mupdate-feature {FEAT-NNN} {description}` to modify an existing 
 
 ### UC-0S96-009: Update Use Case
 
-The user runs `/mupdate-usecase {UC-NNN} {description}` to modify an existing UC file. The command reads the current UC, proposes specific changes, increments the version, and sets status to `dirty`.
+The user runs `/m:update-usecase {UC-NNN} {description}` to modify an existing UC file. The command reads the current UC, proposes specific changes, increments the version, and sets status to `dirty`.
 
 **Primary Actor:** Developer
 **Preconditions:** UC file exists
@@ -119,7 +119,7 @@ The user runs `/mupdate-usecase {UC-NNN} {description}` to modify an existing UC
 
 ### UC-0S96-010: Reverse-Engineer Feature from Code
 
-The user runs `/mreverse-feature {description}` to scan the codebase for an existing capability and generate a feature directory with `requirements.md`, `USE-CASES.md`, `architecture.md`, and individual UC files populated from the code.
+The user runs `/m:reverse-feature {description}` to scan the codebase for an existing capability and generate a feature directory with `requirements.md`, `USE-CASES.md`, `architecture.md`, and individual UC files populated from the code.
 
 **Primary Actor:** Developer
 **Preconditions:** Codebase has an existing capability not yet documented in the spec system
@@ -127,7 +127,7 @@ The user runs `/mreverse-feature {description}` to scan the codebase for an exis
 
 ### UC-0S96-011: Reverse-Engineer Use Case from Code
 
-The user runs `/mreverse-usecase {description}` to scan the codebase for a specific interaction and generate a single UC file with all fields populated from the code.
+The user runs `/m:reverse-usecase {description}` to scan the codebase for a specific interaction and generate a single UC file with all fields populated from the code.
 
 **Primary Actor:** Developer
 **Preconditions:** Feature directory exists; codebase has an existing interaction not yet documented
@@ -135,7 +135,7 @@ The user runs `/mreverse-usecase {description}` to scan the codebase for a speci
 
 ### UC-0S96-012: Reverse-Engineer Glossary from Code
 
-The user runs `/mreverse-glossary {seed terms}` to scan the codebase for how terms are used and generate a starter `prd/GLOSSARY.md`.
+The user runs `/m:reverse-glossary {seed terms}` to scan the codebase for how terms are used and generate a starter `prd/GLOSSARY.md`.
 
 **Primary Actor:** Developer
 **Preconditions:** Codebase exists; no `prd/GLOSSARY.md` exists yet (or user wants to regenerate)
@@ -143,11 +143,11 @@ The user runs `/mreverse-glossary {seed terms}` to scan the codebase for how ter
 
 ### UC-0S96-013: Restructure Plugin into Plan/Build
 
-The plugin's flat `molcajete/commands/` and `molcajete/skills/` directories are reorganized into two independent subsystems: `molcajete/plan/` and `molcajete/build/`. Each subsystem has its own `commands/` and `skills/` directories. Commands and skills that don't belong to either subsystem (e.g., commit, review, doc, research) remain at the plugin root (`molcajete/commands/`, `molcajete/skills/`). No `/shared` directory — the root level serves that purpose. The plugin manifest (`plugin.json`) is updated to reference the new paths and the `/mcommand` naming convention.
+The plugin's flat `molcajete/commands/` and `molcajete/skills/` directories are reorganized into two independent subsystems: `molcajete/plan/` and `molcajete/build/`. Each subsystem has its own `commands/` and `skills/` directories. Commands and skills that don't belong to either subsystem (e.g., commit, review, doc, research) remain at the plugin root (`molcajete/commands/`, `molcajete/skills/`). No `/shared` directory — the root level serves that purpose. The plugin manifest (`plugin.json`) is updated to reference the new paths and the `/m:command` naming convention.
 
 **Primary Actor:** Developer (plugin maintainer)
 **Preconditions:** Current flat plugin structure exists
-**Postconditions:** `molcajete/plan/commands/`, `molcajete/plan/skills/`, `molcajete/build/commands/`, `molcajete/build/skills/` directories exist; shared commands remain at `molcajete/commands/`; shared skills remain at `molcajete/skills/`; `plugin.json` updated with new paths and `/mcommand` naming; no `molcajete/shared/` directory
+**Postconditions:** `molcajete/plan/commands/`, `molcajete/plan/skills/`, `molcajete/build/commands/`, `molcajete/build/skills/` directories exist; shared commands remain at `molcajete/commands/`; shared skills remain at `molcajete/skills/`; `plugin.json` updated with new paths and `/m:command` naming; no `molcajete/shared/` directory
 
 ### UC-0S96-014: Deprecate Old Commands
 
@@ -177,10 +177,10 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 | US-0S96-002 | developer | to describe a feature in freeform text and get structured EARS requirements back | I get unambiguous requirements without learning EARS syntax myself | Critical |
 | US-0S96-003 | developer | to create use cases with explicit side effects, alternative flows, and fit criteria | agents implement the complete behavior including all side effects on the first run | Critical |
 | US-0S96-004 | developer | architecture docs generated with C4 diagrams, ER with invariants, and event topology | implementing agents know exactly which components exist and how they relate | Critical |
-| US-0S96-005 | developer | to run /mrun on a use case and have four agents (plan, test, build, verify) handle it | I get unattended implementation with verification that nothing was missed | Critical |
+| US-0S96-005 | developer | to run /m:run on a use case and have four agents (plan, test, build, verify) handle it | I get unattended implementation with verification that nothing was missed | Critical |
 | US-0S96-006 | developer | to look up FEATURES.md and instantly know what the system does | I don't need to scan directories or read multiple files to understand the system | High |
-| US-0S96-007 | developer | to run /mstories on a UC and get Gherkin with full side effect coverage | the verification gate catches incomplete implementations | High |
-| US-0S96-008 | developer | to update a use case and have its status go to `dirty` | I know which UCs need /mrun to catch up with spec changes | High |
+| US-0S96-007 | developer | to run /m:stories on a UC and get Gherkin with full side effect coverage | the verification gate catches incomplete implementations | High |
+| US-0S96-008 | developer | to update a use case and have its status go to `dirty` | I know which UCs need /m:run to catch up with spec changes | High |
 | US-0S96-009 | developer | to reverse-engineer specs from an existing codebase | I can adopt this system on projects that already have code | Medium |
 | US-0S96-010 | developer | to generate a project-level database schema from codebase | agents have the full data model context when implementing | Medium |
 | US-0S96-011 | developer | commands organized into Plan and Build subsystems | each agent's context stays focused and within the instruction ceiling | High |
@@ -189,7 +189,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-001: Project setup
 
-- [ ] `/msetup` interviews the user for project description, tech stack, and actors
+- [ ] `/m:setup` interviews the user for project description, tech stack, and actors
 - [ ] Generates `prd/PROJECT.md` with 1-2 paragraph description
 - [ ] Generates `prd/TECH-STACK.md` with languages, frameworks, data, infrastructure, conventions
 - [ ] Generates `prd/ACTORS.md` with actor roles, descriptions, and permissions/constraints
@@ -200,7 +200,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-002: Feature creation with EARS
 
-- [ ] `/mfeature` accepts freeform text input
+- [ ] `/m:feature` accepts freeform text input
 - [ ] Extracts and presents back: name, non-goals, actors, FRs (EARS syntax), NFRs, acceptance criteria
 - [ ] User reviews each section before file creation
 - [ ] Generates `requirements.md` with EARS requirements and Fit Criteria
@@ -210,7 +210,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-003: Use case creation with side effects
 
-- [ ] `/musecase` accepts feature ID and freeform text
+- [ ] `/m:usecase` accepts feature ID and freeform text
 - [ ] Extracts and presents: name, actor, preconditions, trigger, main flow, postconditions, side effects (including non-side-effects), alternative flows, fit criteria
 - [ ] User reviews each section before file creation
 - [ ] Writes UC file with all fields in the v3 template format
@@ -218,7 +218,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-004: Architecture generation
 
-- [ ] `/mspec` reads feature's requirements.md and UC files
+- [ ] `/m:spec` reads feature's requirements.md and UC files
 - [ ] Generates C4 System Context (L1) Mermaid diagram
 - [ ] Generates C4 Container View (L2) Mermaid diagram
 - [ ] Generates ER diagram with field constraints
@@ -229,11 +229,11 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-005: Four-agent run pipeline
 
-- [ ] `/mrun {UC-NNN}` runs Planner, Tester, Developer, Verifier in sequence
-- [ ] `/mrun {UC-NNN} {UC-NNN} ...` accepts multiple UCs, resolves dependencies, executes in dependency order
-- [ ] `/mrun {FEAT-NNN}` expands to new/dirty UCs, resolves dependencies, iterates until all live
-- [ ] `/mrun {FEAT-NNN} {FEAT-NNN} ...` accepts multiple features with cross-feature dependency resolution
-- [ ] `/mrun {FEAT-NNN} {UC-NNN}` accepts mixed input (features + UCs)
+- [ ] `/m:run {UC-NNN}` runs Planner, Tester, Developer, Verifier in sequence
+- [ ] `/m:run {UC-NNN} {UC-NNN} ...` accepts multiple UCs, resolves dependencies, executes in dependency order
+- [ ] `/m:run {FEAT-NNN}` expands to new/dirty UCs, resolves dependencies, iterates until all live
+- [ ] `/m:run {FEAT-NNN} {FEAT-NNN} ...` accepts multiple features with cross-feature dependency resolution
+- [ ] `/m:run {FEAT-NNN} {UC-NNN}` accepts mixed input (features + UCs)
 - [ ] Dispatcher builds dependency graph and topologically sorts (not user-provided order)
 - [ ] Dispatcher detects and reports dependency cycles, stops without executing
 - [ ] Planner reads PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md, requirements.md, architecture.md, UC file
@@ -253,7 +253,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-007: Gherkin with side effect coverage
 
-- [ ] `/mstories {UC-NNN}` reads UC file fields
+- [ ] `/m:stories {UC-NNN}` reads UC file fields
 - [ ] Preconditions map to `Given` clauses
 - [ ] Trigger maps to `When` clauses
 - [ ] Postconditions + side effects map to `Then/And` clauses
@@ -263,7 +263,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 #### US-0S96-008: Use case updates and dirty status
 
-- [ ] `/mupdate-usecase {UC-NNN}` reads current UC file
+- [ ] `/m:update-usecase {UC-NNN}` reads current UC file
 - [ ] Shows proposed changes against current state
 - [ ] Increments version in frontmatter on apply
 - [ ] Sets status to `dirty`
@@ -277,9 +277,9 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-001 | When the user runs `/msetup`, the system shall interview the user for a project description, tech stack, and actors, then generate `prd/PROJECT.md`, `prd/TECH-STACK.md`, and `prd/ACTORS.md`. If a codebase exists, the system shall infer the tech stack and actors from code and confirm with the user; if no codebase exists, the user describes them directly | Critical |
-| FR-0S96-002 | When the user runs `/msetup`, the system shall also create `prd/GLOSSARY.md` with starter terms, `prd/FEATURES.md` with an empty feature table, and `prd/features/` directory | Critical |
-| FR-0S96-055 | When the system can infer actors from the project description or codebase during `/msetup`, it shall suggest them to the user and ask for confirmation before writing `ACTORS.md` | Critical |
+| FR-0S96-001 | When the user runs `/m:setup`, the system shall interview the user for a project description, tech stack, and actors, then generate `prd/PROJECT.md`, `prd/TECH-STACK.md`, and `prd/ACTORS.md`. If a codebase exists, the system shall infer the tech stack and actors from code and confirm with the user; if no codebase exists, the user describes them directly | Critical |
+| FR-0S96-002 | When the user runs `/m:setup`, the system shall also create `prd/GLOSSARY.md` with starter terms, `prd/FEATURES.md` with an empty feature table, and `prd/features/` directory | Critical |
+| FR-0S96-055 | When the system can infer actors from the project description or codebase during `/m:setup`, it shall suggest them to the user and ask for confirmation before writing `ACTORS.md` | Critical |
 | FR-0S96-003 | The system shall use `prd/PROJECT.md` (1-2 paragraphs) instead of the v2 `prd/mission.md` for project context | Critical |
 | FR-0S96-004 | The system shall use `prd/TECH-STACK.md` instead of the v2 `prd/tech-stack.md` for technology context | Critical |
 
@@ -287,7 +287,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-005 | When the user runs `/mfeature {input}`, the system shall extract structured content from freeform input and present it section-by-section for review before writing files | Critical |
+| FR-0S96-005 | When the user runs `/m:feature {input}`, the system shall extract structured content from freeform input and present it section-by-section for review before writing files | Critical |
 | FR-0S96-006 | The system shall write all functional requirements in EARS syntax (When/While/If-Then patterns) with a Fit Criterion for each | Critical |
 | FR-0S96-007 | The system shall place the Non-Goals section second in `requirements.md` — immediately after the one-sentence objective, before actors and requirements | Critical |
 | FR-0S96-008 | When the system creates a feature, it shall generate `requirements.md`, `USE-CASES.md`, and an `architecture.md` scaffold in `prd/features/{slug}/` | Critical |
@@ -297,7 +297,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-010 | When the user runs `/musecase {FEAT-NNN} {input}`, the system shall create a UC file with all required fields: preconditions, trigger, main flow, postconditions, side effects, alternative flows, and fit criteria | Critical |
+| FR-0S96-010 | When the user runs `/m:usecase {FEAT-NNN} {input}`, the system shall create a UC file with all required fields: preconditions, trigger, main flow, postconditions, side effects, alternative flows, and fit criteria | Critical |
 | FR-0S96-011 | The system shall require an explicit Side Effects field on every use case, including deliberate non-side-effects ("No email sent", "No event published") | Critical |
 | FR-0S96-012 | The system shall write one file per use case: `prd/features/{slug}/use-cases/UC-NNN-{slug}.md` | Critical |
 | FR-0S96-013 | When the system creates a UC, it shall update the parent feature's `USE-CASES.md` index with the new row | Critical |
@@ -307,7 +307,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-015 | When the user runs `/mspec {FEAT-NNN}`, the system shall generate `architecture.md` with C4 System Context (L1) and Container View (L2) Mermaid diagrams | Critical |
+| FR-0S96-015 | When the user runs `/m:spec {FEAT-NNN}`, the system shall generate `architecture.md` with C4 System Context (L1) and Container View (L2) Mermaid diagrams | Critical |
 | FR-0S96-016 | The system shall generate ER diagrams with field constraints followed by an Invariants block listing rules the data model must never violate | Critical |
 | FR-0S96-017 | The system shall generate an Event Topology table with columns: Event, Publisher, Payload, Condition, Consumers | Critical |
 | FR-0S96-018 | The system shall include explicit Non-events in the event topology section for scenarios where no event should be published | High |
@@ -318,14 +318,14 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-021 | When the user runs `/mschema`, the system shall scan the codebase for migrations, ORM definitions, or model files and generate `prd/SCHEMA.md` using Mermaid ER diagrams for visual representation | Medium |
+| FR-0S96-021 | When the user runs `/m:schema`, the system shall scan the codebase for migrations, ORM definitions, or model files and generate `prd/SCHEMA.md` using Mermaid ER diagrams for visual representation | Medium |
 | FR-0S96-022 | The system shall always reverse-engineer the schema from code — there is no "create from scratch" mode | Medium |
 
 ### Gherkin Generation (maps to UC-0S96-006)
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-023 | When the user runs `/mstories {UC-NNN}`, the system shall reference the `gherkin` skill (`./skills/gherkin`) for scenario generation rules and generate Gherkin scenarios from the UC file's fields: preconditions to Given, trigger to When, postconditions + side effects to Then/And | Critical |
+| FR-0S96-023 | When the user runs `/m:stories {UC-NNN}`, the system shall reference the `gherkin` skill (`./skills/gherkin`) for scenario generation rules and generate Gherkin scenarios from the UC file's fields: preconditions to Given, trigger to When, postconditions + side effects to Then/And | Critical |
 | FR-0S96-024 | The system shall generate an `And` clause for every declared side effect and an `And no ...` clause for every explicit non-side-effect | Critical |
 | FR-0S96-025 | The system shall tag every scenario with `@FEAT-NNN @UC-NNN` for traceability | Critical |
 | FR-0S96-026 | The system shall generate at least one scenario for every alternative flow in the UC file | High |
@@ -334,10 +334,10 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-027 | When the user runs `/mrun {UC-NNN}`, the system shall execute a four-agent pipeline: Planner, Tester, Developer, Verifier | Critical |
-| FR-0S96-028 | When the user runs `/mrun {FEAT-NNN}`, the system shall iterate through all new or `dirty` UCs in the feature's `USE-CASES.md` and run the four-agent pipeline for each until all are `live` | Critical |
-| FR-0S96-056 | When the user runs `/mrun` with multiple UCs (`/mrun UC-001 UC-003 UC-002`), the dispatcher shall resolve inter-UC dependencies, topologically sort them, and execute in dependency order regardless of input order | Critical |
-| FR-0S96-057 | When the user runs `/mrun` with multiple features (`/mrun FEAT-001 FEAT-003`) or mixed input (`/mrun FEAT-001 UC-007`), the dispatcher shall expand features to their new/dirty UCs, merge all targets, resolve cross-feature dependencies, and execute in dependency order | Critical |
+| FR-0S96-027 | When the user runs `/m:run {UC-NNN}`, the system shall execute a four-agent pipeline: Planner, Tester, Developer, Verifier | Critical |
+| FR-0S96-028 | When the user runs `/m:run {FEAT-NNN}`, the system shall iterate through all new or `dirty` UCs in the feature's `USE-CASES.md` and run the four-agent pipeline for each until all are `live` | Critical |
+| FR-0S96-056 | When the user runs `/m:run` with multiple UCs (`/m:run UC-001 UC-003 UC-002`), the dispatcher shall resolve inter-UC dependencies, topologically sort them, and execute in dependency order regardless of input order | Critical |
+| FR-0S96-057 | When the user runs `/m:run` with multiple features (`/m:run FEAT-001 FEAT-003`) or mixed input (`/m:run FEAT-001 UC-007`), the dispatcher shall expand features to their new/dirty UCs, merge all targets, resolve cross-feature dependencies, and execute in dependency order | Critical |
 | FR-0S96-058 | If the dispatcher detects a dependency cycle among the target UCs, it shall report the cycle to the user and stop without executing any pipeline | Critical |
 | FR-0S96-029 | The Planner agent shall read PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md, the feature's requirements.md, architecture.md, and the target UC file to produce an implementation plan | Critical |
 | FR-0S96-030 | The Planner agent shall produce the plan in context only — not written to disk | Critical |
@@ -351,24 +351,24 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-036 | When the user runs `/mupdate-feature {FEAT-NNN} {description}`, the system shall read the current requirements.md and architecture.md, propose specific changes, and apply after review | High |
-| FR-0S96-037 | When the user runs `/mupdate-usecase {UC-NNN} {description}`, the system shall increment the UC's version, set status to `dirty`, and update USE-CASES.md | High |
+| FR-0S96-036 | When the user runs `/m:update-feature {FEAT-NNN} {description}`, the system shall read the current requirements.md and architecture.md, propose specific changes, and apply after review | High |
+| FR-0S96-037 | When the user runs `/m:update-usecase {UC-NNN} {description}`, the system shall increment the UC's version, set status to `dirty`, and update USE-CASES.md | High |
 | FR-0S96-038 | Update commands shall not run the creation interview — they show only proposed changes against the current document | High |
 
 ### Reverse-Engineering Commands (maps to UC-0S96-010, UC-0S96-011, UC-0S96-012)
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-039 | When the user runs `/mreverse-feature {description}`, the system shall scan the codebase and generate a feature directory with requirements.md, USE-CASES.md, architecture.md, and individual UC files | Medium |
-| FR-0S96-040 | When the user runs `/mreverse-usecase {description}`, the system shall scan the codebase and generate a single UC file with all fields populated from code analysis | Medium |
-| FR-0S96-041 | When the user runs `/mreverse-glossary {seed terms}`, the system shall scan the codebase and generate `prd/GLOSSARY.md` with definitions derived from code usage | Medium |
+| FR-0S96-039 | When the user runs `/m:reverse-feature {description}`, the system shall scan the codebase and generate a feature directory with requirements.md, USE-CASES.md, architecture.md, and individual UC files | Medium |
+| FR-0S96-040 | When the user runs `/m:reverse-usecase {description}`, the system shall scan the codebase and generate a single UC file with all fields populated from code analysis | Medium |
+| FR-0S96-041 | When the user runs `/m:reverse-glossary {seed terms}`, the system shall scan the codebase and generate `prd/GLOSSARY.md` with definitions derived from code usage | Medium |
 
 ### Plugin Restructure (maps to UC-0S96-013, UC-0S96-014, UC-0S96-015)
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR-0S96-042 | The system shall restructure the plugin into `molcajete/plan/` (commands + skills) and `molcajete/build/` (commands + skills), with commands and skills not belonging to either subsystem remaining at the plugin root (`molcajete/commands/`, `molcajete/skills/`). No `molcajete/shared/` directory. | Critical |
-| FR-0S96-043 | The system shall rename all commands from `/m:command` to `/mcommand` format in the plugin manifest only — file names remain unchanged | Critical |
+| FR-0S96-043 | The system shall use the `/m:command` naming format (plugin namespace with colon separator) for all commands in the plugin manifest — command names are derived from the markdown filename, and the `m:` prefix is applied automatically by the Claude Code plugin system | Critical |
 | FR-0S96-044 | The system shall move deprecated commands to `molcajete/deprecated/commands/`: init, tasks, feature (v2), spec (v2), stories (v2), amend, rebase, copy, prompt, explain, fix, refactor | Critical |
 | FR-0S96-045 | The system shall keep these commands active outside the pipeline: commit, review, doc, research | Critical |
 | FR-0S96-046 | The system shall move language/stack skills to `molcajete/deprecated/skills/`: go-writing-code, go-testing, node-writing-code, node-testing, typescript-writing-code, typescript-testing, react-writing-code, react-testing, react-components, tailwind-css | Critical |
@@ -388,8 +388,8 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-053 | The system shall use `/mcommand` naming (no colon) for all v3 commands | Critical |
-| FR-0S96-054 | The rename shall happen only in the plugin manifest (`plugin.json`); physical command file names remain unchanged | Critical |
+| FR-0S96-053 | The system shall use `/m:command` naming (plugin namespace with colon separator) for all v3 commands, as required by the Claude Code plugin system | Critical |
+| FR-0S96-054 | Command names are derived from the markdown filename by the plugin system; the `commands` field in `plugin.json` uses string paths (not objects with name/description/path) | Critical |
 
 ---
 
@@ -397,9 +397,9 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Target |
 |----|-------------|--------|
-| NFR-0S96-001 | Each agent in the /mrun pipeline shall receive only the spec artifacts relevant to its UC — not the entire feature or project spec | Stay within 150-200 instruction ceiling per agent context |
+| NFR-0S96-001 | Each agent in the /m:run pipeline shall receive only the spec artifacts relevant to its UC — not the entire feature or project spec | Stay within 150-200 instruction ceiling per agent context |
 | NFR-0S96-002 | Plan and Build subsystems shall have fully independent skill sets with no shared skills directory; if both need similar knowledge, each gets its own copy | Zero cross-subsystem coupling; refactor for overlap only after v3 is complete |
-| NFR-0S96-003 | All Mermaid diagrams generated by /mspec shall use double-quoted node labels for any label containing special characters | 100% render success rate |
+| NFR-0S96-003 | All Mermaid diagrams generated by /m:spec shall use double-quoted node labels for any label containing special characters | 100% render success rate |
 | NFR-0S96-004 | The plugin shall maintain zero runtime dependencies — all commands and skills are pure Markdown with YAML frontmatter | No external tooling required |
 | NFR-0S96-005 | All documents generated by v3 commands shall follow the existing formatting rules: text checkboxes only, no emojis, Mermaid-only diagrams, markdown tables for structured data | Consistent with project conventions |
 
@@ -412,7 +412,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 | System | Integration |
 |--------|-------------|
 | Claude Code plugin system | Plugin manifest (`plugin.json`) must reference new directory structure; command and skill discovery depends on manifest paths |
-| Git | Per-UC worktree isolation in /mrun; version tracking for UC files via frontmatter `version:` field |
+| Git | Per-UC worktree isolation in /m:run; version tracking for UC files via frontmatter `version:` field |
 | BDD test runners | Gherkin tags (`@FEAT-NNN`, `@UC-NNN`) must be compatible with pytest, cucumber, godog tag filtering |
 | Existing v2 specs | prd/specs/ remains untouched; no migration needed |
 
@@ -440,40 +440,40 @@ No database changes — Molcajete is a pure Markdown plugin system with zero run
 
 **Flow 1: New project setup**
 
-1. User runs `/msetup`
+1. User runs `/m:setup`
 2. System asks about the project (description, tech stack)
 3. System generates PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md
-4. User runs `/mfeature` with feature description
+4. User runs `/m:feature` with feature description
 5. System runs creation interview, generates feature directory
-6. User runs `/musecase FEAT-001 {description}` for each UC
-7. User runs `/mspec FEAT-001` to generate architecture
-8. User runs `/mstories UC-001` to generate Gherkin
-9. User runs `/mrun UC-001` to implement
+6. User runs `/m:usecase FEAT-001 {description}` for each UC
+7. User runs `/m:spec FEAT-001` to generate architecture
+8. User runs `/m:stories UC-001` to generate Gherkin
+9. User runs `/m:run UC-001` to implement
 
 **Flow 2: Adopt spec system on existing codebase**
 
-1. User runs `/msetup` for foundational docs
-2. User runs `/mreverse-feature` for each existing capability
-3. User runs `/mschema` for database schema
-4. User runs `/mreverse-glossary` with seed terms
+1. User runs `/m:setup` for foundational docs
+2. User runs `/m:reverse-feature` for each existing capability
+3. User runs `/m:schema` for database schema
+4. User runs `/m:reverse-glossary` with seed terms
 5. User reviews and edits generated specs
 6. User continues forward with normal create/update commands
 
 **Flow 3: Modify existing UC**
 
-1. User runs `/mupdate-usecase UC-001 {change description}`
+1. User runs `/m:update-usecase UC-001 {change description}`
 2. System shows proposed changes, user confirms
 3. UC version increments, status goes `dirty`
-4. User runs `/mrun UC-001` to implement the change
+4. User runs `/m:run UC-001` to implement the change
 
 ### Error States
 
 | Scenario | Handling |
 |----------|----------|
-| `/mfeature` run without `/msetup` first | Error: "Run /msetup first — PROJECT.md and TECH-STACK.md are required" |
-| `/musecase` with invalid FEAT-NNN | Error: "Feature {FEAT-NNN} not found in FEATURES.md" |
-| `/mrun` on a UC with empty fields | Error: "UC-NNN is missing required fields: {list}. Complete the UC spec before running." |
-| `/mspec` on a feature with no UCs | Warning: "No use cases found — generating architecture scaffold only" |
+| `/m:feature` run without `/m:setup` first | Error: "Run /m:setup first — PROJECT.md and TECH-STACK.md are required" |
+| `/m:usecase` with invalid FEAT-NNN | Error: "Feature {FEAT-NNN} not found in FEATURES.md" |
+| `/m:run` on a UC with empty fields | Error: "UC-NNN is missing required fields: {list}. Complete the UC spec before running." |
+| `/m:spec` on a feature with no UCs | Warning: "No use cases found — generating architecture scaffold only" |
 | Verifier finds gaps | Report gaps to user with specific references to UC fields, FRs, or architecture elements that aren't covered |
 
 ---
@@ -485,10 +485,10 @@ No database changes — Molcajete is a pure Markdown plugin system with zero run
 - [ ] Plugin restructure into plan/build subsystems (no shared directory)
 - [ ] Command deprecation (11 commands to deprecated/)
 - [ ] Skill deprecation (10 language/stack skills to deprecated/)
-- [ ] Command rename from /m:command to /mcommand in manifest
-- [ ] All 11 Plan commands: /msetup, /mfeature, /musecase, /mspec, /mschema, /mstories, /mupdate-feature, /mupdate-usecase, /mreverse-feature, /mreverse-usecase, /mreverse-glossary
-- [ ] All 4 Build commands: /mrun (with 4-agent pipeline), /mdev, /mtest, /mdebug
-- [ ] 4 kept commands repositioned: /mcommit, /mreview, /mdoc, /mresearch
+- [ ] Commands use `/m:command` naming (plugin namespace with colon separator)
+- [ ] All 11 Plan commands: /m:setup, /m:feature, /m:usecase, /m:spec, /m:schema, /m:stories, /m:update-feature, /m:update-usecase, /m:reverse-feature, /m:reverse-usecase, /m:reverse-glossary
+- [ ] All 4 Build commands: /m:run (with 4-agent pipeline), /m:dev, /m:test, /m:debug
+- [ ] 4 kept commands repositioned: /m:commit, /m:review, /m:doc, /m:research
 - [ ] New prd/ directory structure with GLOSSARY.md, FEATURES.md, PROJECT.md, TECH-STACK.md, ACTORS.md, features/
 - [ ] New Plan skills: feature-authoring, usecase-authoring, architecture, gherkin, reverse-engineering
 - [ ] New Build skills: planner, tester, developer, verifier
@@ -498,7 +498,7 @@ No database changes — Molcajete is a pure Markdown plugin system with zero run
 - [ ] Explicit side effects and non-side-effects on every UC
 - [ ] C4 L1/L2 diagrams, ER with invariants, event topology tables in architecture.md
 - [ ] Feature lifecycle state machine (backlog -> scoped -> specified -> building -> live -> dirty -> deprecated)
-- [ ] Creation interview pattern for /mfeature and /musecase
+- [ ] Creation interview pattern for /m:feature and /m:usecase
 
 ### Out of Scope
 
@@ -530,14 +530,14 @@ No database changes — Molcajete is a pure Markdown plugin system with zero run
 |------------|---------|---------|
 | Claude Code plugin system | Current | Command and skill registration, YAML frontmatter parsing |
 | Mermaid | Latest supported by Claude Code | C4, ER, state, flowchart, sequence diagrams in architecture.md |
-| Git worktrees | Git 2.x | Per-UC isolation during /mrun pipeline |
+| Git worktrees | Git 2.x | Per-UC isolation during /m:run pipeline |
 
 ### Feature Dependencies
 
 | Depends On | Relationship |
 |------------|--------------|
-| Existing BDD scenario generator (UC-0KTg) | /mstories is an enhanced replacement; existing Gherkin skill knowledge is reused |
-| Existing dispatch pipeline (UC-0Rz0) | /mrun is an enhanced replacement; worktree isolation pattern is reused |
+| Existing BDD scenario generator (UC-0KTg) | /m:stories is an enhanced replacement; existing Gherkin skill knowledge is reused |
+| Existing dispatch pipeline (UC-0Rz0) | /m:run is an enhanced replacement; worktree isolation pattern is reused |
 
 ### Blocked By
 
@@ -551,9 +551,9 @@ No database changes — Molcajete is a pure Markdown plugin system with zero run
 |------|--------|------------|------------|
 | Scope size causes implementation to stall | High | Medium | Vertical slicing by UC; each command is independently implementable and testable |
 | FEATURES.md index drifts from actual feature state | Medium | High | Commands that create/update features always update FEATURES.md atomically; Verifier checks consistency |
-| EARS syntax learning curve for users | Low | Medium | /mfeature creation interview handles the conversion — user writes freeform, system outputs EARS |
+| EARS syntax learning curve for users | Low | Medium | /m:feature creation interview handles the conversion — user writes freeform, system outputs EARS |
 | Ephemeral plans may lose valuable architectural decisions | Medium | Low | Architecture decisions belong in architecture.md ADR section, not in the plan; plans are for implementation sequence only |
-| Four-agent pipeline increases /mrun latency | Medium | Medium | Each agent receives only UC-scoped context (instruction ceiling compliance); parallelism not in MVP but planned |
+| Four-agent pipeline increases /m:run latency | Medium | Medium | Each agent receives only UC-scoped context (instruction ceiling compliance); parallelism not in MVP but planned |
 | Deprecating 11 commands breaks existing workflows | High | Low | Deprecated commands are preserved in deprecated/ folder; users can reference them; kept commands (commit, review, doc, research) cover daily utilities |
 
 ---
@@ -562,9 +562,9 @@ No database changes — Molcajete is a pure Markdown plugin system with zero run
 
 | # | Question | Status | Answer |
 |---|----------|--------|--------|
-| 1 | Should /mdev, /mtest, /mdebug be rewritten for v3 or kept as-is with minor path updates? | Open | |
+| 1 | Should /m:dev, /m:test, /m:debug be rewritten for v3 or kept as-is with minor path updates? | Open | |
 | 2 | Where should kept commands (commit, review, doc, research) live — in plan/, build/, or a top-level commands/? | Open | |
 | 3 | Should the Verifier agent attempt auto-fixes for minor gaps, or always report back to user? | Resolved | Always report back — per proposal Part 7 |
 | 4 | How should FEAT-NNN IDs handle parallel creation on different branches? | Open | Noted as knowledge gap in proposal |
-| 5 | Should /msetup detect existing v2 documents (mission.md, tech-stack.md) and offer to migrate them? | Open | |
+| 5 | Should /m:setup detect existing v2 documents (mission.md, tech-stack.md) and offer to migrate them? | Open | |
 | 6 | What happens to prd/roadmap.md and prd/changelog.md in the v3 structure? | Open | |
