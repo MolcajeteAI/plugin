@@ -20,7 +20,7 @@ Implements Molcajete v3: restructures the plugin into Plan/Build subsystems, cre
 | Four-agent pipeline runs end-to-end | /m:run executes Planner, Tester, Developer, Verifier for a UC |
 | /m:command naming | All commands use `plugin:command` colon-separated format in manifest |
 
-**Estimated Total Effort:** 116 story points
+**Estimated Total Effort:** 126 story points
 
 **Key Risks:**
 
@@ -176,6 +176,31 @@ Creates the feature-authoring skill with templates for requirements.md, USE-CASE
     - Completed: 2026-03-17
     - Notes: Replaced placeholder. References feature-authoring skill. Verifies /m:setup prerequisites. Cross-references ACTORS.md for actor selection. FEAT-NNN-slug auto-assigned from FEATURES.md last row.
 
+- [x] 3. Add UI section to feature authoring
+  - Complexity: 3
+  - Dependencies: UC-0S96-002/2
+  - Acceptance: REQUIREMENTS-template.md has optional `## UI` at position 4 (after Actors, before FRs); feature-authoring SKILL.md has UI rules; feature.md command has UI interview step and generates `## UI` section when applicable
+  - Completed: 2026-03-17
+  - Notes: UI section at position 4. ASCII art default, image references via assets/. Interview step 5.4 added. Section omitted entirely for non-UI features.
+  - [x] 3.1 Update REQUIREMENTS-template.md with optional `## UI` section at position 4 (after Actors, before FRs) for ASCII art mockups and image references
+    - Complexity: 1
+    - Dependencies: UC-0S96-002/2
+    - Acceptance: Template section order is Objective, Non-Goals, Actors, UI, FRs, NFRs, Acceptance
+    - Completed: 2026-03-17
+    - Notes: Added `## UI` with ASCII art code block example and commented image reference syntax
+  - [x] 3.2 Update feature-authoring SKILL.md with UI rules (ASCII art default, position 4, asset management for images via `assets/` directory, when to include/omit)
+    - Complexity: 1
+    - Dependencies: UC-0S96-002/3.1
+    - Acceptance: SKILL.md section ordering updated to 7 items; UI Section rules cover ASCII art, image references, asset naming, when to include/omit
+    - Completed: 2026-03-17
+    - Notes: Added UI Section block with content types, asset management rules, naming conventions, include/omit criteria. Updated Required order to 7 items. Updated Creation Interview extraction list and section order.
+  - [x] 3.3 Update feature.md command with UI interview step between Actors and FRs, UI extraction from input, and `## UI` generation in requirements.md
+    - Complexity: 1
+    - Dependencies: UC-0S96-002/3.2
+    - Acceptance: Command asks about UI after Actors step, generates ASCII art from description by default, omits section if user says no UI
+    - Completed: 2026-03-17
+    - Notes: Added step 5.4 UI (between Actors 5.3 and FRs 5.5). Renumbered NFRs to 5.6, Acceptance to 5.7. Updated Step 7 to create assets/ and include `## UI` in requirements.md when applicable.
+
 ---
 
 ## [ ] UC-0S96-003. Create Use Case (/m:usecase)
@@ -203,6 +228,23 @@ Creates the usecase-authoring skill with the UC file template and the /m:usecase
     - Complexity: 5
     - Dependencies: UC-0S96-003/1
     - Acceptance: Command validates FEAT-NNN in FEATURES.md, extracts preconditions/trigger/main-flow/postconditions/side-effects/alternative-flows/fit-criteria, reviews each section, writes UC file with frontmatter, updates USE-CASES.md
+
+- [ ] 3. Add inline UI to use case authoring
+  - Complexity: 3
+  - Dependencies: UC-0S96-003/2
+  - Acceptance: UC template has optional `### UI` subsection within Main Flow and optional UI blocks within Alternative Flows; usecase-authoring SKILL.md has inline UI rules; usecase.md command generates inline UI when applicable
+  - [ ] 3.1 Update UC template with optional `### UI` subsection at end of Main Flow and optional `UI:` blocks within each Alternative Flow
+    - Complexity: 1
+    - Dependencies: UC-0S96-003/2
+    - Acceptance: Main Flow section has optional `### UI` subsection showing screen states labeled by step number; Alternative Flows can optionally include `UI:` block with mockup
+  - [ ] 3.2 Update usecase-authoring SKILL.md with inline UI rules (ASCII art default, per-flow mockups, `use-cases/assets/` for images, `{UC-ID}-{slug}.{ext}` naming)
+    - Complexity: 1
+    - Dependencies: UC-0S96-003/3.1
+    - Acceptance: SKILL.md covers inline UI positioning within flows, asset management for UC-level images, when to include/omit
+  - [ ] 3.3 Update usecase.md command with UI interview per flow and inline UI generation in UC file
+    - Complexity: 1
+    - Dependencies: UC-0S96-003/3.2
+    - Acceptance: Command asks about UI for main flow and each alternative flow, generates ASCII art from description by default, omits UI blocks if user says no UI
 
 ---
 
@@ -363,6 +405,15 @@ Creates the /m:update-feature command that reads current requirements.md/archite
     - Dependencies: UC-0S96-002/1
     - Acceptance: Command proposes targeted changes without full interview; feature status unchanged
 
+- [ ] 2. Add UI update support to /m:update-feature
+  - Complexity: 2
+  - Dependencies: UC-0S96-008/1
+  - Acceptance: update-feature.md handles adding/updating/removing `## UI` section in existing requirements.md and managing `assets/` directory
+  - [ ] 2.1 Update update-feature.md to handle UI section changes (add `## UI` if missing and user wants UI, update existing `## UI` content, remove if user wants to drop UI, create `assets/` directory if images are provided)
+    - Complexity: 2
+    - Dependencies: UC-0S96-008/1
+    - Acceptance: Command can add, update, or remove the `## UI` section; creates `assets/` and copies images when provided
+
 ---
 
 ## [ ] UC-0S96-009. Update Use Case (/m:update-usecase)
@@ -377,6 +428,15 @@ Creates the /m:update-usecase command that edits a UC file, increments version, 
     - Complexity: 3
     - Dependencies: UC-0S96-003/1
     - Acceptance: Command edits UC, version increments, status goes dirty, USE-CASES.md updated
+
+- [ ] 2. Add UI update support to /m:update-usecase
+  - Complexity: 2
+  - Dependencies: UC-0S96-009/1
+  - Acceptance: update-usecase.md handles adding/updating/removing inline UI in existing UC files and managing `use-cases/assets/` directory
+  - [ ] 2.1 Update update-usecase.md to handle inline UI changes (add/update/remove `### UI` in Main Flow, add/update/remove `UI:` blocks in Alternative Flows, create `use-cases/assets/` and copy images when provided)
+    - Complexity: 2
+    - Dependencies: UC-0S96-009/1
+    - Acceptance: Command can add, update, or remove inline UI mockups in flows; creates `use-cases/assets/` and copies images when provided
 
 ---
 

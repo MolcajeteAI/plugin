@@ -13,6 +13,20 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-17
 
+- [07:54] Add UI section to feature authoring (UC-0S96-002/3)
+  Optional `## UI` at position 4 (after Actors, before FRs). ASCII art default from description; image references via `assets/`. Interview step 5.4 added to /m:feature.
+  - Changelog: [changelog-UC-0S96-002--3.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-002--3.md)
+
+- [06:59] Write /mfeature command (UC-0S96-002/2)
+  8-step command: prerequisite check, freeform input extraction, 6-section creation interview via AskUserQuestion, EARS conversion, FEAT-NNN-slug assignment, template-based generation, FEATURES.md registration.
+  - Plan: [task-UC-0S96-002--1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-002--1.md)
+  - Changelog: [changelog-UC-0S96-002--2.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-002--2.md)
+
+- [06:47] Write feature-authoring skill and templates (UC-0S96-002/1)
+  SKILL.md with EARS patterns, Fit Criteria, Non-Goals positioning, FEAT-NNN-slug assignment, creation interview. 4 templates: REQUIREMENTS, USE-CASES, ARCHITECTURE (C4/ER/events), FEATURES-row.
+  - Plan: [task-UC-0S96-002--1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-002--1.md)
+  - Changelog: [changelog-UC-0S96-002--1.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-002--1.md)
+
 - [06:24] Write /msetup command (UC-0S96-001/2)
   Full 8-step command: regeneration check, codebase inference via Explore agents, section-by-section interview via AskUserQuestion, 5-document generation from templates.
   - Plan: [task-UC-0S96-001--2.1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-001--2.1.md)
