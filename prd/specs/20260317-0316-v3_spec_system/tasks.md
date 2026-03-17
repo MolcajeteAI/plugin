@@ -32,57 +32,73 @@ Implements Molcajete v3: restructures the plugin into Plan/Build subsystems, cre
 
 ---
 
-## [ ] UC-0S96-013. Restructure Plugin into Plan/Build
+## [x] UC-0S96-013. Restructure Plugin into Plan/Build
 
 Creates the target directory structure, moves shared commands to root, and updates plugin.json with /mcommand naming. This is the foundation — every other UC depends on the directory layout existing.
 
-- [ ] 1. Create Plan/Build directory structure
+- [x] 1. Create Plan/Build directory structure
   - Complexity: 2
   - Dependencies: None
   - Acceptance: `molcajete/plan/commands/`, `molcajete/plan/skills/`, `molcajete/build/commands/`, `molcajete/build/skills/` directories exist
-  - [ ] 1.1 Create plan/ directory tree (commands/, skills/ with 7 skill subdirectories each with templates/)
+  - Completed: 2026-03-17
+  - Notes: Created plan/ and build/ trees with all skill subdirectories and templates/ dirs
+  - [x] 1.1 Create plan/ directory tree (commands/, skills/ with 7 skill subdirectories each with templates/)
     - Complexity: 1
     - Dependencies: None
     - Acceptance: All 7 plan skill directories exist with empty templates/ subdirectories
-  - [ ] 1.2 Create build/ directory tree (commands/, skills/ with 4 skill subdirectories each with templates/)
+    - Completed: 2026-03-17
+    - Notes: Created plan/commands/, plan/skills/{setup,feature-authoring,usecase-authoring,architecture,gherkin,reverse-engineering,schema}/templates/
+  - [x] 1.2 Create build/ directory tree (commands/, skills/ with 4 skill subdirectories each with templates/)
     - Complexity: 1
     - Dependencies: None
     - Acceptance: All 4 build skill directories exist with empty templates/ subdirectories
+    - Completed: 2026-03-17
+    - Notes: Created build/commands/run/, build/skills/{planner,tester,developer,verifier}/templates/
 
-- [ ] 2. Move shared commands to root and update manifest
+- [x] 2. Move shared commands to root and update manifest
   - Complexity: 3
   - Dependencies: UC-0S96-013/1
   - Acceptance: commit.md, review.md, doc.md, research.md in `molcajete/commands/`; plugin.json references new paths with /mcommand naming for all 19 commands
-  - [ ] 2.1 Move commit, review, doc, research to `molcajete/commands/` (keep copies, remove from flat set)
+  - Completed: 2026-03-17
+  - Notes: Moved 4 build commands to build/commands/, 2 run sub-agents to build/commands/run/, 12 deprecated to deprecated/commands/, 10 skills to deprecated/skills/. Wrote plugin.json v3.0.0 with 19 commands, 15 skills, /mcommand naming. Created placeholder .md files for plan commands and SKILL.md placeholders for plan/build skills.
+  - [x] 2.1 Move commit, review, doc, research to `molcajete/commands/` (keep copies, remove from flat set)
     - Complexity: 1
     - Dependencies: UC-0S96-013/1
     - Acceptance: 4 command files at root commands/ path
-  - [ ] 2.2 Write new plugin.json with v3 structure (19 commands, 15 skills, /mcommand naming, correct paths for plan/, build/, root)
+    - Completed: 2026-03-17
+    - Notes: Used git mv to move build commands to build/commands/, deprecated commands to deprecated/commands/, deprecated skills to deprecated/skills/. Root commands/ retains commit, review, doc, research.
+  - [x] 2.2 Write new plugin.json with v3 structure (19 commands, 15 skills, /mcommand naming, correct paths for plan/, build/, root)
     - Complexity: 2
     - Dependencies: UC-0S96-013/2.1
     - Acceptance: Manifest parses cleanly; all paths point to existing or soon-to-exist files; no deprecated references
+    - Completed: 2026-03-17
+    - Notes: Wrote plugin.json v3.0.0 with object format for commands (name/description/path), flat paths for skills. 6 unlisted workflow skills (agent-coordination, copywriting, dev-workflow, prompting, software-principles, project-management) remain on disk at root skills/ but are not registered in manifest per FR-0S96-047.
 
 ---
 
-## [ ] UC-0S96-014. Deprecate Old Commands
+## [x] UC-0S96-014. Deprecate Old Commands
 
 Moves 12 v2 commands to `molcajete/deprecated/commands/`. Files are preserved for reference but not registered in the manifest.
 
-- [ ] 1. Move deprecated commands
+- [x] 1. Move deprecated commands
   - Complexity: 2
   - Dependencies: UC-0S96-013/2.2
   - Acceptance: init, tasks, feature (v2), spec (v2), stories (v2), amend, rebase, copy, prompt, explain, fix, refactor are in `molcajete/deprecated/commands/`; none referenced in plugin.json
+  - Completed: 2026-03-17
+  - Notes: Moved 12 commands to deprecated/commands/ via git mv as part of UC-0S96-013/2.1. None referenced in v3 plugin.json.
 
 ---
 
-## [ ] UC-0S96-015. Deprecate Language/Stack Skills
+## [x] UC-0S96-015. Deprecate Language/Stack Skills
 
 Moves 10 language-specific skills to `molcajete/deprecated/skills/`.
 
-- [ ] 1. Move deprecated skills
+- [x] 1. Move deprecated skills
   - Complexity: 2
   - Dependencies: UC-0S96-013/2.2
   - Acceptance: go-writing-code, go-testing, node-writing-code, node-testing, typescript-writing-code, typescript-testing, react-writing-code, react-testing, react-components, tailwind-css are in `molcajete/deprecated/skills/`; none referenced in plugin.json
+  - Completed: 2026-03-17
+  - Notes: Moved 10 language/stack skills to deprecated/skills/ via git mv as part of UC-0S96-013/2.1. None referenced in v3 plugin.json.
 
 ---
 

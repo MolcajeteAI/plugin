@@ -11,6 +11,13 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ---
 
+## 2026-03-17
+
+- [05:27] Restructure plugin into Plan/Build subsystems (UC-0S96-013, UC-0S96-014, UC-0S96-015)
+  Reorganized flat commands/skills into plan/ and build/ subsystems. Moved 12 deprecated commands and 10 language skills to deprecated/. Updated plugin.json to v3.0.0 with /mcommand naming (19 commands, 15 skills). Created placeholder files for plan commands and plan/build skills.
+  - Plan: [task-UC-0S96-013.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-013.md)
+  - Changelog: [changelog-UC-0S96-013.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-013.md)
+
 ## 2026-03-16
 
 - [01:03] Status reporting and documentation (UC-0Rz0-004)

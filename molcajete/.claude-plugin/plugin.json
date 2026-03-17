@@ -1,57 +1,124 @@
 {
   "name": "m",
-  "version": "2.6.1",
-  "description": "Core development workflow with generic agents and discoverable skills",
+  "version": "3.0.0",
+  "description": "Use-case-centric spec system with four-agent implementation pipeline",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
   },
-  "keywords": ["workflow", "development", "testing", "documentation", "git"],
+  "keywords": ["workflow", "development", "testing", "documentation", "git", "specs"],
   "commands": [
-    "./commands/amend.md",
-    "./commands/commit.md",
-    "./commands/copy.md",
-    "./commands/debug.md",
-    "./commands/dev.md",
-    "./commands/doc.md",
-    "./commands/feature.md",
-    "./commands/fix.md",
-    "./commands/init.md",
-    "./commands/prompt.md",
-    "./commands/rebase.md",
-    "./commands/refactor.md",
-    "./commands/explain.md",
-    "./commands/research.md",
-    "./commands/review.md",
-    "./commands/run.md",
-    "./commands/run/build.md",
-    "./commands/run/test.md",
-    "./commands/spec.md",
-    "./commands/stories.md",
-    "./commands/tasks.md",
-    "./commands/test.md"
+    {
+      "name": "msetup",
+      "description": "Initialize project: PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md",
+      "path": "./plan/commands/setup.md"
+    },
+    {
+      "name": "mfeature",
+      "description": "Create a new feature with EARS requirements via creation interview",
+      "path": "./plan/commands/feature.md"
+    },
+    {
+      "name": "musecase",
+      "description": "Create a new use case within a feature via creation interview",
+      "path": "./plan/commands/usecase.md"
+    },
+    {
+      "name": "mspec",
+      "description": "Generate or update architecture.md with C4, ER, event topology",
+      "path": "./plan/commands/spec.md"
+    },
+    {
+      "name": "mschema",
+      "description": "Reverse-engineer database schema from codebase into SCHEMA.md",
+      "path": "./plan/commands/schema.md"
+    },
+    {
+      "name": "mstories",
+      "description": "Generate Gherkin scenarios from a use case file",
+      "path": "./plan/commands/stories.md"
+    },
+    {
+      "name": "mupdate-feature",
+      "description": "Update an existing feature's requirements or architecture",
+      "path": "./plan/commands/update-feature.md"
+    },
+    {
+      "name": "mupdate-usecase",
+      "description": "Update an existing use case file, increment version, set dirty",
+      "path": "./plan/commands/update-usecase.md"
+    },
+    {
+      "name": "mreverse-feature",
+      "description": "Reverse-engineer a feature from existing codebase",
+      "path": "./plan/commands/reverse-feature.md"
+    },
+    {
+      "name": "mreverse-usecase",
+      "description": "Reverse-engineer a use case from existing codebase",
+      "path": "./plan/commands/reverse-usecase.md"
+    },
+    {
+      "name": "mreverse-glossary",
+      "description": "Generate GLOSSARY.md from codebase using seed terms",
+      "path": "./plan/commands/reverse-glossary.md"
+    },
+    {
+      "name": "mrun",
+      "description": "Execute four-agent pipeline for a UC or all new/dirty UCs in a feature",
+      "path": "./build/commands/run.md"
+    },
+    {
+      "name": "mdev",
+      "description": "Implement a task from the task plan",
+      "path": "./build/commands/dev.md"
+    },
+    {
+      "name": "mtest",
+      "description": "Write, run, or analyze tests for code",
+      "path": "./build/commands/test.md"
+    },
+    {
+      "name": "mdebug",
+      "description": "Guided debugging workflow",
+      "path": "./build/commands/debug.md"
+    },
+    {
+      "name": "mcommit",
+      "description": "Create a well-formatted commit from staged changes",
+      "path": "./commands/commit.md"
+    },
+    {
+      "name": "mreview",
+      "description": "Code review on staged or recent changes",
+      "path": "./commands/review.md"
+    },
+    {
+      "name": "mdoc",
+      "description": "Generate documentation for code",
+      "path": "./commands/doc.md"
+    },
+    {
+      "name": "mresearch",
+      "description": "Deep research with parallel agents and long-form output",
+      "path": "./commands/research.md"
+    }
   ],
   "skills": [
-    "./skills/agent-coordination/SKILL.md",
-    "./skills/clipboard/SKILL.md",
-    "./skills/code-documentation/SKILL.md",
-    "./skills/copywriting/SKILL.md",
-    "./skills/dev-workflow/SKILL.md",
+    "./plan/skills/setup/SKILL.md",
+    "./plan/skills/feature-authoring/SKILL.md",
+    "./plan/skills/usecase-authoring/SKILL.md",
+    "./plan/skills/architecture/SKILL.md",
+    "./plan/skills/reverse-engineering/SKILL.md",
+    "./plan/skills/schema/SKILL.md",
+    "./build/skills/planner/SKILL.md",
+    "./build/skills/tester/SKILL.md",
+    "./build/skills/developer/SKILL.md",
+    "./build/skills/verifier/SKILL.md",
     "./skills/gherkin/SKILL.md",
+    "./skills/clipboard/SKILL.md",
     "./skills/git-committing/SKILL.md",
-    "./skills/go-testing/SKILL.md",
-    "./skills/go-writing-code/SKILL.md",
-    "./skills/node-testing/SKILL.md",
-    "./skills/node-writing-code/SKILL.md",
-    "./skills/project-management/SKILL.md",
-    "./skills/prompting/SKILL.md",
-    "./skills/react-components/SKILL.md",
-    "./skills/react-testing/SKILL.md",
-    "./skills/react-writing-code/SKILL.md",
-    "./skills/research-methods/SKILL.md",
-    "./skills/software-principles/SKILL.md",
-    "./skills/tailwind-css/SKILL.md",
-    "./skills/typescript-testing/SKILL.md",
-    "./skills/typescript-writing-code/SKILL.md"
+    "./skills/code-documentation/SKILL.md",
+    "./skills/research-methods/SKILL.md"
   ]
 }
