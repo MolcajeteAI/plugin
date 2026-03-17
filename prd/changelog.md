@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-17
 
+- [06:24] Write /msetup command (UC-0S96-001/2)
+  Full 8-step command: regeneration check, codebase inference via Explore agents, section-by-section interview via AskUserQuestion, 5-document generation from templates.
+  - Plan: [task-UC-0S96-001--2.1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-001--2.1.md)
+  - Changelog: [changelog-UC-0S96-001--2.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-001--2.md)
+
 - [06:10] Write setup skill and templates (UC-0S96-001/1)
   Setup SKILL.md with 3-stage interview flow, codebase inference tables, confirmation rules. 5 document templates: project, tech-stack, actors, glossary, features.
   - Plan: [task-UC-0S96-001--1.1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-001--1.1.md)

@@ -102,7 +102,7 @@ Moves 10 language-specific skills to `molcajete/deprecated/skills/`.
 
 ---
 
-## [ ] UC-0S96-001. Set Up Project Foundation (/msetup)
+## [x] UC-0S96-001. Set Up Project Foundation (/msetup)
 
 Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, and the /msetup command that interviews the user and generates all foundational documents.
 
@@ -125,14 +125,18 @@ Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md,
     - Completed: 2026-03-17
     - Notes: 5 templates created (added features-template.md with status key and empty table). All match spec Section 4 templates.
 
-- [ ] 2. Write /msetup command
+- [x] 2. Write /msetup command
   - Complexity: 5
   - Dependencies: UC-0S96-001/1, UC-0S96-013/2.2
   - Acceptance: `plan/commands/setup.md` exists with YAML frontmatter; references setup skill; generates PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md, and prd/features/ directory
-  - [ ] 2.1 Write plan/commands/setup.md (YAML frontmatter + prompt with interview stages, codebase detection, actor inference, document generation)
+  - Completed: 2026-03-17
+  - Notes: 8-step command: regeneration check, load skill, interview (project -> tech stack -> actors) with Explore sub-agents for codebase inference, section-by-section confirmation via AskUserQuestion, generate 5 docs from templates, create features/ dir
+  - [x] 2.1 Write plan/commands/setup.md (YAML frontmatter + prompt with interview stages, codebase detection, actor inference, document generation)
     - Complexity: 5
     - Dependencies: UC-0S96-001/1
     - Acceptance: Command interviews user for project description, tech stack, actors; infers from code when available and confirms; generates all 5 documents using templates; creates prd/features/
+    - Completed: 2026-03-17
+    - Notes: Replaced placeholder. 8-step workflow with Explore agents for codebase scanning, AskUserQuestion for all interaction, template-based document generation. References setup skill via ${CLAUDE_PLUGIN_ROOT}.
 
 ---
 
