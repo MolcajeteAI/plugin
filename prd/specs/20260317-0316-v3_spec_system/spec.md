@@ -1364,10 +1364,6 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 - [ ] Update `scripts/status.sh` for new UC status tracking
 - [ ] Keep `scripts/merge.sh` as-is (worktree merge logic unchanged)
 
-### Global Documents (UC-0S96-016)
-
-- [ ] Create `prd/features/` directory
-- [ ] Verify `prd/specs/` remains untouched
 
 ---
 

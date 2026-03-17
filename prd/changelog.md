@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-17
 
+- [06:10] Write setup skill and templates (UC-0S96-001/1)
+  Setup SKILL.md with 3-stage interview flow, codebase inference tables, confirmation rules. 5 document templates: project, tech-stack, actors, glossary, features.
+  - Plan: [task-UC-0S96-001--1.1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-001--1.1.md)
+  - Changelog: [changelog-UC-0S96-001--1.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-001--1.md)
+
 - [05:27] Restructure plugin into Plan/Build subsystems (UC-0S96-013, UC-0S96-014, UC-0S96-015)
   Reorganized flat commands/skills into plan/ and build/ subsystems. Moved 12 deprecated commands and 10 language skills to deprecated/. Updated plugin.json to v3.0.0 with /mcommand naming (19 commands, 15 skills). Created placeholder files for plan commands and plan/build skills.
   - Plan: [task-UC-0S96-013.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-013.md)

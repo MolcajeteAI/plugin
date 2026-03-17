@@ -165,14 +165,6 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 **Preconditions:** Language/stack skills exist in `molcajete/skills/`
 **Postconditions:** The following skills are in `molcajete/deprecated/skills/`: go-writing-code, go-testing, node-writing-code, node-testing, typescript-writing-code, typescript-testing, react-writing-code, react-testing, react-components, tailwind-css. Remaining workflow/utility skills stay in place until v3 is complete, then evaluated.
 
-### UC-0S96-016: Create Global Documents Structure
-
-The `prd/` directory is updated with the v3 global documents: `GLOSSARY.md`, `FEATURES.md`, `PROJECT.md`, `TECH-STACK.md`, `ACTORS.md`, and the `prd/features/` directory. Existing `prd/specs/` is left in place as historical artifacts.
-
-**Primary Actor:** Developer (plugin maintainer)
-**Preconditions:** Current `prd/` structure exists with v2 documents
-**Postconditions:** `prd/GLOSSARY.md` template exists; `prd/FEATURES.md` template exists; `prd/ACTORS.md` template exists; `prd/features/` directory exists; existing `prd/specs/` is untouched; `prd/mission.md` replaced by `prd/PROJECT.md`; `prd/tech-stack.md` replaced by `prd/TECH-STACK.md`
-
 ---
 
 ## 3. User Stories
@@ -281,7 +273,7 @@ The `prd/` directory is updated with the v3 global documents: `GLOSSARY.md`, `FE
 
 ## 4. Functional Requirements
 
-### Project Foundation (maps to UC-0S96-001, UC-0S96-016)
+### Project Foundation (maps to UC-0S96-001)
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
@@ -382,7 +374,7 @@ The `prd/` directory is updated with the v3 global documents: `GLOSSARY.md`, `FE
 | FR-0S96-046 | The system shall move language/stack skills to `molcajete/deprecated/skills/`: go-writing-code, go-testing, node-writing-code, node-testing, typescript-writing-code, typescript-testing, react-writing-code, react-testing, react-components, tailwind-css | Critical |
 | FR-0S96-047 | The system shall retain existing workflow/utility skills in place until v3 is complete, then evaluate which to deprecate | High |
 
-### Feature Inventory and Glossary (maps to UC-0S96-016)
+### Feature Inventory and Glossary (maps to UC-0S96-001)
 
 | ID | Requirement | Priority |
 |----|-------------|----------|

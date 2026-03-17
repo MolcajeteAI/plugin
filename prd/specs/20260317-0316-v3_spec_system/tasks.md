@@ -102,33 +102,28 @@ Moves 10 language-specific skills to `molcajete/deprecated/skills/`.
 
 ---
 
-## [ ] UC-0S96-016. Create Global Documents Structure
-
-Sets up the v3 prd/ directory layout with `prd/features/` directory. Existing `prd/specs/` remains untouched.
-
-- [ ] 1. Create prd/features/ directory
-  - Complexity: 1
-  - Dependencies: None
-  - Acceptance: `prd/features/` exists; `prd/specs/` is untouched
-
----
-
 ## [ ] UC-0S96-001. Set Up Project Foundation (/msetup)
 
 Creates the setup skill with templates for PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, and the /msetup command that interviews the user and generates all foundational documents.
 
-- [ ] 1. Write setup skill and templates
+- [x] 1. Write setup skill and templates
   - Complexity: 5
   - Dependencies: UC-0S96-013/1.1
-  - Acceptance: `plan/skills/setup/SKILL.md` exists with interview flow rules, inference patterns, and references to all 4 templates
-  - [ ] 1.1 Write plan/skills/setup/SKILL.md (interview flow, tech stack inference, actor inference rules)
+  - Acceptance: `plan/skills/setup/SKILL.md` exists with interview flow rules, inference patterns, and references to all 5 templates
+  - Completed: 2026-03-17
+  - Notes: SKILL.md covers 3-stage interview (project, tech stack, actors), codebase detection tables, confirmation rules, document generation order. Added features-template.md since /msetup creates the initial FEATURES.md per FR-0S96-002.
+  - [x] 1.1 Write plan/skills/setup/SKILL.md (interview flow, tech stack inference, actor inference rules)
     - Complexity: 3
     - Dependencies: UC-0S96-013/1.1
     - Acceptance: SKILL.md defines interview stages, codebase scanning rules for inference, confirmation flow
-  - [ ] 1.2 Write templates: project-template.md, tech-stack-template.md, actors-template.md, glossary-template.md
+    - Completed: 2026-03-17
+    - Notes: 3-stage interview flow, tech stack indicators table (14 file patterns), actor indicators table (6 patterns), confirmation rules, regeneration handling
+  - [x] 1.2 Write templates: project-template.md, tech-stack-template.md, actors-template.md, glossary-template.md, features-template.md
     - Complexity: 2
     - Dependencies: UC-0S96-001/1.1
-    - Acceptance: 4 template files in plan/skills/setup/templates/ matching spec Section 4.1-4.4
+    - Acceptance: 5 template files in plan/skills/setup/templates/ matching spec Section 4.1-4.5
+    - Completed: 2026-03-17
+    - Notes: 5 templates created (added features-template.md with status key and empty table). All match spec Section 4 templates.
 
 - [ ] 2. Write /msetup command
   - Complexity: 5
