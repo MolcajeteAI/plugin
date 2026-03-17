@@ -8,101 +8,25 @@
   },
   "keywords": ["workflow", "development", "testing", "documentation", "git", "specs"],
   "commands": [
-    {
-      "name": "msetup",
-      "description": "Initialize project: PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md",
-      "path": "./plan/commands/setup.md"
-    },
-    {
-      "name": "mfeature",
-      "description": "Create a new feature with EARS requirements via creation interview",
-      "path": "./plan/commands/feature.md"
-    },
-    {
-      "name": "musecase",
-      "description": "Create a new use case within a feature via creation interview",
-      "path": "./plan/commands/usecase.md"
-    },
-    {
-      "name": "mspec",
-      "description": "Generate or update architecture.md with C4, ER, event topology",
-      "path": "./plan/commands/spec.md"
-    },
-    {
-      "name": "mschema",
-      "description": "Reverse-engineer database schema from codebase into SCHEMA.md",
-      "path": "./plan/commands/schema.md"
-    },
-    {
-      "name": "mstories",
-      "description": "Generate Gherkin scenarios from a use case file",
-      "path": "./plan/commands/stories.md"
-    },
-    {
-      "name": "mupdate-feature",
-      "description": "Update an existing feature's requirements or architecture",
-      "path": "./plan/commands/update-feature.md"
-    },
-    {
-      "name": "mupdate-usecase",
-      "description": "Update an existing use case file, increment version, set dirty",
-      "path": "./plan/commands/update-usecase.md"
-    },
-    {
-      "name": "mreverse-feature",
-      "description": "Reverse-engineer a feature from existing codebase",
-      "path": "./plan/commands/reverse-feature.md"
-    },
-    {
-      "name": "mreverse-usecase",
-      "description": "Reverse-engineer a use case from existing codebase",
-      "path": "./plan/commands/reverse-usecase.md"
-    },
-    {
-      "name": "mreverse-glossary",
-      "description": "Generate GLOSSARY.md from codebase using seed terms",
-      "path": "./plan/commands/reverse-glossary.md"
-    },
-    {
-      "name": "mrun",
-      "description": "Execute four-agent pipeline for a UC or all new/dirty UCs in a feature",
-      "path": "./build/commands/run.md"
-    },
-    {
-      "name": "mdev",
-      "description": "Implement a task from the task plan",
-      "path": "./build/commands/dev.md"
-    },
-    {
-      "name": "mtest",
-      "description": "Write, run, or analyze tests for code",
-      "path": "./build/commands/test.md"
-    },
-    {
-      "name": "mdebug",
-      "description": "Guided debugging workflow",
-      "path": "./build/commands/debug.md"
-    },
-    {
-      "name": "mcommit",
-      "description": "Create a well-formatted commit from staged changes",
-      "path": "./commands/commit.md"
-    },
-    {
-      "name": "mreview",
-      "description": "Code review on staged or recent changes",
-      "path": "./commands/review.md"
-    },
-    {
-      "name": "mdoc",
-      "description": "Generate documentation for code",
-      "path": "./commands/doc.md"
-    },
-    {
-      "name": "mresearch",
-      "description": "Deep research with parallel agents and long-form output",
-      "path": "./commands/research.md"
-    }
+    "./plan/commands/setup.md",
+    "./plan/commands/feature.md",
+    "./plan/commands/usecase.md",
+    "./plan/commands/spec.md",
+    "./plan/commands/schema.md",
+    "./plan/commands/stories.md",
+    "./plan/commands/update-feature.md",
+    "./plan/commands/update-usecase.md",
+    "./plan/commands/reverse-feature.md",
+    "./plan/commands/reverse-usecase.md",
+    "./plan/commands/reverse-glossary.md",
+    "./build/commands/run.md",
+    "./build/commands/dev.md",
+    "./build/commands/test.md",
+    "./build/commands/debug.md",
+    "./commands/commit.md",
+    "./commands/review.md",
+    "./commands/doc.md",
+    "./commands/research.md"
   ],
   "skills": [
     "./plan/skills/setup/SKILL.md",
