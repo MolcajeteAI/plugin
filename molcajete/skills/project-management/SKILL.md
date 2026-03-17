@@ -118,6 +118,10 @@ Tasks must be organized as vertical slices through all layers, not horizontal la
 
 Organize tasks by use case (UC-{tag}-NNN). Within each use case, order tasks by dependency — earlier tasks unblock later ones.
 
+### Infrastructure Belongs to Its Use Case
+
+If a UC requires infrastructure work (command skeleton, argument router, shared migrations, base types), that work is part of the UC's scope — it becomes a subtask of that UC. Every UC must correspond to testable user-facing behavior. Cross-UC dependencies are resolved by reordering UCs so the one with the shared work comes first.
+
 ## Changelog as LLM Memory
 
 The changelog (`prd/changelog.md`) is designed as an LLM memory document — organized by domain area rather than chronologically. It describes what exists in the codebase, mapped back to requirement IDs. This allows any agent to quickly understand what has been built without reading every file.

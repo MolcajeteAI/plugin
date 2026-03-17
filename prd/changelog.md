@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-16
 
+- [00:16] Ban UC-000 from /m:tasks and project-management skill (UC-0Rz0-003)
+  Replaced UC-000 extraction in /m:tasks Step 6 with "absorb into first UC" rule. Added UC-000 ban to SKILL.md and tasks-template.md. Every UC must have testable user-facing behavior.
+  - Plan: [task-UC-0Rz0-003--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-003--1.md)
+  - Changelog: [changelog-UC-0Rz0-003--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-003--1.md), [changelog-UC-0Rz0-003--2.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-003--2.md)
+
 - [22:48] Create dispatch.sh three-agent orchestration loop (UC-0Rz0-002/4)
   Core dispatcher for `/m:run`. Per UC: worktree -> Tester -> Developer x N (with LLM review) -> BDD Validator -> merge on green. Linear loop, no state machine. Rate limit backoff, BDD auto-detection, jq-based tasks.json mutation.
   - Plan: [task-UC-0Rz0-002--4.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--4.md)

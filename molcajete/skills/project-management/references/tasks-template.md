@@ -91,6 +91,7 @@ graph LR
 
 - Tasks are organized as vertical slices through all layers (database, API, UI)
 - Each feature section maps to a use case from requirements.md
+- Infrastructure work belongs to the UC that needs it — include it as subtasks within that UC's scope
 - Complexity uses story points (1/2/3/5/8) — not time estimates
 - When a task is completed, mark its checkbox and add:
   - `Completed: {YYYY-MM-DD}`

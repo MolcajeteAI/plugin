@@ -90,23 +90,27 @@ Build the dispatch pipeline: two headless agent commands (Tester and Developer),
 
 ---
 
-## [ ] UC-0Rz0-003. Task Planning Without UC-000 (ban infrastructure-only use cases)
+## [x] UC-0Rz0-003. Task Planning Without UC-000 (ban infrastructure-only use cases)
 
 Update the `/m:tasks` command and project-management skill to eliminate UC-000 "Shared Prerequisites" sections. Infrastructure tasks are absorbed by the first UC that needs them, ensuring every UC corresponds to testable user-facing behavior.
 
-- [ ] 1. Update /m:tasks command to ban UC-000
+- [x] 1. Update /m:tasks command to ban UC-000
   - Complexity: 3
   - Dependencies: None
   - Acceptance: Step 6 of `tasks.md` no longer extracts UC-000 sections; instead, infrastructure tasks are subtasks of the first UC; any Step 8 references to UC-000 are also removed; cross-UC dependencies resolved by reordering UCs, not by shared prerequisites
   - Files: `molcajete/commands/tasks.md` (edit)
   - Implements: FR-0Rz0-030, FR-0Rz0-031
+  - Completed: 2026-03-16
+  - Notes: Replaced Step 6 UC-000 extraction logic with "absorb into first UC" rule. Infrastructure becomes subtasks of the first UC, UCs reordered if needed. Removed Step 8 "Shared Prerequisites" bullet.
 
-- [ ] 2. Update project-management skill and tasks template
+- [x] 2. Update project-management skill and tasks template
   - Complexity: 2
   - Dependencies: UC-0Rz0-003/1
   - Acceptance: `project-management/SKILL.md` includes rule: "No UC-000 sections — infrastructure belongs to the first UC that needs it"; `tasks-template.md` has no UC-000 example; both documents reflect "absorb into first UC" pattern
   - Files: `molcajete/skills/project-management/SKILL.md` (edit), `molcajete/skills/project-management/references/tasks-template.md` (edit)
   - Implements: FR-0Rz0-032
+  - Completed: 2026-03-16
+  - Notes: Added "No UC-000 Sections" subsection under Vertical Feature Slicing in SKILL.md. Added UC-000 ban note to tasks-template.md Notes section. Template had no UC-000 examples to remove.
 
 ---
 

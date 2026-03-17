@@ -154,30 +154,15 @@ Skip ahead to Step 7.
 
 ### If cross-UC dependency conflicts exist
 
-Extract **only** the minimum shared work needed to unblock the dependency graph into a `UC-{tag}-000. Shared Prerequisites` section at the top of tasks.md, before all other UC sections.
+Any shared infrastructure needed to complete a use case should be built as subtasks of that use case, even if other use cases also benefit from it. The UC that needs the infrastructure first owns it.
 
-**Rules for Shared Prerequisites:**
-- Include ONLY tasks that are blocking multiple UCs and cannot logically belong to a single UC
-- Typical examples: a shared database migration that multiple UCs need, a base model/type that several resolvers depend on, a shared auth middleware required by all endpoints
-- Each task must state exactly which UCs it unblocks in its Dependencies field
-- Keep it as small as possible — if a dependency can be moved into the first UC that needs it, do that instead
-- This is NOT a "build all infrastructure first" layer. If it grows beyond ~3-5 tasks, the slicing is wrong — rethink the UC boundaries instead
+**Resolution rules:**
+- Infrastructure tasks (command skeleton, argument router, shared migrations, base types) become subtasks of the UC that needs them
+- If multiple UCs need the same infrastructure, it belongs to whichever UC comes first — later UCs simply depend on that earlier UC
+- Reorder UC sections if needed so the UC containing the shared work comes first
+- If a UC grows large because it includes infrastructure, that's correct — size it accordingly with story points
 
-```
-## [ ] UC-{tag}-000. Shared Prerequisites
-
-These tasks extract the minimum shared infrastructure needed to unblock
-cross-UC dependencies. Each task exists here only because it cannot belong
-to a single UC without creating circular dependencies.
-
-- [ ] 1. {Shared task title}
-  - Complexity: {points}
-  - Dependencies: None
-  - Acceptance: {criterion}
-  - Unblocks: UC-{tag}-001, UC-{tag}-003
-```
-
-After adding the prerequisites section, re-validate the dependency graph to confirm all conflicts are resolved. Update the Execution Strategy and critical path diagram to reflect the new structure.
+After reordering, re-validate the dependency graph to confirm all conflicts are resolved. Update the Execution Strategy and critical path diagram to reflect the new structure.
 
 ## Step 7: Update Roadmap
 
@@ -188,7 +173,6 @@ If `prd/roadmap.md` exists, update the feature's entry to include a link to the 
 After generating the document, tell the user:
 - What file was created and where
 - Total story points and number of tasks
-- Whether a Shared Prerequisites section was needed (and why, briefly)
 - Critical path summary
 - Suggest next steps: "Use `/m:dev {UC-{tag}-NNN/task-id}` to start implementing a task (e.g., `/m:dev UC-0Fy0-001/1.1`)."
 
