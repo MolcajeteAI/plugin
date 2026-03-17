@@ -114,30 +114,36 @@ Update the `/m:tasks` command and project-management skill to eliminate UC-000 "
 
 ---
 
-## [ ] UC-0Rz0-004. Status Reporting and Documentation (v3-2 architecture docs)
+## [x] UC-0Rz0-004. Status Reporting and Documentation (v3-2 architecture docs)
 
 Create the status reporter, register new commands, document the three-agent architecture in skills and product docs. This UC depends on the dispatch pipeline being defined (UC-001 and UC-002) so documentation accurately reflects the implementation.
 
-- [ ] 1. Create status.sh for v3-2 schema
+- [x] 1. Create status.sh for v3-2 schema
   - Complexity: 3
   - Dependencies: UC-0Rz0-001/1
   - Acceptance: `status.sh` reads `tasks.json` and displays: UC-level `done` boolean, subtask-level `status`, retry counts, commit SHAs; no references to phases or phase counters; output is human-readable table format
   - Files: `molcajete/scripts/status.sh` (new)
   - Implements: FR-0Rz0-033
+  - Completed: 2026-03-16
+  - Notes: Created 105-line Bash script. Reads tasks.json via jq, displays UC summary table (status, tester info, subtask counts) and subtask detail (status, commit, review, retries, errors). No phase references.
 
-- [ ] 2. Create agent-coordination skill and update plugin.json
+- [x] 2. Create agent-coordination skill and update plugin.json
   - Complexity: 3
   - Dependencies: UC-0Rz0-002/4
   - Acceptance: `agent-coordination/SKILL.md` documents the three-agent chain for `/m:run` (Tester -> Developer x N -> Validator) with agent scope boundaries (what each agent does and does NOT do); `plugin.json` registers `run.md`, `run/build.md`, and `run/test.md` in the commands array and the new skill in the skills array
   - Files: `molcajete/skills/agent-coordination/SKILL.md` (new), `molcajete/.claude-plugin/plugin.json` (edit)
   - Implements: FR-0Rz0-034, FR-0Rz0-036
+  - Completed: 2026-03-16
+  - Notes: Created agent-coordination skill documenting dispatch chain, session model, worktree isolation, and interactive vs headless distinction. Registered run.md, run/build.md, run/test.md in plugin.json commands array and agent-coordination in skills array.
 
-- [ ] 3. Update README and product docs
+- [x] 3. Update README and product docs
   - Complexity: 3
   - Dependencies: UC-0Rz0-004/1, UC-0Rz0-004/2
   - Acceptance: README "Coordinated Builds" section describes v3-2 architecture (worktree-per-UC, three agents, merge-after-validation); `prd/tech-stack.md` describes the three-agent dispatch model; `prd/roadmap.md` links to tasks.md for this feature
   - Files: `README.md` (edit), `prd/tech-stack.md` (edit), `prd/roadmap.md` (edit)
   - Implements: FR-0Rz0-035, FR-0Rz0-037
+  - Completed: 2026-03-16
+  - Notes: Added /m:run, /m:stories to README commands table. Added gherkin, clipboard, agent-coordination to skills table. Added Coordinated Builds section to README and tech-stack.md. Updated skill count to 21. Roadmap already had correct links.
 
 ---
 

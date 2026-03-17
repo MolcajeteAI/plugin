@@ -13,6 +13,10 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-16
 
+- [01:03] Status reporting and documentation (UC-0Rz0-004)
+  Created status.sh, agent-coordination skill, registered new commands in plugin.json. Added Coordinated Builds sections to README and tech-stack.md.
+  - Changelog: [changelog-UC-0Rz0-004.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-004.md)
+
 - [00:16] Ban UC-000 from /m:tasks and project-management skill (UC-0Rz0-003)
   Replaced UC-000 extraction in /m:tasks Step 6 with "absorb into first UC" rule. Added UC-000 ban to SKILL.md and tasks-template.md. Every UC must have testable user-facing behavior.
   - Plan: [task-UC-0Rz0-003--1.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-003--1.md)

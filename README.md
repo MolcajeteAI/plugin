@@ -14,7 +14,7 @@ You know when you start using AI for your daily workflows, one day you get the r
 
 Molcajete.ai is a [Claude Code](https://www.anthropic.com/claude/code) plugin marketplace. It ships two plugins:
 
-- **`m`** — The core plugin. Generic, stack-aware commands covering the full development lifecycle, backed by a library of 18 reusable skills.
+- **`m`** — The core plugin. Generic, stack-aware commands covering the full development lifecycle, backed by a library of 21 reusable skills.
 - **`legacy`** — A migration helper for moving files from the old v1 `.molcajete/` format into the current `m` plugin format.
 
 ## Installation
@@ -77,7 +77,9 @@ The `m` plugin is the core of Molcajete.ai. Every command is a structured prompt
 | `/m:refactor` | Research a refactoring/replacement, produce impact analysis and requirements |
 | `/m:spec` | Create a technical specification for a feature or refactor |
 | `/m:tasks` | Break a specification into sequenced implementation tasks |
+| `/m:stories` | Generate BDD scenarios and step definitions for a feature |
 | `/m:dev` | Implement a task from the task plan |
+| `/m:run` | Run a spec end-to-end: plan, build, test, validate (headless dispatch) |
 | `/m:fix` | Diagnose and fix a bug or failed implementation |
 | `/m:test` | Write, run, or analyze tests for code |
 | `/m:review` | Code review on staged or recent changes |
@@ -127,6 +129,25 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each skil
 | `go-testing` | Go testing patterns, table-driven tests, and coverage |
 | `react-testing` | React Testing Library and component testing patterns |
 | `node-testing` | Integration and API testing patterns for Node.js |
+| `gherkin` | BDD scenario generation, Gherkin conventions, and step definition patterns |
+| `clipboard` | Copy-to-clipboard integration for commands |
+| `agent-coordination` | Three-agent dispatch chain (Tester -> Developer -> Validator) for `/m:run` |
+
+### Coordinated Builds
+
+The `/m:run` command orchestrates headless builds using a three-agent model. The prerequisite chain is:
+
+```
+/m:spec -> /m:tasks -> /m:stories -> /m:run
+```
+
+Per UC, `dispatch.sh` creates a git worktree and runs:
+
+1. **Tester** — writes BDD step definition assertions (red phase)
+2. **Developer** (per subtask) — implements production code + unit tests, with LLM review after each commit
+3. **Validator** — runs BDD tests; merges worktree to base branch only on green
+
+All agents share one session per UC for full context continuity. The base branch never receives untested code.
 
 ---
 
