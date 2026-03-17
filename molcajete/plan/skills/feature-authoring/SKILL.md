@@ -4,17 +4,17 @@ description: >-
   Rules and templates for creating and updating feature documents. Defines
   EARS syntax patterns, Fit Criteria, Non-Goals positioning, FEAT-NNN-slug
   ID assignment, FEATURES.md row management, and the creation interview
-  pattern. Used by /mfeature and /mupdate-feature.
+  pattern. Used by /m:feature and /m:update-feature.
 ---
 
 # Feature Authoring
 
-Rules for creating and maintaining feature documents: requirements.md, USE-CASES.md, and architecture.md scaffold. The /mfeature command references this skill to run the creation interview and generate all feature artifacts. The /mupdate-feature command references it for update mode.
+Rules for creating and maintaining feature documents: requirements.md, USE-CASES.md, and architecture.md scaffold. The /m:feature command references this skill to run the creation interview and generate all feature artifacts. The /m:update-feature command references it for update mode.
 
 ## When to Use
 
-- Creating a new feature with /mfeature
-- Updating an existing feature's requirements with /mupdate-feature
+- Creating a new feature with /m:feature
+- Updating an existing feature's requirements with /m:update-feature
 - Understanding the structure and rules for requirements.md, USE-CASES.md, and architecture.md
 
 ## EARS Syntax
@@ -226,11 +226,11 @@ After all sections are confirmed:
 4. Write `requirements.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI
 5. Write `USE-CASES.md` using [USE-CASES-template.md](./templates/USE-CASES-template.md) (empty table)
 6. Write `architecture.md` scaffold using [ARCHITECTURE-template.md](./templates/ARCHITECTURE-template.md)
-6. Add row to `prd/FEATURES.md` using [FEATURE-template.md](./templates/FEATURE-template.md)
+6. Add row to `prd/FEATURES.md` (format from the Row Management section above)
 
 ## Update Mode
 
-/mupdate-feature uses this skill in update mode:
+/m:update-feature uses this skill in update mode:
 - Read the current `requirements.md` and `architecture.md`
 - Compare with the user's change description
 - Propose specific changes via AskUserQuestion ("Here's what I'd change: ... Does this look correct?")

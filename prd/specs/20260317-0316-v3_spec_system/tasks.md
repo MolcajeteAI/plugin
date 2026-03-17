@@ -205,46 +205,52 @@ Creates the feature-authoring skill with templates for requirements.md, USE-CASE
 
 ## [ ] UC-0S96-003. Create Use Case (/m:usecase)
 
-Creates the usecase-authoring skill with the UC file template and the /m:usecase command with creation interview.
+Creates the usecase-authoring skill with the UC file template (flat scenario structure) and the /m:usecase command with creation interview.
 
-- [ ] 1. Write usecase-authoring skill and template
+- [x] 1. Write usecase-authoring skill and template
   - Complexity: 5
   - Dependencies: UC-0S96-013/1.1
-  - Acceptance: `plan/skills/usecase-authoring/SKILL.md` exists with UC field rules, side effects rules, YAML frontmatter schema, and reference to template
-  - [ ] 1.1 Write plan/skills/usecase-authoring/SKILL.md (UC file structure, mandatory Side Effects field with non-side-effects, YAML frontmatter schema, UC-NNN assignment, USE-CASES.md row management, version/status rules)
+  - Acceptance: `plan/skills/usecase-authoring/SKILL.md` exists with flat scenario structure rules, side effects rules, Gherkin mapping table, YAML frontmatter schema, and reference to template
+  - Completed: 2026-03-17
+  - Notes: SKILL.md covers flat scenario structure (shared context + peer scenario blocks with Given/Steps/Outcomes/Side Effects), dedicated Side Effects rules with 3 categories, Gherkin mapping table, YAML frontmatter schema (7 fields), UC-NNN assignment algorithm, USE-CASES.md row management, creation interview (4 steps with scenario loop and AskUserQuestion), update mode. UC-template.md uses flat scenario blocks with no main/alternative hierarchy.
+  - [x] 1.1 Write plan/skills/usecase-authoring/SKILL.md (flat scenario structure with Given/Steps/Outcomes/Side Effects per scenario, mandatory Side Effects with non-side-effects, Gherkin mapping table, YAML frontmatter schema, UC-NNN assignment, USE-CASES.md row management, version/status rules)
     - Complexity: 3
     - Dependencies: UC-0S96-013/1.1
-    - Acceptance: SKILL.md defines all UC fields, side effect rules including explicit non-side-effects, frontmatter fields, status transitions
-  - [ ] 1.2 Write template: usecase-template.md
+    - Acceptance: SKILL.md defines flat scenario blocks, side effect rules including explicit non-side-effects, Gherkin mapping, frontmatter fields, status transitions
+    - Completed: 2026-03-17
+    - Notes: Flat scenario structure (S1, S2, ...) with bold field labels (Given/Steps/Outcomes/Side Effects), HR separators between scenarios, Gherkin mapping table, side effects rules (events, DB writes, non-side-effects), 7-field frontmatter schema, creation interview with shared context review then scenario loop, update mode with version increment and dirty status
+  - [x] 1.2 Write template: UC-template.md
     - Complexity: 2
     - Dependencies: UC-0S96-003/1.1
-    - Acceptance: Template in plan/skills/usecase-authoring/templates/ matching spec Section 4.8
+    - Acceptance: Template in plan/skills/usecase-authoring/templates/ with flat scenario blocks, no main/alternative hierarchy
+    - Completed: 2026-03-17
+    - Notes: UC-template.md with flat scenario structure: shared Preconditions, Trigger, Gherkin Tags, then S1/S2 scenario blocks each with Given/Steps/Outcomes/Side Effects. HR separators between scenarios. YAML frontmatter with 7 fields, status defaults to backlog, version to 1.
 
 - [ ] 2. Write /m:usecase command
   - Complexity: 5
   - Dependencies: UC-0S96-003/1, UC-0S96-013/2.2
-  - Acceptance: `plan/commands/usecase.md` exists; references usecase-authoring skill; implements creation interview
-  - [ ] 2.1 Write plan/commands/usecase.md (YAML frontmatter + prompt with FEAT-NNN validation, freeform extraction, section-by-section review for all UC fields, UC-NNN assignment, file generation, USE-CASES.md update)
+  - Acceptance: `plan/commands/usecase.md` exists; references usecase-authoring skill; implements creation interview with scenario loop
+  - [ ] 2.1 Write plan/commands/usecase.md (YAML frontmatter + prompt with FEAT-NNN validation, freeform extraction, shared context review (name/actor/preconditions/trigger), per-scenario review (Given/Steps/Outcomes/Side Effects), scenario loop ("Add another scenario?"), UC-NNN assignment, file generation with flat scenario structure, USE-CASES.md update)
     - Complexity: 5
     - Dependencies: UC-0S96-003/1
-    - Acceptance: Command validates FEAT-NNN in FEATURES.md, extracts preconditions/trigger/main-flow/postconditions/side-effects/alternative-flows/fit-criteria, reviews each section, writes UC file with frontmatter, updates USE-CASES.md
+    - Acceptance: Command validates FEAT-NNN in FEATURES.md, extracts shared context and scenarios, reviews shared context then each scenario, loops for additional scenarios, writes UC file with flat scenario structure, updates USE-CASES.md
 
 - [ ] 3. Add inline UI to use case authoring
   - Complexity: 3
   - Dependencies: UC-0S96-003/2
-  - Acceptance: UC template has optional `### UI` subsection within Main Flow and optional UI blocks within Alternative Flows; usecase-authoring SKILL.md has inline UI rules; usecase.md command generates inline UI when applicable
-  - [ ] 3.1 Update UC template with optional `### UI` subsection at end of Main Flow and optional `UI:` blocks within each Alternative Flow
+  - Acceptance: UC template has optional UI block within scenario Steps; usecase-authoring SKILL.md has inline UI rules; usecase.md command generates inline UI when applicable
+  - [ ] 3.1 Update UC template with optional UI block within scenario Steps for screen state mockups
     - Complexity: 1
     - Dependencies: UC-0S96-003/2
-    - Acceptance: Main Flow section has optional `### UI` subsection showing screen states labeled by step number; Alternative Flows can optionally include `UI:` block with mockup
-  - [ ] 3.2 Update usecase-authoring SKILL.md with inline UI rules (ASCII art default, per-flow mockups, `use-cases/assets/` for images, `{UC-ID}-{slug}.{ext}` naming)
+    - Acceptance: Scenario Steps can optionally include UI mockup showing screen state at that step
+  - [ ] 3.2 Update usecase-authoring SKILL.md with inline UI rules (ASCII art default, per-scenario mockups, `use-cases/assets/` for images, `{UC-ID}-{slug}.{ext}` naming)
     - Complexity: 1
     - Dependencies: UC-0S96-003/3.1
-    - Acceptance: SKILL.md covers inline UI positioning within flows, asset management for UC-level images, when to include/omit
-  - [ ] 3.3 Update usecase.md command with UI interview per flow and inline UI generation in UC file
+    - Acceptance: SKILL.md covers inline UI positioning within scenarios, asset management for UC-level images, when to include/omit
+  - [ ] 3.3 Update usecase.md command with UI interview per scenario and inline UI generation in UC file
     - Complexity: 1
     - Dependencies: UC-0S96-003/3.2
-    - Acceptance: Command asks about UI for main flow and each alternative flow, generates ASCII art from description by default, omits UI blocks if user says no UI
+    - Acceptance: Command asks about UI for each scenario, generates ASCII art from description by default, omits UI blocks if user says no UI
 
 ---
 
@@ -328,7 +334,7 @@ Creates the plan-side gherkin skill with template and the /m:stories command tha
   - [ ] 2.1 Write plan/commands/stories.md (YAML frontmatter + prompt with UC-NNN lookup, UC file field reading, Gherkin generation using gherkin skill, scenario tagging, step definition TODO placeholders, coverage validation)
     - Complexity: 5
     - Dependencies: UC-0S96-006/1
-    - Acceptance: Command reads UC file, generates scenarios covering main flow, every alternative flow, every side effect (And clause), every non-side-effect (And no clause), tagged with @FEAT-NNN @UC-NNN
+    - Acceptance: Command reads UC file, generates one Gherkin scenario per UC scenario block (S1, S2, ...) with Preconditions as Background, per-scenario Given/Steps/Outcomes/Side Effects mapped to Given/When/Then/And, tagged with @FEAT-NNN @UC-NNN
 
 ---
 
@@ -349,7 +355,7 @@ Creates 4 build skills (planner, tester, developer, verifier), the /m:run comman
   - Complexity: 5
   - Dependencies: UC-0S96-013/1.2
   - Acceptance: `build/skills/tester/SKILL.md` exists with Gherkin writing rules, coverage requirements, step definition placeholder rules
-  - [ ] 2.1 Write build/skills/tester/SKILL.md (receives plan + UC file; writes Gherkin covering all main flow steps, alternative flows, side effects as And clauses, non-side-effects as And-no clauses; writes step definitions with TODO placeholders; applies @FEAT-NNN @UC-NNN @priority tags; coverage rules per spec Section 6.3)
+  - [ ] 2.1 Write build/skills/tester/SKILL.md (receives plan + UC file; writes one Gherkin scenario per UC scenario block (S1, S2, ...) with Preconditions as Background, per-scenario Given/Steps/Outcomes/Side Effects mapped to Given/When/Then/And, side effects as And clauses, non-side-effects as And-no clauses; writes step definitions with TODO placeholders; applies @FEAT-NNN @UC-NNN @priority tags; coverage rules per spec Section 6.3)
     - Complexity: 5
     - Dependencies: UC-0S96-013/1.2
     - Acceptance: SKILL.md defines coverage table, tag convention, step placeholder format, relationship to plan
@@ -433,7 +439,7 @@ Creates the /m:update-usecase command that edits a UC file, increments version, 
   - Complexity: 2
   - Dependencies: UC-0S96-009/1
   - Acceptance: update-usecase.md handles adding/updating/removing inline UI in existing UC files and managing `use-cases/assets/` directory
-  - [ ] 2.1 Update update-usecase.md to handle inline UI changes (add/update/remove `### UI` in Main Flow, add/update/remove `UI:` blocks in Alternative Flows, create `use-cases/assets/` and copy images when provided)
+  - [ ] 2.1 Update update-usecase.md to handle inline UI changes (add/update/remove UI blocks within scenario Steps, create `use-cases/assets/` and copy images when provided)
     - Complexity: 2
     - Dependencies: UC-0S96-009/1
     - Acceptance: Command can add, update, or remove inline UI mockups in flows; creates `use-cases/assets/` and copies images when provided

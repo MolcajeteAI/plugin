@@ -468,6 +468,8 @@ Linked to: UC-NNN
 
 ### 4.8 UC-NNN-{slug}.md Template
 
+Uses a flat scenario structure where every scenario -- success, error, edge case -- has the same shape. No distinction between "main" and "alternative" flows.
+
 ```markdown
 ---
 id: UC-NNN
@@ -485,45 +487,65 @@ tag: @UC-NNN
 
 ## Preconditions
 
-- {System/data state that must exist}
+- {Shared state that must exist before ANY scenario can start}
 - {Actor state: authenticated, has permission, etc.}
 
 ## Trigger
 
-{One sentence: what the actor does or what event occurs to begin this interaction.}
+{One sentence: what the actor does or what event occurs.}
 
-## Main Flow
-
-1. {Actor} {action}
-2. System {validates/processes/stores/returns} {what}
-...
-
-## Postconditions
-
-- {Entity/state that now exists or has changed}
-
-## Side Effects
-
-- `{event.name}` event published with payload `{fields}`
-- `{table}` table: {row created/updated/deleted}
-- No {notification/email/webhook} sent
-
-## Alternative Flows
-
-**{N}a. {Condition that causes deviation}:**
-1. System {response}
-Result: {How this ends}
-Side effects: {Any side effects specific to this alternative}
-
-## Fit Criteria
-
-- Given {precondition}, when {trigger}, then {measurable outcome}
-- Response time: < {N}ms at {percentile} under {load}
-
-## Gherkin Tag
+## Gherkin Tags
 
 `@FEAT-NNN @UC-NNN`
+
+---
+
+### S1: {Scenario Name}
+
+**Given:**
+- {State specific to THIS scenario, beyond UC-level Preconditions}
+
+**Steps:**
+1. {Actor} {action}
+2. System {validates/processes/stores/returns} {what}
+
+**Outcomes:**
+- {Entity/state that now exists or has changed}
+
+**Side Effects:**
+- `{event.name}` event published with payload `{fields}`
+- No {notification/email/webhook} sent
+
+---
+
+### S2: {Scenario Name}
+
+**Given:**
+- {Scenario-specific state}
+
+**Steps:**
+1. {Actor} {action}
+2. System {response}
+
+**Outcomes:**
+- {What is true after this scenario}
+
+**Side Effects:**
+- {Side effects for this scenario}
+- No {thing that does NOT happen}
 ```
+
+**Gherkin mapping from UC elements:**
+
+| UC Element | Gherkin Output |
+|------------|----------------|
+| UC `Preconditions` | `Background: Given ...` |
+| UC `Gherkin Tags` | `@FEAT-NNN @UC-NNN` on Feature line |
+| Scenario `Given` | Additional `Given` / `And` after Background |
+| Scenario `Steps` | `When` / `And` clauses |
+| Scenario `Outcomes` | `Then` clauses |
+| Scenario `Side Effects` (positive) | `And` clauses |
+| Scenario `Side Effects` ("No ...") | `And no ...` clauses |
 
 ### 4.9 architecture.md Template (per-feature)
 
@@ -690,10 +712,11 @@ flowchart TD
 
 **Creation Interview Flow:**
 1. Validate FEAT-NNN exists in FEATURES.md.
-2. Extract from input: name, actor, preconditions, trigger, main flow, postconditions, side effects (including non-side-effects), alternative flows, fit criteria.
-3. Present each section for review.
-4. Assign UC-NNN ID (next sequential within feature's USE-CASES.md).
-5. Write UC file with YAML frontmatter. Update USE-CASES.md.
+2. Extract from input: name, actor, preconditions, trigger, and scenarios (each with Given, Steps, Outcomes, Side Effects).
+3. Present shared context for review (name, actor, preconditions, trigger).
+4. Present each scenario for review. After all extracted scenarios, ask "Add another scenario?" and loop until done.
+5. Assign UC-NNN ID (next sequential within feature's USE-CASES.md).
+6. Write UC file with YAML frontmatter (flat scenario structure). Update USE-CASES.md.
 
 #### /m:spec
 
@@ -709,8 +732,8 @@ flowchart TD
 2. Read `prd/TECH-STACK.md` for technology context.
 3. Generate C4 System Context (L1) from actors and external system references.
 4. Generate C4 Container View (L2) from component references in UC flows.
-5. Generate ER diagram from data entities mentioned in UC side effects and postconditions.
-6. Write invariants block from UC preconditions and fit criteria.
+5. Generate ER diagram from data entities mentioned in UC scenario Outcomes and Side Effects.
+6. Write invariants block from UC preconditions and scenario Outcomes.
 7. Generate Event Topology table from UC side effects (events published).
 8. Generate state transition diagram if entities have lifecycle states.
 9. Add ADR section for non-obvious architectural decisions.
@@ -742,16 +765,15 @@ flowchart TD
 
 **Mapping rules (from UC file to Gherkin):**
 
-| UC Field | Gherkin Element |
-|----------|-----------------|
-| Preconditions | `Given` clauses |
-| Trigger | `When` clause |
-| Postconditions | `Then` clause |
-| Side effects | `And` clauses after `Then` |
-| Non-side-effects | `And no ...` clauses |
-| Alternative flows | Separate scenarios with deviation as `When` |
-| Fit criteria | Measurable `Then` assertions |
-| FEAT-NNN + UC-NNN | `@FEAT-NNN @UC-NNN` tags on every scenario |
+| UC Element | Gherkin Output |
+|------------|----------------|
+| UC `Preconditions` | `Background: Given ...` |
+| UC `Gherkin Tags` | `@FEAT-NNN @UC-NNN` on Feature line |
+| Scenario `Given` | Additional `Given` / `And` after Background |
+| Scenario `Steps` | `When` / `And` clauses |
+| Scenario `Outcomes` | `Then` clauses |
+| Scenario `Side Effects` (positive) | `And` clauses |
+| Scenario `Side Effects` ("No ...") | `And no ...` clauses |
 
 #### /m:update-feature
 
@@ -876,20 +898,20 @@ flowchart TD
 
 **Produces:** Gherkin feature files with:
 - `@FEAT-NNN @UC-NNN @{priority}` tags on every scenario
-- One `@smoke` scenario for the happy path (main flow)
-- One scenario per alternative flow
+- One Gherkin scenario per UC scenario block (S1, S2, ...)
+- UC Preconditions mapped to `Background: Given` block
+- Per-scenario Given/Steps/Outcomes/Side Effects mapped to Given/When/Then/And
 - `And` clauses for every declared side effect
 - `And no ...` clauses for every explicit non-side-effect
 - Step definitions with `TODO: implement step` placeholders
 
 **Coverage rules:**
 
-| UC Field | Required Coverage |
-|----------|-------------------|
-| Main flow | At least one scenario covering all steps |
-| Each alternative flow | At least one scenario |
-| Each side effect | At least one `And` clause |
-| Each non-side-effect | At least one `And no ...` clause |
+| UC Element | Required Coverage |
+|------------|-------------------|
+| Each scenario block (S1, S2, ...) | One Gherkin scenario |
+| Each scenario's side effects | At least one `And` clause |
+| Each scenario's non-side-effects | At least one `And no ...` clause |
 | Each FR linked to this UC | At least one scenario |
 | Each NFR applicable to this UC | At least one measurable assertion |
 
@@ -932,7 +954,7 @@ flowchart TD
 
 | Check | What it validates |
 |-------|-------------------|
-| Feature completeness | Every field in UC file (main flow, postconditions, side effects, alternative flows) has corresponding implementation |
+| Feature completeness | Every scenario block in UC file (Given, Steps, Outcomes, Side Effects) has corresponding implementation |
 | FR compliance | No FR from parent feature's requirements.md is violated |
 | NFR compliance | No NFR from parent feature's requirements.md is violated |
 | Architecture conformance | Data model matches ER diagram; events match event topology; invariants are enforced in code |
@@ -991,7 +1013,7 @@ stateDiagram-v2
 stateDiagram-v2
     [*] --> backlog : "UC added to USE-CASES.md"
     backlog --> scoped : "UC file created with fields"
-    scoped --> specified : "all fields populated + fit criteria"
+    scoped --> specified : "all fields populated + scenarios complete"
     specified --> building : "/m:run pipeline started"
     building --> live : "Verifier approves"
     live --> dirty : "/m:update-usecase changes spec"
@@ -1005,7 +1027,7 @@ stateDiagram-v2
 |------|----|-------------|
 | (new) | backlog | Row added to USE-CASES.md |
 | backlog | scoped | `/m:usecase` creates UC file |
-| scoped | specified | All UC fields populated, fit criteria written |
+| scoped | specified | All UC fields populated, all scenarios complete |
 | specified | building | `/m:run` starts pipeline |
 | building | live | Verifier passes with no gaps |
 | live | dirty | `/m:update-usecase` modifies UC file |
@@ -1046,8 +1068,8 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 ```
 @FEAT-NNN          # All scenarios for a feature
   @UC-NNN          # All scenarios for a use case
-    @smoke         # Happy path
-    @critical      # Alternative flows / error paths
+    @smoke         # Success scenario
+    @critical      # Error / edge-case scenarios
     @deprecated    # Retained for audit, excluded from CI
 ```
 
@@ -1084,7 +1106,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 - [ ] `/m:usecase` accepts FEAT-NNN and freeform text
 - [ ] Validates FEAT-NNN exists in FEATURES.md
 - [ ] Creation interview presents each UC section for review
-- [ ] Writes UC file with all fields: preconditions, trigger, main flow, postconditions, side effects (including non-side-effects), alternative flows, fit criteria
+- [ ] Writes UC file with flat scenario structure: preconditions, trigger, Gherkin tags, and peer scenario blocks (each with Given, Steps, Outcomes, Side Effects)
 - [ ] UC file has YAML frontmatter with id, name, feature, status, version, actor, tag
 - [ ] Updates USE-CASES.md with new row
 - [ ] Skill template exists: usecase-template.md
@@ -1113,8 +1135,7 @@ Format: `FR-NNN`, `NFR-NNN` (within a feature's requirements.md)
 
 - [ ] `/m:stories` reads UC file and references gherkin skill
 - [ ] Generates scenarios with @FEAT-NNN @UC-NNN tags
-- [ ] Every main flow step has scenario coverage
-- [ ] Every alternative flow has at least one scenario
+- [ ] Every UC scenario block (S1, S2, ...) produces a Gherkin scenario
 - [ ] Every side effect produces an `And` clause
 - [ ] Every non-side-effect produces an `And no ...` clause
 - [ ] Step definitions include TODO placeholders

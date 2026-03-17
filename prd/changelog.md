@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-17
 
+- [14:29] Write usecase-authoring skill and template (UC-0S96-003/1)
+  SKILL.md with flat scenario structure (shared Preconditions/Trigger/Gherkin Tags + peer scenario blocks with Given/Steps/Outcomes/Side Effects), Gherkin mapping table, dedicated Side Effects rules, YAML frontmatter schema (7 fields), UC-NNN assignment, USE-CASES.md row management, creation interview with scenario loop. UC-template.md with flat scenario blocks.
+  - Plan: [task-UC-0S96-003--1.md](specs/20260317-0316-v3_spec_system/plans/task-UC-0S96-003--1.md)
+  - Changelog: [changelog-UC-0S96-003--1.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-003--1.md)
+
 - [07:54] Add UI section to feature authoring (UC-0S96-002/3)
   Optional `## UI` at position 4 (after Actors, before FRs). ASCII art default from description; image references via `assets/`. Interview step 5.4 added to /m:feature.
   - Changelog: [changelog-UC-0S96-002--3.md](specs/20260317-0316-v3_spec_system/plans/changelog-UC-0S96-002--3.md)

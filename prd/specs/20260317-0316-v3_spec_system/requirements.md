@@ -63,11 +63,11 @@ The user runs `/m:feature` with freeform input to create a new feature entry. Th
 
 ### UC-0S96-003: Create Use Case
 
-The user runs `/m:usecase {FEAT-NNN} {input}` to create a new use case file within a feature. The command follows the creation interview pattern — extracts preconditions, trigger, main flow, postconditions, side effects, alternative flows, and fit criteria from the input, then presents each section for review. This UC also includes creating the skill template for use case files that the command uses to generate the UC document.
+The user runs `/m:usecase {FEAT-NNN} {input}` to create a new use case file within a feature. The command follows the creation interview pattern — extracts shared context (name, actor, preconditions, trigger) and flat peer scenarios (each with Given, Steps, Outcomes, Side Effects) from the input, then reviews shared context followed by each scenario individually. A scenario loop allows adding scenarios until the user is done. This UC also includes creating the skill template for use case files that the command uses to generate the UC document.
 
 **Primary Actor:** Developer
 **Preconditions:** Feature exists in `prd/features/{slug}/`; `USE-CASES.md` exists for that feature
-**Postconditions:** `UC-NNN-{slug}.md` exists in `use-cases/` with all fields populated; `USE-CASES.md` updated with new row; feature status in `FEATURES.md` may advance; skill template for use case files exists in the plan skills directory
+**Postconditions:** `UC-NNN-{slug}.md` exists in `use-cases/` with flat scenario structure; `USE-CASES.md` updated with new row; feature status in `FEATURES.md` may advance; skill template for use case files exists in the plan skills directory
 
 ### UC-0S96-004: Create or Update Architecture
 
@@ -87,11 +87,11 @@ The user runs `/m:schema` to scan the codebase for migrations, ORM definitions, 
 
 ### UC-0S96-006: Generate Gherkin Stories
 
-The user runs `/m:stories {UC-NNN}` to generate Gherkin scenarios from a use case file. The command references the `gherkin` skill (`./skills/gherkin`) for scenario generation rules, tag conventions, and step writing patterns. It reads the UC's preconditions, trigger, main flow, postconditions, side effects, and alternative flows, then produces tagged scenarios with side effect coverage.
+The user runs `/m:stories {UC-NNN}` to generate Gherkin scenarios from a use case file. The command references the `gherkin` skill (`./skills/gherkin`) for scenario generation rules, tag conventions, and step writing patterns. It reads the UC's preconditions, trigger, and flat scenario blocks (each with Given, Steps, Outcomes, Side Effects), then produces tagged Gherkin scenarios with side effect coverage.
 
 **Primary Actor:** Developer
 **Preconditions:** UC file exists with all fields populated; parent feature has `architecture.md` (for side effect and data model context); `gherkin` skill exists in the plan skills directory
-**Postconditions:** Gherkin feature file exists with `@FEAT-NNN @UC-NNN` tags; every main flow step has scenario coverage; every alternative flow has at least one scenario; every side effect has an `And` clause; every explicit non-side-effect has an `And no ...` clause
+**Postconditions:** Gherkin feature file exists with `@FEAT-NNN @UC-NNN` tags; every UC scenario block produces a Gherkin scenario; every side effect has an `And` clause; every explicit non-side-effect has an `And no ...` clause
 
 ### UC-0S96-007: Run Four-Agent Pipeline
 
@@ -175,7 +175,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 |----|------|--------|---------|----------|
 | US-0S96-001 | developer | to run a single setup command and get my project's foundational docs generated | I don't need to manually create PROJECT.md and TECH-STACK.md | Critical |
 | US-0S96-002 | developer | to describe a feature in freeform text and get structured EARS requirements back | I get unambiguous requirements without learning EARS syntax myself | Critical |
-| US-0S96-003 | developer | to create use cases with explicit side effects, alternative flows, and fit criteria | agents implement the complete behavior including all side effects on the first run | Critical |
+| US-0S96-003 | developer | to create use cases with flat peer scenarios, each with explicit side effects and non-side-effects | agents implement the complete behavior including all side effects on the first run | Critical |
 | US-0S96-004 | developer | architecture docs generated with C4 diagrams, ER with invariants, and event topology | implementing agents know exactly which components exist and how they relate | Critical |
 | US-0S96-005 | developer | to run /m:run on a use case and have four agents (plan, test, build, verify) handle it | I get unattended implementation with verification that nothing was missed | Critical |
 | US-0S96-006 | developer | to look up FEATURES.md and instantly know what the system does | I don't need to scan directories or read multiple files to understand the system | High |
@@ -211,9 +211,10 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 #### US-0S96-003: Use case creation with side effects
 
 - [ ] `/m:usecase` accepts feature ID and freeform text
-- [ ] Extracts and presents: name, actor, preconditions, trigger, main flow, postconditions, side effects (including non-side-effects), alternative flows, fit criteria
-- [ ] User reviews each section before file creation
-- [ ] Writes UC file with all fields in the v3 template format
+- [ ] Extracts and presents: name, actor, preconditions, trigger, and scenarios (each with Given, Steps, Outcomes, Side Effects)
+- [ ] User reviews shared context (name, actor, preconditions, trigger) then each scenario individually
+- [ ] Scenario loop: after reviewing extracted scenarios, asks "Add another scenario?" until user is done
+- [ ] Writes UC file with flat scenario structure (no main/alternative distinction)
 - [ ] Updates parent feature's `USE-CASES.md`
 
 #### US-0S96-004: Architecture generation
@@ -254,12 +255,14 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 #### US-0S96-007: Gherkin with side effect coverage
 
 - [ ] `/m:stories {UC-NNN}` reads UC file fields
-- [ ] Preconditions map to `Given` clauses
-- [ ] Trigger maps to `When` clauses
-- [ ] Postconditions + side effects map to `Then/And` clauses
-- [ ] Every explicit non-side-effect produces an `And no ...` clause
-- [ ] Alternative flows produce failure/edge-case scenarios
-- [ ] Scenarios tagged with `@FEAT-NNN @UC-NNN @{priority}`
+- [ ] UC Preconditions map to `Background: Given` block
+- [ ] Scenario Given maps to additional `Given` / `And` after Background
+- [ ] Scenario Steps map to `When` / `And` clauses
+- [ ] Scenario Outcomes map to `Then` clauses
+- [ ] Scenario Side Effects (positive) map to `And` clauses
+- [ ] Scenario Side Effects ("No ...") map to `And no ...` clauses
+- [ ] Every scenario in the UC produces a corresponding Gherkin scenario
+- [ ] Scenarios tagged with `@FEAT-NNN @UC-NNN`
 
 #### US-0S96-008: Use case updates and dirty status
 
@@ -297,8 +300,8 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-010 | When the user runs `/m:usecase {FEAT-NNN} {input}`, the system shall create a UC file with all required fields: preconditions, trigger, main flow, postconditions, side effects, alternative flows, and fit criteria | Critical |
-| FR-0S96-011 | The system shall require an explicit Side Effects field on every use case, including deliberate non-side-effects ("No email sent", "No event published") | Critical |
+| FR-0S96-010 | When the user runs `/m:usecase {FEAT-NNN} {input}`, the system shall create a UC file with flat scenario structure: shared preconditions, trigger, Gherkin tags, and one or more peer scenarios each with Given, Steps, Outcomes, and Side Effects | Critical |
+| FR-0S96-011 | The system shall require an explicit Side Effects field on every scenario within a use case, including deliberate non-side-effects ("No email sent", "No event published") | Critical |
 | FR-0S96-012 | The system shall write one file per use case: `prd/features/{slug}/use-cases/UC-NNN-{slug}.md` | Critical |
 | FR-0S96-013 | When the system creates a UC, it shall update the parent feature's `USE-CASES.md` index with the new row | Critical |
 | FR-0S96-014 | The UC file shall include YAML frontmatter with: id, name, feature, status, version, actor, tag | Critical |
@@ -325,10 +328,10 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 
 | ID | Requirement | Priority |
 |----|-------------|----------|
-| FR-0S96-023 | When the user runs `/m:stories {UC-NNN}`, the system shall reference the `gherkin` skill (`./skills/gherkin`) for scenario generation rules and generate Gherkin scenarios from the UC file's fields: preconditions to Given, trigger to When, postconditions + side effects to Then/And | Critical |
-| FR-0S96-024 | The system shall generate an `And` clause for every declared side effect and an `And no ...` clause for every explicit non-side-effect | Critical |
+| FR-0S96-023 | When the user runs `/m:stories {UC-NNN}`, the system shall reference the `gherkin` skill (`./skills/gherkin`) for scenario generation rules and generate Gherkin scenarios from the UC file: Preconditions to Background, per-scenario Given/Steps/Outcomes/Side Effects to Gherkin Given/When/Then/And | Critical |
+| FR-0S96-024 | The system shall generate an `And` clause for every declared side effect and an `And no ...` clause for every explicit non-side-effect within each scenario | Critical |
 | FR-0S96-025 | The system shall tag every scenario with `@FEAT-NNN @UC-NNN` for traceability | Critical |
-| FR-0S96-026 | The system shall generate at least one scenario for every alternative flow in the UC file | High |
+| FR-0S96-026 | The system shall generate a Gherkin scenario for every scenario block (S1, S2, ...) in the UC file | High |
 
 ### Run Pipeline (maps to UC-0S96-007)
 
@@ -341,7 +344,7 @@ Language-specific and stack-specific skills are moved to `molcajete/deprecated/s
 | FR-0S96-058 | If the dispatcher detects a dependency cycle among the target UCs, it shall report the cycle to the user and stop without executing any pipeline | Critical |
 | FR-0S96-029 | The Planner agent shall read PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, FEATURES.md, the feature's requirements.md, architecture.md, and the target UC file to produce an implementation plan | Critical |
 | FR-0S96-030 | The Planner agent shall produce the plan in context only — not written to disk | Critical |
-| FR-0S96-031 | The Tester agent shall receive the plan and UC file, then write Gherkin scenarios covering all main flow steps, alternative flows, side effects, and non-side-effects | Critical |
+| FR-0S96-031 | The Tester agent shall receive the plan and UC file, then write Gherkin scenarios covering every scenario block (S1, S2, ...) with full side effect and non-side-effect coverage | Critical |
 | FR-0S96-032 | The Developer agent shall receive the plan and failing Gherkin scenarios, then implement until all scenarios pass | Critical |
 | FR-0S96-033 | The Verifier agent shall check: feature completeness, FR/NFR compliance, architecture conformance, non-goals respected, and side effect coverage | Critical |
 | FR-0S96-034 | If the Verifier finds gaps, the system shall report them back to the user rather than attempting autonomous fixes | Critical |
