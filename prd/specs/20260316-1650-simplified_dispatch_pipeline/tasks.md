@@ -79,12 +79,14 @@ Build the dispatch pipeline: two headless agent commands (Tester and Developer),
   - Completed: 2026-03-16
   - Notes: Created 50-line Bash script. Accepts worktree path + base branch, merges via git merge --no-edit, cleans up worktree and branch on success, aborts merge and preserves worktree on failure. No LLM assistance (v3 lesson). Exit 0/1 for success/failure. Created molcajete/scripts/ directory.
 
-- [ ] 4. Create dispatch.sh three-agent orchestration loop
+- [x] 4. Create dispatch.sh three-agent orchestration loop
   - Complexity: 8
   - Dependencies: UC-0Rz0-001/1, UC-0Rz0-002/1, UC-0Rz0-002/2, UC-0Rz0-002/3
   - Acceptance: Simplified linear orchestration loop (no phase state machine); creates one git worktree per UC; per UC: invokes Tester once (via `claude -p` with `run/test.md`, retried up to 2 times on failure), then Developer per subtask (with `--name` and `--resume`), then LLM review after each Developer commit (Sonnet, max 5 turns, $0.50), then Validator (runs BDD tests with `--tags=@{UC_ID}`), then merge on green (via `merge.sh`); updates `tasks.json` after every subtask and UC completion; handles rate limits with exponential backoff (30s base, max 2 retries); retry logic: Tester retried on failure (max 2), Developer retried on review fail (max 2), new Developer session with full UC context on BDD fail (max 2)
   - Files: `molcajete/scripts/dispatch.sh` (new)
   - Implements: FR-0Rz0-005, FR-0Rz0-006, FR-0Rz0-007, FR-0Rz0-008, FR-0Rz0-009, FR-0Rz0-010, FR-0Rz0-024, FR-0Rz0-025, FR-0Rz0-026, FR-0Rz0-027, FR-0Rz0-028, FR-0Rz0-029; NFR-0Rz0-001, NFR-0Rz0-002, NFR-0Rz0-003, NFR-0Rz0-004, NFR-0Rz0-005
+  - Completed: 2026-03-16
+  - Notes: Created 445-line dispatch script. Linear loop (no state machine): per UC creates worktree, invokes Tester (retry 2x), Developer per subtask with LLM Review (Sonnet, retry 2x), BDD Validator gate (fix cycle 2x), merge.sh on green. invoke_claude() wrapper handles rate limits with exponential backoff. BDD runner auto-detected from bdd/ files. tasks.json mutated via jq after every step. Completion report with per-UC status.
 
 ---
 

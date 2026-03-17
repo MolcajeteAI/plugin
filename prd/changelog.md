@@ -13,6 +13,11 @@ Chronological record of implemented changes. Each entry links to its plan file a
 
 ## 2026-03-16
 
+- [22:48] Create dispatch.sh three-agent orchestration loop (UC-0Rz0-002/4)
+  Core dispatcher for `/m:run`. Per UC: worktree -> Tester -> Developer x N (with LLM review) -> BDD Validator -> merge on green. Linear loop, no state machine. Rate limit backoff, BDD auto-detection, jq-based tasks.json mutation.
+  - Plan: [task-UC-0Rz0-002--4.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--4.md)
+  - Changelog: [changelog-UC-0Rz0-002--4.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/changelog-UC-0Rz0-002--4.md)
+
 - [21:37] Create merge.sh worktree merge utility (UC-0Rz0-002/3)
   Bash utility for dispatch pipeline. Merges UC worktree into base branch after BDD validation, cleans up on success, preserves on failure. No LLM assistance.
   - Plan: [task-UC-0Rz0-002--3.md](specs/20260316-1650-simplified_dispatch_pipeline/plans/task-UC-0Rz0-002--3.md)
