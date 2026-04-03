@@ -1,37 +1,70 @@
 ---
 module: molcajete-ai
-purpose: Claude Code plugin marketplace providing opinionated development workflow commands and reusable skills
-last-updated: 2026-02-17
+purpose: Spec-driven development framework for Claude Code — EARS requirements, BDD scenarios, and automated build dispatch
+last-updated: 2026-04-03
 ---
 
 # Molcajete.ai
 
-**Consistent, opinionated workflows for Claude Code. No AI multiple-personality disorder.**
+AI coding agents are only as good as what you put in front of them.
+Without a structured specification, you're not engineering — you're gambling. The same prompt generates two different architectures on two different days. You end up with code you can't test, can't explain, and don't fully own.
+The problem isn't the agent. It's the gap between your intent and the code.
+Molcajete.ai closes that gap.
 
-You know when you start using AI for your daily workflows, one day you get the right personality out of AI, other days you feel like it's the dumbest model in the world. What Molcajete.ai brings is the right setup for Claude Code — well-curated flows and consistent output. A curated marketplace of plugins that grind through complexity and blend workflows into smooth, production-ready solutions. Just opinionated commands and skills that get the job done, the way I like things done.
+It puts a layer of structured specifications between what you want and what gets built — EARS requirements, use cases with explicit side effects, Gherkin scenarios, and architecture documents that agents can actually follow. Not as suggestions. As constraints.
+
+The specs become the source of truth. The code is derived from them — deterministically, traceably, repeatably.
+You don't just get working software. You get software you understand, can test, and can hand to anyone on your team.
 
 ## What is Molcajete.ai?
 
-Molcajete.ai is a [Claude Code](https://www.anthropic.com/claude/code) plugin marketplace. It ships two plugins:
+Molcajete.ai is a spec-driven development framework built on [Claude Code](https://www.anthropic.com/claude/code). It provides a pipeline that transforms freeform feature descriptions into structured specs, then uses those specs to drive implementation through coordinated agent workflows.
 
-- **`m`** — The core plugin. Generic, stack-aware commands covering the full development lifecycle, backed by a library of 18 reusable skills.
-- **`legacy`** — A migration helper for moving files from the old v1 `.molcajete/` format into the current `m` plugin format.
+The framework ships two components:
+
+- **`m` plugin** — A Claude Code plugin with 17 slash commands and 12 skills organized into four modules: spec, plan, build, and research.
+- **`@MolcajeteAI/cli`** — A Node.js CLI ([source](https://github.com/MolcajeteAI/molcajete)) that orchestrates spec development in unattended mode, running the full spec-to-build pipeline without manual interaction.
+
+### The Pipeline
+
+```
+Feature idea → EARS Requirements → Use Cases → Scenarios → Gherkin → Build
+```
+
+1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects.
+2. **Plan** — Generate implementation plans from specs. Wire BDD scenarios to code via architecture documents that map spec IDs to source files.
+3. **Build** — Execute plans task-by-task with agents that read the specs and architecture, write code, and validate against Gherkin scenarios.
+4. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
+
+### Why Specs?
+
+- **Deterministic agent behavior** — Agents follow structured requirements, not ambiguous prose. Same spec, same output.
+- **Traceable coverage** — Every requirement has a fit criterion, every use case maps to Gherkin scenarios, every scenario maps to code via the architecture document.
+- **Reversible** — Extract specs from existing codebases with reverse commands, then use the same pipeline to extend them.
+- **Unattended execution** — The `@MolcajeteAI/cli` runs the pipeline end-to-end without human-in-the-loop, using specs as the contract.
 
 ## Installation
 
 ### Prerequisites
 
 - [Claude Code](https://docs.claude.com/claude-code) installed
+- Node.js >= 20 (for the CLI)
 
-### Quick Install
+### Plugin Install
 
 ```bash
 /plugin marketplace add MolcajeteAI/plugin
 ```
 
+### CLI Install
+
+```bash
+npx @MolcajeteAI/cli
+```
+
 ### Alternative: settings.json
 
-For persistent configuration across sessions, add to `.claude/settings.json`:
+For persistent plugin configuration across sessions, add to `.claude/settings.json`:
 
 ```json
 {
@@ -52,12 +85,12 @@ For persistent configuration across sessions, add to `.claude/settings.json`:
 /plugin marketplace list
 ```
 
-You should see `molcajete` in the list. Both plugins are enabled by default:
+You should see `molcajete` in the list with the `m` plugin enabled:
 
 ```json
 {
   "enabledPlugins": {
-    "m@molcajete": true
+    "m@Molcajete.ai": true
   }
 }
 ```
@@ -66,116 +99,127 @@ You should see `molcajete` in the list. Both plugins are enabled by default:
 
 ## The `m` Plugin
 
-The `m` plugin is the core of Molcajete.ai. Every command is a structured prompt that reads relevant skills, follows established conventions, and delegates complex sub-tasks to specialized agents.
+The `m` plugin is organized into four modules, each owning a stage of the development pipeline.
 
-### Commands
+### Spec Module
+
+Create and maintain structured specifications from freeform descriptions or existing code.
 
 | Command | Description |
 |---------|-------------|
-| `/m:init` | Initialize a new project with mission, tech stack, roadmap, and changelog |
-| `/m:feature` | Scope a new feature into structured requirements |
-| `/m:refactor` | Research a refactoring/replacement, produce impact analysis and requirements |
-| `/m:spec` | Create a technical specification for a feature or refactor |
-| `/m:tasks` | Break a specification into sequenced implementation tasks |
-| `/m:dev` | Implement a task from the task plan |
-| `/m:fix` | Diagnose and fix a bug or failed implementation |
-| `/m:test` | Write, run, or analyze tests for code |
-| `/m:review` | Code review on staged or recent changes |
-| `/m:doc` | Generate or update documentation for a file or directory |
-| `/m:explain` | Explain a topic in a clear, friendly 3-5 minute read |
-| `/m:research` | Deep research with tech stack context, parallel agents, and long-form output |
-| `/m:copy` | Rewrite text or file content with clear structure and good copy |
-| `/m:prompt` | Write a well-structured LLM prompt from a rough description |
-| `/m:debug` | Guided debugging workflow with hypothesis testing |
-| `/m:commit` | Create a well-formatted commit from staged changes |
-| `/m:amend` | Amend the last commit with staged changes |
-| `/m:rebase` | Interactive rebase helper |
+| `/m:feature` | Create a new feature with EARS requirements via creation interview |
+| `/m:usecase` | Create a new use case with flat scenario structure |
+| `/m:scenario` | Generate Gherkin feature files from a use case |
+| `/m:spec` | Create or update features, use cases, and scenarios from natural language |
+| `/m:update-feature` | Update an existing feature's requirements |
+| `/m:update-usecase` | Update a use case and propagate changes to Gherkin |
+| `/m:update-scenario` | Update a scenario and propagate changes to Gherkin |
+| `/m:reverse-spec` | Reverse-engineer specs from existing code (broadest scope) |
+| `/m:reverse-feature` | Reverse-engineer a feature from existing code |
+| `/m:reverse-usecase` | Reverse-engineer a use case from existing code |
+| `/m:reverse-scenario` | Reverse-engineer a scenario from a code path |
 
-### Natural Language Triggers
+### Plan Module
 
-Some skills activate automatically based on what you say — no slash command needed. The `research-methods` skill is the first to support this:
+| Command | Description |
+|---------|-------------|
+| `/m:plan` | Generate an implementation plan from specs |
+| `/m:reverse-plan` | Generate a plan for wiring BDD to existing code |
 
-| What you say | What runs | Output |
-|---|---|---|
-| "What is a CLOB?" | Quick answer | Inline response, no agents |
-| "Explain how OAuth works" | Explain flow (2 agents) | 3-5 minute Introduction, save prompt |
-| "Research sharding for our Postgres" | Deep research (4 agents) | Full Learning Guide, save prompt |
+### Build Module
 
-The `/m:explain` and `/m:research` commands are shortcuts that skip classification and go straight to their respective depth.
+| Command | Description |
+|---------|-------------|
+| `/m:build` | Execute a task from an implementation plan |
+| `/m:setup` | Initialize project with foundational docs and tooling detection |
+
+### Research and Shared
+
+| Command | Description |
+|---------|-------------|
+| `/m:research` | Deep research with tech stack context and parallel agents |
+| `/m:doc` | Generate or update directory documentation |
 
 ### Skills
 
 Skills are reusable knowledge documents loaded by commands at runtime. Each skill encodes conventions, patterns, and standards for a specific domain.
 
-| Skill | What it encodes |
-|-------|----------------|
-| `software-principles` | SOLID, clean code, and architectural principles |
-| `dev-workflow` | Development process and task execution conventions |
-| `project-management` | Requirements, spec, and roadmap formats and templates |
-| `code-documentation` | README structure, inline doc conventions, and templates |
-| `git-committing` | Conventional commit format and git workflow standards |
-| `typescript-writing-code` | Idiomatic TypeScript patterns and strict type safety |
-| `go-writing-code` | Idiomatic Go patterns, project layout, and godoc conventions |
-| `node-writing-code` | Node.js backend patterns with Fastify and ESM |
-| `react-writing-code` | React component patterns, hooks, and state management |
-| `copywriting` | Text transformation for restructuring and improving clarity of written content |
-| `prompting` | Writing clear, effective LLM prompts with structure and specificity |
-| `research-methods` | Research skill with 3 depth tiers (quick, explain, deep), beginner-friendly templates, and source evaluation. Triggers on natural language ("research X", "explain X", "help me understand X") or via `/m:explain` and `/m:research` commands |
-| `react-components` | Component composition, Radix UI, and Tailwind conventions |
-| `tailwind-css` | Tailwind utility class patterns and design system usage |
-| `typescript-testing` | Vitest and testing conventions for TypeScript projects |
-| `go-testing` | Go testing patterns, table-driven tests, and coverage |
-| `react-testing` | React Testing Library and component testing patterns |
-| `node-testing` | Integration and API testing patterns for Node.js |
+| Module | Skill | What it encodes |
+|--------|-------|----------------|
+| spec | `feature-authoring` | EARS syntax, fit criteria, non-goals positioning, creation interview |
+| spec | `usecase-authoring` | UC file structure, flat scenarios, side effects rules, Gherkin mapping |
+| spec | `architecture` | ARCHITECTURE.md schema, C4 diagrams, code map, population rules |
+| spec | `reverse-engineering` | Code-to-spec extraction patterns, scope discovery, dispatcher integration |
+| plan | `planning` | Implementation plan generation and task sequencing |
+| build | `setup` | Project initialization, domain structure, tooling detection |
+| research | `research-methods` | 3-tier research routing (quick, explain, deep) with source evaluation |
+| research | `headless-research` | Unattended research execution for CLI mode |
+| shared | `code-documentation` | README structure and documentation conventions |
+| shared | `gherkin` | BDD scenario generation and step definition patterns |
+| shared | `git-committing` | Commit message standards and orchestration workflow |
+| shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
 
 ---
 
-## The `legacy` Plugin
+## Spec Structure
 
-For users migrating from the old v1 marketplace. If you have existing `.molcajete/prd/` or `.molcajete/research/` directories from the previous format, these commands migrate those files into the current `m` plugin conventions.
+Molcajete.ai produces a structured `prd/` directory in your project:
 
-| Command | Description |
-|---------|-------------|
-| `/legacy:migrate-prd` | Convert `.molcajete/prd/` files to the current spec and task format |
-| `/legacy:migrate-research` | Convert `.molcajete/research/` files to the current research format |
+```
+prd/
+├── DOMAINS.md                    # Domain registry
+├── FEATURES.md                   # Feature index with status tracking
+├── ACTORS.md                     # Actor definitions and roles
+├── TECH-STACK.md                 # Technology inventory
+└── domains/
+    └── {domain}/
+        └── features/
+            └── FEAT-XXXX-{slug}/
+                ├── REQUIREMENTS.md    # EARS requirements + fit criteria
+                ├── USE-CASES.md       # Use case index
+                ├── ARCHITECTURE.md    # Code map, C4 diagrams, data model
+                └── use-cases/
+                    └── UC-XXXX-{slug}.md  # Scenarios with side effects
+```
+
+### Key Conventions
+
+- **EARS requirements** — Every functional requirement uses explicit keywords (When, While, If/Then) and includes a measurable fit criterion
+- **Flat scenarios** — No main/alternative flow distinction. Every scenario (success, error, edge case) has the same shape: Given, Steps, Outcomes, Side Effects
+- **Side effects are mandatory** — Every scenario declares what changes (events, DB writes) AND what does not change (non-side-effects become `And no ...` assertions in Gherkin)
+- **Architecture as bridge** — ARCHITECTURE.md maps spec IDs to source files, giving agents precise context for implementation
+- **Base-62 IDs** — All artifacts use timestamp-based IDs (e.g., `FEAT-0S9A`, `UC-0KTg`, `SC-001`) that are permanent and never reused
 
 ---
 
 ## Plugin Architecture
 
-Each plugin follows this structure:
-
 ```
-plugin-name/
+molcajete/
 ├── .claude-plugin/
-│   └── plugin.json       # Plugin manifest (name, version, commands, skills)
-├── commands/             # Slash command prompts
-│   └── *.md
-└── skills/               # Reusable knowledge loaded by commands
-    └── <skill-name>/
-        ├── SKILL.md
-        └── references/   # Templates and examples referenced by skills
+│   └── plugin.json       # Plugin manifest (commands, skills, version)
+├── spec/                  # Spec module — feature and UC authoring
+│   ├── commands/
+│   └── skills/
+├── plan/                  # Plan module — implementation planning
+│   ├── commands/
+│   └── skills/
+├── build/                 # Build module — task execution
+│   ├── commands/
+│   └── skills/
+├── research/              # Research module — multi-tier research
+│   ├── commands/
+│   └── skills/
+└── shared/                # Shared skills used across modules
+    ├── commands/
+    └── skills/
 ```
 
 ### Key Concepts
 
-- **Commands** — User-facing slash commands (e.g., `/m:commit`). Markdown prompts that Claude Code loads as system context.
-- **Skills** — Structured knowledge documents with YAML frontmatter. Loaded by commands via `${CLAUDE_PLUGIN_ROOT}/skills/`. Can also be installed standalone via `npx skills`.
-- **Namespace** — Plugin identifier prefix (e.g., `m:`, `legacy:`).
-
-## Repository Layout
-
-```
-molcajete.ai/
-├── .claude-plugin/
-│   └── marketplace.json  # Declares the two plugins in this repo
-├── molcajete/            # Source for the m plugin
-├── legacy/               # Source for the legacy migration plugin
-├── deprecated/           # Archived v1 plugins (reference only, not installed)
-├── .hooks/               # Git hooks used in this repo (pre-commit)
-├── scripts/              # Utility scripts (init.sh)
-└── LICENSE               # MIT
-```
+- **Commands** — User-facing slash commands (e.g., `/m:feature`). Markdown prompts with YAML frontmatter specifying model, tools, and behavior.
+- **Skills** — Structured knowledge documents loaded by commands at runtime. Encode conventions, templates, and rules that commands follow.
+- **Modules** — Logical groupings (spec, plan, build, research, shared) that own a stage of the pipeline.
 
 ---
 
@@ -183,13 +227,13 @@ molcajete.ai/
 
 1. Fork the repository
 2. Create a feature branch
-3. Add or edit commands in `molcajete/commands/` or skills in `molcajete/skills/`
+3. Add or edit commands and skills within the appropriate module
 4. Submit a pull request
 
 Guidelines:
-- Commands are plain markdown — write them as structured prompts for Claude
+- Commands are plain Markdown with YAML frontmatter
 - Skills use YAML frontmatter with `name` and `description` fields
-- Don't add a new top-level plugin — add commands or skills to `m` instead
+- Place new commands and skills in the module they belong to (spec, plan, build, research, or shared)
 
 ---
 
@@ -202,7 +246,7 @@ Guidelines:
 
 ## About
 
-**Molcajete** (mol-ca-HEH-teh) is a traditional Mexican mortar and pestle made from volcanic rock, used for grinding and transforming raw ingredients into refined creations. Just as a molcajete transforms raw ingredients, Molcajete.ai transforms raw development tasks through coordinated agent workflows.
+**Molcajete** (mol-ca-HEH-teh) is a traditional Mexican mortar and pestle made from volcanic rock, used for grinding and transforming raw ingredients into refined creations. Just as a molcajete transforms raw ingredients, Molcajete.ai transforms freeform feature descriptions into structured specifications that drive deterministic agent behavior.
 
 ## License
 
