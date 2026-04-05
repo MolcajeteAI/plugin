@@ -175,7 +175,7 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    - `feature`: parent feature ID (FEAT-XXXX)
    - `domain`: the domain the feature belongs to
    - `architecture`: path to the feature's ARCHITECTURE.md (at `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`)
-   - `intent`: `implement` (forward plan always uses implement)
+   - `intent`: `implement` (Specs First plans always use implement)
    - `status`: `pending`
    - `estimated_context`: `~{N}K tokens`
    - `scenario`: `"SC-XXXX"` for filtered BDD gate; null for chores (BDD skipped)

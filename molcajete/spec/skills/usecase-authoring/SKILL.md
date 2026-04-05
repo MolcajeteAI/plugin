@@ -224,6 +224,44 @@ Side Effects is the most critical field for downstream agents. The Tester agent 
 - Event names follow `{domain}.{entity}.{verb}` convention (e.g., `auth.session.created`, `billing.invoice.sent`).
 - Payload fields are listed in backtick-wrapped comma-separated format.
 
+## E2E Testing Philosophy
+
+### Core Principle
+
+All scenarios assume end-to-end execution against real infrastructure. No mocked databases, no stubbed network calls, no fake services. Fixtures and data reset before/after every scenario are the default data strategy.
+
+### Authoring Rule
+
+Write Given/Steps/Outcomes/Side Effects as if everything is testable end-to-end. Never design scenarios around mocking. If a scenario requires a database row, the Given step seeds a real row. If a scenario publishes an event, the Then step asserts the event was published on the real bus.
+
+### Potential Concerns
+
+During authoring (Specs First or Code First), the agent may notice areas that could challenge E2E execution (e.g., a third-party API with no sandbox, time-dependent logic requiring clock manipulation). These are flagged silently -- they do NOT interrupt the workflow and do NOT change the spec.
+
+**Concern categories** (closed set):
+
+| Category | Description |
+|----------|-------------|
+| `fixture` | Complex data setup that may be difficult to seed/teardown |
+| `selector` | Hardcoded selectors or identifiers shared across users/sessions |
+| `mock` | External service with no sandbox or test mode available |
+| `injection` | Time-dependent logic, randomness, or other values requiring injection |
+| `environment` | Feature flags, A/B conditions, or environment-specific behavior |
+| `data-seed` | Large or interdependent dataset required for realistic test state |
+
+### Recommendations File (Reverse Path Only)
+
+When running reverse commands, if the agent detects potential E2E concerns, it generates a recommendations file alongside the UC file:
+
+- **Naming:** same as the UC file with `-recommendations` suffix (e.g., `UC-0KTg-001-create-order-recommendations.md`)
+- **Template:** `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`
+- **Developer-only guidance** -- NOT consumed by models during spec authoring or Gherkin generation
+- **Only created during reverse commands** -- Specs First commands report concerns in the final output instead
+
+### Testing Decisions in ARCHITECTURE.md
+
+Resolved E2E testing decisions are recorded in the feature's ARCHITECTURE.md under a `## Testing Decisions` section. Commands check this section before flagging concerns -- if a decision already exists for a service or pattern, the concern is not re-flagged.
+
 ## Gherkin Mapping
 
 This table defines how UC elements map to Gherkin output for the Tester agent.
@@ -371,3 +409,4 @@ After all sections are confirmed:
 | Template | Purpose |
 |----------|---------|
 | [UC-template.md](./templates/UC-template.md) | UC file for each use case |
+| [UC-recommendations-template.md](./templates/UC-recommendations-template.md) | Testability recommendations (reverse path only) |

@@ -183,6 +183,25 @@ These tags track implementation state in `.feature` files. They are managed auto
 
 Instead, always use exact values: exact counts, exact amounts, exact strings, exact status codes. If the scenario needs to verify a range, use a `Scenario Outline` with `Examples` that test specific boundary values.
 
+## E2E-First Step Writing
+
+All steps assume end-to-end execution -- describe real state, real actions, real assertions. Never write steps that reference mocks, stubs, or test doubles.
+
+| Step Type | E2E Pattern (correct) | Mock-Dependent Anti-Pattern (wrong) |
+|-----------|----------------------|--------------------------------------|
+| Given | `Given user alice exists with verified email` | `Given the user service returns a verified user` |
+| Given | `Given 3 products exist in the catalog` | `Given the product API is mocked to return 3 items` |
+| When | `When alice submits a payment of $25` | `When we call the mocked payment endpoint` |
+| When | `When the system processes the nightly batch` | `When the batch processor mock is triggered` |
+| Then | `Then the payments table has exactly 1 row for alice` | `Then the mock was called once` |
+| Then | `Then alice receives a confirmation email` | `Then the email mock was invoked with the correct template` |
+
+**Rules:**
+- Given steps seed real state (database rows, queue messages, file system artifacts)
+- When steps perform real actions (HTTP requests, UI interactions, CLI commands)
+- Then steps assert real outcomes (database contents, API responses, published events)
+- Never reference "mock", "stub", "fake", "spy", or "double" in step text
+
 ## Gherkin Construct Selection
 
 | Situation | Construct | Example |

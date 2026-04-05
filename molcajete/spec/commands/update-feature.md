@@ -169,7 +169,15 @@ For each dependent domain feature (FEAT-YYYY in domain {D}):
 
 This ensures that a change to a global feature propagates dirty status to every domain that consumes it via refs.
 
-## Step 9: Report
+## Step 9: Testability Notes
+
+After applying changes, scan the updated requirements for new testability signals per the usecase-authoring skill's E2E Testing Philosophy:
+
+- If new requirements reference external APIs, time-dependent logic, feature flags, or other E2E concern patterns, include them in the report
+- Do NOT create a recommendations file on the Specs First path
+- Do NOT use AskUserQuestion for testability concerns
+
+## Step 10: Report
 
 Tell the user what changed:
 
@@ -177,4 +185,5 @@ Tell the user what changed:
 - Summarize the changes applied
 - If dirty cascade was triggered: list the feature, UCs, and scenarios that were set to `dirty`
 - If cross-domain cascade was triggered: list each affected domain feature and its dirty UCs/scenarios
+- If testability signals were detected in Step 9, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."
 - Note: "Use `/m:update-usecase UC-XXXX <description>` to refine individual use cases if needed."

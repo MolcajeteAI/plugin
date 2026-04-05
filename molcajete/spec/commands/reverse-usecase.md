@@ -143,6 +143,7 @@ The subagent prompt must include:
    - Update ARCHITECTURE.md: add new entries to Component Inventory, API Surface, and Code Map for this UC and its scenarios. If ARCHITECTURE.md doesn't have enrichment sections yet, add them using the enriched template structure
    - Compare discovered actors against `prd/ACTORS.md` and add any new ones. Compare discovered technologies against `prd/TECH-STACK.md` and add any new ones. Follow the project-level discovery rules from the reverse-engineering skill.
    - Generate IDs: run `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}` for 1 UC + N SCs
+   - **Testability analysis:** Run the testability analysis per the reverse-engineering skill's Testability Analysis section. Check the feature's ARCHITECTURE.md `## Testing Decisions` first -- skip concerns that already have a recorded decision. If unresolved concerns are found, generate a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`. Do not use AskUserQuestion for testability concerns.
 
 5. **Files to write:**
    - Create directory if needed: `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
@@ -151,12 +152,14 @@ The subagent prompt must include:
    - Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — add Code Map entries for UC-XXXX and all SC-XXXX IDs, update frontmatter `use_cases` and `scenarios` arrays, update `last_update` date
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
+   - `UC-XXXX-{slug}-recommendations.md` — testability recommendations (conditional, only when concerns are found)
 
 6. **Report format:** The subagent must end with a structured report listing:
    - UC ID, name, scenario count, and file path
    - Scenario IDs and names
    - ARCHITECTURE.md changes (new Code Map entries, new Component Inventory rows)
    - Project-level updates: {count} new actors added to ACTORS.md, {count} new tech stack entries added to TECH-STACK.md (list names)
+   - Testability: recommendations file generated (path) or "no concerns found"
 
 ## Step 7: Report T1 Results
 

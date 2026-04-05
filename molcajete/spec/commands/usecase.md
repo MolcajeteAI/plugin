@@ -292,11 +292,27 @@ Then read the template and generate the UC file:
    | UC-XXXX | {Use Case Name} | {One-sentence description} | pending | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
    ```
 
-## Step 9: Report
+## Step 9: Testability Notes
+
+After all files are written, scan the created scenarios for testability signals per the usecase-authoring skill's E2E Testing Philosophy:
+
+- Look for references to external APIs, time-dependent logic, feature flags, or other patterns from the concern categories
+- If signals are found, include a **Testability Notes** block in the final report (Step 10) listing each concern with its category
+- Do NOT create a recommendations file on the Specs First path
+- Do NOT use AskUserQuestion for testability concerns
+
+## Step 10: Report
 
 Tell the user what was created:
 
 - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- UC file with flat scenario structure
 - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- updated with new row (UC-XXXX, status: pending)
+
+If testability signals were detected in Step 9, include:
+
+**Testability Notes:**
+- {concern description} (category: {category})
+
+These are informational only. Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`.
 
 Suggest next step: "Use `/m:scenario UC-XXXX` to generate Gherkin scenarios for this use case."

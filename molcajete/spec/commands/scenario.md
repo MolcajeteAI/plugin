@@ -134,6 +134,17 @@ Use AskUserQuestion:
 - Header: "Tags"
 - Options: "Yes, looks good" / "Edit" (user corrects via Other)
 
+## Step 6b: E2E Step Quality Check
+
+Before generating Gherkin, scan the parsed UC steps for mock-dependent anti-patterns per the gherkin skill's E2E-First Step Writing rules:
+
+- Check Given/Steps/Outcomes/Side Effects for references to mocks, stubs, fakes, spies, or test doubles
+- If mock-dependent language is found, automatically rewrite to E2E patterns:
+  - "Given the user service returns a verified user" -> "Given user alice exists with verified email"
+  - "When we call the mocked payment endpoint" -> "When alice submits a payment of $25"
+  - "Then the mock was called once" -> "Then the payments table has exactly 1 row for alice"
+- This is a Gherkin quality rule applied silently -- no AskUserQuestion needed
+
 ## Step 7: Generate Gherkin
 
 ### 7.1 Construct Feature File Content

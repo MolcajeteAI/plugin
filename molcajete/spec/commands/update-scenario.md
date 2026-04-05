@@ -136,6 +136,14 @@ If the user wants edits, revise and present again.
 1. Edit the `.feature` file -- update only the `@SC-XXXX` scenario block with the confirmed changes.
 2. Add `@dirty` to the scenario's tag line if not already present. If `@pending` is present, remove it (the scenario was previously implemented, `@dirty` replaces it as the lifecycle state).
 
+## Step 7b: Testability Notes
+
+After applying changes, scan the updated scenario for new testability signals per the usecase-authoring skill's E2E Testing Philosophy:
+
+- If the changed scenario introduces references to external APIs, time-dependent logic, feature flags, or other E2E concern patterns, include them in the report
+- Do NOT create a recommendations file on the Specs First path
+- Do NOT use AskUserQuestion for testability concerns
+
 ## Step 8: Report
 
 Tell the user what changed:
@@ -144,3 +152,4 @@ Tell the user what changed:
 - Note the UC version bump (e.g., "version: 1 -> 2") and status change to `dirty`
 - If Gherkin was updated, list the Gherkin files modified and summarize changes
 - If Gherkin was NOT updated (no existing feature file), note: "No existing Gherkin for this scenario. Run `/m:scenario UC-XXXX` to generate Gherkin when ready."
+- If testability signals were detected in Step 7b, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."

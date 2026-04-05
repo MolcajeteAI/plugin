@@ -164,7 +164,7 @@ Then read each template and generate the documents:
    **Skip for global** — global features have no use cases.
 
 3. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold.
+   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold. The scaffold includes an empty `## Testing Decisions` table for recording resolved E2E testing decisions.
 
 4. Edit `prd/FEATURES.md` — add a new row under the appropriate section:
    ```

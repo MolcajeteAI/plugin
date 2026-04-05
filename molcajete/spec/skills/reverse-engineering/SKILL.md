@@ -9,7 +9,7 @@ description: >-
 
 # Reverse Engineering
 
-Rules for extracting product specs from existing code. The reverse commands scan a codebase, extract structured specs (features, use cases, scenarios), populate ARCHITECTURE.md from code analysis, and generate Gherkin artifacts — the inverse of the forward authoring pipeline.
+Rules for extracting product specs from existing code. The reverse commands scan a codebase, extract structured specs (features, use cases, scenarios), populate ARCHITECTURE.md from code analysis, and generate Gherkin artifacts — the inverse of the Specs First (greenfield) pipeline.
 
 ## When to Use
 
@@ -123,6 +123,39 @@ Look for what the code explicitly does NOT do in certain paths:
 - Conditional blocks that skip event emission → "No {event} is published"
 - Early returns before DB writes → "No database record is created"
 - Guards that prevent notifications → "No notification is sent"
+
+## Testability Analysis
+
+During reverse engineering, identify areas that might challenge E2E execution. These are flagged in a recommendations file, not treated as design problems.
+
+### Purpose
+
+Silently detect code patterns that could complicate end-to-end testing. Findings go into a recommendations file for developer review. The spec itself is never altered -- E2E is always the default.
+
+### What to Look For
+
+| Code Pattern | Concern Category | Example |
+|-------------|-----------------|---------|
+| HTTP clients to external APIs with no known sandbox | `mock` | Stripe live-only endpoints, third-party webhooks |
+| `Date.now()`, `new Date()`, time-based conditions | `injection` | Token expiration checks, scheduled job windows |
+| `Math.random()`, UUID generation in assertions | `injection` | Non-deterministic output that tests must match |
+| OAuth/SSO redirects to external providers | `mock` | Google OAuth, SAML IdP redirects |
+| Hardcoded selectors shared across users | `selector` | CSS selectors or element IDs that collide in parallel runs |
+| Feature flags, A/B conditions | `environment` | `if (featureFlag('new-checkout'))` branches |
+| Large seed datasets or complex fixture graphs | `data-seed` | Reporting queries needing 1000+ rows for realistic results |
+| Complex teardown or shared mutable state | `fixture` | Global counters, singleton caches, file locks |
+
+### Check ARCHITECTURE.md First
+
+Before flagging a concern, read the feature's ARCHITECTURE.md and look for a `## Testing Decisions` section. If a decision already exists for the service or pattern in question, skip it -- the developer has already resolved this concern.
+
+### Generate Recommendations File
+
+When concerns are found, create a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`. Only create this file during reverse commands. If no concerns are found, do not create the file.
+
+### No Interruptions
+
+Do not use AskUserQuestion for testability concerns. Write the recommendations file silently and mention the count in the final report.
 
 ## Populating ARCHITECTURE.md
 
@@ -270,7 +303,7 @@ def step_impl(context):
 
 This ensures that running the BDD suite immediately shows which steps need implementation, and the build dispatcher can use "all scenarios passing" as its done signal. The literal string `"TODO: implement step"` is the canonical marker the build dispatcher greps for.
 
-> **Note:** Reverse commands stop at Gherkin generation. Step definitions are created during the build phase, after production code exists (forward path) or from existing code (reverse path). The stubs above are only relevant if step definitions are created outside the build pipeline.
+> **Note:** Reverse commands stop at Gherkin generation. Step definitions are created during the build phase, after production code exists (Specs First path) or from existing code (Code First path). The stubs above are only relevant if step definitions are created outside the build pipeline.
 
 ## Template Reference
 

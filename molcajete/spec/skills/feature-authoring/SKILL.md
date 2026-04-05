@@ -317,6 +317,18 @@ For ARCHITECTURE.md schema, sections, and population rules, see the architecture
 
 During feature creation, scaffold ARCHITECTURE.md using the template at `spec/skills/architecture/templates/ARCHITECTURE-template.md`.
 
+ARCHITECTURE.md may include a `## Testing Decisions` section that records resolved E2E testing decisions for the feature. This section is checked by reverse commands before flagging testability concerns -- if a decision already exists for a service or pattern, the concern is not re-flagged.
+
+**Format:** table with columns `| Service/Pattern | Decision | Reason |`
+
+**Examples:**
+
+| Service/Pattern | Decision | Reason |
+|-----------------|----------|--------|
+| Stripe API | e2e | Use test mode API keys |
+| Legacy reporting DB | mock | Read-only replica, cannot seed fixtures |
+| Clock-dependent expiration | injection | Use injectable clock for deterministic tests |
+
 ## Template Reference
 
 | Template | Purpose |

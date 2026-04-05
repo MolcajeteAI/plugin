@@ -8,7 +8,7 @@ description: >-
 
 # Architecture
 
-Owns all ARCHITECTURE.md knowledge: frontmatter schema, section definitions, population rules, and the template. Both forward authoring and reverse engineering reference this skill when creating or populating ARCHITECTURE.md.
+Owns all ARCHITECTURE.md knowledge: frontmatter schema, section definitions, population rules, and the template. Both Specs First (greenfield) and Code First (brownfield) flows reference this skill when creating or populating ARCHITECTURE.md.
 
 ## When to Use
 
@@ -31,7 +31,7 @@ last_update: YYYY-MM-DD
 All fields are mandatory:
 - `id` — the feature's FEAT-XXXX identifier
 - `name` — the feature's display name
-- `use_cases` — array of UC-XXXX IDs whose implementation is documented in this file. Populated as UCs are created (forward) or extracted (reverse).
+- `use_cases` — array of UC-XXXX IDs whose implementation is documented in this file. Populated as UCs are created (Specs First) or extracted (Code First).
 - `scenarios` — array of SC-XXXX IDs documented in this file. Populated as scenarios are created or extracted.
 - `last_update` — date the sections were last updated (use current date).
 
@@ -118,6 +118,18 @@ Links spec IDs to implementation files. This table is the primary bridge between
 | Implementation Files | Source files using `file:function()` notation for scenario-level specificity |
 
 Every UC and SC gets a Code Map entry.
+
+### Testing Decisions
+
+Records resolved E2E testing decisions for this feature. Reverse commands check this section before flagging testability concerns -- if a decision exists for a service or pattern, the concern is not re-flagged.
+
+| Column | Content |
+|--------|---------|
+| Service/Pattern | The external service, code pattern, or infrastructure component |
+| Decision | `e2e`, `mock`, or `injection` -- how this will be tested |
+| Reason | Why this decision was made |
+
+Initially empty when scaffolded. Populated by developers after reviewing testability recommendations.
 
 ### Architecture Decisions
 

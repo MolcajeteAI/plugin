@@ -146,6 +146,18 @@ Edit the UC file (`prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-X
 1. Append each confirmed scenario in flat structure — each preceded and followed by a `---` horizontal rule, with SC-XXXX ID, Given/Steps/Outcomes/Side Effects.
 2. Increment the `version` number in the YAML frontmatter.
 
+## Step 7b: Testability Analysis
+
+After scenarios are confirmed but before writing to the UC file, run testability analysis per the reverse-engineering skill's Testability Analysis section:
+
+1. Check the feature's ARCHITECTURE.md for a `## Testing Decisions` section. Skip concerns that already have a recorded decision.
+2. Scan the extracted scenarios for testability signals (external API calls without sandbox, time-dependent logic, etc.).
+3. If unresolved concerns are found, create or append to the existing recommendations file for this UC:
+   - If `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}-recommendations.md` exists, append new concerns
+   - If it does not exist, create it using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`
+4. Do not use AskUserQuestion for testability concerns. Write the file silently.
+5. Report the count of concerns in the final output.
+
 ## Step 8: Update ARCHITECTURE.md
 
 If `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` exists:

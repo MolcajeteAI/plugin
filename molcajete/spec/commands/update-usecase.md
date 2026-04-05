@@ -163,7 +163,15 @@ If the user wants edits, revise and present again.
 5. If new step definitions are needed, append them to the appropriate step file following the gherkin skill's step file placement rules.
 6. Update `bdd/features/INDEX.md` and `bdd/steps/INDEX.md` if new scenarios or steps were added.
 
-## Step 8: Report
+## Step 8: Testability Notes
+
+After applying changes, scan the updated scenarios for new testability signals per the usecase-authoring skill's E2E Testing Philosophy:
+
+- If new or changed scenarios reference external APIs, time-dependent logic, feature flags, or other E2E concern patterns, include them in the report
+- Do NOT create a recommendations file on the Specs First path
+- Do NOT use AskUserQuestion for testability concerns
+
+## Step 9: Report
 
 Tell the user what changed:
 
@@ -171,3 +179,4 @@ Tell the user what changed:
 - Note the version bump (e.g., "version: 1 -> 2") and status change to `dirty`
 - If Gherkin was updated, list the Gherkin files modified and summarize changes
 - If Gherkin was NOT updated (no existing feature file), note: "No existing Gherkin files found for this UC. Run `/m:scenario UC-XXXX` to generate Gherkin when ready."
+- If testability signals were detected in Step 8, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."

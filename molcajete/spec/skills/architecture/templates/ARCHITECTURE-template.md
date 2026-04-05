@@ -110,6 +110,13 @@ stateDiagram-v2
 | Spec ID | Spec Name | Implementation Files |
 |---------|-----------|---------------------|
 
+## Testing Decisions
+
+> Resolved E2E testing decisions. Reverse commands check this section before flagging concerns.
+
+| Service/Pattern | Decision | Reason |
+|-----------------|----------|--------|
+
 ## Architecture Decisions
 
 > Non-obvious choices that future agents should not reverse.

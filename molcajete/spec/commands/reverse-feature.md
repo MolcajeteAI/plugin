@@ -142,6 +142,7 @@ The subagent prompt must include:
    - Populate ARCHITECTURE.md with all enrichment sections: Component Inventory, Data Model (with real entities), API Surface, Integration Points, Event Topology, Code Map (linking every UC and SC to implementation files)
    - Compare discovered actors against `prd/ACTORS.md` and add any new ones. Compare discovered technologies against `prd/TECH-STACK.md` and add any new ones. Follow the project-level discovery rules from the reverse-engineering skill.
    - Generate IDs: run `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}` for all needed IDs (1 FEAT + N UCs + M SCs)
+   - **Testability analysis:** For each extracted UC, run the testability analysis per the reverse-engineering skill's Testability Analysis section. Check the feature's ARCHITECTURE.md `## Testing Decisions` first -- skip concerns that already have a recorded decision. If unresolved concerns are found, generate a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`. Do not use AskUserQuestion for testability concerns.
 
 5. **Files to write:**
 
@@ -170,12 +171,14 @@ The subagent prompt must include:
    **Common to both:**
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
+   - `UC-XXXX-{slug}-recommendations.md` — testability recommendations (conditional, only when concerns are found)
 
 6. **Report format:** The subagent must end with a structured report listing:
    - Feature ID, name, and file path
    - Use case IDs, names, scenario counts, and file paths
    - ARCHITECTURE.md enrichment summary (which sections populated, file counts in Component Inventory, entity counts in Data Model, route counts in API Surface, Code Map entry counts)
    - Project-level updates: {count} new actors added to ACTORS.md, {count} new tech stack entries added to TECH-STACK.md (list names)
+   - Testability: {count} recommendations files generated (list paths)
 
 ## Step 8: Report T1 Results
 

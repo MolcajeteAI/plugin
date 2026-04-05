@@ -26,11 +26,11 @@ You are the broadest spec-authoring command. Unlike the granular commands (`feat
 Read all four authoring skills since this command can touch any layer:
 
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md` — EARS syntax, Fit Criteria, feature interview
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat scenario structure, UC interview
-3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — Gherkin generation, tagging, scaffold, indexes
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat scenario structure, UC interview, E2E Testing Philosophy
+3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — Gherkin generation, tagging, scaffold, indexes, E2E-First Step Writing
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — ID generation rules
 
-Follow these skills' rules for all subsequent steps.
+Follow these skills' rules for all subsequent steps. In particular, follow the E2E Testing Philosophy from the usecase-authoring skill: all scenarios assume E2E execution against real infrastructure, no mocked databases or stubbed services. Write specs as if everything is testable end-to-end.
 
 ## Step 2: Verify Prerequisites
 
