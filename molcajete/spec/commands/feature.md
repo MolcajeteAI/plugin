@@ -137,6 +137,17 @@ node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js
 
 Prepend `FEAT-` to the output (e.g., `FEAT-0S9A`).
 
+Then generate IDs for all confirmed functional requirements, non-functional requirements, and user stories:
+
+```bash
+node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}
+```
+
+Assign prefixes from the output lines:
+- `FR-` for functional requirements (e.g., `FR-0Fy0`)
+- `NFR-` for non-functional requirements (e.g., `NFR-0Fy1`)
+- `US-` for user stories (e.g., `US-0Fy2`)
+
 ## Step 9: Generate Documents
 
 Create the feature directory structure using the selected domain:

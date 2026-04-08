@@ -117,6 +117,8 @@ stateDiagram-v2
 | Service/Pattern | Decision | Reason |
 |-----------------|----------|--------|
 
+<!-- Generate ADR IDs by running: node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js -->
+
 ## Architecture Decisions
 
 > Non-obvious choices that future agents should not reverse.

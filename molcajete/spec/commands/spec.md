@@ -193,6 +193,10 @@ Assign prefixes from the output lines in order:
 - `FEAT-` for new features
 - `UC-` for new use cases
 - `SC-` for new scenarios
+- `FR-` for functional requirements
+- `NFR-` for non-functional requirements
+- `US-` for user stories
+- `ADR-` for architecture decisions
 
 ## Step 10: Write PRD Documents
 

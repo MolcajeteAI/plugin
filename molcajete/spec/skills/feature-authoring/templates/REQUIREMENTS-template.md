@@ -44,6 +44,8 @@ refs: [] # Optional: global feature IDs this feature depends on (e.g., [FEAT-0A1
 <!-- Image references (after feature directory is created): -->
 <!-- ![{Description}](assets/{filename}.png) -->
 
+<!-- Generate FR/NFR/US IDs by running: node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count} -->
+
 ## Functional Requirements
 
 > Written in EARS syntax. Each requirement has a Fit Criterion and links to use cases.

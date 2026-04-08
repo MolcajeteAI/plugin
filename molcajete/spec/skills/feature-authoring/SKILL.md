@@ -103,8 +103,6 @@ Fit Criterion: Given {precondition}, {measurable outcome that proves this is sat
 Linked to: UC-XXXX
 ```
 
-Generate FR, NFR, and US IDs using the id-generation skill (`shared/skills/id-generation/SKILL.md`). Run the script and prepend the appropriate prefix (`FR-`, `NFR-`, or `US-`) to the output.
-
 **Rules:**
 - Fit Criteria use "Given ... {measurable outcome}" format
 - The outcome must be verifiable (a test can check it)
@@ -192,6 +190,19 @@ Run: `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id
 Prepend `FEAT-` to the output (e.g., `FEAT-0S9A`).
 
 **IDs are permanent.** Once assigned, a FEAT-XXXX ID is never reused or deleted, even if the feature is deprecated.
+
+## FR/NFR/US ID Assignment
+
+When writing functional requirements, non-functional requirements, or user stories, generate a unique ID for each using a 4-character timestamp code.
+
+**How to generate IDs:**
+Run: `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}`
+Prepend the appropriate prefix to each output line:
+- `FR-` for functional requirements (e.g., `FR-0Fy0`)
+- `NFR-` for non-functional requirements (e.g., `NFR-0Fy1`)
+- `US-` for user stories (e.g., `US-0Fy2`)
+
+**IDs are permanent.** Once assigned, an FR/NFR/US ID is never reused.
 
 ## Slug Generation
 
