@@ -15,7 +15,7 @@ allowed-tools:
 
 # Reverse Plan Command
 
-You generate plans for wiring BDD step definitions to existing code. You scan for use cases that need BDD coverage, verify Gherkin exists, and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `/m:build` will execute. The output format is strictly JSON — never markdown. Every task uses `wire-bdd` intent — the application already works, tasks create step definitions that exercise it.
+You generate plans for wiring BDD step definitions to existing code. You scan for use cases that need BDD coverage, verify Gherkin exists, and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `molcajete build` will execute. The output format is strictly JSON — never markdown. Every task uses `wire-bdd` intent — the application already works, tasks create step definitions that exercise it.
 
 **Scope argument:** $ARGUMENTS
 
@@ -213,4 +213,4 @@ Tell the user:
 - Features and UCs covered
 - Any UCs excluded due to missing Gherkin
 
-Suggest next step: "Review the plan file, then run `/m:build {plan-name}` to start implementation."
+Suggest next step: "Review the plan file, then run `molcajete build {plan-name}` to start implementation."

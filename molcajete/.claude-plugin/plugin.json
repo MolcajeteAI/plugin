@@ -1,16 +1,14 @@
 {
   "name": "m",
   "version": "3.0.0",
-  "description": "Spec-driven development plugin with spec, plan, and build workflows",
+  "description": "Spec-driven development plugin with setup, spec, and plan workflows",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
   },
   "keywords": ["workflow", "development", "testing", "specs", "bdd"],
   "commands": [
-    "./build/commands/build.md",
-    "./build/commands/build/update-architecture.md",
-    "./build/commands/setup.md",
+    "./setup/commands/setup.md",
     "./plan/commands/plan.md",
     "./plan/commands/reverse-plan.md",
     "./research/commands/research.md",
@@ -28,7 +26,7 @@
     "./spec/commands/usecase.md"
   ],
   "skills": [
-    "./build/skills/setup/SKILL.md",
+    "./setup/skills/setup/SKILL.md",
     "./plan/skills/planning/SKILL.md",
     "./research/skills/headless-research/SKILL.md",
     "./research/skills/research-methods/SKILL.md",

@@ -15,7 +15,7 @@ allowed-tools:
 
 # Plan Command
 
-You generate implementation plans from PRD specs. You scan for unimplemented use cases, verify Gherkin exists, and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `/m:build` will execute. The output format is strictly JSON — never markdown.
+You generate implementation plans from PRD specs. You scan for unimplemented use cases, verify Gherkin exists, and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `molcajete build` will execute. The output format is strictly JSON — never markdown.
 
 **Scope argument:** $ARGUMENTS
 
@@ -212,4 +212,4 @@ Tell the user:
 - Features and UCs covered
 - Any UCs excluded due to missing Gherkin
 
-Suggest next step: "Review the plan file, then run `/m:build {plan-name}` to start implementation."
+Suggest next step: "Review the plan file, then run `molcajete build {plan-name}` to start implementation."

@@ -8,7 +8,7 @@
     {
       "name": "m",
       "source": "./molcajete",
-      "description": "Spec-driven development with EARS requirements, BDD scenarios, and automated build dispatch"
+      "description": "Spec-driven development with EARS requirements, BDD scenarios, and implementation planning"
     }
   ]
 }

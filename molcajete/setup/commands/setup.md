@@ -14,7 +14,7 @@ allowed-tools:
 
 # Set Up Project Foundation
 
-You are initializing a project's foundational documents. These documents are required by all other Molcajete commands (/m:plan, /m:build).
+You are initializing a project's foundational documents. These documents are required by all other Molcajete commands (/m:plan, /m:spec).
 
 **All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response. This keeps you in control of the conversation flow.
 
@@ -23,7 +23,7 @@ You are initializing a project's foundational documents. These documents are req
 Read the setup skill for interview rules, codebase detection patterns, confirmation rules, and template references:
 
 ```
-Read: ${CLAUDE_PLUGIN_ROOT}/build/skills/setup/SKILL.md
+Read: ${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md
 ```
 
 Follow the skill's rules for all subsequent steps.
@@ -214,27 +214,27 @@ mkdir -p prd/modules/{module}/features
 
 Read all templates from the setup skill and generate the documents:
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/PROJECT-template.md`
+1. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/PROJECT-template.md`
    Write `prd/PROJECT.md` filled with the confirmed project description.
 
-2. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/TECH-STACK-template.md`
+2. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/TECH-STACK-template.md`
    Write `prd/TECH-STACK.md` filled with the confirmed tech stack.
 
-3. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/ACTORS-template.md`
+3. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/ACTORS-template.md`
    Write `prd/ACTORS.md` filled with the confirmed actors.
 
-4. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/GLOSSARY-template.md`
+4. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/GLOSSARY-template.md`
    Write `prd/GLOSSARY.md` with starter terms:
    - 5 standard terms: Domain, Feature, Use Case, Actor, Side Effect (adapted to this project's domain)
    - 3-5 additional terms extracted from the project description and tech stack (e.g., the database name, the primary framework, domain-specific terms)
 
-5. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/MODULES-template.md`
+5. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/MODULES-template.md`
    Write `prd/MODULES.md` filled with the confirmed modules table.
 
-6. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/DOMAINS-template.md`
+6. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/DOMAINS-template.md`
    Write `prd/DOMAINS.md` filled with the confirmed domain tags as a lightweight tag registry.
 
-7. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/FEATURES-template.md`
+7. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/FEATURES-template.md`
    Write `prd/FEATURES.md` with the status key, then one `## {domain}` section per domain from DOMAINS.md. All tables start empty. No features are populated at setup time.
 
 ## Step 9: Report
