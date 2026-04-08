@@ -109,16 +109,16 @@ Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/ref
 - Persist BDD settings to `.molcajete/settings.json`
 - Validate existing indexes, rebuild if drift detected
 
-## Step 6: Domain and Tag Selection
+## Step 6: Module and Tag Selection
 
-### 6.1 Domain Selection
+### 6.1 Module Folder Resolution
 
-Infer the domain from the feature's subject area. Check existing domain folders under `bdd/features/`.
+Resolve the module folder from the feature's REQUIREMENTS.md frontmatter. Check existing module folders under `bdd/features/`.
 
 Use AskUserQuestion:
-- Question: "Which domain folder should this feature file go in?\n\nInferred domain: **{inferred}**\n\nExisting domains: {list of existing domain folders}"
-- Header: "Domain"
-- Options: "{inferred domain}" / list existing domains / "Other" (user provides via Other)
+- Question: "Which module folder should this feature file go in?\n\nModule from spec: **{module from REQUIREMENTS.md}**\n\nExisting modules: {list of existing module folders under bdd/features/}"
+- Header: "Module"
+- Options: "{module from spec}" / list existing modules / "Other" (user provides via Other)
 
 ### 6.2 Classification Tags
 
@@ -181,7 +181,7 @@ Grep `bdd/features/` for `@FEAT-XXXX` tag. If found, follow the dedup procedure 
 
 ### 7.4 Write Feature File
 
-Write the `.feature` file to `bdd/features/{domain}/{feature-name}.feature` (kebab-case, describes the feature not a scenario). If appending to an existing file, use the Edit tool to append new scenarios at the end.
+Write the `.feature` file to `bdd/features/{module}/{feature-name}.feature` (kebab-case, describes the feature not a scenario). If appending to an existing file, use the Edit tool to append new scenarios at the end.
 
 ## Step 8: Update Indexes
 

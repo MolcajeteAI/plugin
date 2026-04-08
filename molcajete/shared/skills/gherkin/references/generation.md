@@ -38,19 +38,19 @@ After the dedup check, carry forward:
 - The list of step patterns already used in the existing feature file (so 3c maximizes step reuse)
 - The file path and line count of the existing feature file (so 3b knows where to append)
 
-## 3a. Determine Domain Folder
+## 3a. Determine Module Folder
 
-Decide which `bdd/features/{domain}/` folder to place the feature file in:
+Resolve which `bdd/features/{module}/` folder to place the feature file in:
 
-1. If the argument was resolved from a UC-ID (Step 1b), infer the domain from the spec's subject area (e.g., an authentication UC goes in `authentication/`).
-2. If the argument matched an existing feature (Step 1c), use the same domain folder as the existing file.
-3. If the argument is a generic name (Step 1d), use the primary domain determined in the exploration procedure.
-4. Check existing domain folders in `bdd/features/`. If a suitable domain already exists, use it.
-5. If no existing domain fits, create a new `bdd/features/{domain}/` folder with a descriptive kebab-case name.
+1. If the argument was resolved from a UC-ID (Step 1b), read the parent feature's `REQUIREMENTS.md` frontmatter and use the `module:` value.
+2. If the argument matched an existing feature (Step 1c), use the same module folder as the existing file.
+3. If the argument is a generic name (Step 1d) and exploration found a spec, use the `module:` value from the feature's `REQUIREMENTS.md`.
+4. If no spec exists (generic name with no PRD match), fall back to module detection priority from SKILL.md.
+5. Verify the module directory exists under `bdd/features/`. If not, create `bdd/features/{module}/`.
 
 ## 3b. Generate Feature File
 
-Create the feature file at `bdd/features/{domain}/{feature-name}.feature` (or `.feature.md` if MDG format). Read the matching template: `templates/feature-gherkin.md` for `.feature` files or `templates/feature-mdg.md` for `.feature.md` files.
+Create the feature file at `bdd/features/{module}/{feature-name}.feature` (or `.feature.md` if MDG format). Read the matching template: `templates/feature-gherkin.md` for `.feature` files or `templates/feature-mdg.md` for `.feature.md` files.
 
 Follow the file naming rules, tagging rules, step writing rules, and Gherkin construct selection rules from SKILL.md.
 

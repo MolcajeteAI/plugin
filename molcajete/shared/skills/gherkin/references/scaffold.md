@@ -95,7 +95,7 @@ This section runs only when 2g detected drift in either index. It rebuilds **bot
 **Rebuild `bdd/features/INDEX.md`:**
 
 1. Glob `bdd/features/**/*.feature` and `bdd/features/**/*.feature.md` to collect all feature files on disk.
-2. Identify promoted feature directories: any directory under `bdd/features/{domain}/` that contains `.feature` or `.feature.md` files (e.g., `bdd/features/auth/login/` containing `happy-path.feature` and `error-handling.feature`).
+2. Identify promoted feature directories: any directory under `bdd/features/{module}/` that contains `.feature` or `.feature.md` files (e.g., `bdd/features/auth/login/` containing `happy-path.feature` and `error-handling.feature`).
 3. For each feature file, read it and extract:
    - The `Feature:` name (text after the `Feature:` keyword on the first matching line).
    - The feature description (the line(s) immediately following the `Feature:` line, before the first `Background:`, `Scenario:`, or `Scenario Outline:`).

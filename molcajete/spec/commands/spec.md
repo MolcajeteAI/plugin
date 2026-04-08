@@ -277,13 +277,13 @@ Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/ref
 - Persist BDD settings to `.molcajete/settings.json`
 - Validate existing indexes, rebuild if drift detected
 
-### 11.2 Domain Selection
+### 11.2 Module Folder Resolution
 
-Infer domains from each feature's subject area. Check existing domain folders under `bdd/features/`.
+Resolve the module folder for each feature's Gherkin placement. Read each feature's `module:` value from its REQUIREMENTS.md frontmatter, then confirm with the user.
 
 Use a single AskUserQuestion for all features at once:
-- Question: "Which domain folder should each feature's Gherkin go in?\n\n{for each feature: **{FEAT-XXXX}: {name}** → Inferred: {inferred domain}}\n\nExisting domains: {list of existing domain folders}"
-- Header: "Domains"
+- Question: "Which module folder should each feature's Gherkin go in?\n\n{for each feature: **{FEAT-XXXX}: {name}** → Module: {module from REQUIREMENTS.md frontmatter}}\n\nExisting modules: {list of existing module folders under bdd/features/}"
+- Header: "Modules"
 - Options: "Looks good" / "Edit" (user corrects via Other)
 
 ### 11.3 Generate Feature Files
@@ -292,7 +292,7 @@ For each UC with scenarios, follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/
 
 1. **Dedup** — Grep `bdd/features/` for `@FEAT-XXXX` tag. Skip exact duplicate scenarios, warn on near-duplicates.
 2. **Construct** — Build .feature file content using the Gherkin Mapping table from the usecase-authoring skill. All newly generated scenarios must include `@pending` in their tag line, after `@SC-XXXX` and before classification tags.
-3. **Write** — Write to `bdd/features/{domain}/{feature-name}.feature` (kebab-case). If appending to an existing file, use Edit to append new scenarios.
+3. **Write** — Write to `bdd/features/{module}/{feature-name}.feature` (kebab-case). If appending to an existing file, use Edit to append new scenarios.
 
 ### 11.4 Generate Step Stubs
 

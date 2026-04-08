@@ -179,7 +179,7 @@ The subagent prompt must include:
 
 3. **The specific task:**
    - Run scaffold setup from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md`
-   - Infer domain from feature subject area, check existing domains under `bdd/features/`
+   - Use the feature's module from REQUIREMENTS.md frontmatter for `bdd/features/{module}/` placement
    - For each UC in this feature:
      - Generate `.feature` file with scenarios using the Gherkin Mapping table
      - Follow dedup procedure for existing feature files

@@ -82,7 +82,7 @@ Use the selected match as the sole context for Step 3.
 
 If all matches point to the same feature or closely related aspects of one feature, synthesize them into a unified context:
 1. Combine information from all sources — use spec data (REQUIREMENTS.md, USE-CASES.md, ARCHITECTURE.md) for use cases and acceptance criteria, feature inventory data for status and scope, README data for module structure, and code data for implementation details.
-2. Determine the primary domain this feature belongs to (for domain folder placement in 3a).
+2. Determine the primary module this feature belongs to (for module folder placement in 3a).
 3. Store the synthesized context — it will be used in Step 3 to drive implementation-specific scenarios rather than generic patterns.
 
 After synthesis or disambiguation, proceed to Step 3.

@@ -18,7 +18,7 @@ If the count exceeds 15:
    - Scenarios sharing identical Given/Background setup → likely same group
    - Aim for 5-10 scenarios per group. Avoid single-scenario groups unless the scenario is truly standalone.
 
-2. **Create the feature directory:** `bdd/features/{domain}/{feature-name}/` (same name as the original file, without extension).
+2. **Create the feature directory:** `bdd/features/{module}/{feature-name}/` (same name as the original file, without extension).
 
 3. **Create sub-files:** For each group, create a `.feature` (or `.feature.md`) file inside the new directory:
    - File name: descriptive kebab-case name reflecting the group's concern (e.g., `login.feature`, `password-reset.feature`, `session-management.feature`).
