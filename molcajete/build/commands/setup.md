@@ -128,20 +128,20 @@ Use AskUserQuestion:
 
 After gathering the answer, use AskUserQuestion to present the structured actor table for confirmation.
 
-## Step 6: Interview -- Domains
+## Step 6: Interview -- Modules
 
-Follow the setup skill's Stage 4 (Domains) rules.
+Modules are physical application layers -- each distinct app, service, console, API, or package in the project. They determine how specs and features are organized on disk.
 
 ### If a codebase exists
 
-Launch an `Explore` sub-agent to infer domains from the project structure:
-- Check for `apps/`, `packages/`, `services/` directories -- each subdirectory suggests a domain
-- Check for `src/` subdirectories suggesting distinct concern areas
+Launch an `Explore` sub-agent to infer modules from the project structure:
+- Check for `apps/`, `packages/`, `services/`, `cmd/` directories -- each subdirectory is a module
 - Check for monorepo workspace configurations (package.json workspaces, pnpm-workspace.yaml)
+- A single root application (e.g., one `package.json` + `src/`, one `go.mod` + `main.go`) is one module
 
-After inference, use AskUserQuestion to present the inferred domains:
-- Question: "I found these logical domains in your project:\n\n{domain table: Name | Type | Description}\n\nDomains are logical boundaries for organizing your specs. They can represent physical apps (patient, doctor) or logical concerns (billing, analytics) within a single app. Molcajete treats them all the same way.\n\nDo these look correct?"
-- Header: "Domains"
+After inference, use AskUserQuestion to present the inferred modules:
+- Question: "I found these physical modules in your project:\n\n{module table: ID | Module | Description}\n\nModules are physical application layers (apps, services, packages). Each maps to a deployable unit.\n\nDo these look correct?"
+- Header: "Modules"
 - Options:
   - "Yes, that's correct" -- proceed
   - "Needs changes" -- user provides corrections via Other
@@ -149,37 +149,67 @@ After inference, use AskUserQuestion to present the inferred domains:
 ### If no codebase exists
 
 Use AskUserQuestion:
-- Question: "What are the logical domains in your project? A domain can be a separate app (patient app, admin console), a service (auth API, billing service), or a concern area within one app (onboarding, analytics).\n\nDomains are logical boundaries for organizing your specs -- not deployment boundaries. Molcajete treats all domain types the same way."
-- Header: "Domains"
+- Question: "What are the physical modules in your project? A module is each distinct application, service, or package -- for example: a frontend app, a backend API, a shared library, a CLI tool.\n\nModules are physical application layers, not logical concerns."
+- Header: "Modules"
 
-### For single-app projects
+### For single-module projects
 
-If the project appears to be a single application (one framework, one entry point, no monorepo structure), suggest one domain:
-- Question: "This appears to be a single-app project. I'll create one domain: **{project-name-slug}** (type: app). You can add more domains later if your project grows. Does this look correct?"
-- Header: "Domains"
+If the project appears to be a single application (one framework, one entry point, no monorepo structure), suggest one module using the project name or `app`:
+- Question: "This appears to be a single-module project. I'll create one module: **{project-name-slug}** (type: app). You can add more modules later if your project grows. Does this look correct?"
+- Header: "Modules"
 - Options:
-  - "Yes, one domain is fine" -- proceed
-  - "I have multiple domains" -- user provides corrections via Other
+  - "Yes, one module is fine" -- proceed
+  - "I have multiple modules" -- user provides corrections via Other
 
-After confirmation, record the domain list for document generation.
+After confirmation, for each confirmed module assign:
+- **ID:** Short kebab-case identifier (doubles as Gherkin tag)
+- **Module:** Human-readable name
+- **Description:** One sentence explaining what this module covers
+- **Directory:** `modules/{id}/` (relative path within `prd/`)
 
-### Global Domain Auto-Creation
+Record the module list for document generation.
 
-If more than one domain is confirmed, automatically prepend a `global` domain (ID: 0, Type: spec-only). Do not ask the user — this is automatic for multi-domain projects.
+## Step 7: Interview -- Domain Tags
 
-## Step 7: Generate Documents
+After modules are confirmed, identify logical business domains that cut across modules. Domain tags are lightweight labels used to organize features by business concern -- they are not tied to a specific module.
 
-**Global project files go directly in `prd/`.** Per-domain files go in `prd/domains/{domain}/`.
+### If a codebase exists
 
-First, create the prd directory and domain directories:
+Launch an `Explore` sub-agent to infer domain tags from code patterns:
+- Auth middleware, login routes, role checks suggest an `identity` domain
+- Payment routes, billing models, subscription logic suggest a `billing` domain
+- Notification handlers, email templates suggest a `notifications` domain
+- Dashboard routes, analytics endpoints suggest an `analytics` domain
+- Onboarding flows, setup wizards suggest an `onboarding` domain
+
+After inference, use AskUserQuestion to present the suggested domain tags:
+- Question: "What logical business domains does your project have?\n\n{suggested domains}\n\nDomains are logical concerns (identity, billing, analytics) used as tags to filter features and tests across modules."
+- Header: "Domain Tags"
+- Options:
+  - "Yes, that's correct" -- proceed
+  - "Needs changes" -- user provides corrections via Other
+
+### If no codebase exists
+
+Use AskUserQuestion:
+- Question: "What logical business domains does your project have?\n\nDomains are logical concerns (identity, billing, analytics) used as tags to filter features and tests across modules."
+- Header: "Domain Tags"
+
+After confirmation, record the domain tag list. DOMAINS.md will be written as a lightweight tag registry (ID, Domain, Description -- no types or directories).
+
+## Step 8: Generate Documents
+
+**Global project files go directly in `prd/`.** Per-module files go in `prd/modules/{module}/`.
+
+First, create the prd directory and module directories:
 
 ```bash
 mkdir -p prd
 ```
 
-Then for each confirmed domain:
+Then for each confirmed module:
 ```bash
-mkdir -p prd/domains/{domain}/features
+mkdir -p prd/modules/{module}/features
 ```
 
 Read all templates from the setup skill and generate the documents:
@@ -198,24 +228,28 @@ Read all templates from the setup skill and generate the documents:
    - 5 standard terms: Domain, Feature, Use Case, Actor, Side Effect (adapted to this project's domain)
    - 3-5 additional terms extracted from the project description and tech stack (e.g., the database name, the primary framework, domain-specific terms)
 
-5. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/DOMAINS-template.md`
-   Write `prd/DOMAINS.md` filled with the confirmed domains table.
+5. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/MODULES-template.md`
+   Write `prd/MODULES.md` filled with the confirmed modules table.
 
-6. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/FEATURES-template.md`
-   Write `prd/FEATURES.md` with the status key, a `## global` section first (if global domain exists), then one `## {domain}` section per real domain. All tables start empty.
+6. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/DOMAINS-template.md`
+   Write `prd/DOMAINS.md` filled with the confirmed domain tags as a lightweight tag registry.
 
-## Step 8: Report
+7. Read `${CLAUDE_PLUGIN_ROOT}/build/skills/setup/templates/FEATURES-template.md`
+   Write `prd/FEATURES.md` with the status key, then one `## {domain}` section per domain from DOMAINS.md. All tables start empty. No features are populated at setup time.
+
+## Step 9: Report
 
 Tell the user what was created or updated.
 
-**Created files (Steps 3-7):**
+**Created files (Steps 3-8):**
 - `prd/PROJECT.md` -- project description
 - `prd/TECH-STACK.md` -- technology choices
 - `prd/ACTORS.md` -- system actors
 - `prd/GLOSSARY.md` -- domain vocabulary with starter terms
-- `prd/DOMAINS.md` -- domain registry
+- `prd/MODULES.md` -- module registry (physical application layers)
+- `prd/DOMAINS.md` -- domain tag registry (logical business concerns)
 - `prd/FEATURES.md` -- master feature inventory (sectioned by domain)
-- For each domain:
-  - `prd/domains/{domain}/features/` -- directory for feature specs
+- For each module:
+  - `prd/modules/{module}/features/` -- directory for feature specs
 
-Explain the structure: "Your specs are organized by domain. All features are registered in `prd/FEATURES.md` under their domain section. Use `/m:feature` to create your first feature."
+Explain the structure: "Your specs are organized by module. Features are registered in `prd/FEATURES.md` under their domain section. Use `/m:feature` to create your first feature."

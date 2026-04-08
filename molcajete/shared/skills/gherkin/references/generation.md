@@ -47,7 +47,6 @@ Decide which `bdd/features/{domain}/` folder to place the feature file in:
 3. If the argument is a generic name (Step 1d), use the primary domain determined in the exploration procedure.
 4. Check existing domain folders in `bdd/features/`. If a suitable domain already exists, use it.
 5. If no existing domain fits, create a new `bdd/features/{domain}/` folder with a descriptive kebab-case name.
-6. If the feature spans multiple domains, use `cross-domain/`.
 
 ## 3b. Generate Feature File
 

@@ -56,26 +56,9 @@ Infrastructure tasks are **not** standalone top-level tasks. The first scenario 
 
 The parent task's BDD gate validates both when its single scenario passes. Sub-tasks inherit `scenario` from the parent but BDD is skipped at sub-task level.
 
-### Cross-Domain Awareness
+### Cross-Module Awareness
 
-Read `prd/DOMAINS.md` as part of project context. When a feature spans domains (tagged with multiple `@{domain}` tags), the first task for that feature absorbs infrastructure cost. Do not create T-000 infrastructure tasks per domain. Tasks slice vertically by scenario — a task's files may span any number of domains' codebases.
-
-### Global Feature Planning
-
-When the target is a global feature (domain is `global`, type is `spec-only`):
-
-1. **Cross-domain task generation:** Generate tasks for each real domain, never for `global` itself. Each task's Domain field must reference a real domain.
-2. **Group by domain:** Organize tasks into domain groups in the plan output.
-3. **Global baseline context:** Each task description must reference the global feature's spec directory: "Global baseline: prd/domains/global/features/FEAT-XXXX-{slug}/"
-4. **Domain overrides:** When a real domain has a feature with `refs` pointing to the global feature, prefer the domain feature's REQUIREMENTS.md and ARCHITECTURE.md over the global baseline for that domain's tasks.
-
-### Refs Loading
-
-When a domain feature declares `refs` in its REQUIREMENTS.md frontmatter:
-
-1. Load each referenced global feature's REQUIREMENTS.md and ARCHITECTURE.md
-2. Use global specs as baseline context alongside the domain feature's own specs
-3. Global requirements inform task decomposition but domain requirements take precedence where they diverge
+Read `prd/MODULES.md` as part of project context. When a feature spans modules (tagged with multiple `@{module}` tags), the first task for that feature absorbs infrastructure cost. Do not create T-000 infrastructure tasks per module. Tasks slice vertically by scenario — a task's files may span any number of modules' codebases.
 
 ### Using ARCHITECTURE.md Enrichment
 
@@ -122,7 +105,7 @@ Sub-tasks break a large task into sequential steps that share a single worktree 
 
 - **ID format:** `T-NNN-M` — parent task ID + dash + integer (e.g., `T-003-1`, `T-003-2`). Never use decimal IDs.
 - **`sub_tasks` field:** `null` when the task has no sub-tasks. An array of sub-task objects when decomposed.
-- **Inheritance:** Sub-tasks inherit `use_case`, `feature`, `domain`, `architecture`, `intent`, and `scenario` from the parent task. These fields are not repeated in the sub-task object.
+- **Inheritance:** Sub-tasks inherit `use_case`, `feature`, `module`, `architecture`, `intent`, and `scenario` from the parent task. These fields are not repeated in the sub-task object.
 - **Dependencies:** `depends_on` in a sub-task references **sibling sub-task IDs only** (e.g., `T-003-1`), never top-level task IDs.
 - **Shared worktree:** All sub-tasks run in the parent task's worktree — no separate branches.
 - **Validation split:** Sub-tasks get formatting + linting + code review + completeness checks (no BDD). BDD tests run only at the parent task level after all sub-tasks complete.
@@ -131,7 +114,7 @@ Sub-tasks break a large task into sequential steps that share a single worktree 
 #### Sub-Task Object Shape
 
 See the `sub_task_schema` section in [plan-schema.json](./templates/plan-schema.json) for the exact fields. Key differences from top-level tasks:
-- No `use_case`, `feature`, `domain`, `architecture`, `intent`, or `scenario` (inherited from parent)
+- No `use_case`, `feature`, `module`, `architecture`, `intent`, or `scenario` (inherited from parent)
 - `depends_on` scoped to sibling IDs
 - `summary`, `errors` work the same as top-level tasks
 

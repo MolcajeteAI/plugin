@@ -11,8 +11,8 @@
       "title": "string",
       "use_case": "UC-XXXX",
       "feature": "FEAT-XXXX",
-      "domain": "string",
-      "architecture": "prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md",
+      "module": "string",
+      "architecture": "prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md",
       "intent": "implement | wire-bdd",
       "status": "pending",
       "estimated_context": "~120K tokens",
@@ -39,7 +39,7 @@
   },
   "sub_task_rules": {
     "null_when_no_sub_tasks": true,
-    "inherit_from_parent": ["use_case", "feature", "domain", "architecture", "intent", "scenario"],
+    "inherit_from_parent": ["use_case", "feature", "module", "architecture", "intent", "scenario"],
     "depends_on_scope": "sibling sub-task IDs only",
     "shared_worktree": "all sub-tasks share the parent task worktree"
   }

@@ -1,9 +1,11 @@
 ---
 id: FEAT-XXXX
 name: {Feature Name}
+module: {module}
+domain: {domain}
 status: pending
 version: 1
-refs: [] # Optional: global feature IDs this feature depends on (e.g., [FEAT-0A1b])
+refs: [] # Optional: feature IDs this feature depends on (e.g., [FEAT-0A1b])
 ---
 
 # {Feature Name}

@@ -3,7 +3,7 @@ name: gherkin
 description: >-
   Conventions and rules for BDD scenario generation. Use this skill when
   creating Gherkin feature files, step definitions, or managing the bdd/
-  scaffold. It defines language/format detection, domain detection, file naming,
+  scaffold. It defines language/format detection, module detection, file naming,
   tagging, step writing rules, and index maintenance.
 ---
 
@@ -19,8 +19,7 @@ The canonical `bdd/` directory tree:
 bdd/
 ├── features/
 │   ├── INDEX.md
-│   ├── cross-domain/
-│   └── {domain}/
+│   └── {module}/
 │       └── {feature-name}.feature
 ├── steps/
 │   ├── INDEX.md
@@ -28,7 +27,7 @@ bdd/
 │   ├── common_steps.[ext]
 │   ├── api_steps.[ext]
 │   ├── db_steps.[ext]
-│   └── {domain}_steps.[ext]
+│   └── {module}_steps.[ext]
 ```
 
 Note: `bdd/.claude/rules/` is user-created when needed for custom domain mappings — it is not part of the auto-generated scaffold.
@@ -92,18 +91,18 @@ Detection results (language, framework, format) are persisted in `.molcajete/set
 5. Else → default to **standard Gherkin** (`.feature`).
 6. **Never** mix formats within `bdd/features/`.
 
-## Domain Detection Priority
+## Module Detection Priority
 
-Determine domain subdirectories under `bdd/features/` using this priority — stop at the first source that yields names:
+Determine module subdirectories under `bdd/features/` using this priority — stop at the first source that yields names:
 
-0. **DOMAINS.md registry:** Read `prd/DOMAINS.md`. If it exists and contains domain entries, use those domain names as `bdd/features/` subdirectories. This is the authoritative source. Add `@{domain}` to feature-level tags.
-1. **User-defined rules:** Glob `bdd/.claude/rules/*.md` for explicit domain mappings.
-2. **BDD conventions file:** Read `bdd/CLAUDE.md` for domain conventions.
-3. **Existing domain folders:** Glob `bdd/features/*/` — preserve existing domains.
-4. **PRD feature specs:** Glob `prd/domains/*/features/*/` and use domain folder names as domain hints.
+0. **MODULES.md registry:** Read `prd/MODULES.md`. If it exists and contains module entries, use those module names as `bdd/features/` subdirectories. This is the authoritative source. Add `@{module}` to feature-level tags.
+1. **User-defined rules:** Glob `bdd/.claude/rules/*.md` for explicit module mappings.
+2. **BDD conventions file:** Read `bdd/CLAUDE.md` for module conventions.
+3. **Existing module folders:** Glob `bdd/features/*/` — preserve existing modules.
+4. **PRD feature specs:** Glob `prd/modules/*/features/*/` and use module folder names as module hints.
 5. **Codebase structure:** Glob top-level and `server/`/`src/` subdirectories.
 
-If no sources yield domains, create a single `general/` domain folder. Always ensure `cross-domain/` exists. Use kebab-case naming.
+If no sources yield modules, create a single `general/` module folder. Use kebab-case naming.
 
 ## File Naming Rules
 
@@ -125,7 +124,7 @@ Every feature file and scenario must be traceable back to the PRD spec via ID ta
 Each scenario carries both its use case and scenario IDs. Example:
 
 ```gherkin
-@FEAT-0F3y @auth
+@FEAT-0F3y @auth @auth-module
 Feature: Email login
 
   @UC-0G2a @SC-0H7k @pending @smoke
@@ -148,9 +147,10 @@ In addition to spec traceability tags, choose from:
 | `@critical` | Scenarios testing security, data integrity, or financial correctness |
 | `@backend` | Scenarios that test server-side behavior only |
 | `@fullstack` | Scenarios requiring UI + backend interaction |
-| `@{domain}` | Domain-specific tag matching the folder name (e.g., `@auth`, `@billing`) |
+| `@{domain}` | Domain-specific tag for filtering by business concern across modules (e.g., `@auth`, `@billing`) |
+| `@{module}` | Module tag matching the BDD directory name — implicit from directory but explicit as a tag for clarity |
 
-Feature-level tags: `@FEAT-{tag}`, `@{domain}` (from DOMAINS.md or BDD domain folder), and one priority tag (`@smoke`, `@regression`, or `@critical`). Scenario-level tags: `@UC-{tag}`, `@SC-{tag}`, optional lifecycle tag (`@pending` or `@dirty`), and any additional classification tags.
+Feature-level tags: `@FEAT-{tag}`, `@{domain}`, `@{module}` (from MODULES.md or BDD module folder), and one priority tag (`@smoke`, `@regression`, or `@critical`). Scenario-level tags: `@UC-{tag}`, `@SC-{tag}`, optional lifecycle tag (`@pending` or `@dirty`), and any additional classification tags.
 
 ### Lifecycle tags
 
@@ -225,10 +225,10 @@ Before creating any step definitions, read `bdd/steps/INDEX.md` to identify exis
 
 | Category | File | When to use |
 |----------|------|-------------|
-| Common | `common_steps.[ext]` | Generic steps reusable across domains: login, navigation, time manipulation, basic CRUD |
+| Common | `common_steps.[ext]` | Generic steps reusable across modules: login, navigation, time manipulation, basic CRUD |
 | API | `api_steps.[ext]` | HTTP request/response steps: sending requests, checking status codes, validating response bodies |
 | Database | `db_steps.[ext]` | Database assertion steps: checking row counts, verifying column values, seeding test data |
-| Domain-specific | `{domain}_steps.[ext]` | Steps unique to a business domain: billing calculations, notification rules, auth policies |
+| Module-specific | `{module}_steps.[ext]` | Steps unique to a business module: billing calculations, notification rules, auth policies |
 
 If the target step file exists, append new definitions. If not, create it using the matching template from `templates/`.
 

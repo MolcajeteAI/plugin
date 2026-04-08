@@ -33,11 +33,11 @@ Follow the skill's rules for all subsequent steps.
 
 ## Step 2: Verify Prerequisites
 
-Check that `prd/PROJECT.md` and `prd/DOMAINS.md` both exist.
+Check that `prd/PROJECT.md` and `prd/MODULES.md` both exist.
 
 If either is missing, tell the user:
 
-"Project foundation not found. Run `/m:setup` first to create PROJECT.md and DOMAINS.md."
+"Project foundation not found. Run `/m:setup` first to create PROJECT.md and MODULES.md."
 
 Then stop. Do not proceed.
 
@@ -48,33 +48,28 @@ Read the following files to understand the project and avoid duplicate features:
 1. `prd/PROJECT.md` — project description (required)
 2. `prd/TECH-STACK.md` — technology choices (if exists)
 3. `prd/ACTORS.md` — system actors (if exists)
-4. `prd/DOMAINS.md` — domain registry (required)
-5. `prd/FEATURES.md` — check for duplicates across all domains
+4. `prd/MODULES.md` — module registry (required)
+5. `prd/DOMAINS.md` — domain tag registry (if exists)
+6. `prd/FEATURES.md` — check for duplicates across all modules
 
 Use the project context to inform your extraction and suggestions in the interview.
 
-## Step 4: Domain Selection
+## Step 4: Module and Domain Selection
 
-Read `prd/DOMAINS.md` and resolve the target domain following the feature-authoring skill's full Domain Resolution rules — do not skip any steps:
+Read `prd/MODULES.md` and `prd/DOMAINS.md`.
 
-- If only one domain exists, use it automatically
-- If multiple domains exist, first ask via AskUserQuestion: "Is this a cross-cutting concern that applies to every domain in the project?" (Yes = `global` domain, No = ask which domain, excluding `global` from the list)
-- Follow the skill's Cross-Cutting Detection Signals to inform the question when applicable
+**Module selection:**
 
-Record the selected domain for all subsequent path operations.
+- If only one module exists, use it automatically
+- If multiple modules exist, ask via AskUserQuestion: "Which module does this feature belong to?" Present the module list from MODULES.md as a single-select
 
-**If domain is `global`:**
-1. Inform the user: "Global features contain only baseline requirements and architecture. Use cases will be created in domain features."
-2. After global feature creation (Step 9), ask via AskUserQuestion: "Which domains need this feature? Each selected domain will get its own `features/FEAT-XXXX-{slug}/` directory with domain-specific requirements, use cases, and architecture."
-   - Header: "Domain Features"
-   - Present the domain list from DOMAINS.md (excluding `global`), multi-select
-3. For each selected domain, create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/` with:
-   - `REQUIREMENTS.md` with `refs: [FEAT-XXXX]` in frontmatter, domain-specific scaffold
-   - `USE-CASES.md` (empty table)
-   - `ARCHITECTURE.md` scaffold
-   - A FEATURES.md row under that domain's section
+**Domain selection:**
 
-**If domain is NOT `global`:** Run the Refs Declaration flow from the feature-authoring skill to check for global feature dependencies.
+- Ask via AskUserQuestion: "Which domain does this feature belong to?" Present the domain list from DOMAINS.md as a single-select
+
+Record the selected module and domain for all subsequent path operations.
+
+**Check for feature dependencies:** Read `prd/FEATURES.md` and check if the new feature depends on any existing features. If dependencies are found, note them for inclusion in the requirements frontmatter.
 
 ## Step 5: Research Context
 
@@ -150,47 +145,38 @@ Assign prefixes from the output lines:
 
 ## Step 9: Generate Documents
 
-Create the feature directory structure using the selected domain:
+Create the feature directory structure using the selected module:
 
-**If domain is `global`:**
+For each selected module:
 ```bash
-mkdir -p prd/domains/global/features/FEAT-XXXX-{slug}
-```
-No `use-cases/` directory — global features have no use cases.
-
-**If domain is NOT `global`:**
-```bash
-mkdir -p prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases
+mkdir -p prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases
 ```
 
-If the user provided image file paths during the interview, also create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/assets/` and copy the images there.
+If the user provided image file paths during the interview, also create `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/` and copy the images there.
 
 Then read each template and generate the documents:
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` filled with confirmed content. Add `domain: {domain}` to the frontmatter. Follow the section order from the skill: name + objective, Non-Goals, Actors, UI (only if provided), Functional Requirements (EARS + Fit Criteria), Non-Functional Requirements, Acceptance.
+   Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` filled with confirmed content. Add `module: {module}` and `domain: {domain}` to the frontmatter. Follow the section order from the skill: name + objective, Non-Goals, Actors, UI (only if provided), Functional Requirements (EARS + Fit Criteria), Non-Functional Requirements, Acceptance.
 
-2. **If domain is NOT `global`:** Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` with an empty use case table.
-   **Skip for global** — global features have no use cases.
+2. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md`
+   Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` with an empty use case table.
 
 3. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold. The scaffold includes an empty `## Testing Decisions` table for recording resolved E2E testing decisions.
+   Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold. The scaffold includes an empty `## Testing Decisions` table for recording resolved E2E testing decisions.
 
-4. Edit `prd/FEATURES.md` — add a new row under the appropriate section:
+4. Edit `prd/FEATURES.md` — add a new row under the `## {domain}` section:
    ```
-   | FEAT-XXXX | {Feature Name} | {One-sentence description} | pending | @FEAT-XXXX | [features/FEAT-XXXX-{slug}/](features/FEAT-XXXX-{slug}/) |
+   | FEAT-XXXX | {Feature Name} | {One-sentence description} | pending |
    ```
-
-5. **If domain is `global` and domain features were requested (Step 4):** For each selected domain, create the domain feature with the same FEAT-XXXX ID — see Step 4 for details.
 
 ## Step 10: Report
 
 Tell the user what was created:
 
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements (EARS syntax)
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — use case index (empty, ready for /m:usecase)
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — architecture scaffold
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements (EARS syntax)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — use case index (empty, ready for /m:usecase)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — architecture scaffold
 - Updated `prd/FEATURES.md` with new row
 
 Suggest next step: "Use `/m:usecase FEAT-XXXX {description}` to add use cases to this feature."

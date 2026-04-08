@@ -34,11 +34,11 @@ Follow these skills' rules for all subsequent steps. In particular, follow the E
 
 ## Step 2: Verify Prerequisites
 
-Check that `prd/PROJECT.md` and `prd/DOMAINS.md` both exist.
+Check that `prd/PROJECT.md` and `prd/MODULES.md` both exist.
 
 If either is missing, tell the user:
 
-"Project foundation not found. Run `/m:setup` first to create PROJECT.md and DOMAINS.md."
+"Project foundation not found. Run `/m:setup` first to create PROJECT.md and MODULES.md."
 
 Then stop. Do not proceed.
 
@@ -50,14 +50,15 @@ Read all project-level files, the domain registry, and every existing feature's 
 - `prd/PROJECT.md` — project description (required)
 - `prd/TECH-STACK.md` — technology choices (if exists)
 - `prd/ACTORS.md` — system actors (if exists)
-- `prd/DOMAINS.md` — domain registry (required)
+- `prd/MODULES.md` — module registry (required)
+- `prd/DOMAINS.md` — domain tag registry (if exists)
 
 **Per-domain files:**
 - `prd/FEATURES.md` — features across all domains
 
 **Per-feature files:** For every feature listed in each domain's FEATURES.md, read:
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`
 
 For large projects with many features, use Agent sub-agents to parallelize reading.
 
@@ -131,15 +132,15 @@ If the user selects "Cancel", stop.
 
 For each entity in the spec plan, present a consolidated review. Unlike the granular commands which go section-by-section, spec presents all sections at once since the user already provided substantial context.
 
-### 7.1 Domain Resolution for New Features
+### 7.1 Module and Domain Resolution for New Features
 
-For each new feature in the spec plan, run the feature-authoring skill's Domain Resolution before proceeding to interviews:
+For each new feature in the spec plan, run the feature-authoring skill's Module and Domain Resolution before proceeding to interviews:
 
-1. Follow the full 5-step Domain Resolution from the feature-authoring skill
-2. Ask the cross-cutting question per feature: "Is this a cross-cutting concern that applies to every domain?" — use the Cross-Cutting Detection Signals to inform the question when applicable
-3. **If resolved as cross-cutting (global):** After confirming global, ask which domains need this feature (present domain list excluding `global`, multi-select). Include both the global baseline and domain targets in the Step 7 spec plan presentation.
-4. For domain features (non-global), run the Refs Declaration flow from the feature-authoring skill to check for global feature dependencies
-5. Include the resolved domain in the Step 7 spec plan presentation so the user sees where each feature will be created
+1. Read `prd/MODULES.md` for modules, read `prd/DOMAINS.md` for domains
+2. If one module, use automatically; if multiple, ask which module via AskUserQuestion (single-select)
+3. Ask which domain this feature belongs to (from DOMAINS.md). Single-select.
+4. Check FEATURES.md for existing features this new feature depends on
+5. Include the resolved module and domain in the Step 7 spec plan presentation so the user sees where each feature will be created
 
 ### 8.1 New Features
 
@@ -206,45 +207,21 @@ Write in dependency order so that parent structures exist before children.
 
 For each new feature:
 
-**If the feature is cross-cutting (global with target domains from Step 7.1):**
-
-1. Create global directory (no use-cases/):
-   ```bash
-   mkdir -p prd/domains/global/features/FEAT-XXXX-{slug}
-   ```
-
-2. Write global `REQUIREMENTS.md` — shared/baseline requirements only. Follow section order from the skill.
-
-3. Write global `ARCHITECTURE.md` scaffold.
-
-4. Add a global row to `prd/FEATURES.md` under `## global`.
-
-5. For each target domain, create the domain feature with the **same FEAT-XXXX ID**:
-   ```bash
-   mkdir -p prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases
-   ```
-   - Write domain `REQUIREMENTS.md` with `refs: [FEAT-XXXX]` in frontmatter, domain-specific requirements
-   - Write domain `USE-CASES.md` (empty table)
-   - Write domain `ARCHITECTURE.md` scaffold
-   - Add a domain row to `prd/FEATURES.md` under `## {domain}`
-
-6. Use cases extracted during the interview go into the appropriate domain features (not global).
-
-**If the feature is NOT cross-cutting:**
+For each selected module, create the feature directory:
 
 1. Create the directory structure:
    ```bash
-   mkdir -p prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases
+   mkdir -p prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases
    ```
 
 2. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` filled with confirmed content. Follow section order from the skill: name + objective, Non-Goals, Actors, UI (only if provided), Functional Requirements (EARS + Fit Criteria), Non-Functional Requirements, Acceptance.
+   Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` filled with confirmed content. Follow section order from the skill: name + objective, Non-Goals, Actors, UI (only if provided), Functional Requirements (EARS + Fit Criteria), Non-Functional Requirements, Acceptance.
 
 3. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` with an empty use case table.
+   Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` with an empty use case table.
 
 4. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold.
+   Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold.
 
 5. Edit `prd/FEATURES.md` — add a new row:
    ```
@@ -254,7 +231,7 @@ For each new feature:
 ### 11.2 Modified Features
 
 For each modified feature:
-- Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed changes (new FRs, NFRs, acceptance criteria).
+- Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed changes (new FRs, NFRs, acceptance criteria).
 
 **Gherkin Propagation:** For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
 
@@ -264,7 +241,7 @@ For each new use case:
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
 
-2. Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
+2. Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
    - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor, tag (@UC-XXXX)
    - Title: `# UC-XXXX: {Use Case Name}`
    - Objective blockquote
@@ -273,7 +250,7 @@ For each new use case:
    - Gherkin Tags: `@FEAT-XXXX @UC-XXXX`
    - All confirmed scenarios in flat structure — each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
 
-3. Add a new row to `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
+3. Add a new row to `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
    ```
    | UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
    ```

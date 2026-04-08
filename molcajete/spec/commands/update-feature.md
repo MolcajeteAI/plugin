@@ -50,47 +50,27 @@ If the change description is empty (only a FEAT ID was provided), use AskUserQue
 
 ## Step 3: Verify Feature Exists
 
-1. Check that `prd/DOMAINS.md` exists. If missing, tell the user:
+1. Check that `prd/MODULES.md` exists. If missing, tell the user:
 
-   "Run `/m:setup` first -- DOMAINS.md is required."
+   "Run `/m:setup` first -- MODULES.md is required."
 
    Then stop.
 
-2. Glob `prd/domains/*/features/FEAT-XXXX-*/` to find the feature directory and extract the domain from the path. If not found, tell the user:
+2. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory and extract the domain from the path. If not found, tell the user:
 
    "Feature {FEAT-XXXX} not found. Check the ID and try again."
 
    Then stop.
 
-3. Verify that `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` exists. If missing, tell the user:
+3. Verify that `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` exists. If missing, tell the user:
 
    "REQUIREMENTS.md not found for {FEAT-XXXX}. The feature directory may be incomplete."
 
    Then stop.
 
-## Step 4: Detect Global Scope
+## Step 4: Load Module Context
 
-After resolving the feature's domain:
-
-### If the target feature is global (domain is `global`)
-
-This change may affect every real domain. Read `prd/FEATURES.md` and collect all domain features whose `Refs` column includes this FEAT-XXXX. These are the **dependent domain features**.
-
-Use AskUserQuestion:
-- Question: "**{FEAT-XXXX}** is a global feature. Changes here affect all domains that reference it.\n\n**Dependent domain features:**\n{list each dependent feature: FEAT-YYYY ({domain}) — {name}}\n\nHow should this change be scoped?"
-- Header: "Global Scope"
-- Options:
-  - "Apply globally — update the global feature and dirty-cascade all dependent domain features"
-  - "Apply globally but let me review domain impact first"
-  - "Cancel — I meant to update a domain feature instead"
-
-If "Cancel", stop.
-
-Record the dependent domain features for use in Step 8 (Dirty Cascade).
-
-### If the target feature is a domain feature with refs
-
-Read the feature's REQUIREMENTS.md frontmatter. If `refs` is non-empty, load each referenced global feature's REQUIREMENTS.md for context — the domain feature's requirements may build on or override global requirements.
+Extract the module from the resolved feature path.
 
 ## Step 5: Load Context
 
@@ -99,12 +79,8 @@ Read these files to understand the current state:
 - `prd/PROJECT.md` -- project description
 - `prd/TECH-STACK.md` -- technology choices (if exists)
 - `prd/ACTORS.md` -- system actors (if exists)
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- current feature requirements
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- current architecture (if exists)
-
-If the target is a global feature, also load each dependent domain feature's REQUIREMENTS.md to understand how domains currently consume the global baseline.
-
-If the target is a domain feature with refs, also load the referenced global feature's REQUIREMENTS.md for baseline context.
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- current feature requirements
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- current architecture (if exists)
 
 ## Step 6: Analyze and Propose Changes
 
@@ -129,28 +105,15 @@ If the user wants edits, revise the proposal and present again via AskUserQuesti
 
 Apply the confirmed changes:
 
-1. Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed requirement changes. Follow EARS syntax and Fit Criteria format from the skill.
+1. Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed requirement changes. Follow EARS syntax and Fit Criteria format from the skill.
 
-2. If architecture changes were confirmed, edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`.
+2. If architecture changes were confirmed, edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`.
 
 3. Do NOT change the FEAT ID or tag.
 
 ## Step 8: Gherkin Propagation
 
-### Standard cascade (domain features)
-
 Propagate `@dirty` to Gherkin files: For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
-
-### Cross-domain cascade (global features)
-
-If the target feature is global and dependent domain features were identified in Step 4:
-
-For each dependent domain feature (FEAT-YYYY in domain {D}):
-
-1. Read `prd/domains/{D}/features/FEAT-YYYY-{slug}/USE-CASES.md`. For each UC:
-   - Propagate `@dirty` to Gherkin files: grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
-
-This ensures that a change to a global feature propagates dirty tags to every domain that consumes it via refs.
 
 ## Step 9: Testability Notes
 
@@ -167,6 +130,5 @@ Tell the user what changed:
 - List each file that was modified
 - Summarize the changes applied
 - If Gherkin propagation was triggered: list the Gherkin files where `@dirty` was added
-- If cross-domain cascade was triggered: list each affected domain feature and its Gherkin files
 - If testability signals were detected in Step 9, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."
 - Note: "Use `/m:update-usecase UC-XXXX <description>` to refine individual use cases if needed."

@@ -17,62 +17,26 @@ Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES
 - Updating an existing feature's requirements with /m:update-feature
 - Understanding the structure and rules for REQUIREMENTS.md, USE-CASES.md, and ARCHITECTURE.md
 
-## Domain Resolution
+## Module and Domain Resolution
 
-Before creating or locating a feature, resolve the target domain:
+Before creating or locating a feature, resolve the target module and domain:
 
-1. Read `prd/DOMAINS.md` to get the list of registered domains
-2. If only one domain exists, use it automatically (no user prompt needed)
-3. If multiple domains exist, first ask via AskUserQuestion:
-   "Is this a cross-cutting concern that applies to every domain in the project?"
-   Options: "Yes — create as global feature" / "No — it belongs to a specific domain"
-   If yes → use `global` domain, skip step 4.
-   If no → proceed to step 4 (which domain?).
-4. If multiple domains exist, present them via AskUserQuestion: "Which domain should this feature belong to?\n\n{domain table from DOMAINS.md}" — filter out `global` from the selection (global is only selected via step 3)
-5. Use the selected domain for all path operations
+1. Read `prd/MODULES.md` for the list of registered modules. Read `prd/DOMAINS.md` for the list of registered domains.
+2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask via AskUserQuestion: "Which module should this feature belong to?\n\n{module table from MODULES.md}" — single-select.
+3. Ask which domain this feature belongs to via AskUserQuestion: "Which domain should this feature belong to?\n\n{domain table from DOMAINS.md}" — single-select. Every feature has one primary domain.
+4. Use the selected module and domain for all path operations.
 
-All feature paths use the pattern `prd/domains/{domain}/features/FEAT-XXXX-{slug}/`.
-
-### Cross-Cutting Detection Signals
-
-When determining whether a capability is cross-cutting, look for these concrete signals:
-
-| Signal | Evidence |
-|--------|----------|
-| Multi-domain imports | Code imported/required by 3+ domain directories |
-| Infrastructure capability | Auth, logging, notifications, shared UI, error handling, config |
-| Identical interface | Same API/interface consumed identically by multiple domains |
-| Shared package location | Code lives in `shared/`, `common/`, `lib/`, `packages/shared-*` |
-| No domain-specific logic | Capability has no conditional behavior per domain |
-
-When 2+ signals match, include the matching evidence in the cross-cutting AskUserQuestion prompt so the user can make an informed decision.
-
-### Global Feature Artifacts
-
-Global features contain only REQUIREMENTS.md + ARCHITECTURE.md:
-
-- **No USE-CASES.md, no `use-cases/` directory** — use cases belong in domain features, not global
-- Global defines baseline requirements (constraints, standards, non-functional requirements) that all domains inherit
-- Domains can override global requirements with documented reasoning in their own REQUIREMENTS.md
-
-### Shared Feature ID
-
-Cross-cutting features use the **same FEAT-XXXX ID** across global and all implementing domains:
-
-- One ID is generated; it appears in `prd/domains/global/features/FEAT-XXXX-{slug}/` and in each domain's `prd/domains/{domain}/features/FEAT-XXXX-{slug}/`
-- Domain features declare `refs: [FEAT-XXXX]` in REQUIREMENTS.md frontmatter to link back to the global baseline (self-referencing the same ID is expected and correct)
-- `refs` can also reference other features the domain feature depends on
-- The shared ID makes the relationship explicit — no ambiguity about which domain features map to which global baseline
+All feature paths use the pattern `prd/modules/{module}/features/FEAT-XXXX-{slug}/`.
 
 ## Refs Declaration
 
-When creating a domain feature (non-global), after the domain is selected and before the creation interview:
+When creating a feature, after the module and domain are resolved and before the creation interview:
 
-1. Read `prd/FEATURES.md` and extract features from the `## global` section
-2. If global features exist, ask via AskUserQuestion:
-   "Does this feature depend on any global features?\n\n{global features table}\n\nSelect any that apply, or skip."
-   Options: list each global feature + "None — no global dependencies"
-3. Record selected refs for inclusion in REQUIREMENTS.md frontmatter and FEATURES.md Refs column
+1. Read `prd/FEATURES.md` and check if there are existing features this new feature depends on.
+2. If dependency candidates exist, ask via AskUserQuestion:
+   "Does this feature depend on any existing features?\n\n{features table}\n\nSelect any that apply, or skip."
+   Options: list each candidate feature + "None -- no dependencies"
+3. Record selected refs for inclusion in REQUIREMENTS.md frontmatter.
 
 ## EARS Syntax
 
@@ -89,7 +53,7 @@ All functional requirements MUST be written in EARS (Easy Approach to Requiremen
 **Rules:**
 - Never write requirements as prose ("The system should be fast")
 - Always use the pattern keyword exactly: "When", "While", "If ... then"
-- Each sentence expresses one requirement — no "and" chaining
+- Each sentence expresses one requirement -- no "and" chaining
 - Requirements must be falsifiable: a test must be able to pass or fail it
 
 ## Fit Criteria
@@ -108,11 +72,11 @@ Linked to: UC-XXXX
 - The outcome must be verifiable (a test can check it)
 - "The system should feel fast" is not a Fit Criterion
 - "Given 100 concurrent users, response time is < 200ms at p95" is a Fit Criterion
-- Every FR requires one Fit Criterion — no exceptions
+- Every FR requires one Fit Criterion -- no exceptions
 
 ## Non-Goals Positioning
 
-The Non-Goals section MUST appear second in REQUIREMENTS.md — immediately after the one-sentence objective, before Actors, before Functional Requirements.
+The Non-Goals section MUST appear second in REQUIREMENTS.md -- immediately after the one-sentence objective, before Actors, before Functional Requirements.
 
 **Why:** LLMs process documents top-to-bottom. Scope boundaries read late are scope boundaries partially ignored. An agent that sees Non-Goals at position 2 will respect them throughout. An agent that sees them at position 8 may already have invented out-of-scope implementations.
 
@@ -161,11 +125,11 @@ ASCII art conveys layout and element hierarchy. It is always the default -- gene
 ![Dashboard overview](assets/overview-dashboard.png)
 ```
 
-Images are a post-creation enhancement. The `assets/` directory is created inside the feature directory after the feature directory exists. When the user provides image files (file paths), copy them to `prd/domains/{domain}/features/FEAT-XXXX-{slug}/assets/` with descriptive names and reference them in the `## UI` section.
+Images are a post-creation enhancement. The `assets/` directory is created inside the feature directory after the feature directory exists. When the user provides image files (file paths), copy them to `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/` with descriptive names and reference them in the `## UI` section.
 
 ### Asset Management
 
-- Feature-level images go in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/assets/`
+- Feature-level images go in `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/`
 - File naming: `{descriptive-slug}.{ext}` -- lowercase, hyphens, no spaces, max 50 character slug
 - Supported formats: PNG, JPG
 - When the user provides image file paths during creation or update, copy the files and add references
@@ -216,38 +180,28 @@ When creating a feature, generate a kebab-case slug from the confirmed feature n
 6. Truncate to max 40 characters at the last full word boundary
 
 **Examples:**
-- "User Authentication" → `user-authentication`
-- "Real-Time Notifications" → `real-time-notifications`
-- "API Rate Limiting & Throttling" → `api-rate-limiting-throttling`
+- "User Authentication" -> `user-authentication`
+- "Real-Time Notifications" -> `real-time-notifications`
+- "API Rate Limiting & Throttling" -> `api-rate-limiting-throttling`
 
 The slug is appended to the FEAT ID with a hyphen: `FEAT-XXXX-{slug}` (e.g., `FEAT-0S9A-user-authentication`).
 
 ## FEATURES.md Row Management
 
-When creating a feature, add a new row to `prd/FEATURES.md` under the appropriate section. Add the row under the `## global` section if domain is `global`, otherwise under the `## {domain}` section.
+When creating a feature, add a new row to `prd/FEATURES.md` under the `## {domain}` section.
 
-**Cross-cutting features** appear under both `## global` and under each implementing domain's section, using the same FEAT-XXXX ID. The global row has no Refs column; each domain row includes `refs: [FEAT-XXXX]` pointing back to the global baseline.
-
-For domain features:
+**Format:**
 ```
-| FEAT-XXXX | {Feature Name} | {One-sentence description} | pending | @FEAT-XXXX | {Refs} | [features/FEAT-XXXX-{slug}/](features/FEAT-XXXX-{slug}/) |
-```
-
-For global features (no Refs column):
-```
-| FEAT-XXXX | {Feature Name} | {One-sentence description} | pending | @FEAT-XXXX | [features/FEAT-XXXX-{slug}/](features/FEAT-XXXX-{slug}/) |
+| FEAT-XXXX | {Feature Name} | {One-sentence description} | pending |
 ```
 
 **Column rules:**
-- **ID:** `FEAT-XXXX` — the generated ID
+- **ID:** `FEAT-XXXX` -- the generated ID
 - **Feature:** Short name (3-5 words)
-- **Description:** One sentence — enough for an agent to decide if this is the right feature
+- **Description:** One sentence -- enough for an agent to decide if this is the right feature
 - **Status:** Always `pending` when first created
-- **Tag:** `@FEAT-XXXX` — used as Gherkin feature tag
-- **Refs** (domain features only)**:** Comma-separated FEAT-XXXX IDs of global features this feature depends on (if refs were declared)
-- **Directory:** Relative Markdown link to `features/FEAT-XXXX-{slug}/` (relative to the domain's FEATURES.md)
 
-**When updating a feature,** do NOT change the ID or Tag. Update Status only when the feature advances through its lifecycle.
+**When updating a feature,** do NOT change the ID. Update Status only when the feature advances through its lifecycle.
 
 ## Creation Interview
 
@@ -307,12 +261,12 @@ If the user describes the UI, generate ASCII art mockups from their description 
 
 After all sections are confirmed:
 1. Generate FEAT-XXXX ID (4-character timestamp code)
-2. Create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/` directory. **If domain is NOT `global`**, also create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
-3. If the user provided image file paths, create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/assets/` and copy image files with descriptive names
-4. Write `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI. Add `domain: {domain}` to the frontmatter.
-5. **If domain is NOT `global`:** Write `USE-CASES.md` using [USE-CASES-template.md](./templates/USE-CASES-template.md) (empty table). **Skip for global** — global features have no use cases.
+2. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/` directory. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/` subdirectory.
+3. If the user provided image file paths, create `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/` and copy image files with descriptive names. For use-case-level assets, use `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/`.
+4. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI. Add `domain: {domain}` and `module: {module}` to the frontmatter.
+5. Write `USE-CASES.md` using [USE-CASES-template.md](./templates/USE-CASES-template.md) (empty table).
 6. Write `ARCHITECTURE.md` scaffold using the template at `spec/skills/architecture/templates/ARCHITECTURE-template.md`
-7. Add row to `prd/FEATURES.md` under the appropriate section (format from the Row Management section above)
+7. Add row to `prd/FEATURES.md` under the `## {domain}` section (format from the Row Management section above)
 
 ## Update Mode
 

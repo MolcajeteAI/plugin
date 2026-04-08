@@ -34,11 +34,11 @@ Follow these skills' rules for all subsequent steps.
 
 ## Step 2: Verify Prerequisites
 
-Check that `prd/PROJECT.md` and `prd/DOMAINS.md` both exist.
+Check that `prd/PROJECT.md` and `prd/MODULES.md` both exist.
 
 If either is missing, tell the user:
 
-"Project foundation not found. Run `/m:setup` first to create PROJECT.md and FEATURES.md."
+"Project foundation not found. Run `/m:setup` first to create PROJECT.md and MODULES.md."
 
 Then stop. Do not proceed.
 
@@ -49,39 +49,27 @@ Read the following files to understand the project and avoid duplicate features:
 1. `prd/PROJECT.md` — project description (required)
 2. `prd/TECH-STACK.md` — technology choices (if exists)
 3. `prd/ACTORS.md` — system actors (if exists)
-4. `prd/DOMAINS.md` — domain registry (required)
-5. `prd/FEATURES.md` — check for duplicates across all domains
+4. `prd/MODULES.md` — module registry (required)
+5. `prd/DOMAINS.md` — domain tag registry (if exists)
+6. `prd/FEATURES.md` — check for duplicates across all modules
 
 Use the project context to inform your code analysis and extraction.
 
-## Step 4: Domain Selection (Deferred)
+## Step 4: Module Selection
 
-Read `prd/DOMAINS.md` to get the list of registered domains.
-- If only one domain exists, use it automatically and skip to Step 5
-- If multiple domains exist, **defer the full Domain Resolution until after Step 6** (Discovery Scan) when code evidence is available
+Read `prd/MODULES.md` for the list of registered modules and `prd/DOMAINS.md` for domain tags (if it exists).
 
-After Step 6.2 (Scope Confirmation), analyze the discovered files for Cross-Cutting Detection Signals from the feature-authoring skill:
-- Check if the code is imported/required by 3+ domain directories
-- Check if it provides an infrastructure capability (auth, logging, notifications, shared UI, error handling, config)
-- Check if the same interface is consumed identically by multiple domains
-- Check if the code lives in `shared/`, `common/`, `lib/`, or `packages/shared-*`
-- Check if the capability has no conditional behavior per domain
+- If only one module exists, use it automatically and skip to Step 5
+- If multiple modules exist, **defer full resolution until after Step 6** (Discovery Scan) when code evidence is available
 
-If 2+ signals match, present the evidence via AskUserQuestion:
-- Question: "This code shows signs of being a cross-cutting concern:\n\n{list matching signals with file-level evidence}\n\nIs this a cross-cutting concern that applies to every domain?"
-- Header: "Cross-Cutting Detection"
-- Options: "Yes — create as global feature" / "No — it belongs to a specific domain"
+After Step 6.2 (Scope Confirmation), when code evidence is available:
 
-If yes → use `global` domain. After confirming global, ask which domains also need this feature via AskUserQuestion:
-- Question: "Which domains need domain-specific features for this cross-cutting concern? Each selected domain will get its own `features/FEAT-XXXX-{slug}/` with domain-specific requirements, use cases, and architecture.\n\n{list non-global domains from DOMAINS.md}"
-- Header: "Domain Features"
-- Options: list non-global domains (multi-select)
-
-Pass both the `global` domain AND the list of target domains to the T1 subagent.
-
-If no → present the domain list (excluding `global`) via AskUserQuestion and ask which domain.
-
-If fewer than 2 signals match, follow the feature-authoring skill's standard Domain Resolution (ask cross-cutting question first, then which domain)
+- Use AskUserQuestion to ask which module this feature belongs to (from MODULES.md). Single-select.
+  - Question: "Based on the discovered code, which module does this feature belong to?\n\n{list modules from MODULES.md}"
+  - Header: "Module Selection"
+- Use AskUserQuestion to ask which domain this feature belongs to (from DOMAINS.md). Single-select.
+  - Question: "Which domain does this feature belong to?\n\n{list domains from DOMAINS.md}"
+  - Header: "Domain Selection"
 
 ## Step 5: Collect Description
 
@@ -124,19 +112,16 @@ The subagent prompt must include:
    - `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 
 2. **Project context files to read:**
-   - `prd/PROJECT.md`, `prd/TECH-STACK.md` (if exists), `prd/ACTORS.md` (if exists), `prd/DOMAINS.md`, `prd/FEATURES.md`
+   - `prd/PROJECT.md`, `prd/TECH-STACK.md` (if exists), `prd/ACTORS.md` (if exists), `prd/MODULES.md`, `prd/DOMAINS.md` (if exists), `prd/FEATURES.md`
 
 3. **The confirmed file list** from Step 6.2
 
-4. **The specific task:**
+4. **The selected module and domain** from Step 4
+
+5. **The specific task:**
    - Read and analyze all confirmed files following the reverse-engineering skill's research methodology
-   - **If domain is `global` with target domains:** Separate concerns:
-     - Extract shared/baseline requirements → global REQUIREMENTS.md + ARCHITECTURE.md (no USE-CASES.md, no use-cases/ directory)
-     - For each target domain, extract domain-specific requirements and use cases → domain `features/FEAT-XXXX-{slug}/`
-     - Use the **same FEAT-XXXX ID** for global and all domain features
-     - Domain REQUIREMENTS.md gets `refs: [FEAT-XXXX]` in frontmatter
-     - Only domain features get USE-CASES.md and use-cases/ directories
-   - **If domain is NOT `global`:** Extract as a single domain feature:
+   - Create the feature in each selected module with the same FEAT-XXXX ID
+   - For each module:
      - Extract the feature: name, non-goals, actors, EARS functional requirements with Fit Criteria, non-functional requirements, acceptance criteria
      - Extract all use cases: name, objective, actor, preconditions, trigger, scenarios (Given/Steps/Outcomes/Side Effects per the usecase-authoring skill)
    - Populate ARCHITECTURE.md with all enrichment sections: Component Inventory, Data Model (with real entities), API Surface, Integration Points, Event Topology, Code Map (linking every UC and SC to implementation files)
@@ -144,36 +129,21 @@ The subagent prompt must include:
    - Generate IDs: run `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}` for all needed IDs (1 FEAT + N UCs + M SCs + P FRs + Q NFRs + R USs + S ADRs)
    - **Testability analysis:** For each extracted UC, run the testability analysis per the reverse-engineering skill's Testability Analysis section. Check the feature's ARCHITECTURE.md `## Testing Decisions` first -- skip concerns that already have a recorded decision. If unresolved concerns are found, generate a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`. Do not use AskUserQuestion for testability concerns.
 
-5. **Files to write:**
+6. **Files to write (per selected module):**
+   - Create directory: `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md` (with `module:` and `domain:` in frontmatter)
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md` (with rows for all extracted UCs)
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` for each use case, using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
+   - Append a row to `prd/FEATURES.md` under `## {domain}` section: `| FEAT-XXXX | {name} | {description} | pending |`
 
-   **If domain is `global` with target domains:**
-   - Create global directory: `prd/domains/global/features/FEAT-XXXX-{slug}/` (no use-cases/ subdirectory)
-   - Global `REQUIREMENTS.md` — shared/baseline requirements using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md`
-   - Global `ARCHITECTURE.md` — shared architectural decisions using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   - Append a global row to `prd/FEATURES.md` under `## global`
-   - For each target domain:
-     - Create directory: `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
-     - Domain `REQUIREMENTS.md` with `refs: [FEAT-XXXX]` in frontmatter, domain-specific requirements
-     - Domain `USE-CASES.md` with rows for domain-specific UCs
-     - Domain `ARCHITECTURE.md` scaffold
-     - Domain UC files: `use-cases/UC-XXXX-{slug}.md` for each use case
-     - Append a domain row to `prd/FEATURES.md` under `## {domain}`
-
-   **If domain is NOT `global`:**
-   - Create directory: `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md`
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md` (with rows for all extracted UCs)
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` for each use case, using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
-   - Append a row to `prd/FEATURES.md` under the appropriate domain section: `| FEAT-XXXX | {name} | {description} | @FEAT-XXXX | [features/FEAT-XXXX-{slug}/](features/FEAT-XXXX-{slug}/) |`
-
-   **Common to both:**
+   **Common:**
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
    - `UC-XXXX-{slug}-recommendations.md` — testability recommendations (conditional, only when concerns are found)
 
-6. **Report format:** The subagent must end with a structured report listing:
-   - Feature ID, name, and file path
+7. **Report format:** The subagent must end with a structured report listing:
+   - Feature ID, name, and file path (per module)
    - Use case IDs, names, scenario counts, and file paths
    - ARCHITECTURE.md enrichment summary (which sections populated, file counts in Component Inventory, entity counts in Data Model, route counts in API Surface, Code Map entry counts)
    - Project-level updates: {count} new actors added to ACTORS.md, {count} new tech stack entries added to TECH-STACK.md (list names)
@@ -181,9 +151,11 @@ The subagent prompt must include:
 
 ## Step 8: Report T1 Results
 
-After the subagent returns, present the results via AskUserQuestion:
+After the subagent returns, present the results via AskUserQuestion.
 
-- Question: "**Research + Spec Extraction Complete**\n\n**{FEAT-XXXX}: {name}**\n- REQUIREMENTS.md: {FR count} functional, {NFR count} non-functional requirements\n- ARCHITECTURE.md: enriched with {sections list}\n- Use Cases:\n  {for each UC: UC-XXXX: {name} ({scenario count} scenarios)}\n\nPlease review the generated specs in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/`. Edit any specs that need adjustment, then continue to generate Gherkin.\n\nReady to proceed with Gherkin generation?"
+Report per module:
+
+- Question: "**Research + Spec Extraction Complete**\n\n{for each module:\n**{module}: {FEAT-XXXX}: {name}**\n- REQUIREMENTS.md: {FR count} functional, {NFR count} non-functional requirements\n- ARCHITECTURE.md: enriched with {sections list}\n- Use Cases:\n  {for each UC: UC-XXXX: {name} ({scenario count} scenarios)}\n}\n\nPlease review the generated specs in `prd/modules/{module}/features/FEAT-XXXX-{slug}/`. Edit any specs that need adjustment, then continue to generate Gherkin.\n\nReady to proceed with Gherkin generation?"
 - Header: "Specs Ready for Review"
 - Options: "Proceed with Gherkin generation" / "I need to review and edit first — I'll re-run when ready"
 
@@ -199,10 +171,10 @@ The subagent prompt must include:
    - `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md`
    - `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` (Gherkin Mapping table)
 
-2. **Files to read:**
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`
-   - All UC files in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
+2. **Files to read (per module):**
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`
+   - All UC files in `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/`
    - `prd/TECH-STACK.md` (if exists) for language/framework detection
 
 3. **The specific task:**
@@ -222,10 +194,10 @@ The subagent prompt must include:
 
 Tell the user what was created:
 
-**Specs Created:**
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements (EARS syntax, extracted from code)
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — use case index
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — enriched with implementation research
+**Specs Created (per module):**
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements (EARS syntax, extracted from code)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — use case index
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — enriched with implementation research
 - UC files with scenario counts
 - Updated `prd/FEATURES.md` with new row
 

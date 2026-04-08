@@ -47,7 +47,7 @@ If the change description is empty (only an SC ID was provided), use AskUserQues
 
 ## Step 3: Locate Scenario
 
-1. Grep `prd/domains/*/features/*/use-cases/*.md` for the heading pattern `### SC-XXXX:` (substituting the actual ID). If not found, tell the user:
+1. Grep `prd/modules/*/features/*/use-cases/*.md` for the heading pattern `### SC-XXXX:` (substituting the actual ID). If not found, tell the user:
 
    "Scenario {SC-XXXX} not found in any use case file. Check the ID and try again."
 
@@ -57,7 +57,7 @@ If the change description is empty (only an SC ID was provided), use AskUserQues
 
 3. Extract the parent `UC-XXXX` from the filename (e.g., `UC-0S9A.md` -> `UC-0S9A`).
 
-4. Extract the parent `FEAT-XXXX` from the directory path (under `features/`) and the domain from the path (under `prd/domains/`).
+4. Extract the parent `FEAT-XXXX` from the directory path (under `features/`) and the domain from the path (under `prd/modules/`).
 
 5. Verify `prd/FEATURES.md` exists and FEAT-XXXX is listed. If either check fails, tell the user and stop.
 
@@ -68,9 +68,9 @@ Read these files to understand the current state:
 - `prd/PROJECT.md` -- project description
 - `prd/TECH-STACK.md` -- technology choices (if exists)
 - `prd/ACTORS.md` -- known actors (if exists)
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- architecture context (if exists)
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- the use case containing this scenario
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- architecture context (if exists)
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- the use case containing this scenario
 
 ## Step 5: Analyze and Propose Changes
 
@@ -93,7 +93,7 @@ If the user wants edits, revise the proposal and present again via AskUserQuesti
 
 Apply the confirmed changes to the scenario within the UC file:
 
-1. Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- modify only the `### SC-XXXX:` block with confirmed changes.
+1. Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- modify only the `### SC-XXXX:` block with confirmed changes.
 
 2. Increment the `version` field in the UC file's YAML frontmatter.
 

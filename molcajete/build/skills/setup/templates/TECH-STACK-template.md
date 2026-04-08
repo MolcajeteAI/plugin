@@ -52,7 +52,7 @@
 
 ## Tooling
 
-| Domain | Root | Language | Format Command | Lint Command |
+| Module | Root | Language | Format Command | Lint Command |
 |--------|------|----------|----------------|--------------|
 | {e.g., bdd} | {`bdd/`} | {Python} | {`ruff format --check bdd/`} | {`ruff check bdd/`} |
 | {e.g., server} | {`server/`} | {Go} | {`cd server && gofmt -l .`} | {`cd server && golangci-lint run ./...`} |

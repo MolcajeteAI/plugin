@@ -3,13 +3,13 @@ name: setup
 description: >-
   Rules and templates for the /m:setup command. Defines the interview flow
   for generating PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md,
-  DOMAINS.md, and master FEATURES.md. Covers codebase inference for
-  tech stack, actors, and domains.
+  MODULES.md, DOMAINS.md, and master FEATURES.md. Covers codebase inference
+  for tech stack, actors, modules, and domain tags.
 ---
 
 # Project Setup
 
-Rules for initializing a project's foundational documents. The /m:setup command references this skill to interview the user and generate the global documents (PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, DOMAINS.md) and master FEATURES.md that all other commands depend on.
+Rules for initializing a project's foundational documents. The /m:setup command references this skill to interview the user and generate the global documents (PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, MODULES.md, DOMAINS.md) and master FEATURES.md that all other commands depend on.
 
 ## When to Use
 
@@ -19,7 +19,7 @@ Rules for initializing a project's foundational documents. The /m:setup command 
 
 ## Interview Flow
 
-The setup interview has three stages. Each stage gathers information, presents what was understood, and asks the user to confirm or correct before proceeding.
+The setup interview has five stages. Each stage gathers information, presents what was understood, and asks the user to confirm or correct before proceeding.
 
 **All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in the response. This keeps the agent in control of the flow -- the user answers via the tool, and the agent proceeds to the next question without losing control. Even open-ended questions (like "describe your project") must go through AskUserQuestion so the agent remains the driver of the conversation.
 
@@ -68,30 +68,43 @@ Fill in the TECH-STACK.md template with the confirmed answers, populating all ap
 
 Fill in the ACTORS.md template with the confirmed actors.
 
-### Stage 4: Domains
+### Stage 4: Modules
 
-Domains are logical boundaries for organizing specs. Every project has at least one domain. A domain can represent a physical app, a backend service, or a logical concern area within a single app.
+Modules are physical application layers -- each distinct app, service, console, API, or package in the project. Module types are open vocabulary; suggested defaults include `app`, `service`, `package`, `console`, `api`, `cli`, `worker`, `library`, but any descriptive type is valid.
 
-**If a codebase exists**, infer domains from the project structure:
-- Check for `apps/`, `packages/`, or `services/` directories — each subdirectory suggests a domain
-- Check for `src/` subdirectories that suggest distinct concern areas
+**If a codebase exists**, infer modules from the project structure:
+- Check for `apps/`, `packages/`, `services/`, `cmd/` directories -- each subdirectory is a module
 - Check for monorepo workspace configurations (package.json workspaces, pnpm-workspace.yaml)
-- Use AskUserQuestion to present the inferred domains: "I found these logical domains in your project:\n\n{domain table}\n\nDomains are logical boundaries for organizing your specs. They can represent physical apps (patient, doctor) or logical concerns (billing, analytics) within a single app. Molcajete treats them all the same way.\n\nDo these look correct?"
+- A single root application (e.g., one `package.json` + `src/`, one `go.mod` + `main.go`) is one module
+- Use AskUserQuestion to present the inferred modules: "I found these modules in your project:\n\n{module table}\n\nModules are the physical application layers in your project -- each app, service, or package. They determine how specs and features are organized.\n\nDo these look correct?"
 
-**If no codebase exists**, use AskUserQuestion to ask about bounded contexts:
-- "What are the logical domains in your project? A domain can be a separate app (patient app, admin console), a service (auth API, billing service), or a concern area within one app (onboarding, analytics).\n\nDomains are logical boundaries for organizing your specs — not deployment boundaries. Molcajete treats all domain types the same way."
+**If no codebase exists**, use AskUserQuestion to ask about project structure:
+- "What are the physical modules in your project? A module is each distinct application, service, or package -- for example: a frontend app, a backend API, a shared library, a CLI tool.\n\nModules are physical application layers, not logical concerns."
 
-**For single-app projects**, suggest one domain using the project name or `app`:
-- "This appears to be a single-app project. I'll create one domain: **{project-name-slug}** (type: app). You can add more domains later if your project grows. Does this look correct?"
+**For single-module projects**, use the project name or `app` as the sole module:
+- "This appears to be a single-module project. I'll create one module: **{project-name-slug}** (type: app). You can add more modules later if your project grows. Does this look correct?"
 
-For each confirmed domain, assign:
-- **ID:** Sequential integer (1, 2, 3...)
-- **Name:** Short descriptive name (lowercase, kebab-case)
-- **Type:** `app`, `service`, or `concern`
-- **Description:** One sentence explaining what this domain covers
-- **Directory:** `domains/{name}/` (relative path within `prd/`)
+For each confirmed module, assign:
+- **ID:** Short kebab-case identifier (doubles as Gherkin tag)
+- **Module:** Human-readable name
+- **Description:** One sentence explaining what this module covers
+- **Directory:** `modules/{id}/` (relative path within `prd/`)
 
-After domain confirmation, if more than one domain exists: auto-prepend a `global` domain (ID: 0, Name: global, Type: spec-only, Description: "Cross-cutting concerns that apply to all domains", Directory: domains/global/). For single-domain projects: do NOT add global. The global domain is automatic for multi-domain projects and always listed first.
+### Stage 5: Domain Tags
+
+After modules are confirmed, identify logical business domains that cut across modules. Domain tags are lightweight labels used to organize features by business concern.
+
+**If a codebase exists**, infer domain tags from code patterns:
+- Auth middleware, login routes, role checks suggest an `identity` domain
+- Payment routes, billing models, subscription logic suggest a `billing` domain
+- Notification handlers, email templates suggest a `notifications` domain
+- Dashboard routes, analytics endpoints suggest an `analytics` domain
+- Use AskUserQuestion to present the inferred domain tags: "Based on the codebase, I identified these business domains:\n\n{domain tag table}\n\nDomain tags are logical business concerns used to organize features across modules (e.g., identity, billing, analytics). They are not tied to a specific module.\n\nDo these look correct? Are there others?"
+
+**If no codebase exists**, use AskUserQuestion to ask about business domains:
+- "What are the logical business domains in your project? Domain tags represent business concerns that may span multiple modules -- for example: identity, billing, onboarding, analytics.\n\nThese are used to organize features by topic, not by physical layer."
+
+Write DOMAINS.md as a lightweight tag registry with the confirmed domain tags.
 
 ## Codebase Detection
 
@@ -157,7 +170,7 @@ These are suggestions only -- always confirm with the user.
 
 ## Document Generation
 
-After the interview, generate these documents in order. **All global files go directly in `prd/`.** Per-domain files go in `prd/domains/{domain}/`.
+After the interview, generate these documents in order. **All global files go directly in `prd/`.** Per-module files go in `prd/modules/{module}/`.
 
 | Order | Document | Template | Location |
 |-------|----------|----------|----------|
@@ -165,17 +178,19 @@ After the interview, generate these documents in order. **All global files go di
 | 2 | TECH-STACK.md | [TECH-STACK-template.md](./templates/TECH-STACK-template.md) | `prd/TECH-STACK.md` |
 | 3 | ACTORS.md | [ACTORS-template.md](./templates/ACTORS-template.md) | `prd/ACTORS.md` |
 | 4 | GLOSSARY.md | [GLOSSARY-template.md](./templates/GLOSSARY-template.md) | `prd/GLOSSARY.md` |
-| 5 | DOMAINS.md | [DOMAINS-template.md](./templates/DOMAINS-template.md) | `prd/DOMAINS.md` |
-| 6 | FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `prd/FEATURES.md` |
+| 5 | MODULES.md | [MODULES-template.md](./templates/MODULES-template.md) | `prd/MODULES.md` |
+| 6 | DOMAINS.md | [DOMAINS-template.md](./templates/DOMAINS-template.md) | `prd/DOMAINS.md` |
+| 7 | FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `prd/FEATURES.md` |
 
-After generating all documents, create `prd/domains/{domain}/features/` for each domain (including global).
+After generating all documents, create `prd/modules/{module}/features/` for each module.
 
 ### GLOSSARY.md Starter Terms
 
 When generating GLOSSARY.md, include these starter terms (adapted to the project's domain):
 
 - **Command** -- the project's primary interaction unit (if applicable)
-- **Domain** -- a logical bounded context for organizing specs (app, service, or concern area)
+- **Module** -- a physical application layer (app, console, API, service)
+- **Domain Tag** -- a logical business concern used for cross-cutting queries
 - **Feature** -- a permanent, named capability of the system
 - **Use Case** -- a specific interaction between an actor and the system
 - **Actor** -- a role (human or system) that participates in use cases
@@ -184,7 +199,7 @@ Add 3-5 additional terms extracted from the project description and tech stack (
 
 ### FEATURES.md Initial State
 
-Generate one master FEATURES.md at `prd/FEATURES.md` with `## global` section first (if global domain exists), then one `## {domain}` section per real domain. All tables start empty. No features are populated at setup time -- they are added by /m:feature or /m:spec.
+Generate one master FEATURES.md at `prd/FEATURES.md` with one `## {domain}` section per domain from DOMAINS.md. All tables start empty. No features are populated at setup time -- they are added by /m:feature or /m:spec.
 
 ## Regeneration
 
@@ -192,7 +207,7 @@ If `prd/PROJECT.md` already exists when /m:setup is run:
 1. Ask the user what they want to do. Options:
    - **"Regenerate all"** -- full interview, regenerate PRD documents
    - **"No changes"** -- stop without changes
-2. If "Regenerate all", proceed with the full interview (Stages 1-4)
+2. If "Regenerate all", proceed with the full interview (Stages 1-5)
 3. If "No changes", stop
 
 ## Template Reference
@@ -203,5 +218,6 @@ If `prd/PROJECT.md` already exists when /m:setup is run:
 | [TECH-STACK-template.md](./templates/TECH-STACK-template.md) | TECH-STACK.md structure |
 | [ACTORS-template.md](./templates/ACTORS-template.md) | ACTORS.md structure |
 | [GLOSSARY-template.md](./templates/GLOSSARY-template.md) | GLOSSARY.md structure |
-| [DOMAINS-template.md](./templates/DOMAINS-template.md) | DOMAINS.md structure |
+| [MODULES-template.md](./templates/MODULES-template.md) | MODULES.md structure |
+| [DOMAINS-template.md](./templates/DOMAINS-template.md) | DOMAINS.md domain tag registry |
 | [FEATURES-template.md](./templates/FEATURES-template.md) | Master FEATURES.md structure (sectioned by domain) |

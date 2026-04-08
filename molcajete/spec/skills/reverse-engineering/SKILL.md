@@ -49,13 +49,13 @@ When scanning code to extract specs, follow this systematic approach:
 
 When breaking code into features vs use cases vs scenarios:
 
-- **Feature boundary** — a cohesive set of capabilities sharing a domain (e.g., "authentication" encompasses login, registration, token refresh)
+- **Feature boundary** — a cohesive set of capabilities sharing a module (e.g., "authentication" encompasses login, registration, token refresh)
 - **Use case boundary** — a single actor goal achieved through one interaction (e.g., "user login" is one UC within auth)
 - **Scenario boundary** — one path through a use case (e.g., "valid credentials" vs "invalid password" are separate scenarios within login)
 
 **Signals for feature boundaries:**
 - Separate directory/module structure
-- Distinct domain models
+- Distinct data models
 - Different actor sets
 - Independent middleware chains
 - Separate configuration sections

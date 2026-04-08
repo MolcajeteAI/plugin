@@ -63,7 +63,7 @@ Read these files (skip any that don't exist):
 **Project-level:**
 - `prd/PROJECT.md`
 - `prd/TECH-STACK.md`
-- `prd/DOMAINS.md`
+- `prd/MODULES.md`
 - `CLAUDE.md` and all `.claude/rules/*.md`
 - `.molcajete/hooks/` — executable hook scripts for health checks, tests, formatting, and linting. **If mandatory hooks are missing, warn the user:** "Missing mandatory hooks."
 
@@ -73,12 +73,12 @@ git log --oneline -20
 ```
 
 **Feature-level:**
-- Feature's `REQUIREMENTS.md`: glob `prd/domains/{domain}/features/{feature}-*/REQUIREMENTS.md`
+- Feature's `REQUIREMENTS.md`: glob `prd/modules/{domain}/features/{feature}-*/REQUIREMENTS.md`
 - Feature's `ARCHITECTURE.md`: read the task's `architecture` field directly
 
 **Use case and Gherkin files:**
 For each UC-XXXX in the task's Use Cases:
-1. Find the UC file: glob `prd/domains/*/features/*/use-cases/{UC-XXXX}-*.md`
+1. Find the UC file: glob `prd/modules/*/features/*/use-cases/{UC-XXXX}-*.md`
 2. Read the UC file
 3. Find the Gherkin feature file: grep `bdd/features/` for `@{UC-XXXX}`
 4. Read the feature file
@@ -117,7 +117,7 @@ In interactive mode, you run the gates yourself rather than delegating to the va
 - Code review: self-review for intent conformance
 - Completeness: trace requirements to code
 
-**Mechanical gates (formatting, linting, BDD tests):** In automated mode, the orchestrator runs these via hooks. In interactive mode, run the hook scripts directly: `echo '{"domains":["server","bdd"]}' | .molcajete/hooks/format.mjs` and similar.
+**Mechanical gates (formatting, linting, BDD tests):** In automated mode, the orchestrator runs these via hooks. In interactive mode, run the hook scripts directly: `echo '{"modules":["server","bdd"]}' | .molcajete/hooks/format.mjs` and similar.
 
 If all gates pass → proceed to Step 7.
 

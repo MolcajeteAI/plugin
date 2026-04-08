@@ -10,7 +10,7 @@ description: >-
 
 # Use Case Authoring
 
-Rules for creating and maintaining use case files: one file per UC at `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. The /m:usecase command references this skill to run the creation interview and generate the UC file.
+Rules for creating and maintaining use case files: one file per UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. The /m:usecase command references this skill to run the creation interview and generate the UC file.
 
 ## When to Use
 
@@ -175,7 +175,7 @@ Scenarios that involve screens or visual interactions can include optional `**UI
 
 **Asset management:**
 
-- UC-level images go in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/assets/`
+- UC-level images go in `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/`
 - File naming: `{UC-ID}-{descriptive-slug}.{ext}` (e.g., `UC-A1B2-login-form.png`)
 - Lowercase, hyphens, no spaces
 - Supported formats: PNG, JPG
@@ -386,8 +386,8 @@ Repeat the scenario review loop until the user confirms they have no more scenar
 
 After all sections are confirmed:
 1. Generate UC-XXXX ID (4-character timestamp code)
-2. Create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/` directory if it does not exist
-3. If any scenario has image files, create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming
+2. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/` directory if it does not exist
+3. If any scenario has image files, create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming
 4. Write `UC-XXXX-{slug}.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter version to `1`
 6. Add row to the feature's `USE-CASES.md`
 

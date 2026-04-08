@@ -2,7 +2,7 @@
 
 > The permanent catalog of all product features.
 > Features are never removed -- they accumulate use cases over their lifetime.
-> Update this file whenever a feature changes state or gains new use cases.
+> The feature ID doubles as a tag (@FEAT-XXXX) for Gherkin traceability.
 
 ## Status Key
 
@@ -11,12 +11,7 @@
 - `dirty` -- Spec changed after implementation; code needs to catch up
 - `deprecated` -- No longer active; retained for audit trail
 
-## global
-
-| ID | Feature | Description | Status | Tag | Directory |
-|----|---------|-------------|--------|-----|-----------|
-
 ## {domain}
 
-| ID | Feature | Description | Status | Tag | Refs | Directory |
-|----|---------|-------------|--------|-----|------|-----------|
+| ID | Feature | Description | Status |
+|----|---------|-------------|--------|

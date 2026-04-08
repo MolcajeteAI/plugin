@@ -32,9 +32,9 @@ Follow these skills' rules for all subsequent steps.
 
 ## Step 2: Verify Prerequisites
 
-1. Verify `prd/PROJECT.md` and `prd/DOMAINS.md` both exist. If either is missing:
+1. Verify `prd/PROJECT.md` and `prd/MODULES.md` both exist. If either is missing:
 
-   "Project foundation not found. Run `/m:setup` first to create PROJECT.md and FEATURES.md."
+   "Project foundation not found. Run `/m:setup` first to create PROJECT.md and MODULES.md."
 
    Then stop.
 
@@ -52,8 +52,8 @@ Parse `$ARGUMENTS` for entity IDs:
 
 If arguments are provided, validate every ID exists in the PRD:
 - `FEAT-XXXX` → must appear in `prd/FEATURES.md`
-- `UC-XXXX` → must exist as `prd/domains/*/features/*/use-cases/UC-XXXX-*.md`
-- `SC-XXXX` → must exist as a scenario heading in some UC file (grep `prd/domains/*/features/*/use-cases/*.md` for `### SC-XXXX`)
+- `UC-XXXX` → must exist as `prd/modules/*/features/*/use-cases/UC-XXXX-*.md`
+- `SC-XXXX` → must exist as a scenario heading in some UC file (grep `prd/modules/*/features/*/use-cases/*.md` for `### SC-XXXX`)
 
 If any ID is not found, report which ones are invalid and stop.
 
@@ -63,7 +63,8 @@ Read project-level files:
 - `prd/PROJECT.md` — project description (required)
 - `prd/TECH-STACK.md` — technology choices (if exists)
 - `prd/ACTORS.md` — system actors (if exists)
-- `prd/DOMAINS.md` — domain registry (required)
+- `prd/MODULES.md` — module registry (required)
+- `prd/DOMAINS.md` — domain tag registry (if exists)
 - `prd/FEATURES.md` — master feature registry
 
 Per-feature files will be loaded in Step 5 based on scope.
@@ -74,30 +75,20 @@ Per-feature files will be loaded in Step 5 based on scope.
 
 Plan work for exactly the provided IDs — **no status filtering**. The user is explicitly telling you what to work on.
 
-- `FEAT-XXXX` → include all UCs under that feature. Glob `prd/domains/*/features/FEAT-XXXX-*/` to find it, then read `USE-CASES.md` and all UC files in `use-cases/`.
-- `UC-XXXX` → include that specific UC. Glob `prd/domains/*/features/*/use-cases/UC-XXXX-*.md` to find it.
-- `SC-XXXX` → include the parent UC. Grep `prd/domains/*/features/*/use-cases/*.md` for `### SC-XXXX` to find the UC file, then include the whole UC (scenarios aren't planned individually).
+- `FEAT-XXXX` → include all UCs under that feature. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find it, then read `USE-CASES.md` and all UC files in `use-cases/`.
+- `UC-XXXX` → include that specific UC. Glob `prd/modules/*/features/*/use-cases/UC-XXXX-*.md` to find it.
+- `SC-XXXX` → include the parent UC. Grep `prd/modules/*/features/*/use-cases/*.md` for `### SC-XXXX` to find the UC file, then include the whole UC (scenarios aren't planned individually).
 
 For each in-scope feature, extract the domain from the path and also read:
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
-
-**Global feature handling:** After resolving the feature's domain from the path:
-
-If the resolved domain is `global`:
-1. Glob `prd/domains/*/features/FEAT-XXXX-*/` to find all domains that have this feature (exclude `global` from results). The shared FEAT-XXXX ID makes resolution direct — no need to search by refs.
-2. If no domain features found: tell the user "FEAT-XXXX exists only as a global baseline. Create domain features first with `/m:feature` targeting specific domains." Then stop.
-3. If domain features found: this is a cross-domain plan. The planner must generate tasks for each domain that has this feature.
-4. Load the global feature's REQUIREMENTS.md and ARCHITECTURE.md as baseline context.
-5. For each domain feature found, load that domain's REQUIREMENTS.md, ARCHITECTURE.md, and USE-CASES.md + UC files.
-6. Use AskUserQuestion to confirm: "FEAT-XXXX is a global feature. Domain features found in: {list of domains}. This will generate a cross-domain plan. Continue, or specify UC IDs for narrower scope?"
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
 
 ### Mode B: No Arguments (full scan)
 
 Find everything that needs implementation:
 
-1. Read `prd/FEATURES.md` for all features across all domains. Skip features in the `## global` section during full scan (global features are only planned when explicitly targeted by ID).
-2. For each feature, read `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`.
+1. Read `prd/FEATURES.md` for all features across all domains.
+2. For each feature, read `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`.
 3. Collect UCs with status `pending` or `dirty` in the USE-CASES.md table.
 4. Also scan `prd/FEATURES.md` for features with status `dirty`. For each dirty feature, include **all** its UCs from USE-CASES.md — even those with `implemented` status — since a dirty feature means requirements changed and all UCs may need re-planning.
 5. Also include features with status `pending` that have UCs ready.
@@ -105,10 +96,6 @@ Find everything that needs implementation:
 7. Build the full picture of all pending work.
 
 If nothing plannable is found: tell the user "No unimplemented specs found. All use cases are either already implemented or not yet specified. Use `/m:feature`, `/m:usecase`, or `/m:spec` to author new specs, then `/m:scenario` to generate Gherkin." Then stop.
-
-## Step 6: Load Global Refs Context
-
-For each in-scope domain feature, read its REQUIREMENTS.md frontmatter. If `refs` is non-empty, load each referenced global feature's REQUIREMENTS.md and ARCHITECTURE.md. Pass as additional baseline context to task generation.
 
 ## Step 7: Verify Gherkin
 
@@ -173,8 +160,8 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    - `title`: verb-noun describing what gets built
    - `use_case`: the UC-XXXX this task advances
    - `feature`: parent feature ID (FEAT-XXXX)
-   - `domain`: the domain the feature belongs to
-   - `architecture`: path to the feature's ARCHITECTURE.md (at `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`)
+   - `module`: the module the feature belongs to
+   - `architecture`: path to the feature's ARCHITECTURE.md (at `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`)
    - `intent`: `implement` (Specs First plans always use implement)
    - `status`: `pending`
    - `estimated_context`: `~{N}K tokens`
@@ -184,11 +171,6 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    - `files_to_modify`: expected file paths
    - `summary`: `null`
    - `errors`: `[]`
-
-   When generating tasks for a cross-domain plan (global feature):
-   - Each task's Domain field must be a real domain, never `global`
-   - Group tasks by domain in the plan output
-   - Include in each task description: "Global baseline: prd/domains/global/features/FEAT-XXXX-{slug}/"
 
 5. **Plan-level fields** — also populate:
    - `base_branch`: current git branch (run `git branch --show-current`)
