@@ -284,12 +284,12 @@ Then read the template and generate the UC file:
    - Preconditions section
    - Trigger section
    - Gherkin Tags: `@FEAT-XXXX @UC-XXXX`
-   - All confirmed scenarios in flat structure -- each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects. Each scenario heading must include a `pending` status annotation: `### SC-XXXX: {Scenario Name} \`pending\``
+   - All confirmed scenarios in flat structure -- each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
    - For scenarios with UI: include inline `**UI:**` blocks within Steps, indented under the confirmed step number. Use fenced code blocks for ASCII art or `![description](assets/{filename})` for images. Omit UI blocks for scenarios where the user said no UI.
 
 3. Add a new row to `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
    ```
-   | UC-XXXX | {Use Case Name} | {One-sentence description} | pending | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
+   | UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
    ```
 
 ## Step 9: Testability Notes
@@ -306,7 +306,7 @@ After all files are written, scan the created scenarios for testability signals 
 Tell the user what was created:
 
 - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- UC file with flat scenario structure
-- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- updated with new row (UC-XXXX, status: pending)
+- `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- updated with new row (UC-XXXX)
 
 If testability signals were detected in Step 9, include:
 

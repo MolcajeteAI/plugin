@@ -95,18 +95,9 @@ Apply the confirmed changes to the scenario within the UC file:
 
 1. Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- modify only the `### SC-XXXX:` block with confirmed changes.
 
-2. Set the scenario heading annotation to `dirty`:
-   ```
-   ### SC-XXXX: {Scenario Name} `dirty`
-   ```
+2. Increment the `version` field in the UC file's YAML frontmatter.
 
-3. Increment the `version` field in the UC file's YAML frontmatter.
-
-4. Set `status` to `dirty` in the UC file's YAML frontmatter.
-
-5. Update the status column in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` to `dirty` for this UC row.
-
-6. Do NOT change the SC-XXXX ID, UC-XXXX ID, or any tags.
+3. Do NOT change the SC-XXXX ID, UC-XXXX ID, or any tags.
 
 ## Step 7: Gherkin Propagation
 
@@ -149,7 +140,7 @@ After applying changes, scan the updated scenario for new testability signals pe
 Tell the user what changed:
 
 - Summarize the scenario changes applied to the UC file
-- Note the UC version bump (e.g., "version: 1 -> 2") and status change to `dirty`
+- Note the UC version bump (e.g., "version: 1 -> 2")
 - If Gherkin was updated, list the Gherkin files modified and summarize changes
 - If Gherkin was NOT updated (no existing feature file), note: "No existing Gherkin for this scenario. Run `/m:scenario UC-XXXX` to generate Gherkin when ready."
 - If testability signals were detected in Step 7b, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."

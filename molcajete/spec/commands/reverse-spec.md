@@ -178,14 +178,10 @@ The subagent prompt must include:
      - Generate `.feature` file with scenarios using the Gherkin Mapping table
      - Follow dedup procedure for existing feature files
    - Update `bdd/features/INDEX.md`
-   - Set UC statuses to `pending` in both UC files and USE-CASES.md
-   - Set feature statuses to `pending` in FEATURES.md
-   - Add `pending` annotation to each scenario heading in UC files: `### SC-XXXX: {Scenario Name} \`pending\``
    - Run splitting check for any feature file exceeding 15 scenarios
 
 4. **Report format:** The subagent must end with a structured report listing:
    - Feature files created (paths, scenario counts)
-   - UC status changes
    - Any splitting performed
 
 ## Step 9: Report
@@ -200,10 +196,5 @@ Tell the user what was created across all features:
 **Gherkin Created:**
 - Feature files with scenario counts
 - Updated indexes
-
-**Status Changes:**
-- Features set to `pending`
-- UCs set to `pending`
-- Scenario headings annotated with `pending`
 
 Suggest next step: "Review the specs and Gherkin, then run `/m:reverse-plan FEAT-XXXX` to plan BDD wiring for a specific feature."

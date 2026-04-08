@@ -135,24 +135,11 @@ Apply the confirmed changes:
 
 3. Do NOT change the FEAT ID or tag.
 
-## Step 8: Dirty Cascade
+## Step 8: Gherkin Propagation
 
 ### Standard cascade (domain features)
 
-If the feature's current status in FEATURES.md is `implemented`, cascade `dirty` status:
-
-1. Set the feature's status to `dirty` in `prd/FEATURES.md`.
-
-2. Read `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`. For each UC with status `implemented`:
-   - Set the UC's status to `dirty` in USE-CASES.md.
-   - Edit the UC file's YAML frontmatter: set `status` to `dirty`.
-   - Set all scenario heading annotations in the UC file to `dirty`:
-     ```
-     ### SC-XXXX: {Scenario Name} `dirty`
-     ```
-   - Propagate `@dirty` to Gherkin files: For each scenario heading set to `dirty`, grep `bdd/features/` for `@SC-XXXX`. If found, add `@dirty` to the scenario's tag line in the `.feature` file. Remove `@pending` if present.
-
-If the feature's current status is `pending`, do not cascade — the feature hasn't been implemented yet so there's nothing to mark dirty.
+Propagate `@dirty` to Gherkin files: For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
 
 ### Cross-domain cascade (global features)
 
@@ -160,14 +147,10 @@ If the target feature is global and dependent domain features were identified in
 
 For each dependent domain feature (FEAT-YYYY in domain {D}):
 
-1. If FEAT-YYYY's status in `prd/FEATURES.md` is `implemented`, set it to `dirty`.
-2. Read `prd/domains/{D}/features/FEAT-YYYY-{slug}/USE-CASES.md`. For each UC with status `implemented`:
-   - Set the UC's status to `dirty` in USE-CASES.md.
-   - Edit the UC file's YAML frontmatter: set `status` to `dirty`.
-   - Set all scenario heading annotations in the UC file to `dirty`.
-   - Propagate `@dirty` to Gherkin files: For each scenario heading set to `dirty`, grep `bdd/features/` for `@SC-XXXX`. If found, add `@dirty` to the scenario's tag line in the `.feature` file. Remove `@pending` if present.
+1. Read `prd/domains/{D}/features/FEAT-YYYY-{slug}/USE-CASES.md`. For each UC:
+   - Propagate `@dirty` to Gherkin files: grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
 
-This ensures that a change to a global feature propagates dirty status to every domain that consumes it via refs.
+This ensures that a change to a global feature propagates dirty tags to every domain that consumes it via refs.
 
 ## Step 9: Testability Notes
 
@@ -183,7 +166,7 @@ Tell the user what changed:
 
 - List each file that was modified
 - Summarize the changes applied
-- If dirty cascade was triggered: list the feature, UCs, and scenarios that were set to `dirty`
-- If cross-domain cascade was triggered: list each affected domain feature and its dirty UCs/scenarios
+- If Gherkin propagation was triggered: list the Gherkin files where `@dirty` was added
+- If cross-domain cascade was triggered: list each affected domain feature and its Gherkin files
 - If testability signals were detected in Step 9, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."
 - Note: "Use `/m:update-usecase UC-XXXX <description>` to refine individual use cases if needed."

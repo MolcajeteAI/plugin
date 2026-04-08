@@ -252,18 +252,7 @@ For each new feature:
 For each modified feature:
 - Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed changes (new FRs, NFRs, acceptance criteria).
 
-**Dirty Cascade:** If the feature's current status in FEATURES.md is `implemented`, cascade `dirty` status:
-
-1. Set the feature's status to `dirty` in `prd/FEATURES.md`.
-2. Read `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`. For each UC with status `implemented`:
-   - Set the UC's status to `dirty` in USE-CASES.md.
-   - Edit the UC file's YAML frontmatter: set `status` to `dirty`.
-   - Set all scenario heading annotations in the UC file to `dirty`:
-     ```
-     ### SC-XXXX: {Scenario Name} `dirty`
-     ```
-
-If the feature's current status is `pending`, do not cascade — the feature hasn't been implemented yet so there's nothing to mark dirty.
+**Gherkin Propagation:** For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
 
 ### 11.3 New Use Cases
 
@@ -278,11 +267,11 @@ For each new use case:
    - Preconditions section
    - Trigger section
    - Gherkin Tags: `@FEAT-XXXX @UC-XXXX`
-   - All confirmed scenarios in flat structure — each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects. Each scenario heading must include a `pending` status annotation: `### SC-XXXX: {Scenario Name} \`pending\``
+   - All confirmed scenarios in flat structure — each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
 
 3. Add a new row to `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
    ```
-   | UC-XXXX | {Use Case Name} | {One-sentence description} | pending | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
+   | UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
    ```
 
 ### 11.4 Modified Use Cases
@@ -290,14 +279,13 @@ For each new use case:
 For each modified use case:
 - Edit the UC file with new/changed scenarios.
 - Increment `version` in YAML frontmatter.
-- Set `status` to `dirty` in YAML frontmatter.
-- Update the corresponding row in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` (status column to `dirty`).
+- Increment `version` in YAML frontmatter.
 
 ## Step 11: Gherkin Generation
 
 For each **new** use case that has scenarios, generate Gherkin files (Steps 11.1–11.7).
 
-For each **modified** use case, propagate Gherkin changes instead (Step 11.8).
+For each **modified** use case, propagate Gherkin changes instead (Step 11.7).
 
 ### 11.1 Scaffold Setup (once)
 
@@ -349,18 +337,7 @@ Use AskUserQuestion to show a summary of generated Gherkin:
 
 If the user selects "Show full content", display the full Gherkin via AskUserQuestion and ask for confirmation.
 
-### 11.7 Update Scenario Headings
-
-For each use case that received Gherkin generation:
-1. Add a `pending` status annotation to each scenario heading line in the UC file:
-   ```
-   ### SC-XXXX: {Scenario Name} `pending`
-   ```
-   Gherkin files carry `@pending` lifecycle tags — these are added during generation (Step 11.3) and removed by the dev session during build.
-2. The UC file's YAML frontmatter `status` stays as-is (`pending`). Do not change it.
-3. Do not change the USE-CASES.md status column.
-
-### 11.8 Gherkin Propagation (Modified UCs)
+### 11.7 Gherkin Propagation (Modified UCs)
 
 For each modified use case, propagate changes to existing Gherkin files. Skip this step for new use cases (they were handled in 11.3).
 
@@ -368,7 +345,7 @@ Grep `bdd/features/` for `@UC-XXXX`. If no `.feature` file contains this tag, tr
 
 If a `.feature` file exists with `@UC-XXXX`:
 
-#### 11.8.1 Determine Gherkin Changes
+#### 11.7.1 Determine Gherkin Changes
 
 Based on the spec changes applied in Step 10.4, determine what Gherkin changes are needed:
 
@@ -380,7 +357,7 @@ Based on the spec changes applied in Step 10.4, determine what Gherkin changes a
 - **New scenarios added** — append new scenario blocks with the new `@SC-XXXX` tags
 - **Step text changed** — find and update matching step definitions (check `bdd/steps/INDEX.md` or grep step definition files)
 
-#### 11.8.2 Preview Gherkin Changes
+#### 11.7.2 Preview Gherkin Changes
 
 Use AskUserQuestion to preview the Gherkin changes:
 - Question: "The following Gherkin changes are needed to match the updated spec:\n\n**{feature-file-path}:**\n{describe each change — before/after for modified blocks, full content for new scenarios}\n\n{if step definitions changed}**Step definitions:**\n{list step text changes}{/if}\n\nDoes this look correct?"
@@ -389,7 +366,7 @@ Use AskUserQuestion to preview the Gherkin changes:
 
 If the user wants edits, revise and present again.
 
-#### 11.8.3 Apply Gherkin Changes
+#### 11.7.3 Apply Gherkin Changes
 
 1. Edit the `.feature` file with the confirmed changes.
 2. For modified scenarios: add `@dirty` to the scenario's tag line if not already present. Remove `@pending` if present (the scenario was implemented before the spec change).
@@ -414,10 +391,6 @@ Tell the user a structured summary of everything created and updated:
 - Updated FEATURES.md rows
 - Updated USE-CASES.md rows
 - Updated INDEX.md files
-
-**Status Changes:**
-- Scenario headings annotated with `pending`
-- Modified UCs set to `dirty`
 
 Suggest next steps based on what was created:
 - If new features without UCs: "Use `/m:usecase FEAT-XXXX` or `/m:spec` to add use cases."

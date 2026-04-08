@@ -130,7 +130,7 @@ Propose tags for each scenario based on its nature:
 Also propose a feature-level priority tag.
 
 Use AskUserQuestion:
-- Question: "Proposed tags:\n\n**Feature-level:** `@FEAT-XXXX @{domain} @{priority-tag}`\n\n{for each scenario: `@UC-XXXX @SC-XXXX @pending @{classification-tag}` — {scenario name}}\n\n(`@pending` is automatic for new scenarios and cannot be removed here.)\n\nDo these look correct?"
+- Question: "Proposed tags:\n\n**Feature-level:** `@FEAT-XXXX @{domain} @{priority-tag}`\n\n{for each scenario: `@UC-XXXX @SC-XXXX @{classification-tag}` — {scenario name}}\n\nDo these look correct?"
 - Header: "Tags"
 - Options: "Yes, looks good" / "Edit" (user corrects via Other)
 
@@ -155,7 +155,7 @@ Using the Gherkin Mapping table from the usecase-authoring skill:
 - **Feature line:** `Feature: {UC Name}` with description from UC objective
 - **Background:** from UC Preconditions (each precondition becomes a `Given` / `And` clause)
 - **Each scenario:**
-  - Tags: `@UC-XXXX @SC-XXXX @pending @{classification-tag}`
+  - Tags: `@UC-XXXX @SC-XXXX @{classification-tag}`
   - `Scenario: {Scenario Name}`
   - `Given` / `And` from scenario Given field
   - `When` / `And` from scenario Steps field (one action per clause)
@@ -191,24 +191,11 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` st
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/splitting.md`. If the scenario count in the target feature file exceeds 15, run the splitting procedure.
 
-## Step 10: Update UC Status and Scenario Headings
-
-1. For each scenario in the UC file, add a `pending` status annotation to the scenario heading line:
-   ```
-   ### SC-XXXX: {Scenario Name} `pending`
-   ```
-   Gherkin files carry `@pending` lifecycle tags — these are added during generation (Step 7.1) and removed by the dev session during build.
-
-2. The UC file's YAML frontmatter `status` stays as-is (already `pending` from creation). Do not change it.
-
-3. Do not change the USE-CASES.md status column.
-
-## Step 11: Report
+## Step 10: Report
 
 Tell the user what was created:
 
 - Feature file path + scenario count
 - Updated INDEX.md files
-- Scenario heading annotations set to `pending`
 
 Suggest next step: "Use `/m:plan UC-XXXX` to generate an implementation plan, or `/m:scenario UC-YYYY` for another use case."

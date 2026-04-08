@@ -283,7 +283,7 @@ This table defines how UC elements map to Gherkin output for the Tester agent.
 | `id` | string | `UC-XXXX` -- 4-character timestamp ID |
 | `name` | string | Verb-noun goal phrase (e.g., "Create Feature") |
 | `feature` | string | Parent feature ID: `FEAT-XXXX` |
-| `status` | enum | `pending` when first created. Lifecycle: pending, implemented, dirty, deprecated |
+| `status` | string | `pending` on creation |
 | `version` | integer | Starts at `1`. Incremented by /m:plan on each edit |
 | `actor` | string | Primary actor role (must exist in prd/ACTORS.md) |
 | `tag` | string | `@UC-XXXX` -- used for Gherkin scenario filtering |
@@ -313,17 +313,17 @@ Use case slugs follow the same rules as feature slugs (defined in the feature-au
 When creating a use case, add a new row to the feature's `USE-CASES.md`:
 
 ```
-| UC-XXXX | {Use Case Name} | {One-sentence description} | pending | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
+| UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
 ```
 
 **Column rules:**
 - **ID:** `UC-XXXX` -- the generated ID
 - **Name:** Verb-noun goal phrase (matches frontmatter `name`)
+- **Status:** `pending` on creation
 - **Description:** One sentence -- enough for an agent to identify this use case
-- **Status:** Always `pending` when first created
 - **File:** Relative Markdown link to `use-cases/UC-XXXX-{slug}.md`
 
-**When updating a use case,** do NOT change the ID. Update Status only when the use case advances through its lifecycle.
+**When updating a use case,** do NOT change the ID.
 
 ## Creation Interview
 
@@ -388,7 +388,7 @@ After all sections are confirmed:
 1. Generate UC-XXXX ID (4-character timestamp code)
 2. Create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/` directory if it does not exist
 3. If any scenario has image files, create `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming
-4. Write `UC-XXXX-{slug}.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter status to `pending`, version to `1`
+4. Write `UC-XXXX-{slug}.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter version to `1`
 6. Add row to the feature's `USE-CASES.md`
 
 ## Update Mode
@@ -399,8 +399,6 @@ After all sections are confirmed:
 - Propose specific changes via AskUserQuestion ("Here's what I'd change:\n\n{diff}\n\nDoes this look correct?")
 - Apply after confirmation
 - Increment `version` in frontmatter
-- Set `status` to `dirty` in frontmatter
-- Update the status column in USE-CASES.md
 - Do NOT run the creation interview
 - Do NOT change the UC-XXXX ID or tag
 

@@ -107,17 +107,7 @@ Apply the confirmed changes to the UC file:
 
 2. Increment the `version` field in the YAML frontmatter.
 
-3. Set `status` to `dirty` in the YAML frontmatter.
-
-4. Update the status column in `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` to `dirty` for this UC row.
-
-5. Set affected scenario headings to `dirty`. For each scenario that was modified, update its heading annotation:
-   ```
-   ### SC-XXXX: {Scenario Name} `dirty`
-   ```
-   If new scenarios were added, annotate them with `pending`.
-
-6. Do NOT change the UC-XXXX ID or tag.
+3. Do NOT change the UC-XXXX ID or tag.
 
 6. If new scenarios were added, generate SC IDs for them:
 
@@ -176,7 +166,7 @@ After applying changes, scan the updated scenarios for new testability signals p
 Tell the user what changed:
 
 - List each spec file that was modified and summarize the changes
-- Note the version bump (e.g., "version: 1 -> 2") and status change to `dirty`
+- Note the version bump (e.g., "version: 1 -> 2")
 - If Gherkin was updated, list the Gherkin files modified and summarize changes
 - If Gherkin was NOT updated (no existing feature file), note: "No existing Gherkin files found for this UC. Run `/m:scenario UC-XXXX` to generate Gherkin when ready."
 - If testability signals were detected in Step 8, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."

@@ -27,7 +27,7 @@ tag: @UC-XXXX
 
 ---
 
-### SC-XXXX: {Scenario Name} `pending`
+### SC-XXXX: {Scenario Name}
 
 **Given:**
 - {State specific to THIS scenario, beyond UC-level Preconditions}
@@ -56,7 +56,7 @@ tag: @UC-XXXX
 
 ---
 
-### SC-XXXX: {Scenario Name} `pending`
+### SC-XXXX: {Scenario Name}
 
 **Given:**
 - {Scenario-specific state}

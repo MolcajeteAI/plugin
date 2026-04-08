@@ -164,9 +164,8 @@ The subagent prompt must include:
    - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md`
    - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md` (with rows for all extracted UCs)
    - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` for each use case, using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md` — set YAML frontmatter `status` to `pending`, and annotate each scenario heading with `pending`: `### SC-XXXX: {Scenario Name} \`pending\``
-   - In USE-CASES.md rows, set status column to `pending`
-   - Append a row to `prd/FEATURES.md` under the appropriate domain section: `| FEAT-XXXX | {name} | {description} | pending | @FEAT-XXXX | [features/FEAT-XXXX-{slug}/](features/FEAT-XXXX-{slug}/) |`
+   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` for each use case, using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
+   - Append a row to `prd/FEATURES.md` under the appropriate domain section: `| FEAT-XXXX | {name} | {description} | @FEAT-XXXX | [features/FEAT-XXXX-{slug}/](features/FEAT-XXXX-{slug}/) |`
 
    **Common to both:**
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
@@ -213,13 +212,10 @@ The subagent prompt must include:
      - Generate `.feature` file with scenarios using the Gherkin Mapping table
      - Follow dedup procedure for existing feature files
    - Update `bdd/features/INDEX.md`
-   - Verify UC statuses are `pending` in both UC files and USE-CASES.md
-   - Add `pending` annotation to each scenario heading in UC files: `### SC-XXXX: {Scenario Name} \`pending\``
    - Run splitting check for any feature file exceeding 15 scenarios
 
 4. **Report format:** The subagent must end with a structured report listing:
    - Feature files created (paths, scenario counts)
-   - UC status changes
    - Any splitting performed
 
 ## Step 10: Report
@@ -236,10 +232,5 @@ Tell the user what was created:
 **Gherkin Created:**
 - Feature file paths with scenario counts
 - Updated BDD indexes
-
-**Status Changes:**
-- Feature set to `pending`
-- UCs set to `pending`
-- Scenario headings annotated with `pending`
 
 Suggest next step: "Review the specs and Gherkin, then run `/m:reverse-plan FEAT-XXXX` to plan BDD wiring."

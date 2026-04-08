@@ -147,8 +147,8 @@ The subagent prompt must include:
 
 5. **Files to write:**
    - Create directory if needed: `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
-   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md` — set YAML frontmatter `status` to `pending`, and annotate each scenario heading with `pending`: `### SC-XXXX: {Scenario Name} \`pending\``
-   - Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — add row: `| UC-XXXX | {name} | {description} | pending | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |`
+   - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
+   - Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — add row: `| UC-XXXX | {name} | pending | {description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |`
    - Edit `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — add Code Map entries for UC-XXXX and all SC-XXXX IDs, update frontmatter `use_cases` and `scenarios` arrays, update `last_update` date
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
@@ -193,12 +193,10 @@ The subagent prompt must include:
    - Generate `.feature` file with scenarios using the Gherkin Mapping table
    - Follow dedup procedure for existing feature files
    - Update `bdd/features/INDEX.md`
-   - Verify UC status is `pending` in both UC file and USE-CASES.md (should already be set by T1)
    - Run splitting check if feature file exceeds 15 scenarios
 
 4. **Report format:** The subagent must end with a structured report listing:
    - Feature file path and scenario count
-   - UC status change
 
 ## Step 9: Report
 
@@ -208,8 +206,6 @@ Tell the user what was created:
 - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — updated with new row
 - `prd/domains/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — updated with Code Map entries
 - Feature file path + scenario count
-- UC status: `pending`
-- Scenario headings annotated with `pending`
 
 Suggest next steps:
 - "Use `/m:reverse-usecase FEAT-XXXX <description>` to extract more use cases from this feature's code."

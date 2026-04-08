@@ -248,16 +248,7 @@ Follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` st
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/splitting.md`. If the scenario count in the target feature file exceeds 15, run the splitting procedure.
 
-## Step 14: Update Scenario Headings and UC Status
-
-1. For each new scenario appended to the UC file, add a `pending` annotation to the heading:
-   ```
-   ### SC-XXXX: {Scenario Name} `pending`
-   ```
-2. Do not change the UC's YAML frontmatter `status` — it transitions to `implemented` only after build completes and BDD tests pass.
-3. Only increment the `version` (already done in Step 7).
-
-## Step 15: Report
+## Step 14: Report
 
 Tell the user what was created:
 
@@ -265,7 +256,6 @@ Tell the user what was created:
 - ARCHITECTURE.md Code Map entries added
 - Feature file path + scenario count
 - Updated INDEX.md files
-- UC status change (if any)
 
 Suggest next steps:
 - "Use `/m:reverse-scenario UC-XXXX <description>` to extract more scenarios from code."
