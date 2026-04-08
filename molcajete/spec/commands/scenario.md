@@ -44,7 +44,7 @@ Follow these skills' rules for all subsequent steps.
 
    Then stop.
 
-3. Extract the parent `FEAT-XXXX` from the path (the directory name under `features/`) and the domain from the path (the directory name under `prd/modules/`).
+3. Extract the parent `FEAT-XXXX` from the path (the directory name under `features/`) and the module from the path (the directory name under `prd/modules/`).
 
 4. Verify `prd/FEATURES.md` exists. If missing, tell the user:
 
@@ -65,9 +65,9 @@ Read these files to understand the project, feature, and use case:
 - `prd/PROJECT.md` — what this project is
 - `prd/TECH-STACK.md` — technology context (if exists)
 - `prd/ACTORS.md` — known actors (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — architecture context (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` — the target use case
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — architecture context (if exists)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` — the target use case
 
 ## Step 4: Parse Use Case
 

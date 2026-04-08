@@ -79,16 +79,16 @@ Plan work for exactly the provided IDs — **no status filtering**. The user is 
 - `UC-XXXX` → include that specific UC. Glob `prd/modules/*/features/*/use-cases/UC-XXXX-*.md` to find it.
 - `SC-XXXX` → include the parent UC. Grep `prd/modules/*/features/*/use-cases/*.md` for `### SC-XXXX` to find the UC file, then include the whole UC (scenarios aren't planned individually).
 
-For each in-scope feature, extract the domain from the path and also read:
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
+For each in-scope feature, extract the module from the path and also read:
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
 
 ### Mode B: No Arguments (full scan)
 
 Find everything that needs implementation:
 
 1. Read `prd/FEATURES.md` for all features across all domains.
-2. For each feature, read `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`.
+2. For each feature, read `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md`.
 3. Collect UCs with status `pending` or `dirty` in the USE-CASES.md table.
 4. Also include features with status `implemented` that have UCs ready.
 5. For each in-scope feature, read `REQUIREMENTS.md` and `ARCHITECTURE.md` (if exists).

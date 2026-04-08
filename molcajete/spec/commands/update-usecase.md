@@ -55,7 +55,7 @@ If the change description is empty (only a UC ID was provided), use AskUserQuest
 
    Then stop.
 
-2. Extract the parent `FEAT-XXXX` from the path (the directory name under `features/`) and the domain from the path (the directory name under `prd/modules/`).
+2. Extract the parent `FEAT-XXXX` from the path (the directory name under `features/`) and the module from the path (the directory name under `prd/modules/`).
 
 3. Verify `prd/FEATURES.md` exists. If missing, tell the user:
 
@@ -76,10 +76,10 @@ Read these files to understand the current state:
 - `prd/PROJECT.md` -- project description
 - `prd/TECH-STACK.md` -- technology choices (if exists)
 - `prd/ACTORS.md` -- known actors (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- architecture context (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- the target use case
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- use case index
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- architecture context (if exists)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- the target use case
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- use case index
 
 ## Step 5: Analyze and Propose Changes
 
@@ -103,7 +103,7 @@ If the user wants edits, revise the proposal and present again via AskUserQuesti
 
 Apply the confirmed changes to the UC file:
 
-1. Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with the confirmed changes.
+1. Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with the confirmed changes.
 
 2. Increment the `version` field in the YAML frontmatter.
 

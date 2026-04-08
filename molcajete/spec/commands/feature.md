@@ -61,7 +61,7 @@ Read `prd/MODULES.md` and `prd/DOMAINS.md`.
 **Module selection:**
 
 - If only one module exists, use it automatically
-- If multiple modules exist, ask via AskUserQuestion: "Which module does this feature belong to?" Present the module list from MODULES.md as a single-select
+- If multiple modules exist, ask via AskUserQuestion: "Which modules does this feature apply to?" Present the module list from MODULES.md as a multi-select
 
 **Domain selection:**
 

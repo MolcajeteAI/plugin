@@ -57,8 +57,8 @@ Read all project-level files, the domain registry, and every existing feature's 
 - `prd/FEATURES.md` — features across all domains
 
 **Per-feature files:** For every feature listed in each domain's FEATURES.md, read:
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md`
 
 For large projects with many features, use Agent sub-agents to parallelize reading.
 
@@ -137,7 +137,7 @@ For each entity in the spec plan, present a consolidated review. Unlike the gran
 For each new feature in the spec plan, run the feature-authoring skill's Module and Domain Resolution before proceeding to interviews:
 
 1. Read `prd/MODULES.md` for modules, read `prd/DOMAINS.md` for domains
-2. If one module, use automatically; if multiple, ask which module via AskUserQuestion (single-select)
+2. If one module, use automatically; if multiple, ask via AskUserQuestion: "Which modules does this feature apply to?" (multi-select)
 3. Ask which domain this feature belongs to (from DOMAINS.md). Single-select.
 4. Check FEATURES.md for existing features this new feature depends on
 5. Include the resolved module and domain in the Step 7 spec plan presentation so the user sees where each feature will be created
@@ -211,17 +211,17 @@ For each selected module, create the feature directory:
 
 1. Create the directory structure:
    ```bash
-   mkdir -p prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases
+   mkdir -p prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases
    ```
 
 2. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md`
-   Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` filled with confirmed content. Follow section order from the skill: name + objective, Non-Goals, Actors, UI (only if provided), Functional Requirements (EARS + Fit Criteria), Non-Functional Requirements, Acceptance.
+   Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` filled with confirmed content. Follow section order from the skill: name + objective, Non-Goals, Actors, UI (only if provided), Functional Requirements (EARS + Fit Criteria), Non-Functional Requirements, Acceptance.
 
 3. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md`
-   Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` with an empty use case table.
+   Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` with an empty use case table.
 
 4. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold.
+   Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` scaffold.
 
 5. Edit `prd/FEATURES.md` — add a new row:
    ```
@@ -231,7 +231,7 @@ For each selected module, create the feature directory:
 ### 11.2 Modified Features
 
 For each modified feature:
-- Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed changes (new FRs, NFRs, acceptance criteria).
+- Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed changes (new FRs, NFRs, acceptance criteria).
 
 **Gherkin Propagation:** For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
 
@@ -241,7 +241,7 @@ For each new use case:
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
 
-2. Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
+2. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
    - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor, tag (@UC-XXXX)
    - Title: `# UC-XXXX: {Use Case Name}`
    - Objective blockquote
@@ -250,7 +250,7 @@ For each new use case:
    - Gherkin Tags: `@FEAT-XXXX @UC-XXXX`
    - All confirmed scenarios in flat structure — each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
 
-3. Add a new row to `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
+3. Add a new row to `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
    ```
    | UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
    ```

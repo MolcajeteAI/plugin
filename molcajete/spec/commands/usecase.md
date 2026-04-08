@@ -49,13 +49,17 @@ Follow the skill's rules for all subsequent steps.
 
    Then stop.
 
-3. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory and extract the module from the path.
+3. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory.
 
    **If not found**, tell the user:
 
    "Feature {FEAT-XXXX} not found. Check the ID and try again."
 
    Then stop.
+
+   **If multiple matches** (feature exists in multiple modules), ask via AskUserQuestion: "This feature exists in multiple modules: {list module names from paths}. Which module should this use case be added to?" — single-select. Use the selected match.
+
+   **If one match**, extract the module from the path and use it automatically.
 
 4. Verify the feature exists in `prd/FEATURES.md`. If not found, tell the user:
 
@@ -75,8 +79,8 @@ Read these files to understand the project and feature:
 - `prd/PROJECT.md` -- what this project is
 - `prd/TECH-STACK.md` -- technology context (if exists)
 - `prd/ACTORS.md` -- known actors (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements for context
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- existing UCs
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements for context
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- existing UCs
 
 ## Step 4: Research Context
 
@@ -257,16 +261,16 @@ Prepend `SC-` to each output line (e.g., `SC-1T4B`, `SC-1T4C`).
 Create the use case directory if it does not exist:
 
 ```bash
-mkdir -p prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases
+mkdir -p prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases
 ```
 
-If any scenario has image files, also create `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming (lowercase, hyphens).
+If any scenario has image files, also create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming (lowercase, hyphens).
 
 Then read the template and generate the UC file:
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
 
-2. Write `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
+2. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
    - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor, tag (@UC-XXXX)
    - Title: `# UC-XXXX: {Use Case Name}`
    - Objective blockquote
@@ -276,7 +280,7 @@ Then read the template and generate the UC file:
    - All confirmed scenarios in flat structure -- each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
    - For scenarios with UI: include inline `**UI:**` blocks within Steps, indented under the confirmed step number. Use fenced code blocks for ASCII art or `![description](assets/{filename})` for images. Omit UI blocks for scenarios where the user said no UI.
 
-3. Add a new row to `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
+3. Add a new row to `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
    ```
    | UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
    ```
@@ -294,8 +298,8 @@ After all files are written, scan the created scenarios for testability signals 
 
 Tell the user what was created:
 
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- UC file with flat scenario structure
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- updated with new row (UC-XXXX)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` -- UC file with flat scenario structure
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- updated with new row (UC-XXXX)
 
 If testability signals were detected in Step 9, include:
 

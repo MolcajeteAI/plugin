@@ -47,7 +47,7 @@ Follow these skills' rules for all subsequent steps.
 
 If a `FEAT-XXXX` token is found:
 
-1. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory and extract the domain. If not found:
+1. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory and extract the module. If not found:
 
    "Feature {FEAT-XXXX} not found in FEATURES.md. Check the ID and try again."
 
@@ -55,7 +55,7 @@ If a `FEAT-XXXX` token is found:
 
 2. Extract the feature directory path from the matched row.
 
-3. Check that `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` exists. If missing:
+3. Check that `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` exists. If missing:
 
    "USE-CASES.md is missing for {FEAT-XXXX}. Run `/m:feature` or `/m:reverse-feature` to create the feature structure first."
 
@@ -80,9 +80,9 @@ Read these files to understand the project and feature:
 - `prd/PROJECT.md` — what this project is
 - `prd/TECH-STACK.md` — technology context (if exists)
 - `prd/ACTORS.md` — known actors (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements for context
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — existing architecture research (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — existing UCs
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` — feature requirements for context
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — existing architecture research (if exists)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — existing UCs
 
 ## Step 4: Collect Description
 
@@ -132,8 +132,8 @@ The subagent prompt must include:
 
 2. **Project context files to read:**
    - `prd/PROJECT.md`, `prd/TECH-STACK.md` (if exists), `prd/ACTORS.md` (if exists)
-   - `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-   - `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
 
 3. **The confirmed file list** from Step 5.2
 
@@ -146,10 +146,10 @@ The subagent prompt must include:
    - **Testability analysis:** Run the testability analysis per the reverse-engineering skill's Testability Analysis section. Check the feature's ARCHITECTURE.md `## Testing Decisions` first -- skip concerns that already have a recorded decision. If unresolved concerns are found, generate a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`. Do not use AskUserQuestion for testability concerns.
 
 5. **Files to write:**
-   - Create directory if needed: `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/`
-   - `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
-   - Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — add row: `| UC-XXXX | {name} | pending | {description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |`
-   - Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — add Code Map entries for UC-XXXX and all SC-XXXX IDs, update frontmatter `use_cases` and `scenarios` arrays, update `last_update` date
+   - Create directory if needed: `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
+   - Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — add row: `| UC-XXXX | {name} | pending | {description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |`
+   - Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — add Code Map entries for UC-XXXX and all SC-XXXX IDs, update frontmatter `use_cases` and `scenarios` arrays, update `last_update` date
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
    - `UC-XXXX-{slug}-recommendations.md` — testability recommendations (conditional, only when concerns are found)
@@ -165,7 +165,7 @@ The subagent prompt must include:
 
 After the subagent returns, present the results via AskUserQuestion:
 
-- Question: "**Use Case Extracted**\n\n**{UC-XXXX}: {name}** (under {FEAT-XXXX})\n- {scenario count} scenarios extracted\n- Scenarios: {list SC-XXXX: {name}}\n- ARCHITECTURE.md updated with Code Map entries\n\nPlease review the UC file at `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. Edit if needed, then continue to generate Gherkin.\n\nReady to proceed with Gherkin generation?"
+- Question: "**Use Case Extracted**\n\n**{UC-XXXX}: {name}** (under {FEAT-XXXX})\n- {scenario count} scenarios extracted\n- Scenarios: {list SC-XXXX: {name}}\n- ARCHITECTURE.md updated with Code Map entries\n\nPlease review the UC file at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. Edit if needed, then continue to generate Gherkin.\n\nReady to proceed with Gherkin generation?"
 - Header: "UC Ready for Review"
 - Options: "Proceed with Gherkin generation" / "I need to review and edit first — I'll re-run when ready"
 
@@ -182,9 +182,9 @@ The subagent prompt must include:
    - `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` (Gherkin Mapping table)
 
 2. **Files to read:**
-   - `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-   - `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`
-   - `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`
    - `prd/TECH-STACK.md` (if exists) for language/framework detection
 
 3. **The specific task:**
@@ -202,9 +202,9 @@ The subagent prompt must include:
 
 Tell the user what was created:
 
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` — UC file with flat scenario structure (extracted from code)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/USE-CASES.md` — updated with new row
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — updated with Code Map entries
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` — UC file with flat scenario structure (extracted from code)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — updated with new row
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — updated with Code Map entries
 - Feature file path + scenario count
 
 Suggest next steps:

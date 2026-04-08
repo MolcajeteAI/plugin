@@ -22,7 +22,7 @@ Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES
 Before creating or locating a feature, resolve the target module and domain:
 
 1. Read `prd/MODULES.md` for the list of registered modules. Read `prd/DOMAINS.md` for the list of registered domains.
-2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask via AskUserQuestion: "Which module should this feature belong to?\n\n{module table from MODULES.md}" — single-select.
+2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask via AskUserQuestion: "Which modules does this feature apply to?\n\n{module table from MODULES.md}" — multi-select. Keep auto-select when only one module exists.
 3. Ask which domain this feature belongs to via AskUserQuestion: "Which domain should this feature belong to?\n\n{domain table from DOMAINS.md}" — single-select. Every feature has one primary domain.
 4. Use the selected module and domain for all path operations.
 

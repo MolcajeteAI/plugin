@@ -56,13 +56,19 @@ If the change description is empty (only a FEAT ID was provided), use AskUserQue
 
    Then stop.
 
-2. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory and extract the domain from the path. If not found, tell the user:
+2. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find the feature directory.
+
+   **If not found**, tell the user:
 
    "Feature {FEAT-XXXX} not found. Check the ID and try again."
 
    Then stop.
 
-3. Verify that `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` exists. If missing, tell the user:
+   **If multiple matches** (feature exists in multiple modules), ask via AskUserQuestion: "This feature exists in multiple modules: {list module names from paths}. Which module should be updated?" — single-select. Use the selected match.
+
+   **If one match**, extract the module from the path and use it automatically.
+
+3. Verify that `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` exists. If missing, tell the user:
 
    "REQUIREMENTS.md not found for {FEAT-XXXX}. The feature directory may be incomplete."
 
@@ -79,8 +85,8 @@ Read these files to understand the current state:
 - `prd/PROJECT.md` -- project description
 - `prd/TECH-STACK.md` -- technology choices (if exists)
 - `prd/ACTORS.md` -- system actors (if exists)
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- current feature requirements
-- `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- current architecture (if exists)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- current feature requirements
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` -- current architecture (if exists)
 
 ## Step 6: Analyze and Propose Changes
 
@@ -105,9 +111,9 @@ If the user wants edits, revise the proposal and present again via AskUserQuesti
 
 Apply the confirmed changes:
 
-1. Edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed requirement changes. Follow EARS syntax and Fit Criteria format from the skill.
+1. Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed requirement changes. Follow EARS syntax and Fit Criteria format from the skill.
 
-2. If architecture changes were confirmed, edit `prd/modules/{domain}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`.
+2. If architecture changes were confirmed, edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`.
 
 3. Do NOT change the FEAT ID or tag.
 
