@@ -140,6 +140,8 @@ Non-obvious choices that future agents should not reverse. Uses the format:
 In the context of {situation}, facing {concern}, we decided {choice} to achieve {quality}, accepting {tradeoff}.
 ```
 
+Generate ADR IDs using the id-generation skill (`shared/skills/id-generation/SKILL.md`). Run the script and prepend `ADR-` to the output.
+
 ## Research Discovery
 
 When generating or updating an ARCHITECTURE.md, scan for relevant research briefs:

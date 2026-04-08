@@ -240,7 +240,7 @@ Launched as a **general-purpose subagent** after T1a completes. Receives:
 Produces:
 - ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map)
 - PRD specs (REQUIREMENTS.md, UC files, USE-CASES.md rows, FEATURES.md rows)
-- All IDs assigned (FEAT-, UC-, SC-)
+- All IDs assigned (FEAT-, UC-, SC-, FR-, NFR-, US-, ADR-) using the id-generation skill (`shared/skills/id-generation/SKILL.md`)
 - Updates to ACTORS.md and TECH-STACK.md if new entries were discovered
 
 ### T2: Gherkin Generation

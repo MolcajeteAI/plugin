@@ -103,6 +103,8 @@ Fit Criterion: Given {precondition}, {measurable outcome that proves this is sat
 Linked to: UC-XXXX
 ```
 
+Generate FR, NFR, and US IDs using the id-generation skill (`shared/skills/id-generation/SKILL.md`). Run the script and prepend the appropriate prefix (`FR-`, `NFR-`, or `US-`) to the output.
+
 **Rules:**
 - Fit Criteria use "Given ... {measurable outcome}" format
 - The outcome must be verifiable (a test can check it)
