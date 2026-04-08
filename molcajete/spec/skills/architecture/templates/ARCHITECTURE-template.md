@@ -121,5 +121,5 @@ stateDiagram-v2
 
 > Non-obvious choices that future agents should not reverse.
 
-**ADR-001:** {Decision title}
+**ADR-XXXX:** {Decision title}
 In the context of {situation}, facing {concern}, we decided {choice} to achieve {quality}, accepting {tradeoff}.

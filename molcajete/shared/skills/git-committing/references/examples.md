@@ -62,11 +62,11 @@ feat: Add email verification for new users
 - Adds resend verification option
 - Stores verification token in database
 
-FEAT-0008
-- UC-0023: Verify email address
-  - SC-0071: Verification link sent on registration
-  - SC-0072: Login blocked until verified
-  - SC-0073: Resend verification link
+FEAT-0R7a
+- UC-0R8a: Verify email address
+  - SC-0R9a: Verification link sent on registration
+  - SC-0R9b: Login blocked until verified
+  - SC-0R9c: Resend verification link
 ```
 
 ### Bug Fix
@@ -78,9 +78,9 @@ fix: Fix race condition in payment processing
 - Prevents duplicate charges
 - Retries failed transactions once
 
-FEAT-0003
-- UC-0010: Process payment
-  - SC-0031: Concurrent payment requests handled safely
+FEAT-0R7b
+- UC-0R8b: Process payment
+  - SC-0R9d: Concurrent payment requests handled safely
 ```
 
 ### Step Definitions
@@ -92,11 +92,11 @@ test: Add step definitions for authentication flow
 - Adds token expiration assertions
 - Validates error message steps
 
-FEAT-0001
-- UC-0002: Log in with credentials
-  - SC-0005: Successful login with valid credentials
-  - SC-0006: Login rejected with wrong password
-  - SC-0007: Login rejected with expired token
+FEAT-0R7c
+- UC-0R8c: Log in with credentials
+  - SC-0R9e: Successful login with valid credentials
+  - SC-0R9f: Login rejected with wrong password
+  - SC-0R9g: Login rejected with expired token
 ```
 
 ### Refactoring
@@ -108,10 +108,10 @@ refactor: Simplify error handling across API
 - Standardizes error response format
 - Removes duplicate error code
 
-FEAT-0005
-- UC-0015: Handle API errors
-  - SC-0045: Unknown route returns 404
-  - SC-0046: Server error returns 500 with standard body
+FEAT-0R7d
+- UC-0R8d: Handle API errors
+  - SC-0R9h: Unknown route returns 404
+  - SC-0R9i: Server error returns 500 with standard body
 ```
 
 ### Performance Improvement
@@ -123,9 +123,9 @@ perf: Improve database query performance
 - Reduces N+1 queries with eager loading
 - Caches user permissions
 
-FEAT-0012
-- UC-0040: Load user dashboard
-  - SC-0120: Dashboard loads within 500ms
+FEAT-0R7e
+- UC-0R8e: Load user dashboard
+  - SC-0R9j: Dashboard loads within 500ms
 ```
 
 ### Multiple Use Cases in One Commit
@@ -137,12 +137,12 @@ feat: Add user registration endpoint
 - Adds bcrypt password hashing
 - Sends welcome email on success
 
-FEAT-0001
-- UC-0001: Register new user
-  - SC-0001: Valid registration with all fields
-  - SC-0002: Duplicate email rejected
-- UC-0003: Send welcome email
-  - SC-0008: Welcome email sent after registration
+FEAT-0R7c
+- UC-0R8f: Register new user
+  - SC-0R9k: Valid registration with all fields
+  - SC-0R9l: Duplicate email rejected
+- UC-0R8g: Send welcome email
+  - SC-0R9m: Welcome email sent after registration
 ```
 
 ## Anti-Patterns
@@ -248,8 +248,8 @@ feat: Add user registration endpoint
 - Creates registration handler with validation
 - Adds password hashing
 
-FEAT-0001
-- UC-0001: Register new user
-  - SC-0001: Valid registration with all fields
-  - SC-0002: Duplicate email rejected
+FEAT-0R7c
+- UC-0R8f: Register new user
+  - SC-0R9k: Valid registration with all fields
+  - SC-0R9l: Duplicate email rejected
 ```

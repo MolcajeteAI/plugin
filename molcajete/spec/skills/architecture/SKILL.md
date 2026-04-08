@@ -136,7 +136,7 @@ Initially empty when scaffolded. Populated by developers after reviewing testabi
 Non-obvious choices that future agents should not reverse. Uses the format:
 
 ```
-**ADR-NNN:** {Decision title}
+**ADR-XXXX:** {Decision title}
 In the context of {situation}, facing {concern}, we decided {choice} to achieve {quality}, accepting {tradeoff}.
 ```
 

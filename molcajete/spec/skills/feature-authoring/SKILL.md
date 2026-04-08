@@ -98,7 +98,7 @@ Every functional requirement must include a Fit Criterion immediately after it. 
 
 **Format:**
 ```
-**FR-001** `When {trigger}, the system shall {response}.`
+**FR-XXXX** `When {trigger}, the system shall {response}.`
 Fit Criterion: Given {precondition}, {measurable outcome that proves this is satisfied}.
 Linked to: UC-XXXX
 ```

@@ -48,23 +48,23 @@ refs: [] # Optional: global feature IDs this feature depends on (e.g., [FEAT-0A1
 
 > Written in EARS syntax. Each requirement has a Fit Criterion and links to use cases.
 
-**FR-001** `When {trigger}, the system shall {response}.`
+**FR-XXXX** `When {trigger}, the system shall {response}.`
 Fit Criterion: Given {precondition}, {measurable outcome that proves this is satisfied}.
 Linked to: UC-XXXX
 
-**FR-002** `While {precondition}, the system shall {response}.`
+**FR-XXXX** `While {precondition}, the system shall {response}.`
 Fit Criterion: {measurable condition}.
 Linked to: UC-XXXX
 
-**FR-003** `If {trigger}, then the system shall {response}.`
+**FR-XXXX** `If {trigger}, then the system shall {response}.`
 Fit Criterion: {measurable condition}.
 Linked to: UC-XXXX
 
 ## Non-Functional Requirements
 
-**NFR-001** Performance: `When {trigger}, the system shall {response} within {threshold} at {percentile}.`
-**NFR-002** Security: `The system shall {security behavior}.`
-**NFR-003** Reliability: `When {failure condition}, the system shall {recovery behavior}.`
+**NFR-XXXX** Performance: `When {trigger}, the system shall {response} within {threshold} at {percentile}.`
+**NFR-XXXX** Security: `The system shall {security behavior}.`
+**NFR-XXXX** Reliability: `When {failure condition}, the system shall {recovery behavior}.`
 
 ## Acceptance
 

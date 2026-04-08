@@ -139,10 +139,10 @@ feat: Add user registration endpoint
 - Adds bcrypt password hashing
 - Stores new user in database
 
-FEAT-0012
-- UC-0041: Register new user
-  - SC-0101: Valid registration with all fields
-  - SC-0102: Duplicate email rejected
+FEAT-0R7e
+- UC-0R8h: Register new user
+  - SC-0R9n: Valid registration with all fields
+  - SC-0R9o: Duplicate email rejected
 ```
 
 ### Rules
