@@ -156,6 +156,8 @@ If the user selects "Edit", ask which section to change, collect the correction,
 
 For each new use case, present all sections in one view via AskUserQuestion:
 
+> **Multi-module scoping:** If the parent feature exists in 2+ modules, the UC must narrate from the selected module's perspective -- actor, trigger, preconditions, and scenarios scoped to that module's boundary. See the Module-Scoped Use Cases section in the usecase-authoring skill.
+
 - Question: "**New Use Case: {name}**\nParent feature: {FEAT-XXXX}\n\n**Objective:** {objective}\n\n**Actor:** {actor}\n\n**Preconditions:**\n{preconditions}\n\n**Trigger:** {trigger}\n\n**Scenarios:**\n{for each scenario:\n  **Scenario: {name}**\n  Given: {given}\n  Steps: {steps}\n  Outcomes: {outcomes}\n  Side Effects: {side_effects}\n}\n\nDoes this look correct?"
 - Header: "Use Case: {name}"
 - Options: "Looks good" / "Edit" (user specifies what to change via Other)
@@ -209,6 +211,8 @@ For each new feature:
 
 For each selected module, create the feature directory:
 
+> **Multi-module scoping:** If this feature spans 2+ modules, each module's REQUIREMENTS.md must be scoped to that module's actors, FRs, Non-Goals, NFRs, and Acceptance. Do not copy identical content across modules. See the Module-Scoped Content section in the feature-authoring skill.
+
 1. Create the directory structure:
    ```bash
    mkdir -p prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases
@@ -238,6 +242,8 @@ For each modified feature:
 ### 11.3 New Use Cases
 
 For each new use case:
+
+> **Multi-module scoping:** If the parent feature exists in 2+ modules, scope the UC to the selected module's perspective -- actor, trigger, scenarios, and side effects narrate from that module's boundary. See the Module-Scoped Use Cases section in the usecase-authoring skill.
 
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
 

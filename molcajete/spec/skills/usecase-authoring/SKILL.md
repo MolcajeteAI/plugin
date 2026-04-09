@@ -18,6 +18,52 @@ Rules for creating and maintaining use case files: one file per UC at `prd/modul
 - Updating an existing use case with /m:plan
 - Understanding the structure and rules for UC files
 
+## Module-Scoped Use Cases
+
+When a feature exists in 2+ modules, each module's use cases must narrate from that module's perspective. The same business event may appear in multiple modules, but each UC describes it from its hosting module's actors and concerns.
+
+**Core rule:** The UC actor, trigger, preconditions, and scenarios narrate from the hosting module's perspective.
+
+**Rules:**
+- **Actor selection:** Use the module's primary actor, not a generic "User". A `patient` module UC uses "Patient"; a `console` module UC uses "Administrator".
+- **Trigger and preconditions:** Describe the trigger as the module's actor experiences it. The same business event has different triggers per module (patient submits form vs. administrator reviews submission).
+- **Scenarios:** Scope Steps, Outcomes, and Side Effects to the module boundary. A patient module scenario ends when the patient sees confirmation. A console module scenario begins when the admin sees the pending item.
+- **Naming:** Use module-specific verb-noun goals. "Submit Registration" (patient) vs. "Review Registration" (console), not "Handle Registration" in both.
+
+**Anti-pattern table:**
+
+| Element | Module-blind (bad) | Module-scoped (good) |
+|---------|--------------------|----------------------|
+| UC name | "Handle Registration" (in both modules) | "Submit Registration" (patient), "Review Registration" (console) |
+| Actor | "User" (in both modules) | "Patient" (patient module), "Administrator" (console module) |
+| Trigger | "User initiates registration" (in both) | "Patient completes the registration form" (patient), "Administrator opens the pending registrations queue" (console) |
+| Outcome | "Registration is processed" (in both) | "Patient sees confirmation and welcome screen" (patient), "Administrator sees updated registration status" (console) |
+
+**Cross-module interaction pattern:** Steps stay within the originating module's boundary -- the actor acts in their module. Cross-module consequences belong in **Side Effects**, where they name the event or artifact delivered to the other module. The consuming module has its own UC triggered by that event.
+
+Example -- patient submits registration (patient module):
+
+| Field | Content |
+|-------|---------|
+| Steps | 1. Patient fills in the registration form 2. System validates input |
+| Outcomes | Patient sees "Registration submitted for review" confirmation |
+| Side Effects | `registration.submitted` event published with payload `patient_id, timestamp` |
+
+The console module then has its own UC ("Review Registration") where the trigger is "Administrator sees a new item in the pending registrations queue."
+
+**Gherkin mapping:** Side Effects become `And` assertion clauses, so cross-module consequences are naturally expressed in Gherkin without leaking into the `When` (Steps) or `Then` (Outcomes) layers:
+
+```gherkin
+When the patient fills in the registration form
+And the system validates input
+Then the patient sees "Registration submitted for review"
+And a "registration.submitted" event is published with "patient_id, timestamp"
+```
+
+The last `And` asserts the cross-module boundary crossing. The consuming module's Gherkin tests what happens on the receiving end.
+
+**Single-module features are unaffected.** This section applies only when a feature exists in 2+ modules.
+
 ## UC File Structure
 
 Every UC file follows this exact structure. All sections are mandatory unless noted.

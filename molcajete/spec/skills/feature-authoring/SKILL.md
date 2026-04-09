@@ -28,6 +28,27 @@ Before creating or locating a feature, resolve the target module and domain:
 
 All feature paths use the pattern `prd/modules/{module}/features/FEAT-XXXX-{slug}/`.
 
+### Module-Scoped Content (Multi-Module Features)
+
+When a feature spans 2+ modules, each module's REQUIREMENTS.md must focus on that module's actors, concerns, and interactions. Do not copy identical content across modules.
+
+**Rules:**
+- Scope **Actors** to the module's primary users (e.g., `patient` module lists patients; `console` module lists administrators)
+- Scope **Functional Requirements** to what happens within the module boundary
+- Scope **Non-Goals** to exclude concerns handled by other modules in the same feature
+- Scope **Non-Functional Requirements** to the module's performance and security profile
+- Scope **Acceptance Criteria** to what can be verified from the module's perspective
+
+**Anti-pattern table:**
+
+| Section | patient module (bad: generic) | patient module (good: scoped) | console module (good: scoped) |
+|---------|-------------------------------|-------------------------------|-------------------------------|
+| Actors | User, Administrator | Patient, Caregiver | Administrator, Support Agent |
+| FR example | When a user registers, the system shall create an account. | When a patient completes the registration form, the system shall create their patient profile. | When an administrator searches for a patient, the system shall return matching patient records. |
+| Non-Goals | Does not handle billing. | Does not handle admin review of registrations -- see console module. | Does not handle patient-facing registration -- see patient module. |
+
+**Single-module features are unaffected.** This rule applies only when a feature is created in 2+ modules.
+
 ## Refs Declaration
 
 When creating a feature, after the module and domain are resolved and before the creation interview:

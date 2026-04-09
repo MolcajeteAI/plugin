@@ -82,6 +82,8 @@ Read these files to understand the project and feature:
 - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` -- feature requirements for context
 - `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` -- existing UCs
 
+> **Multi-module awareness:** If this feature exists in multiple modules (glob `prd/modules/*/features/FEAT-XXXX-*/` returns 2+ matches), write the UC from the selected module's perspective -- actor, trigger, preconditions, and scenarios scoped to that module's boundary. See the Module-Scoped Use Cases section in the usecase-authoring skill.
+
 ## Step 4: Research Context
 
 Read the headless-research skill:

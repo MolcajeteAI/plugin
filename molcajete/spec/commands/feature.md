@@ -148,6 +148,9 @@ Assign prefixes from the output lines:
 Create the feature directory structure using the selected module:
 
 For each selected module:
+
+> **Multi-module scoping:** If 2+ modules are selected, each module's REQUIREMENTS.md must be scoped to that module's actors, FRs, Non-Goals, NFRs, and Acceptance. Do not copy identical content across modules. See the Module-Scoped Content section in the feature-authoring skill.
+
 ```bash
 mkdir -p prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases
 ```
