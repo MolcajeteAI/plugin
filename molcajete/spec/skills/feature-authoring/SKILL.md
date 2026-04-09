@@ -55,6 +55,7 @@ All functional requirements MUST be written in EARS (Easy Approach to Requiremen
 - Always use the pattern keyword exactly: "When", "While", "If ... then"
 - Each sentence expresses one requirement -- no "and" chaining
 - Requirements must be falsifiable: a test must be able to pass or fail it
+- Triggers must describe user-observable actions or events, not internal system mechanics (see User-Perspective First)
 
 ## Fit Criteria
 
@@ -73,6 +74,42 @@ Linked to: UC-XXXX
 - "The system should feel fast" is not a Fit Criterion
 - "Given 100 concurrent users, response time is < 200ms at p95" is a Fit Criterion
 - Every FR requires one Fit Criterion -- no exceptions
+
+## User-Perspective First
+
+### Core Principle
+
+EARS triggers must describe user-observable actions, not internal mechanics. Requirements tell the story of what users do and see. Implementation details belong exclusively in Fit Criteria -- the verification layer.
+
+### Perspective Selection
+
+| App type | Trigger perspective | Response perspective |
+|----------|-------------------|---------------------|
+| UI app | User action (clicks, submits, navigates) | What user sees (screen, message, redirect) |
+| API | Consumer action (sends request, calls endpoint) | Response payload / status code |
+| Backend | System event (cron fires, message arrives) | Observable state change (job completes, record updates) |
+
+### Anti-Patterns
+
+| Bad trigger (implementation-leaked) | Corrected trigger (user-perspective) | Why it matters |
+|--------------------------------------|--------------------------------------|----------------|
+| When the system creates a new `users` row with `privy_id` set to the Privy DID | When a new user completes registration | The actor is the user, not the database |
+| When the JWT is validated and the session table is updated | When the user logs in with valid credentials | The user performs login, not JWT validation |
+| When the webhook handler parses the Stripe payload | When a payment is received from the payment provider | The trigger is the business event, not the handler |
+
+### Where Implementation Details Belong
+
+Implementation details surface in Fit Criteria, where they serve as measurable proof that a requirement is satisfied.
+
+**Requirement (user-perspective):**
+
+> **FR-XXXX** `When a new user completes registration, the system shall create their account and mark their profile as complete.`
+
+**Fit Criterion (implementation-specific):**
+
+> Fit Criterion: Given a user completes the registration form, a `users` row exists with `profile_complete=true` and the user sees the welcome screen.
+
+The requirement describes what the user does and what happens from their perspective. The Fit Criterion names the database column, the exact field value, and the observable confirmation -- the verifiable proof.
 
 ## Non-Goals Positioning
 
@@ -144,6 +181,10 @@ Include the `## UI` section when:
 Omit the `## UI` section when:
 - The feature is pure backend, API-only, or infrastructure
 - The user explicitly says no UI
+
+### UI Informs Requirements
+
+When a feature has a UI section, its elements should inform functional requirement language. UI is specification, not decoration. Screen names, button labels, and form fields that appear in mockups are the vocabulary for EARS triggers and responses. A requirement that says "the user submits the form" is stronger when the UI section shows exactly which form, with which fields, and what the confirmation screen looks like.
 
 ## FEAT-XXXX ID Assignment
 

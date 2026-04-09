@@ -174,6 +174,7 @@ These tags track implementation state in `.feature` files. They are managed auto
 | Declarative Given | Given steps describe state, not procedures | `Given user alice is logged in` | `Given I open the login page and type alice into the username field` |
 | Exact Then | Then steps assert exact values — never ranges, approximations, or non-specific quantities | `Then the balance is exactly $94.50` | `Then the balance is more than $90` |
 | Reusable patterns | Use parameterized patterns for similar steps | `Given user {name} is logged in` | `Given user alice is logged in` + `Given user bob is logged in` as separate steps |
+| User-Observable | When/Then steps describe what actors do and see, not internal system behavior | `When alice submits the registration form` / `Then alice sees the confirmation page` | `When the system inserts a user row` / `Then the JWT contains the correct claims` |
 
 **Exact assertion rule (critical):** Every `Then` step must assert a specific, deterministic value. Prohibited patterns:
 - "more than", "less than", "at least", "at most", "greater than", "fewer than"
@@ -202,6 +203,18 @@ All steps assume end-to-end execution -- describe real state, real actions, real
 - Then steps assert real outcomes (database contents, API responses, published events)
 - Never reference "mock", "stub", "fake", "spy", or "double" in step text
 
+### User-Perspective Step Writing
+
+When and Then steps narrate the actor's experience. Implementation details (database assertions, event checks, internal state verification) belong in `And` steps mapped from Side Effects, not in the main When/Then narrative.
+
+| Step | User-Perspective (correct) | Implementation-Leaked (wrong) |
+|------|---------------------------|------------------------------|
+| When | `When alice submits the registration form` | `When the system inserts a row into the users table` |
+| Then | `Then alice sees the welcome dashboard` | `Then the session table contains a new row` |
+| Then | `Then alice receives a confirmation email` | `Then the email service was called with template "welcome"` |
+| And (from Side Effects) | `And a "users" row exists with profile_complete=true` | _(this is correct in And -- Side Effects map here)_ |
+| And no (from Non-Side-Effects) | `And no password reset email is sent` | _(this is correct in And no -- Non-Side-Effects map here)_ |
+
 ## Gherkin Construct Selection
 
 | Situation | Construct | Example |
@@ -212,6 +225,8 @@ All steps assume end-to-end execution -- describe real state, real actions, real
 | Structured input data in a step | Data table | Creating a user with multiple fields |
 
 Prefer `Scenario Outline` over multiple near-identical `Scenario` blocks. Use `Background` sparingly — only for truly shared preconditions, not convenience.
+
+Scenario descriptions should name the actor's situation or goal, not internal system behavior.
 
 ## Step Reuse Policy
 

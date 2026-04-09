@@ -128,6 +128,7 @@ Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Sc
 - The first scenario is typically the success case, but structurally it is identical to every other scenario.
 - Scenario names should be descriptive and unique within the UC (e.g., "Valid credentials", "Expired token", "Missing required field").
 - Each scenario gets a unique `SC-XXXX` ID via `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js`.
+- Names should describe the actor's situation or outcome, not internal system behavior. Use "Valid credentials" or "Expired link shown", not "JWT validated" or "Session row created".
 
 #### Scenario Separators
 
@@ -139,6 +140,8 @@ Every scenario block is preceded and followed by a `---` horizontal rule. This i
 - **System verbs:** validates, processes, stores, returns, displays, creates, publishes, sends
 
 Each step is one action. Do not combine multiple actions in one step.
+
+Actor verbs describe user-performed actions. When tempted to use system verbs like `stores` or `publishes` in Steps, prefer the user-observable effect and move the technical action to Side Effects. Steps narrate what the actor experiences; Side Effects record what happens behind the scenes.
 
 #### Inline UI
 
@@ -223,6 +226,35 @@ Side Effects is the most critical field for downstream agents. The Tester agent 
 - Non-side-effects are just as important as side effects -- they tell the Tester agent what to assert does NOT occur.
 - Event names follow `{domain}.{entity}.{verb}` convention (e.g., `auth.session.created`, `billing.invoice.sent`).
 - Payload fields are listed in backtick-wrapped comma-separated format.
+
+## User-Perspective First
+
+### Core Principle
+
+Scenarios describe what actors do and observe, not internal system behavior. Internal mechanics belong exclusively in Side Effects. The narrative arc of Given/Steps/Outcomes tells the actor's story; Side Effects is the technical appendix.
+
+### Authoring Rule
+
+Write Steps and Outcomes as if narrating the actor's experience. If a step describes something invisible to the actor (database insert, internal event, cache invalidation), move it to Side Effects. The actor never "stores a row" or "publishes an event" -- the actor submits a form, clicks a button, or receives a response.
+
+### Perspective by App Type
+
+| App type | Steps perspective | Outcomes perspective | Side Effects perspective |
+|----------|------------------|---------------------|------------------------|
+| UI app | User clicks, submits, navigates | What user sees (screen, message, redirect) | DB writes, events published, emails queued |
+| API | Consumer sends request | Response payload, status code, headers | DB writes, events published, cache updates |
+| Backend | System event triggers processing | Observable state change (job completes, status updates) | Tables modified, events published, logs written |
+
+### Anti-Patterns
+
+| Field | Bad (implementation-leaked) | Good (user-perspective) | Why |
+|-------|---------------------------|------------------------|-----|
+| Steps | System creates a `users` row with `privy_id` | User completes the registration form | The actor is the user, not the ORM |
+| Steps | System validates the JWT and refreshes the session | User accesses the dashboard | The user navigates; token mechanics are invisible |
+| Steps | System publishes `auth.session.created` event | User sees the welcome screen | Event publishing is a side effect, not a step |
+| Outcomes | `users` table has a row with `profile_complete=true` | User's account is created and profile is marked complete | Outcomes describe the actor's result, not table state |
+| Outcomes | Response body contains `{ "token": "..." }` | User receives an authentication token | Name the business object, not the JSON shape |
+| Side Effects | _(correct)_ `users` table: row created with `privy_id={DID}, profile_complete=true` | _(correct)_ `auth.session.created` event published with payload `user_id, timestamp` | Side Effects IS where implementation detail belongs |
 
 ## E2E Testing Philosophy
 
