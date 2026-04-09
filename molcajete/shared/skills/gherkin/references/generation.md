@@ -38,6 +38,8 @@ After the dedup check, carry forward:
 - The list of step patterns already used in the existing feature file (so 3c maximizes step reuse)
 - The file path and line count of the existing feature file (so 3b knows where to append)
 
+**Key distinction:** Module = directory under `bdd/features/` (from `prd/MODULES.md`). Domain = business concern used for tags (`@auth`, `@billing`) and INDEX.md subheadings. Feature name = file name (kebab-case). Never use a domain name or feature name as the module directory.
+
 ## 3a. Determine Module Folder
 
 Resolve which `bdd/features/{module}/` folder to place the feature file in:
@@ -55,7 +57,7 @@ Create the feature file at `bdd/features/{module}/{feature-name}.feature` (or `.
 Follow the file naming rules, tagging rules, step writing rules, and Gherkin construct selection rules from SKILL.md.
 
 **Feature-level structure:**
-- Add feature-level tags: `@{domain}` and one priority tag (`@smoke`, `@regression`, or `@critical`)
+- Add feature-level tags: `@FEAT-XXXX` `@{domain}` `@{module-name}` and one priority tag (`@smoke`, `@regression`, or `@critical`)
 - Add `@pending` to every scenario tag line, after `@SC-XXXX` and before classification tags. This marks the scenario as not yet implemented.
 - Write a 1-2 sentence description immediately after the `Feature:` line
 - Use `Background:` only if 2+ scenarios share the same preconditions
@@ -100,8 +102,8 @@ After generating the feature file (3b) and step definitions (3c), update both IN
 **Update `bdd/features/INDEX.md`:**
 
 1. Read the current `bdd/features/INDEX.md`.
-2. Find the heading for the target domain (e.g., `## Authentication`). If the heading does not exist, add it.
-3. **New feature:** Add a new feature entry under the domain heading following the Features INDEX.md template format — file path, 1-sentence summary, and all scenario names with brief descriptions.
+2. Find the heading for the target module (e.g., `## Patient App`). If the heading does not exist, add it.
+3. **New feature:** Add a new feature entry under the module heading following the Features INDEX.md template format — file path, 1-sentence summary, and all scenario names with brief descriptions.
 4. **Existing feature (Step 1c path):** Find the existing feature entry. Append only the new scenario names to its scenario list — do not re-list existing scenarios. Do not change the file path or summary unless they are inaccurate.
 5. Use the Edit tool to insert or update the entry.
 

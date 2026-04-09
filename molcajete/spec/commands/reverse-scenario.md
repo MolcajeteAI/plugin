@@ -172,12 +172,12 @@ If `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` exists:
 Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md` (steps 2a–2h):
 
 - Check for existing scaffold, create if missing
-- Detect domains, language, format
+- Detect modules, language, format
 - Create INDEX.md files and world module
 - Persist BDD settings to `.molcajete/settings.json`
 - Validate existing indexes, rebuild if drift detected
 
-## Step 10: Domain and Tag Selection
+## Step 10: Module and Tag Selection
 
 ### 10.1 Module Folder Resolution
 

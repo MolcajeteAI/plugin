@@ -272,7 +272,7 @@ For each **modified** use case, propagate Gherkin changes instead (Step 11.7).
 
 Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md` (steps 2a–2h):
 - Check for existing scaffold, create if missing
-- Detect domains, language, format
+- Detect modules, language, format
 - Create INDEX.md files and world module
 - Persist BDD settings to `.molcajete/settings.json`
 - Validate existing indexes, rebuild if drift detected
