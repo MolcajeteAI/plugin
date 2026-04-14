@@ -67,7 +67,7 @@ Read project-level files:
 - `prd/DOMAINS.md` — domain tag registry (if exists)
 - `prd/FEATURES.md` — master feature registry
 
-Per-feature files will be loaded in Step 5 based on scope.
+Per-feature files will be loaded in the next step based on scope.
 
 ## Step 5: Scan for Plannable Work
 
@@ -96,7 +96,7 @@ Find everything that needs implementation:
 
 If nothing plannable is found: tell the user "No use cases need BDD wiring. Use `/m:reverse-feature`, `/m:reverse-usecase`, or `/m:reverse-spec` to extract specs from code first." Then stop.
 
-## Step 7: Verify Gherkin
+## Step 6: Verify Gherkin
 
 For each plannable UC:
 
@@ -115,6 +115,23 @@ If **some** UCs have gaps, report the gaps and ask via AskUserQuestion:
 - Options: "Proceed with available UCs" / "Cancel — I'll fix the gaps first"
 
 If "Cancel", stop. Otherwise, continue with only the verified UCs.
+
+## Step 7: Collect TEST-ISSUES
+
+For each in-scope UC, check for a sibling testability-concerns file and fold surviving recommendations into the plan. See the planning skill's "Companion `plan.md` (reverse)" section for the full rules.
+
+1. **Discover** — for each UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`, look for a sibling named `UC-XXXX-{slug}-TEST-ISSUES.md` (same basename + `-TEST-ISSUES.md`). Skip UCs that have no such file.
+
+2. **Parse** — read each TEST-ISSUES file. The format follows `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`. Extract each REC's Scenario, Area, Why it might matter, and Category fields.
+
+3. **Filter by Testing Decisions** — for each REC, read the owning feature's `ARCHITECTURE.md`. If it has a `## Testing Decisions` section containing a decision that covers the same area/category, **skip** that REC — the concern is already resolved.
+
+4. **Classify** — for each surviving REC:
+   - **Scenario-local** if the REC's `Scenario:` field names a single in-scope `SC-XXXX`.
+   - **Global** if the REC lacks a `Scenario:` field, OR the same REC text/area appears in TEST-ISSUES files across ≥2 scoped UCs.
+
+5. **Remember the set** — keep the surviving classified RECs available for Step 9 (JSON fold-in) and Step 11 (MD write decision). If zero RECs survive, note that `plan.md` will not be written in Step 11.
+
 
 ## Step 8: Present Scope Summary
 
@@ -179,15 +196,26 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
 
 6. **Order by dependency chain** — infrastructure first, shared step helpers before scenario-specific steps, happy-path before error-handling.
 
+7. **Fold TEST-ISSUES into the JSON** — using the classified RECs from Step 7:
+   - **Global RECs** → add one sub-task under T-001 per global REC, describing the infrastructure change needed for `molcajete build` to run the scenarios. Sub-task IDs follow `T-001-M`. Absorb infrastructure per the planning skill's "Infrastructure Absorption" rule — no standalone top-level infrastructure task. Append the prerequisite file paths to T-001's `files_to_modify`.
+   - **Scenario-local RECs** → append a `Prerequisites:` paragraph to the owning scenario's task `description`. The paragraph lists each REC by ID with its source TEST-ISSUES file path and the required change. Add the prerequisite file paths to the owning task's `files_to_modify`. Only split into a sub-task when the combined work exceeds the 200K context budget.
+
+   This keeps the JSON self-sufficient — `molcajete build` never reads `plan.md`.
+
 ## Step 10: Plan Preview
 
-Use AskUserQuestion to show the full plan JSON content:
+Render the JSON for approval. Also render `plan.md` **only if** at least one REC survived Step 7; otherwise show the JSON only and note that `plan.md` will be skipped.
 
-- Question: Show the complete plan JSON in a code block with 2-space indent
+Use AskUserQuestion:
+
+- Question:
+  - Always: show the complete plan JSON in a code block with 2-space indent.
+  - Conditionally: if any classified RECs exist from Step 7, also show the rendered `plan.md` content (derived per the planning skill's "Companion `plan.md` (reverse)" section) in a separate fenced markdown block.
+  - If no RECs survived, state: "No blocking testability prerequisites detected — `plan.md` will be skipped."
 - Header: "Plan Preview"
 - Options: "Looks good" / "Edit" / "Cancel"
 
-If "Edit": use AskUserQuestion to collect corrections, regenerate affected tasks, and re-preview.
+If "Edit": use AskUserQuestion to collect corrections, regenerate affected tasks (and the derived MD if applicable), and re-preview.
 If "Cancel": stop.
 
 ## Step 11: Write Plan File
@@ -202,15 +230,19 @@ If "Cancel": stop.
    mkdir -p .molcajete/plans/{YYYYMMDDHHmm}-{slug}
    ```
 
-3. Write the plan file to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`.
+3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `molcajete build`.
+
+4. **Conditionally write `plan.md`.** If any classified RECs survived Step 7, render `plan.md` per the planning skill's "Companion `plan.md` (reverse)" section using the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/reverse-plan-template.md`, and write it to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. The MD lists scenarios by ID + short description (never full Gherkin bodies) and details each prerequisite with its source TEST-ISSUES link, category, why it blocks tests, required changes, and the task it maps to. If no RECs survived, **do not** create `plan.md`.
 
 ## Step 12: Report
 
 Tell the user:
 
-- Plan file path
+- Plan JSON path
+- `plan.md` path when written; otherwise state "no blocking testability prerequisites detected — `plan.md` skipped"
 - Task count and total estimated context budget
 - Features and UCs covered
 - Any UCs excluded due to missing Gherkin
+- TEST-ISSUES summary: count of RECs folded into the plan (global + scenario-local) and count filtered out by Testing Decisions
 
 Suggest next step: "Review the plan file, then run `molcajete build {plan-name}` to start implementation."

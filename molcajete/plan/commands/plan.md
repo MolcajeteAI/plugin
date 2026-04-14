@@ -67,7 +67,7 @@ Read project-level files:
 - `prd/DOMAINS.md` — domain tag registry (if exists)
 - `prd/FEATURES.md` — master feature registry
 
-Per-feature files will be loaded in Step 5 based on scope.
+Per-feature files will be loaded in the next step based on scope.
 
 ## Step 5: Scan for Plannable Work
 
@@ -97,7 +97,7 @@ Find everything that needs implementation:
 
 If nothing plannable is found: tell the user "No unimplemented specs found. All use cases are either already implemented or not yet specified. Use `/m:feature`, `/m:usecase`, or `/m:spec` to author new specs, then `/m:scenario` to generate Gherkin." Then stop.
 
-## Step 7: Verify Gherkin
+## Step 6: Verify Gherkin
 
 For each plannable UC:
 
@@ -117,7 +117,7 @@ If **some** UCs have gaps, report the gaps and ask via AskUserQuestion:
 
 If "Cancel", stop. Otherwise, continue with only the verified UCs.
 
-## Step 8: Present Scope Summary
+## Step 7: Present Scope Summary
 
 Use AskUserQuestion to show what will be planned:
 
@@ -132,7 +132,7 @@ Use AskUserQuestion to show what will be planned:
 
 If "Narrow scope": use AskUserQuestion to ask which IDs to exclude, remove them, and re-present. If "Cancel": stop.
 
-## Step 9: Generate Task Breakdown
+## Step 8: Generate Task Breakdown
 
 Read all in-scope materials:
 - UC files with their scenarios
@@ -178,18 +178,20 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
 
 6. **Order by dependency chain** — infrastructure first, data models before APIs, core logic before edge cases, happy-path before error-handling.
 
-## Step 10: Plan Preview
+## Step 9: Plan Preview
 
-Use AskUserQuestion to show the full plan JSON content:
+Render both artifacts for approval. The JSON is the source of truth; the MD is its human-readable companion, derived from the JSON plus loaded PRD context per the planning skill's "Companion `plan.md` (greenfield)" section.
 
-- Question: Show the complete plan JSON in a code block with 2-space indent
+Use AskUserQuestion to show the full plan JSON content and the rendered `plan.md`:
+
+- Question: Show the complete plan JSON in a code block with 2-space indent, followed by the rendered `plan.md` content in a separate fenced markdown block
 - Header: "Plan Preview"
 - Options: "Looks good" / "Edit" / "Cancel"
 
-If "Edit": use AskUserQuestion to collect corrections, regenerate affected tasks, and re-preview.
+If "Edit": use AskUserQuestion to collect corrections, regenerate affected tasks (and the derived MD), and re-preview.
 If "Cancel": stop.
 
-## Step 11: Write Plan File
+## Step 10: Write Plan File
 
 1. Generate the directory name:
    - Timestamp: current time as `YYYYMMDDHHmm`
@@ -201,15 +203,17 @@ If "Cancel": stop.
    mkdir -p .molcajete/plans/{YYYYMMDDHHmm}-{slug}
    ```
 
-3. Write the plan file to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`.
+3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `molcajete build`.
 
-## Step 12: Report
+4. **Derive and write `plan.md` second.** Using the JSON you just wrote plus the PRD context loaded in Steps 4–9 (REQUIREMENTS.md, ARCHITECTURE.md, UC files, Gherkin), render `plan.md` per the planning skill's "Companion `plan.md` (greenfield)" section. Use the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-template.md`. Write the result to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. Do not include execution-state fields (`status`, `summary`, `errors`, `estimated_context`, `depends_on`).
+
+## Step 11: Report
 
 Tell the user:
 
-- Plan file path
+- Plan JSON path and `plan.md` path
 - Task count and total estimated context budget
 - Features and UCs covered
 - Any UCs excluded due to missing Gherkin
 
-Suggest next step: "Review the plan file, then run `molcajete build {plan-name}` to start implementation."
+Suggest next step: "Review `plan.md` for a WYSIWYG preview, then run `molcajete build {plan-name}` to start implementation."

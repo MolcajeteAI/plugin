@@ -32,6 +32,88 @@ Plan files live at `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. Each plan
     final-test.json
 ```
 
+## Companion `plan.md` (greenfield)
+
+Every `/m:plan` run writes a human-readable `plan.md` alongside `plan.json` in the same plan directory. The MD is a WYSIWYG preview of what `molcajete build` will produce — users review it before executing the plan.
+
+### Generation order
+
+1. Build the plan JSON in memory.
+2. Write `plan.json` to disk.
+3. Derive `plan.md` from the JSON plus PRD context and write it to the same directory.
+
+JSON is always authoritative. MD is a pure function of JSON + PRD files; it is regenerated on every plan write and is never hand-edited. If the user wants to change the plan, they edit intent and regenerate — never the MD alone.
+
+### Structure
+
+Use the skeleton at [plan-template.md](./templates/plan-template.md). Required sections in order:
+
+1. **Title** — from `plan.title`.
+2. **Context** — 1–3 paragraphs sourced from scoped features' REQUIREMENTS.md "why" framing plus the plan's scope intent.
+3. **Scope** — bulleted links to each in-scope feature README and UC file, plus `base_branch` and `bdd_command`.
+4. **Non-requirements (plan-level)** — from REQUIREMENTS.md out-of-scope sections.
+5. **Tasks** — one `### T-NNN — {title}` section per top-level task, in JSON order. Each task section contains:
+   - **References** — feature, use case, scenario, architecture links.
+   - **What changes** — narrative version of `task.description`.
+   - **Important snippets** — small code sketches (≤ ~15 lines each) derived from ARCHITECTURE.md Code Map entries and `files_to_modify`. For new exports, show the shape (signature or type), not the full body.
+   - **Files to create/modify** — from `task.files_to_modify`, with short notes. Sub-tasks, when present, appear as nested bullets here — they do not get their own full sections.
+   - **Non-requirements (task-level)** — what the task is explicitly NOT doing.
+   - **Verification** — three bullets: BDD gate (`{bdd_command} --tags @{scenario}`), manual smoke (1–3 steps derived from Gherkin Given/When/Then), file-level assertions (expected files + key exports/functions).
+
+### Link path convention
+
+Plan directory lives at `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md` — three directories deep. Relative links to PRD files use `../../../prd/...`. Scenario anchors use `#sc-xxxx` (lowercased SC ID) pointing into the UC file.
+
+### Fields excluded from greenfield MD
+
+Never render: `plan.status`, `task.status`, `task.summary`, `task.errors`, `task.estimated_context`, `task.depends_on`. These are execution state or implementation concerns; the MD is a pre-execution preview.
+
+## Companion `plan.md` (reverse)
+
+`/m:reverse-plan` writes a `plan.md` **only when** at least one in-scope UC has a materially-blocking REC entry in its `UC-XXXX-{slug}-TEST-ISSUES.md` sibling file (after filtering by the feature's `ARCHITECTURE.md#Testing Decisions`). When no blocking RECs survive, no MD is written — the JSON alone is sufficient because the application already works and the build agent only needs to wire step definitions.
+
+### Conditional write rule
+
+For the MVP, treat every surviving REC as materially blocking (no category filtering). An MD is written iff the union of surviving RECs across scoped TEST-ISSUES files is non-empty.
+
+### TEST-ISSUES discovery
+
+For each scoped UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`, look for a sibling file named `UC-XXXX-{slug}-TEST-ISSUES.md`. Parse REC entries per the template at `spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md` — each REC has Scenario, Area, Why it might matter, Category.
+
+### Testing Decisions cross-check
+
+Before including a REC, read the feature's `ARCHITECTURE.md`. If it has a `## Testing Decisions` section and a decision exists for the same area/category, **skip** that REC — it has already been resolved. This mirrors the rule in `spec/skills/reverse-engineering/SKILL.md`.
+
+### Global vs scenario-local classification
+
+Classify each surviving REC:
+
+- **Scenario-local** — REC names a single scoped `Scenario: SC-XXXX`. It gets listed under that scenario in the MD and reflected in the matching JSON task's `description` as a `Prerequisites:` paragraph (plus the prereq paths added to `files_to_modify`).
+- **Global** — REC lacks a `Scenario:` field, OR the same REC text/area appears in TEST-ISSUES files across ≥2 scoped UCs. It gets listed at the top of the MD and reflected in JSON as a sub-task under T-001, absorbing infrastructure cost per the "Infrastructure Absorption" rule.
+
+### Structure
+
+Use the skeleton at [reverse-plan-template.md](./templates/reverse-plan-template.md). Required sections:
+
+1. **Title** — `{plan.title} — Reverse Plan`.
+2. **Context** — one short paragraph: scenario count, UC count, and the reason this file exists (prerequisites must be resolved before BDD can run).
+3. **Scenarios to wire** — bulleted list: `SC-XXXX — one-line summary · UC: [UC-XXXX](...)`. ID + short description only. **Never** include full Gherkin bodies.
+4. **Global prerequisites** — only when ≥1 global REC exists. One `### PRE-G-NN` subsection per global REC with Source link, Category, Why it blocks, Required changes, Maps-to-task (T-001).
+5. **Per-scenario prerequisites** — only when ≥1 scenario-local REC exists. Grouped by scenario ID. Each `PRE-SC-NN` bullet links its source REC and names the owning task.
+
+### JSON-side effects of TEST-ISSUES ingestion
+
+Even when the MD is skipped, the JSON still reflects TEST-ISSUES:
+
+- **Global REC** → sub-task under T-001 with the infrastructure change described; `files_to_modify` gains the prereq paths.
+- **Scenario-local REC** → `Prerequisites:` paragraph appended to the owning task's `description`; `files_to_modify` gains the prereq paths. Only split into a sub-task when the combined work exceeds the 200K context budget.
+
+This keeps `molcajete build` self-sufficient from the JSON — it never reads `plan.md`.
+
+### Fields excluded from reverse MD
+
+Same exclusions as greenfield: `plan.status`, `task.status`, `task.summary`, `task.errors`, `task.estimated_context`, `task.depends_on`.
+
 ## Task Decomposition Rules
 
 ### BDD-Aligned Tasks — 1 Task = 1 Scenario
