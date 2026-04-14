@@ -331,8 +331,8 @@ During authoring (Specs First or Code First), the agent may notice areas that co
 
 When running reverse commands, if the agent detects potential E2E concerns, it generates a recommendations file alongside the UC file:
 
-- **Naming:** same as the UC file with `-recommendations` suffix (e.g., `UC-0KTg-001-create-order-recommendations.md`)
-- **Template:** `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`
+- **Naming:** `{UC-ID}-TEST-ISSUES.md` alongside the UC file (e.g., `UC-0KTg-001-TEST-ISSUES.md`)
+- **Template:** `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`
 - **Developer-only guidance** -- NOT consumed by models during spec authoring or Gherkin generation
 - **Only created during reverse commands** -- Specs First commands report concerns in the final output instead
 
@@ -485,4 +485,4 @@ After all sections are confirmed:
 | Template | Purpose |
 |----------|---------|
 | [UC-template.md](./templates/UC-template.md) | UC file for each use case |
-| [UC-recommendations-template.md](./templates/UC-recommendations-template.md) | Testability recommendations (reverse path only) |
+| [UC-TEST-ISSUES-template.md](./templates/UC-TEST-ISSUES-template.md) | Testability recommendations (reverse path only) |

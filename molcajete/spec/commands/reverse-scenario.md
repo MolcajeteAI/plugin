@@ -153,8 +153,8 @@ After scenarios are confirmed but before writing to the UC file, run testability
 1. Check the feature's ARCHITECTURE.md for a `## Testing Decisions` section. Skip concerns that already have a recorded decision.
 2. Scan the extracted scenarios for testability signals (external API calls without sandbox, time-dependent logic, etc.).
 3. If unresolved concerns are found, create or append to the existing recommendations file for this UC:
-   - If `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}-recommendations.md` exists, append new concerns
-   - If it does not exist, create it using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`
+   - If `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-TEST-ISSUES.md` exists, append new concerns
+   - If it does not exist, create it using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`
 4. Do not use AskUserQuestion for testability concerns. Write the file silently.
 5. Report the count of concerns in the final output.
 

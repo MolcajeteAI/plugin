@@ -151,7 +151,7 @@ Before flagging a concern, read the feature's ARCHITECTURE.md and look for a `##
 
 ### Generate Recommendations File
 
-When concerns are found, create a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-recommendations-template.md`. Only create this file during reverse commands. If no concerns are found, do not create the file.
+When concerns are found, create a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`. Only create this file during reverse commands. If no concerns are found, do not create the file.
 
 ### No Interruptions
 
