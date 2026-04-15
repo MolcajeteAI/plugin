@@ -101,7 +101,7 @@ If nothing plannable is found: tell the user "No unimplemented specs found. All 
 
 For each plannable UC:
 
-1. Grep `bdd/features/` for `@UC-XXXX` tag to find the `.feature` file.
+1. Each UC has exactly one `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. Use `Glob` with pattern `bdd/features/**/{UC-XXXX}-*.feature` (or `*.feature.md` for MDG projects) to locate it — the `UC-XXXX` filename prefix makes the match deterministic and slug-tolerant.
 2. Verify the `.feature` file exists and contains at least one `Scenario:` or `Scenario Outline:`.
 3. Read the feature file to count scenarios and extract step patterns.
 
