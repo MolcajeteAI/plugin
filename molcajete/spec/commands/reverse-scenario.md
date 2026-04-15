@@ -177,16 +177,22 @@ Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/ref
 - Persist BDD settings to `.molcajete/settings.json`
 - Validate existing indexes, rebuild if drift detected
 
-## Step 10: Module and Tag Selection
+## Step 10: Module/Domain and Tag Selection
 
-### 10.1 Module Folder Resolution
+### 10.1 Module and Domain Resolution
 
-Resolve the module folder from the feature's REQUIREMENTS.md frontmatter. Check existing module folders under `bdd/features/`.
+Read the parent feature's REQUIREMENTS.md frontmatter:
+- `module:` → `{module}` directory segment.
+- `domain:` → `{domain}` directory segment. Every feature has exactly one domain.
+
+**One feature → one domain → one BDD directory.** The test *subject* is this one UC; the *observation surface* is everything the user experiences as a consequence. Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of this UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**.
+
+The target `.feature` file path is `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`.
 
 Use AskUserQuestion:
-- Question: "Which module folder should this feature file go in?\n\nModule from spec: **{module from REQUIREMENTS.md}**\n\nExisting modules: {list of existing module folders under bdd/features/}"
-- Header: "Module"
-- Options: "{module from spec}" / list existing modules / "Other" (user provides via Other)
+- Question: "Place this UC's .feature file at:\n\n`bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`\n\nExisting UC files in this tree: {list of existing `bdd/features/{module}/{domain}/*.feature`}"
+- Header: "Module/Domain"
+- Options: "Confirm" / "Override" (user provides via Other)
 
 ### 10.2 Classification Tags
 
@@ -198,7 +204,7 @@ Propose tags for each scenario based on its nature:
 Also propose a feature-level priority tag.
 
 Use AskUserQuestion:
-- Question: "Proposed tags:\n\n**Feature-level:** `@FEAT-XXXX @{domain} @{priority-tag}`\n\n{for each scenario: `@UC-XXXX @SC-XXXX @{classification-tag}` — {scenario name}}\n\nDo these look correct?"
+- Question: "Proposed tags:\n\n**Feature-level:** `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}`\n\n{for each scenario: `@SC-XXXX @{classification-tag}` — {scenario name}}\n\nDo these look correct?"
 - Header: "Tags"
 - Options: "Yes, looks good" / "Edit" (user corrects via Other)
 
@@ -208,16 +214,16 @@ Use AskUserQuestion:
 
 Using the Gherkin Mapping table from the usecase-authoring skill:
 
-- **Feature-level tags:** `@FEAT-XXXX @{domain} @{priority-tag}`
+- **Feature-level tags:** `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}` (the file represents this UC)
 - **Feature line:** `Feature: {UC Name}` with description from UC objective
 - **Background:** from UC Preconditions (each precondition becomes a `Given` / `And` clause)
 - **Each scenario:**
-  - Tags: `@UC-XXXX @SC-XXXX @{classification-tag}`
+  - Tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag — one feature, one domain.
   - `Scenario: {Scenario Name}`
   - `Given` / `And` from scenario Given field
   - `When` / `And` from scenario Steps field (one action per clause)
   - `Then` from scenario Outcomes field (exact assertion values)
-  - `And` from positive Side Effects
+  - `And` from positive Side Effects — assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes). These are observations of this UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**
   - `And no ...` from "No ..." Side Effects
 
 Follow the step writing rules from the gherkin skill (declarative Given, exact Then, parameterized patterns). Use `Scenario Outline` + `Examples` when multiple scenarios test the same flow with different inputs.
@@ -229,16 +235,18 @@ Use AskUserQuestion to show the full generated Gherkin for review:
 - Header: "Preview"
 - Options: "Yes, looks good" / "Edit" (user corrects via Other)
 
-### 11.3 Check for Existing Feature
+### 11.3 Check for Existing UC File
 
-Grep `bdd/features/` for `@FEAT-XXXX` tag. If found, follow the dedup procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` step 3-pre:
-- Skip exact duplicate scenarios
-- Warn on near-duplicates
-- Append only new scenarios to the existing feature file
+Grep `bdd/features/` for `@UC-XXXX`. If the tag matches a file, that's this UC's existing `.feature`. Follow the dedup procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` step 3-pre:
+- Skip exact duplicate scenarios inside that UC's file.
+- Warn on near-duplicates.
+- Append only new scenarios to the same UC's file — never merge scenarios across UCs.
+
+If multiple files match, report the inconsistent state and stop.
 
 ### 11.4 Write Feature File
 
-Write the `.feature` file to `bdd/features/{module}/{feature-name}.feature` (kebab-case, describes the feature not a scenario). If appending to an existing file, use the Edit tool to append new scenarios at the end.
+Write the `.feature` file to `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. Create `bdd/features/{module}/{domain}/` if missing. If appending to this UC's existing file, use the Edit tool to append new scenarios at the end.
 
 ## Step 12: Update Indexes
 

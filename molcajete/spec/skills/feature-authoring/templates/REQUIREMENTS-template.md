@@ -2,7 +2,7 @@
 id: FEAT-XXXX
 name: {Feature Name}
 module: {module}
-domain: {domain}
+domain: {domain} # The single domain this feature belongs to. Drives the BDD directory: bdd/features/{module}/{domain}/ — one feature, one domain.
 status: pending
 version: 1
 refs: [] # Optional: feature IDs this feature depends on (e.g., [FEAT-0A1b])

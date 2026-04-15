@@ -119,7 +119,7 @@ Apply the confirmed changes:
 
 ## Step 8: Gherkin Propagation
 
-Propagate `@dirty` to Gherkin files: For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
+Propagate `@dirty` to Gherkin files: For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. Each UC owns exactly one `.feature` file (at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`), so the grep should resolve to a single file — if multiple files match, report inconsistent state. Add `@dirty` to each scenario's tag line in that file and remove `@pending` if present.
 
 ## Step 9: Testability Notes
 

@@ -119,7 +119,7 @@ Prepend `SC-` to each output line.
 
 ## Step 7: Gherkin Propagation
 
-Grep `bdd/features/` for `@UC-XXXX`. If no `.feature` file contains this tag, skip to Step 8.
+Grep `bdd/features/` for `@UC-XXXX`. Each UC owns exactly one `.feature` file (at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`), so the grep should resolve to a single file. If multiple files match, report inconsistent state and stop. If no `.feature` file contains this tag, skip to Step 8.
 
 If a `.feature` file exists with `@UC-XXXX`:
 

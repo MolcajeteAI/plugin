@@ -283,22 +283,28 @@ Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/ref
 - Persist BDD settings to `.molcajete/settings.json`
 - Validate existing indexes, rebuild if drift detected
 
-### 11.2 Module Folder Resolution
+### 11.2 Module and Domain Resolution
 
-Resolve the module folder for each feature's Gherkin placement. Read each feature's `module:` value from its REQUIREMENTS.md frontmatter, then confirm with the user.
+Resolve the target `.feature` file path for each UC. For each feature, read from its REQUIREMENTS.md frontmatter:
+- `module:` → `{module}` directory segment
+- `domain:` → `{domain}` directory segment. Every feature has exactly one domain.
 
-Use a single AskUserQuestion for all features at once:
-- Question: "Which module folder should each feature's Gherkin go in?\n\n{for each feature: **{FEAT-XXXX}: {name}** → Module: {module from REQUIREMENTS.md frontmatter}}\n\nExisting modules: {list of existing module folders under bdd/features/}"
-- Header: "Modules"
-- Options: "Looks good" / "Edit" (user corrects via Other)
+**One feature → one domain → one BDD directory.** Every scenario in a UC's file tests the same subject. Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of the UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**.
+
+Each UC gets its own `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`.
+
+Use a single AskUserQuestion for all UCs at once:
+- Question: "Place each UC's .feature file at:\n\n{for each UC: **{UC-XXXX}: {name}** → `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`}\n\nExisting subtrees under bdd/features/: {list of existing `{module}/{domain}/` subtrees}"
+- Header: "Module/Domain"
+- Options: "Confirm" / "Override" (user provides via Other)
 
 ### 11.3 Generate Feature Files
 
 For each UC with scenarios, follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md`:
 
-1. **Dedup** — Grep `bdd/features/` for `@FEAT-XXXX` tag. Skip exact duplicate scenarios, warn on near-duplicates.
-2. **Construct** — Build .feature file content using the Gherkin Mapping table from the usecase-authoring skill. All newly generated scenarios must include `@pending` in their tag line, after `@SC-XXXX` and before classification tags.
-3. **Write** — Write to `bdd/features/{module}/{feature-name}.feature` (kebab-case). If appending to an existing file, use Edit to append new scenarios.
+1. **Dedup** — Grep `bdd/features/` for `@UC-XXXX`. If a match exists, append only new scenarios to that UC's file — never merge scenarios across UCs. Skip exact duplicates, warn on near-duplicates. If multiple files match a single `@UC-XXXX`, report inconsistent state and stop.
+2. **Construct** — Build .feature file content using the Gherkin Mapping table from the usecase-authoring skill. Feature-level tags: `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}` (the file represents the UC; `Feature:` line = UC name; description = UC objective). Scenario-level tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag on a scenario — one feature, one domain. All newly generated scenarios must include `@pending` after `@SC-XXXX` and before classification tags.
+3. **Write** — Write to `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature` (one file per UC, kebab-case). Create `bdd/features/{module}/{domain}/` if missing. If appending to this UC's existing file, use Edit to append new scenarios.
 
 ### 11.4 Generate Step Stubs
 

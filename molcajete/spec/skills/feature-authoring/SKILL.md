@@ -23,10 +23,12 @@ Before creating or locating a feature, resolve the target module and domain:
 
 1. Read `prd/MODULES.md` for the list of registered modules. Read `prd/DOMAINS.md` for the list of registered domains.
 2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask via AskUserQuestion: "Which modules does this feature apply to?\n\n{module table from MODULES.md}" — multi-select. Keep auto-select when only one module exists.
-3. Ask which domain this feature belongs to via AskUserQuestion: "Which domain should this feature belong to?\n\n{domain table from DOMAINS.md}" — single-select. Every feature has one primary domain.
+3. Ask which domain this feature belongs to via AskUserQuestion: "Which domain does this feature belong to?\n\n{domain table from DOMAINS.md}" — **single-select**. Every feature belongs to exactly one domain. If the feature seems to span multiple domains, that is a signal it should be split into multiple features (one per domain), not assigned multiple domains.
 4. Use the selected module and domain for all path operations.
 
 All feature paths use the pattern `prd/modules/{module}/features/FEAT-XXXX-{slug}/`.
+
+The domain is the **BDD path segment** for every `.feature` file this feature owns: `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. **One feature → one domain → one BDD directory.** A use case tests exactly the domain it lives in. Outcomes that touch other systems (emails, notifications, downstream events) are recorded as **side effects** of the UC under test — they are validations of the same UC, not evidence that another domain is being tested.
 
 ### Module-Scoped Content (Multi-Module Features)
 
@@ -325,7 +327,7 @@ After all sections are confirmed:
 1. Generate FEAT-XXXX ID (4-character timestamp code)
 2. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/` directory. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/` subdirectory.
 3. If the user provided image file paths, create `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/` and copy image files with descriptive names. For use-case-level assets, use `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/`.
-4. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI. Add `domain: {domain}` and `module: {module}` to the frontmatter.
+4. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI. Frontmatter: `module: {module}`, `domain: {domain}` (single value).
 5. Write `USE-CASES.md` using [USE-CASES-template.md](./templates/USE-CASES-template.md) (empty table).
 6. Write `ARCHITECTURE.md` scaffold using the template at `spec/skills/architecture/templates/ARCHITECTURE-template.md`
 7. Add row to `prd/FEATURES.md` under the `## {domain}` section (format from the Row Management section above)

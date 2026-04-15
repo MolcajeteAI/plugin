@@ -342,16 +342,20 @@ Resolved E2E testing decisions are recorded in the feature's ARCHITECTURE.md und
 
 ## Gherkin Mapping
 
-This table defines how UC elements map to Gherkin output for the Tester agent.
+This table defines how UC elements map to Gherkin output for the Tester agent. One `.feature` file per UC at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. The `{module}` and `{domain}` come from the parent feature's REQUIREMENTS.md frontmatter — every feature has exactly one domain.
+
+**One feature → one domain → one BDD directory.** The test *subject* is one UC; the *observation surface* is everything the user experiences as a consequence. Side effects on this UC **must** assert everything the user observes as a consequence of performing the UC, including effects that cross into other features or domains (emails sent, notifications shown, analytics events fired, downstream writes). These are observations of *this* UC, not tests of those other features. See **Test Subject vs. Observation Surface** in `gherkin/SKILL.md` for the full rule and examples.
 
 | UC Element | Gherkin Output |
 |------------|----------------|
+| UC `name` | `Feature: {Use Case Name}` line |
+| UC `Objective` | 1-sentence description immediately under the `Feature:` line |
 | UC `Preconditions` | `Background: Given ...` |
-| UC `Gherkin Tags` | `@FEAT-XXXX @UC-XXXX` on Feature line |
+| UC `Gherkin Tags` | Feature-level tags: `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority}` |
 | Scenario `Given` | Additional `Given` / `And` after Background |
 | Scenario `Steps` | `When` / `And` clauses |
 | Scenario `Outcomes` | `Then` clauses |
-| Scenario `Side Effects` (positive) | `And` clauses |
+| Scenario `Side Effects` (positive) | `And` clauses (assertions on the UC's downstream effects — emails sent, events emitted, DB rows written) |
 | Scenario `Side Effects` ("No ...") | `And no ...` clauses |
 
 ## YAML Frontmatter Schema

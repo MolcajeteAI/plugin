@@ -20,7 +20,8 @@ bdd/
 ├── features/
 │   ├── INDEX.md
 │   └── {module}/
-│       └── {feature-name}.feature
+│       └── {domain}/
+│           └── {UC-XXXX}-{uc-slug}.feature
 ├── steps/
 │   ├── INDEX.md
 │   ├── world.[ext]
@@ -29,6 +30,8 @@ bdd/
 │   ├── db_steps.[ext]
 │   └── {module}_steps.[ext]
 ```
+
+**One `.feature` file per use case.** The `Feature:` line names the UC; the PRD feature remains traceable via the `@FEAT-XXXX` tag at Feature-level. Multiple UCs under the same PRD feature produce multiple `.feature` files — never group them.
 
 Note: `bdd/.claude/rules/` is user-created when needed for custom domain mappings — it is not part of the auto-generated scaffold.
 
@@ -106,33 +109,69 @@ If no sources yield modules, create a single `general/` module folder. Use kebab
 
 ## File Naming Rules
 
-- Use kebab-case: `user-registration.feature`, not `userRegistration.feature` or `user_registration.feature`
-- Name must describe the feature, not a scenario: `password-reset.feature`, not `forgot-password-click.feature`
+- Filename is `{UC-XXXX}-{uc-slug}.feature` (e.g., `UC-0G2a-sign-in-with-password.feature`). The UC ID prefix makes files findable by ID alone.
+- Slug is the UC's slug from its UC file (`prd/modules/{module}/features/FEAT-XXXX-*/use-cases/UC-XXXX-{uc-slug}.md`), kebab-case.
+- One UC per file. Never group multiple UCs into the same `.feature`.
+
+## Domain Resolution
+
+The `{domain}` directory segment of every BDD path is the **single domain** declared in the parent feature's `REQUIREMENTS.md` frontmatter:
+
+```yaml
+domain: identity           # the only domain for this feature → bdd/features/{module}/identity/
+```
+
+**One feature → one domain → one BDD directory.** A use case tests exactly the domain it lives in. There is no notion of "secondary" or "additional" domains being tested. If a feature genuinely needs to verify behavior in a different domain, that is a separate feature in that other domain — do not mix subjects inside one `.feature` file.
+
+For how cross-boundary side effects (emails, notifications, analytics) are handled when authoring scenarios, see **Test Subject vs. Observation Surface** below.
+
+## Test Subject vs. Observation Surface
+
+A `.feature` file tests exactly one UC. The **subject** of the test is a single feature, in a single domain, authored from one or more modules. The **observation surface** — what the scenario asserts on — is *everything* the user observes as a consequence of performing that UC.
+
+Those two things are not the same. The observation surface routinely spans feature and domain boundaries. When a shopper signs up:
+
+- The sign-up UC is the **subject** (domain: `identity`, feature: `FEAT-sign-up`).
+- The **observations** include: the account is created, the user is redirected to the dashboard, a welcome notification appears in the UI, and a confirmation email arrives in the inbox.
+- The notification and the email are produced by other features (in other domains) — but the shopper sees them happen as a direct consequence of signing up.
+
+Those cross-boundary observations **must** be asserted in the sign-up UC's scenario. They are part of what the user experiences when they sign up. Omitting them leaves the UC under-validated.
+
+**This is not "testing the notifications feature" or "testing the email feature."** Those features have their own UCs in their own `.feature` files, which test their internal behavior (retries, template rendering, rate limits, failure modes) in isolation. The sign-up scenario only asserts on the user-visible outcome — that the email arrives, that the notification shows up.
+
+**Rules:**
+
+1. **One subject per file.** The `Feature:` line, the `@UC-XXXX` tag, and the `@{domain}` tag at the Feature level all reflect the one UC under test. Never add a second domain tag on a scenario — a scenario is never "partly about" another domain.
+2. **Assert on cross-boundary side effects.** If the user observes it as a consequence of the UC, assert it — email sent, notification shown, analytics event fired, downstream record written. This is **required**, not optional.
+3. **Describe the observation, not the implementation.** Write `And alice receives a welcome email with subject "Welcome to Acme"` — not `And the email service's sendTransactional method is called with template_id=42`.
+4. **Don't reach into the other feature's internals.** Test what the user sees. The email feature's own UC asserts on retry behavior and template rendering; the sign-up UC only asserts that the email arrives. No overlap.
+5. **Don't duplicate across UCs.** A cross-boundary assertion belongs on the UC whose subject *produced* it. "A welcome email is sent on sign-up" lives on the sign-up UC, not on the email-delivery UC.
 
 ## Tagging Rules
 
 ### Spec traceability tags (required)
 
-Every feature file and scenario must be traceable back to the PRD spec via ID tags:
+Every feature file and scenario must be traceable back to the PRD spec via ID tags. Because each `.feature` represents exactly one UC, `@UC-XXXX` is a Feature-level tag (not scenario-level).
 
 | Level | Tag | Placement | Example |
 |-------|-----|-----------|---------|
 | Feature | `@FEAT-{tag}` | Feature-level (top of file) | `@FEAT-0F3y` |
-| Use case | `@UC-{tag}` | On each scenario | `@UC-0G2a` |
+| Feature | `@UC-{tag}` | Feature-level (top of file) | `@UC-0G2a` |
 | Scenario | `@SC-{tag}` | On each scenario | `@SC-0H7k` |
 
-Each scenario carries both its use case and scenario IDs. Example:
+Example:
 
 ```gherkin
-@FEAT-0F3y @auth @auth-module
-Feature: Email login
+@FEAT-0F3y @UC-0G2a @identity @storefront @smoke
+Feature: Sign in with password
+  A returning shopper enters email and password to access their account.
 
-  @UC-0G2a @SC-0H7k @pending @smoke
-  Scenario: Successful login with valid credentials
+  @SC-0H7k @pending @smoke
+  Scenario: Successful sign-in with valid credentials
     ...
 
-  @UC-0G2a @SC-0H8m @pending @regression
-  Scenario: Failed login with wrong password
+  @SC-0H8m @pending @regression
+  Scenario: Failed sign-in with wrong password
     ...
 ```
 
@@ -147,10 +186,10 @@ In addition to spec traceability tags, choose from:
 | `@critical` | Scenarios testing security, data integrity, or financial correctness |
 | `@backend` | Scenarios that test server-side behavior only |
 | `@fullstack` | Scenarios requiring UI + backend interaction |
-| `@{domain}` | Domain-specific tag for filtering by business concern across modules (e.g., `@auth`, `@billing`) |
+| `@{domain}` | Domain tag — matches the BDD directory segment (e.g., `@identity`, `@billing`). One per feature. |
 | `@{module}` | Module tag matching the BDD directory name — implicit from directory but explicit as a tag for clarity |
 
-Feature-level tags: `@FEAT-{tag}`, `@{domain}`, `@{module}` (from MODULES.md or BDD module folder), and one priority tag (`@smoke`, `@regression`, or `@critical`). Scenario-level tags: `@UC-{tag}`, `@SC-{tag}`, optional lifecycle tag (`@pending` or `@dirty`), and any additional classification tags.
+Feature-level tags: `@FEAT-{tag}`, `@UC-{tag}`, `@{domain}`, `@{module}`, and one priority tag (`@smoke`, `@regression`, or `@critical`). Scenario-level tags: `@SC-{tag}`, optional lifecycle tag (`@pending` or `@dirty`), and any additional classification tags. **Never add a second domain tag on a scenario** — one feature, one domain.
 
 ### Lifecycle tags
 
@@ -163,7 +202,7 @@ These tags track implementation state in `.feature` files. They are managed auto
 
 **Placement:** Lifecycle tags go after `@SC-XXXX` and before classification tags:
 
-    @UC-0G2a @SC-0H7k @pending @smoke
+    @SC-0H7k @pending @smoke
 
 **Exclusion syntax** (all supported frameworks): `not @pending and not @dirty`
 

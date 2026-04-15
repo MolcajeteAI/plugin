@@ -179,12 +179,12 @@ The subagent prompt must include:
 
 3. **The specific task:**
    - Run scaffold setup from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md`
-   - Use the feature's module from REQUIREMENTS.md frontmatter for `bdd/features/{module}/` placement
-   - For each UC in this feature:
-     - Generate `.feature` file with scenarios using the Gherkin Mapping table
-     - Follow dedup procedure for existing feature files
-   - Update `bdd/features/INDEX.md`
-   - Run splitting check for any feature file exceeding 15 scenarios
+   - Read `module:` and `domain:` from REQUIREMENTS.md frontmatter — every feature has exactly one domain. **One feature → one domain → one BDD directory.** Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of the UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**
+   - For each UC in this feature, emit a dedicated `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature` — **one file per use case**; never merge scenarios across UCs
+   - Feature-level tags (on each UC file): `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}`. Scenario-level tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag on a scenario
+   - Dedup per UC: grep `bdd/features/` for `@UC-XXXX` — if a match exists, append only new scenarios to that UC's file. If multiple files match a single `@UC-XXXX`, report inconsistent state and stop
+   - Update `bdd/features/INDEX.md` (Module → Domain → UC grouping)
+   - Run splitting check on any UC file exceeding 15 scenarios
 
 4. **Report format:** The subagent must end with a structured report listing:
    - Feature files created (paths, scenario counts)

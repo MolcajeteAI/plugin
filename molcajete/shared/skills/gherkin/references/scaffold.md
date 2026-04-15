@@ -69,11 +69,11 @@ This section detects drift between INDEX.md entries and actual files on disk. If
 
 **Detect feature index drift:**
 
-1. Glob `bdd/features/**/*.feature` and `bdd/features/**/*.feature.md` to collect all feature files on disk.
-2. Read `bdd/features/INDEX.md` and extract every file path from `**File:**` and `**Directory:**` entries. Normalize paths to be relative to `bdd/features/` (e.g., `auth/login.feature`).
+1. Glob `bdd/features/**/*.feature` and `bdd/features/**/*.feature.md` to collect all feature files on disk. Each path has the shape `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`.
+2. Read `bdd/features/INDEX.md` and extract every file path from `**File:**` entries. Normalize paths to be relative to `bdd/features/` (e.g., `storefront/identity/UC-0G2a-sign-in-with-password.feature`).
 3. Compare the two sets:
-   - **Stale entries:** Paths in INDEX.md that do not match any file on disk. A directory entry is stale only if the directory itself is missing.
-   - **Missing entries:** Feature files on disk that have no corresponding INDEX.md entry (no `**File:**` line pointing to them).
+   - **Stale entries:** Paths in INDEX.md that do not match any file on disk.
+   - **Missing entries:** Feature files on disk that have no corresponding INDEX.md entry.
 
 **Detect step index drift:**
 
@@ -95,18 +95,18 @@ This section runs only when 2g detected drift in either index. It rebuilds **bot
 **Rebuild `bdd/features/INDEX.md`:**
 
 1. Glob `bdd/features/**/*.feature` and `bdd/features/**/*.feature.md` to collect all feature files on disk.
-2. Identify promoted feature directories: any directory under `bdd/features/{module}/` that contains `.feature` or `.feature.md` files (e.g., `bdd/features/auth/login/` containing `happy-path.feature` and `error-handling.feature`).
+2. Each file path is `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. The module is the first segment, the domain is the second segment, and the filename carries the UC-ID + slug.
 3. For each feature file, read it and extract:
-   - The `Feature:` name (text after the `Feature:` keyword on the first matching line).
-   - The feature description (the line(s) immediately following the `Feature:` line, before the first `Background:`, `Scenario:`, or `Scenario Outline:`).
-   - All scenario names: lines matching `Scenario:` or `Scenario Outline:` — extract the name portion after the keyword.
-4. Determine each feature's module from its parent directory name relative to `bdd/features/` (e.g., `bdd/features/app/login.feature` → module `app`). Files in promoted directories use the grandparent directory as module (e.g., `bdd/features/app/login/happy-path.feature` → module `app`).
-5. Group features by module. Within each module, sort features alphabetically by file name.
-6. Write `bdd/features/INDEX.md` from scratch using the template from `templates/index-features.md`:
-   - One `## {Module Name}` heading per module (title-case the module name).
-   - For single-file features: use the standard entry format with `**File:**`, `**Summary:**`, and `**Scenarios:**` (bulleted list of scenario names with descriptions).
-   - For promoted feature directories: use the directory entry format from `references/splitting.md` with `**Directory:**`, `**Summary:**`, and `**Files:**` (bulleted list of sub-files, each with nested scenario bullets).
-   - Summarize each feature in one sentence derived from its description. If no description exists, use the feature name.
+   - The `Feature:` name (text after the `Feature:` keyword on the first matching line — this is the UC name).
+   - The feature description (the line(s) immediately following the `Feature:` line, before the first `Background:`, `Scenario:`, or `Scenario Outline:` — this is the UC objective).
+   - The feature-level `@FEAT-XXXX` and `@UC-XXXX` tags (for cross-referencing the parent PRD feature and UC).
+   - All scenario names: lines matching `Scenario:` or `Scenario Outline:`.
+4. Group by module, then by domain. Within each domain, sort files alphabetically (UC-ID prefix makes ordering deterministic).
+5. Write `bdd/features/INDEX.md` from scratch using the template from `templates/index-features.md`:
+   - `## {Module Name}` heading per module (title-case the module name).
+   - `### {Domain}` sub-heading per domain.
+   - Per UC file: `#### {UC Name} ({UC-XXXX})` with `**File:**`, `**Parent feature:**` (FEAT-XXXX and feature name), `**Summary:**` (UC objective), and `**Scenarios:**` (bulleted list of scenario names with descriptions).
+   - If no description exists, use the UC name.
 
 **Rebuild `bdd/steps/INDEX.md`:**
 
