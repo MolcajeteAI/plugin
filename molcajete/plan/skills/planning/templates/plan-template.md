@@ -28,7 +28,6 @@ estimated_context, depends_on.
 - **Use cases:**
   - [UC-XXXX — name](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md)
 - **Base branch:** {plan.base_branch}
-- **BDD command:** `{plan.bdd_command}` <!-- or "not detected" when null -->
 
 ## Non-requirements (plan-level)
 
@@ -81,6 +80,6 @@ files_to_modify. These are sketches, not final code.
 
 **Verification**
 
-- BDD gate: `{plan.bdd_command} --tags @{task.scenario}`
+- BDD gate: scenario `@{task.scenario}` (executed by the project's verify hook)
 - Manual smoke: {1–3 user-level steps derived from Gherkin Given/When/Then}
 - File-level assertions: {expected files + key exports/functions}

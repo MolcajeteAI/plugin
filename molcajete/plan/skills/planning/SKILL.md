@@ -50,7 +50,7 @@ Use the skeleton at [plan-template.md](./templates/plan-template.md). Required s
 
 1. **Title** — from `plan.title`.
 2. **Context** — 1–3 paragraphs sourced from scoped features' REQUIREMENTS.md "why" framing plus the plan's scope intent.
-3. **Scope** — bulleted links to each in-scope feature README and UC file, plus `base_branch` and `bdd_command`.
+3. **Scope** — bulleted links to each in-scope feature README and UC file, plus `base_branch`.
 4. **Non-requirements (plan-level)** — from REQUIREMENTS.md out-of-scope sections.
 5. **Tasks** — one `### T-NNN — {title}` section per top-level task, in JSON order. Each task section contains:
    - **References** — feature, use case, scenario, architecture links.
@@ -58,7 +58,7 @@ Use the skeleton at [plan-template.md](./templates/plan-template.md). Required s
    - **Important snippets** — small code sketches (≤ ~15 lines each) derived from ARCHITECTURE.md Code Map entries and `files_to_modify`. For new exports, show the shape (signature or type), not the full body.
    - **Files to create/modify** — from `task.files_to_modify`, with short notes. Sub-tasks, when present, appear as nested bullets here — they do not get their own full sections.
    - **Non-requirements (task-level)** — what the task is explicitly NOT doing.
-   - **Verification** — three bullets: BDD gate (`{bdd_command} --tags @{scenario}`), manual smoke (1–3 steps derived from Gherkin Given/When/Then), file-level assertions (expected files + key exports/functions).
+   - **Verification** — three bullets: BDD gate (scenario `@{scenario}`, executed by the project's verify hook — never name a test command), manual smoke (1–3 steps derived from Gherkin Given/When/Then), file-level assertions (expected files + key exports/functions).
 
 ### Link path convention
 

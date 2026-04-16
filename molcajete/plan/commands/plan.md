@@ -147,7 +147,7 @@ Read the plan schema — it defines the exact JSON structure you must produce:
 ${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-schema.json
 ```
 
-Build a JSON object matching this schema. The top-level object has `title`, `generated`, `status`, `scope`, `base_branch`, `bdd_command`, and `tasks` (array). Decompose into tasks following the planning skill rules:
+Build a JSON object matching this schema. The top-level object has `title`, `generated`, `status`, `scope`, `base_branch`, and `tasks` (array). Decompose into tasks following the planning skill rules:
 
 1. **BDD-aligned tasks** — each task advances at least one Gherkin scenario. Map scenarios to tasks by examining what code needs to exist for those assertions to pass.
 
@@ -174,7 +174,8 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
 
 5. **Plan-level fields** — also populate:
    - `base_branch`: current git branch (run `git branch --show-current`)
-   - `bdd_command`: detect per dispatch skill's BDD Command Detection rules, `null` if not detectable yet
+
+   Do **not** add a `bdd_command` field or any equivalent test-runner command. BDD invocation is owned exclusively by the project's verify hook — plans must never carry a test command.
 
 6. **Order by dependency chain** — infrastructure first, data models before APIs, core logic before edge cases, happy-path before error-handling.
 

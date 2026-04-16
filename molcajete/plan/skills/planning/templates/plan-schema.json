@@ -4,7 +4,6 @@
   "status": "pending | in_progress | implemented | failed",
   "scope": ["original IDs passed to the plan command"],
   "base_branch": "main",
-  "bdd_command": "npx cucumber-js | null",
   "tasks": [
     {
       "id": "T-001",
