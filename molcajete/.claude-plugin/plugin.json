@@ -8,6 +8,7 @@
   },
   "keywords": ["workflow", "development", "testing", "specs", "bdd"],
   "commands": [
+    "./build/commands/build.md",
     "./setup/commands/setup.md",
     "./plan/commands/plan.md",
     "./plan/commands/reverse-plan.md",
@@ -26,6 +27,7 @@
     "./spec/commands/usecase.md"
   ],
   "skills": [
+    "./build/skills/implementing/SKILL.md",
     "./setup/skills/setup/SKILL.md",
     "./plan/skills/planning/SKILL.md",
     "./research/skills/headless-research/SKILL.md",

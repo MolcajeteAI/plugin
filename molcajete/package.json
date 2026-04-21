@@ -21,6 +21,7 @@
   },
   "files": [
     ".claude-plugin/",
+    "build/",
     "setup/",
     "plan/",
     "research/",
