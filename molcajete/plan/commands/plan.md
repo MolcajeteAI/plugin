@@ -10,7 +10,6 @@ allowed-tools:
   - Grep
   - Bash
   - Agent
-  - AskUserQuestion
 ---
 
 # Plan Command
@@ -19,7 +18,7 @@ You generate implementation plans from PRD specs. You scan for unimplemented use
 
 **Scope argument:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response. This keeps you in control of the conversation flow.
+**Do not ask questions or request confirmations.** Run the entire command uninterrupted from start to finish. The developer will review the output files after generation.
 
 ## Step 1: Load Skills
 
@@ -110,27 +109,18 @@ Report gaps:
 
 If **all** UCs are missing Gherkin, stop with the gap report.
 
-If **some** UCs have gaps, report the gaps and ask via AskUserQuestion:
-- Question: "{gap report}\n\nWould you like to proceed with a plan covering only the UCs that have Gherkin, or fix the gaps first?"
-- Header: "Gherkin Gaps"
-- Options: "Proceed with available UCs" / "Cancel — I'll fix the gaps first"
+If **some** UCs have gaps, report the gaps as plain text, then automatically proceed with only the verified UCs.
 
-If "Cancel", stop. Otherwise, continue with only the verified UCs.
+## Step 7: Log Scope Summary
 
-## Step 7: Present Scope Summary
+Log the scope summary as plain text for the user to see, then continue immediately:
 
-Use AskUserQuestion to show what will be planned:
+- **Features in scope** — list with UC counts
+- **Use cases to plan** — list with scenario counts and status
+- **Total scenarios** — aggregate count
+- **Missing Gherkin** (if any were excluded) — list of excluded UCs
 
-- Question: Format as a structured summary:
-  - **Features in scope** — list with UC counts
-  - **Use cases to plan** — list with scenario counts and status
-  - **Total scenarios** — aggregate count
-  - **Missing Gherkin** (if any were excluded) — list of excluded UCs
-
-- Header: "Plan Scope"
-- Options: "Proceed" / "Narrow scope" / "Cancel"
-
-If "Narrow scope": use AskUserQuestion to ask which IDs to exclude, remove them, and re-present. If "Cancel": stop.
+Do not ask for confirmation or offer to narrow scope.
 
 ## Step 8: Generate Task Breakdown
 
@@ -179,20 +169,7 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
 
 6. **Order by dependency chain** — infrastructure first, data models before APIs, core logic before edge cases, happy-path before error-handling.
 
-## Step 9: Plan Preview
-
-Render both artifacts for approval. The JSON is the source of truth; the MD is its human-readable companion, derived from the JSON plus loaded PRD context per the planning skill's "Companion `plan.md` (greenfield)" section.
-
-Use AskUserQuestion to show the full plan JSON content and the rendered `plan.md`:
-
-- Question: Show the complete plan JSON in a code block with 2-space indent, followed by the rendered `plan.md` content in a separate fenced markdown block
-- Header: "Plan Preview"
-- Options: "Looks good" / "Edit" / "Cancel"
-
-If "Edit": use AskUserQuestion to collect corrections, regenerate affected tasks (and the derived MD), and re-preview.
-If "Cancel": stop.
-
-## Step 10: Write Plan File
+## Step 9: Write Plan File
 
 1. Generate the directory name:
    - Timestamp: current time as `YYYYMMDDHHmm`
@@ -206,9 +183,9 @@ If "Cancel": stop.
 
 3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `molcajete build`.
 
-4. **Derive and write `plan.md` second.** Using the JSON you just wrote plus the PRD context loaded in Steps 4–9 (REQUIREMENTS.md, ARCHITECTURE.md, UC files, Gherkin), render `plan.md` per the planning skill's "Companion `plan.md` (greenfield)" section. Use the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-template.md`. Write the result to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. Do not include execution-state fields (`status`, `summary`, `errors`, `estimated_context`, `depends_on`).
+4. **Derive and write `plan.md` second.** Using the JSON you just wrote plus the PRD context loaded in Steps 4–8 (REQUIREMENTS.md, ARCHITECTURE.md, UC files, Gherkin), render `plan.md` per the planning skill's "Companion `plan.md` (greenfield)" section. Use the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-template.md`. Write the result to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. Do not include execution-state fields (`status`, `summary`, `errors`, `estimated_context`, `depends_on`).
 
-## Step 11: Report
+## Step 10: Report
 
 Tell the user:
 

@@ -10,7 +10,6 @@ allowed-tools:
   - Grep
   - Bash
   - Agent
-  - AskUserQuestion
 ---
 
 # Reverse Plan Command
@@ -19,7 +18,7 @@ You generate plans for wiring BDD step definitions to existing code. You scan fo
 
 **Scope argument:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response. This keeps you in control of the conversation flow.
+**Do not ask questions or request confirmations.** Run the entire command uninterrupted from start to finish. The developer will review the output files after generation.
 
 ## Step 1: Load Skills
 
@@ -109,12 +108,7 @@ Report gaps:
 
 If **all** UCs are missing Gherkin, stop with the gap report.
 
-If **some** UCs have gaps, report the gaps and ask via AskUserQuestion:
-- Question: "{gap report}\n\nWould you like to proceed with a plan covering only the UCs that have Gherkin, or fix the gaps first?"
-- Header: "Gherkin Gaps"
-- Options: "Proceed with available UCs" / "Cancel — I'll fix the gaps first"
-
-If "Cancel", stop. Otherwise, continue with only the verified UCs.
+If **some** UCs have gaps, report the gaps as plain text, then automatically proceed with only the verified UCs.
 
 ## Step 7: Collect TEST-ISSUES
 
@@ -130,23 +124,19 @@ For each in-scope UC, check for a sibling testability-concerns file and fold sur
    - **Scenario-local** if the REC's `Scenario:` field names a single in-scope `SC-XXXX`.
    - **Global** if the REC lacks a `Scenario:` field, OR the same REC text/area appears in TEST-ISSUES files across ≥2 scoped UCs.
 
-5. **Remember the set** — keep the surviving classified RECs available for Step 9 (JSON fold-in) and Step 11 (MD write decision). If zero RECs survive, note that `plan.md` will not be written in Step 11.
+5. **Remember the set** — keep the surviving classified RECs available for Step 9 (JSON fold-in) and Step 10 (MD write decision). If zero RECs survive, note that `plan.md` will not be written in Step 10.
 
 
-## Step 8: Present Scope Summary
+## Step 8: Log Scope Summary
 
-Use AskUserQuestion to show what will be planned:
+Log the scope summary as plain text for the user to see, then continue immediately:
 
-- Question: Format as a structured summary:
-  - **Features in scope** — list with UC counts
-  - **Use cases to plan** — list with scenario counts and status
-  - **Total scenarios** — aggregate count
-  - **Missing Gherkin** (if any were excluded) — list of excluded UCs
+- **Features in scope** — list with UC counts
+- **Use cases to plan** — list with scenario counts and status
+- **Total scenarios** — aggregate count
+- **Missing Gherkin** (if any were excluded) — list of excluded UCs
 
-- Header: "Plan Scope"
-- Options: "Proceed" / "Narrow scope" / "Cancel"
-
-If "Narrow scope": use AskUserQuestion to ask which IDs to exclude, remove them, and re-present. If "Cancel": stop.
+Do not ask for confirmation or offer to narrow scope.
 
 ## Step 9: Generate Task Breakdown
 
@@ -203,23 +193,7 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
 
    This keeps the JSON self-sufficient — `molcajete build` never reads `plan.md`.
 
-## Step 10: Plan Preview
-
-Render the JSON for approval. Also render `plan.md` **only if** at least one REC survived Step 7; otherwise show the JSON only and note that `plan.md` will be skipped.
-
-Use AskUserQuestion:
-
-- Question:
-  - Always: show the complete plan JSON in a code block with 2-space indent.
-  - Conditionally: if any classified RECs exist from Step 7, also show the rendered `plan.md` content (derived per the planning skill's "Companion `plan.md` (reverse)" section) in a separate fenced markdown block.
-  - If no RECs survived, state: "No blocking testability prerequisites detected — `plan.md` will be skipped."
-- Header: "Plan Preview"
-- Options: "Looks good" / "Edit" / "Cancel"
-
-If "Edit": use AskUserQuestion to collect corrections, regenerate affected tasks (and the derived MD if applicable), and re-preview.
-If "Cancel": stop.
-
-## Step 11: Write Plan File
+## Step 10: Write Plan File
 
 1. Generate the directory name:
    - Timestamp: current time as `YYYYMMDDHHmm`
@@ -235,7 +209,7 @@ If "Cancel": stop.
 
 4. **Conditionally write `plan.md`.** If any classified RECs survived Step 7, render `plan.md` per the planning skill's "Companion `plan.md` (reverse)" section using the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/reverse-plan-template.md`, and write it to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. The MD lists scenarios by ID + short description (never full Gherkin bodies) and details each prerequisite with its source TEST-ISSUES link, category, why it blocks tests, required changes, and the task it maps to. If no RECs survived, **do not** create `plan.md`.
 
-## Step 12: Report
+## Step 11: Report
 
 Tell the user:
 
