@@ -33,6 +33,8 @@ Read in one batch:
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md`
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
+4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
+5. `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/SKILL.md`
 
 ## Step 2: Verify Prerequisites
 
@@ -65,20 +67,24 @@ Use Glob, Grep, and Read to find the implementation files in scope. Group by lik
 
 Use the Agent tool (`subagent_type: general-purpose`) with one task: read the confirmed files and produce the spec content for the resolved scope. Pass:
 
-- Skills to load: reverse-engineering, feature-authoring, usecase-authoring.
+- Skills to load: reverse-engineering, feature-authoring, usecase-authoring, architecture, slicing.
 - Project context paths.
 - Confirmed file list.
 - Resolved scope (one of: features, single feature, single UC, single code path) and any inferred module + domain.
-- Instruction: produce REQUIREMENTS.md / UC files / appended scenarios as appropriate, populate ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map). Generate all IDs in one batch call. Add newly discovered actors to ACTORS.md and newly discovered tech-stack entries to TECH-STACK.md per the reverse-engineering skill's project-level discovery rules.
+- Instruction: produce REQUIREMENTS.md / UC files / appended scenarios as appropriate, populate ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map, Testing Decisions, Event Topology) per the architecture skill's **Table Filling** rules — every applicable table must be populated. Generate all IDs in one batch call (include `S-` prefixes for slices). Add newly discovered actors to ACTORS.md and newly discovered tech-stack entries to TECH-STACK.md per the reverse-engineering skill's project-level discovery rules.
 
-For single code path scope, the subagent appends one scenario block to the parent UC file (with `---` separators) and updates the UC's frontmatter version.
+For each new or extended UC, also emit slice files per the slicing skill — one Markdown file per slice in `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.slices/UC-XXXX-NNN-{kebab-name}.md`. **Do not emit any code files.** Reverse-spec emits **coverage** slices: set `objective: coverage` in each slice's frontmatter. Coverage slices target existing files only — `files.create` stays empty, `files.modify` lists the shipped files whose uncovered behavior the slice will test. `provides` lists the exports those files already expose that the slice's tests pin (the harness uses this list as the mutation surface). Every `SC-` in the extracted UC must be covered by exactly one slice. Slice IDs are sequential within the UC: scan the `.slices/` folder for `max(NNN)` and increment; for new UCs start at `001`. Reuse the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/templates/slice-template.md`. Pick the contract language tag from `prd/TECH-STACK.md`.
+
+For single code path scope, the subagent appends one scenario block to the parent UC file (with `---` separators), updates the UC's frontmatter version, and either extends an existing coverage slice's `covers` array and its Tests section (when the new scenario tests files already targeted by a slice) or emits one new coverage slice file in the UC's `.slices/` folder.
 
 ## Step 8: Report
 
 Tell the user what was created or updated:
 
 - Features extracted with file paths and inline scenario counts.
+- For each extracted or extended UC: coverage slice IDs (UC-XXXX-NNN) with their `covers` lists and `test_file` paths the CodeWriter will materialize at build time.
+- ARCHITECTURE.md tables populated per feature.
 - New actors / tech-stack entries added.
-- Testability Notes per UC if any signals were detected (silent — surface here, do not interrupt the flow).
+- Testability Notes per UC if any signals were detected (silent — surface here, do not interrupt the flow); confirm they were recorded in the parent feature's ARCHITECTURE.md `## Testing Decisions` table.
 
-Suggest next step: "Run `/m:reverse-plan` to generate a coverage-recovery plan when modules need more test coverage."
+Suggest next step: "Run `molcajete build <UC-XXXX>` to execute the coverage slices — the harness will assert each scaffold starts GREEN, fill it out, then mutate the targeted files to confirm the new tests catch regressions."

@@ -4,12 +4,12 @@ description: >-
   Rules and templates for creating and updating feature documents. Defines
   EARS syntax patterns, Fit Criteria, Non-Goals positioning, FEAT-XXXX
   ID assignment, FEATURES.md row management, and the creation interview
-  pattern. Used by /m:plan.
+  pattern. Used by /m:spec.
 ---
 
 # Feature Authoring
 
-Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES.md, and ARCHITECTURE.md scaffold. The /m:plan command references this skill to run the creation interview and generate all feature artifacts.
+Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES.md, and ARCHITECTURE.md scaffold. The /m:spec command references this skill to run the creation interview and generate all feature artifacts.
 
 
 ## Module and Domain Resolution
@@ -329,7 +329,7 @@ After all sections are confirmed:
 
 ## Update Mode
 
-/m:plan uses this skill in update mode:
+/m:spec uses this skill in update mode:
 - Read the current `REQUIREMENTS.md` and `ARCHITECTURE.md`
 - Compare with the user's change description
 - Propose specific changes via AskUserQuestion ("Here's what I'd change: ... Does this look correct?")

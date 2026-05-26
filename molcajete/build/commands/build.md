@@ -1,7 +1,7 @@
 ---
-description: Implement a plan task — production code and tests via the test-first build loop
+description: Implement a single slice — TDD red/green/mutation lifecycle in two phases
 model: claude-opus-4-6
-argument-hint: "<plan-name> <T-NNN>"
+argument-hint: "<UC-XXXX-NNN>"
 allowed-tools:
   - Read
   - Write
@@ -15,7 +15,7 @@ allowed-tools:
 
 # Build Command
 
-You implement a single plan task by running a two-subagent loop: an **Implementer** writes a test then production code for one behavior; a **Validator** runs the suite and the coverage check. The loop continues until every behavior named in the task is covered and the Validator returns `pass`. No worktrees, no headless sessions — the user is present and commits when ready.
+You implement a single **slice** by running its two-phase TDD lifecycle. The slice's Markdown file — its frontmatter, Rationale, Contracts (Types / API Surface / Behavior), and Tests (nested bullets) — plus the dependency-slice `provides` signatures and the current contents of any `files.modify` are the only context. There is no plan.json, no UC re-read, no architecture file re-read at build time. Spec already did that work; build consumes its output.
 
 **Do NOT commit code.** The user reviews your output and commits themselves.
 
@@ -25,230 +25,177 @@ You implement a single plan task by running a two-subagent loop: an **Implemente
 
 ## Step 1: Load Skills
 
-1. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer rules, outer-edge mocking, runner inference, coverage gate
-2. `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/SKILL.md` — plan JSON schema
+Read in one batch:
+
+1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/SKILL.md` — slice file schema and the contract this command consumes
+2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — runner inference, outer-edge mocking, coverage gate
 
 ## Step 2: Verify Prerequisites
 
-1. Verify `prd/PROJECT.md` and `prd/MODULES.md` both exist. If either is missing:
+1. `prd/PROJECT.md` and `prd/MODULES.md` must exist. If either is missing:
 
-   "Project foundation not found. Run `/m:setup` first to create PROJECT.md and MODULES.md."
+   "Project foundation not found. Run `/m:setup` first."
 
    Then stop.
 
 2. Ensure `.molcajete/settings.json` exists and contains `testing.threshold`:
    - If the file does not exist, create `.molcajete/` and write `{"testing": {"threshold": 80}}`. Tell the user: "Initialized `.molcajete/settings.json` with default `testing.threshold = 80`. Edit it to change the coverage gate."
-   - If the file exists but `testing.threshold` is missing, merge in `testing.threshold = 80` (preserving every other key) and write it back. Tell the user the same one-liner.
+   - If the file exists but `testing.threshold` is missing, merge in `testing.threshold = 80` (preserving every other key) and write it back.
    - If `testing.threshold` is already set, use that value.
-
-3. Verify `.molcajete/plans/` directory exists. If missing:
-
-   "No plans directory found. Run `/m:plan` first to generate a plan."
-
-   Then stop.
 
 ## Step 3: Parse Arguments
 
-Parse `$ARGUMENTS` for two required tokens:
+Parse `$ARGUMENTS` for one required token: the slice ID in the format `UC-XXXX-NNN` (e.g., `UC-J10A-003`).
 
-1. **Plan name** -- the directory name under `.molcajete/plans/` (e.g., `202604021530-login`)
-2. **Task ID** -- the task identifier (e.g., `T-001`)
+If `$ARGUMENTS` is empty:
 
-If `$ARGUMENTS` is empty or contains fewer than two tokens:
-
-1. List available plans by globbing `.molcajete/plans/*/plan.json`
+1. List available slices by globbing `prd/modules/*/features/*/use-cases/*.slices/*.md` and sorting by ID.
 2. Tell the user:
 
-   "Usage: `/m:build <plan-name> <T-NNN>`\n\nAvailable plans:\n{list each plan directory name}"
+   "Usage: `/m:build <UC-XXXX-NNN>`\n\nAvailable slices:\n{list each slice: id, name, objective, status}"
 
    Then stop.
 
-Verify the plan exists: glob `.molcajete/plans/{plan-name}/plan.json`. If not found:
+Resolve the slice file by globbing `prd/modules/*/features/*/use-cases/*.slices/{UC-XXXX-NNN}-*.md`. If not found:
 
-1. List available plans
-2. Tell the user: "Plan '{plan-name}' not found." with the list of available plans
+1. List available slices as above.
+2. Tell the user: "Slice '{UC-XXXX-NNN}' not found." with the list.
 
 Then stop.
 
-## Step 4: Load Plan
+## Step 4: Load Slice File
 
-1. Read `plan.json` from `.molcajete/plans/{plan-name}/plan.json`
-2. Read `plan.md` from `.molcajete/plans/{plan-name}/plan.md` (if it exists)
-3. Parse the plan JSON. Verify it has `tasks` array and required top-level fields (`title`, `status`, `scope`, `base_branch`).
+1. Read the resolved slice file.
+2. Parse the frontmatter (`id`, `name`, `use_case`, `feature`, `objective`, `files.create`, `files.modify`, `depends_on`, `provides`, `test_file`, `covers`, `last_update`).
+3. Capture the body sections: `## Rationale`, `## Contracts` (with `### Types`, `### API Surface`, `### Behavior` subsections), `## Tests` (the nested bullet plan).
 
-## Step 5: Validate Task
+## Step 5: Validate Slice
 
-1. Find the task with matching `id` in the plan's `tasks` array. If not found:
+1. **Check dependencies.** For each ID in `depends_on`, glob `prd/modules/*/features/*/use-cases/*.slices/{dep-id}-*.md` to confirm the dependency slice file exists, then check `.molcajete/slices/{dep-id}.json` for `status: "implemented"`. If any dependency is unmet:
 
-   "Task {T-NNN} not found in plan '{plan-name}'. Available tasks:\n\n{list each task: id, title, status}"
-
-   Then stop.
-
-2. If the task's status is `implemented`:
-
-   Count implemented vs. total tasks. Tell the user:
-
-   "Task {T-NNN} ({title}) is already implemented. Plan progress: {X}/{Y} tasks done."
-
-   If other pending tasks exist with met dependencies, list them as candidates. Then stop.
-
-3. Check dependencies: for each ID in `task.depends_on`, verify the corresponding task has `status: "implemented"`. If any dependency is not met:
-
-   "Task {T-NNN} is blocked. These dependencies are not yet implemented:\n\n{list each unmet dep: id, title, status}"
+   "Slice {id} is blocked. These dependencies are not yet implemented:\n\n{list each unmet dep: id, status}"
 
    Then stop.
 
-4. Present the task to the user via AskUserQuestion:
+2. **Check file invariants:**
+   - For `objective: implement` slices: every path in `files.create` must NOT yet exist; every path in `files.modify` must exist.
+   - For `objective: coverage` slices: `files.create` must be empty; every path in `files.modify` must exist.
 
-   - Question: "**{task.id}: {task.title}**\n\n**Use Case:** {task.use_case}\n**Feature:** {task.feature}\n**Module:** {task.module}\n\n**Description:**\n{task.description}\n\n**Files to modify:**\n{task.files_to_modify as bulleted list}\n\n{if task.sub_tasks}**Sub-tasks:** {count} sub-tasks{/if}\n\nReady to implement?"
-   - Header: "Build Task"
+   On violation, tell the user precisely which invariant failed and stop.
+
+3. **Present the slice** via AskUserQuestion:
+
+   - Question: "**{id}: {name}**\n\n**Use Case:** {use_case}\n**Objective:** {objective}\n**Covers:** {covers}\n\n**Files (create):** {files.create}\n**Files (modify):** {files.modify}\n**Depends on:** {depends_on}\n**Test file (materialized at build):** {test_file}\n\nReady to build this slice?"
+   - Header: "Build Slice"
    - Options: "Proceed" / "Cancel"
 
    If "Cancel", stop.
 
-## Step 6: Load Task Context
+## Step 6: Load Build Payload
 
-Issue all reads in a single parallel batch (one assistant turn, multiple tool_use blocks). This context is essential -- the model must understand the full project, the feature requirements, and the task details to implement correctly.
+Issue all reads in a single parallel batch. The payload is intentionally narrow — slice file content + dependency exports + existing modify files + tech stack — and nothing else. Do NOT re-read REQUIREMENTS.md, ARCHITECTURE.md, the UC file, or any other slice file.
 
-### 6.1 Project-Level Context
+### 6.1 Dependency Exports
 
-Read all project-level files. These establish the shared vocabulary, tech stack, domains, actors, and feature landscape:
+For each slice ID in `depends_on`:
 
-- `prd/PROJECT.md` -- project description (required)
-- `prd/TECH-STACK.md` -- technology choices, project organization, and how the project runs (required for the loop; the Implementer reads the relevant `Module` section)
-- `prd/ACTORS.md` -- system actors for consistent actor references across specs (if exists)
-- `prd/DOMAINS.md` -- domain registry so you know what domains exist (if exists)
-- `prd/FEATURES.md` -- master feature registry showing what is already implemented (if exists)
-- `prd/GLOSSARY.md` -- shared terminology for consistent language (if exists)
-- `prd/MODULES.md` -- module registry (required)
-- `.molcajete/settings.json` -- testing threshold and project settings (required)
+1. Read the dependency's slice file to find its `provides` list and `files.create` / `files.modify` paths.
+2. For each name in `provides`, `grep` the dependency's source files for the exported identifier and capture the signature (function declaration, type alias, class, or constant declaration). Capture only the export signature line(s), not the full body.
 
-### 6.2 Feature and Use Case Context
+Build a `dependency_exports` view in memory: one entry per dependency slice, listing `{ slice_id, name, signature }` rows. This is what the slice sees of its dependencies — never the full source.
 
-Read the feature-level and use-case-level specs. These define WHAT the code must do:
+### 6.2 Existing Modify Files
 
-- **REQUIREMENTS.md** -- feature requirements (EARS syntax, functional/non-functional, acceptance criteria). Derive the path from the UC file's parent feature directory: `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-- **ARCHITECTURE.md** -- architecture context, Code Map, data model, integration points. Read from `task.architecture` (if non-empty path)
-- **UC file** -- the use case being implemented. Glob `prd/modules/*/features/*/use-cases/{task.use_case}-*.md` to find and read it. Contains the objective, preconditions, trigger, scenarios with Given/Steps/Outcomes/Side Effects
+For each path in `files.modify`, read the current contents.
 
-### 6.3 Design Assets
+### 6.3 Tech Stack
 
-Check for high-resolution design files (screenshots, mockups, Figma exports) referenced in the task description, plan.md task section, or the feature's ARCHITECTURE.md. If any design assets are provided (image files, annotated screenshots, etc.), read them. **When designs are provided, the implementation MUST match them pixel-for-pixel** -- layout, spacing, colors, typography, component structure. Designs are the source of truth for UI work.
+Determine the module by matching the first file in `files.modify` (or `files.create`) against the `Directory` rows in `prd/TECH-STACK.md`. Read that module's section verbatim — it carries the framework, key libraries, and testing runner.
 
-### 6.4 Plan Context
+If no module matches, or the matched module is missing `Framework` / `Key libraries` rows, stop with:
 
-The task object from plan.json is already parsed (Step 4). Now load the narrative:
+"`prd/TECH-STACK.md` is incomplete for the module containing {first file}. Run `/m:setup` to fill in `Framework` and `Key libraries` for that module."
 
-- **Plan.md task section** -- Locate the `### T-NNN` section in `plan.md`. If the task ID has a sub-task format (`T-NNN-M`), use the parent ID (`T-NNN`) to find the section.
-- **Prior task summaries** -- For each task ID in `task.depends_on`, read its `summary` field from `plan.json`. These provide context about what was already built and key decisions made.
+Resolve the test runner per the testing skill's "Runner Inference". Cache it for this invocation. Resolve test + coverage commands from `.molcajete/settings.json testing.commands.{test,coverage}` when set, otherwise derive from the runner's conventional scoping flag. The touched-files placeholder is `files.create ∪ files.modify ∪ {test_file}`.
 
-## Step 7: Validate plan.md
+## Step 7: Phase 1 — Scaffold
 
-If `plan.md` is missing or the `### {task.id}` section (or parent `### T-NNN` for sub-tasks) is not found:
+The scaffold phase translates the slice's `## Tests` nested-bullet plan into actual test code in the project's runner. The output goes to `slice.test_file`. **Do not write production code in this phase.**
 
-"Companion plan.md is missing or the task section was not found. Regenerate the plan with `/m:plan` (or `/m:reverse-plan` for coverage plans) before running `/m:build`."
+1. Read the `## Tests` section of the slice file.
+2. Map the bullet structure to runner-equivalent grouping:
+   - Top-level bullets (typically `- **SC-XXXX:** ...` or `- **FR-XXXX:** ...`) become outermost `describe` blocks. Block names follow the pattern `SC-XXXX: {scenario name}` so the harness can map results back to scenarios.
+   - Nested context bullets (`- Given ...`, `- When ...`) become nested `describe` blocks.
+   - Leaf bullets (`- Then ...`, `- And ...`) become `it` blocks.
+3. For `objective: implement` slices: `it` bodies are intentionally empty (or contain only a single `expect.fail("not implemented")` placeholder when the runner requires it). The initial run must be deterministically RED.
+4. For `objective: coverage` slices: `it` bodies contain the full assertions implied by the bullet text against the existing implementation. The initial run must be deterministically GREEN.
+5. Add the imports the assertions will need — for `implement` slices these may not yet resolve (the modules don't exist), and that's part of the expected RED state.
+6. Write the file at `slice.test_file`. Create parent directories as needed.
 
-Then stop.
+## Step 8: Phase 1 Check — Initial Test Run
 
-## Step 8: Update Plan State (in_progress)
+Run the scoped test command against `slice.test_file` only.
 
-1. Set `task.status` to `"in_progress"` in the parsed plan JSON
-2. If the plan's top-level `status` is `"pending"`, set it to `"in_progress"`
-3. Write the updated plan JSON back to `.molcajete/plans/{plan-name}/plan.json`
+- `objective: implement` — expect RED.
+  - GREEN → run the **mutation check** (Step 10). If mutation turns the scaffold RED, the implementation already satisfies the slice; record the outcome and skip Phase 2. If mutation leaves the scaffold GREEN, halt and write to `.molcajete/escalations/{id}.md`: "Scaffold for {id} starts GREEN and survives mutation — the test does not actually test the contract. Re-run `/m:spec` to re-author the Tests section."
+  - RED → proceed to Phase 2.
+- `objective: coverage` — expect GREEN.
+  - GREEN → proceed to Phase 2.
+  - RED → halt; write to `.molcajete/escalations/{id}.md`: "Coverage slice {id} scaffold is RED before tests are added — existing implementation appears broken or the scaffold targets the wrong files."
 
-## Step 9: Resolve Module Tech Stack
+## Step 9: Phase 2 — Implement
 
-From `task.files_to_modify`, determine the module whose `Directory` in `prd/TECH-STACK.md` contains those files. Extract that `Module` section verbatim — it is what the Implementer will receive.
+The implement phase writes production code (and, for `implement` slices, fills in the test assertion bodies the scaffold left empty).
 
-If no module's `Directory` covers the task's files, or the matched module is missing `Framework` or `Key libraries` rows (or those rows still contain template placeholders like `{e.g., ...}`), stop and tell the user:
+1. **For `implement` slices:** write production code in its final form to satisfy the slice's Contracts (Types / API Surface / Behavior) and turn the scaffold GREEN. Fill each empty `it` body with concrete assertions as you implement the behavior it covers. Honour `dependency_exports` signatures verbatim.
+2. **For `coverage` slices:** add more assertions to the scaffold to close coverage on `files.modify`. Do NOT edit production code unless a seam is genuinely untestable (the testing skill's reactive refactor rule).
+3. Run the scoped test + coverage commands.
+   - All green + per-file coverage on every touched file ≥ `testing.threshold` → proceed to Step 10.
+   - RED → retry up to 3 more times. On retry, the only context you operate with is the **failing test output** plus the slice frontmatter. Do NOT re-read the slice file, dependency exports, or modify files.
+   - On the 3rd RED, halt; write to `.molcajete/escalations/{id}.md` with the last test output.
 
-"`prd/TECH-STACK.md` is incomplete for the module containing {first file in files_to_modify}. Run `/m:setup` to fill in the `Framework` and `Key libraries` rows for that module, then retry."
+## Step 10: Mutation Check (harness-owned semantics)
 
-**Test runner resolution.** Resolve per the testing skill's "Runner Inference" section. If ambiguous, ask via `AskUserQuestion` with the candidates as options. Cache the resolution for this invocation.
+The mutation check is a deterministic perturbation: for each file in `files.modify` (and `files.create` if it exists), rewrite every exported function/binding named in `slice.provides` to throw `new Error('MUTANT')` (TS/JS) or the language-appropriate equivalent (`raise NotImplementedError('MUTANT')` for Python, `panic("MUTANT")` for Go, etc.). Save the originals first. Run the scoped test command. Restore originals in a `finally`. Report RED/GREEN.
 
-**Test + coverage commands.** If `.molcajete/settings.json testing.commands.{test,coverage}` is set, use those (with `{paths}` as the touched-files placeholder). Otherwise derive from the resolved runner's conventional scoping flag (see testing skill). If unknown, halt with a setup hint.
+When the harness runs this command non-interactively, the mutation step is performed by the harness itself (see `molcajete/src/commands/build/mutation.ts`). When you run this command interactively:
 
-**Touched set.** Before each Validator call, build the touched set as the union of:
-   - `task.files_to_modify` (production files the planner expected to change)
-   - The files actually changed by the Implementer in any round so far this task (tracked across iterations)
-   - Their colocated or sibling test files (per the module's existing test layout)
+- For `implement` slices, run mutation only when the scaffold starts GREEN unexpectedly (Step 8).
+- For `coverage` slices, run mutation after Phase 2 — success criterion is **mutation RED**. If mutation leaves the scaffold GREEN, the added tests are vacuous; retry up to 3 more times passing only the mutation report plus the slice frontmatter.
 
-   Translate the touched set to runner-appropriate test_paths/pkg_paths/src_paths arguments before substituting into the command.
+Perform the perturbation via `Edit`/`Write`, run the test command via `Bash`, and restore via `Edit`/`Write`. Wrap in explicit save → mutate → run → restore order, and verify restoration by re-reading the file and comparing to the saved original. **Never leave a file mutated on exit.**
 
-## Step 10: Implement — Inline Loop
+## Step 11: Record Outcome
 
-The orchestrator (you) is the Implementer. You write the test then the production code directly. You also run the test/coverage command via Bash and judge the result. No subagents — spawning one to run `npm test` is wasted Claude calls.
+Write `.molcajete/slices/{id}.json` with:
 
-### Loop setup
+```json
+{
+  "id": "{id}",
+  "use_case": "{use_case}",
+  "feature": "{feature}",
+  "objective": "{objective}",
+  "status": "implemented",
+  "completed_at": "{ISO timestamp}",
+  "files_touched": [...],
+  "covers": [...],
+  "summary": "{one paragraph: what got built / what got covered, key decisions, anything downstream slices should know}"
+}
+```
 
-- `behaviors_covered`: empty list
-- `validator_feedback`: null
-- `iterations`: 0
-- `max_iterations`: 10
-- Create `.molcajete/plans/{plan-name}/runs/` if missing; open `.molcajete/plans/{plan-name}/runs/{task.id}.log`.
-
-### Loop body — repeat until done or `iterations >= max_iterations`
-
-For each iteration:
-
-1. **Pick the next uncovered behavior** named in `task.description`. If every named behavior is in `behaviors_covered`, run one final verify (step 4) and exit.
-
-2. **Write the test first.** The test file must be created or extended before any production-code edit in this iteration. Use the resolved runner from Step 9 and the testing skill's conventions.
-
-3. **Write production code in its final form.** No throwaway-minimum-then-refactor. If the task's `description` names uncovered code paths (coverage-recovery flavor), write only tests — touch production code only when a seam is genuinely untestable (reactive refactor).
-
-4. **Run the scoped test + coverage commands via Bash** (the commands resolved in Step 9, substituted with the current touched set). Read the result yourself:
-   - All scoped tests green + per-file coverage on every touched file ≥ `testing.threshold` → behavior done. Append to `behaviors_covered`. Clear `validator_feedback`. Loop to step 1.
-   - Tests failed → set `validator_feedback` to the failure details. Loop to step 1 (you'll address them on the next iteration as part of the same behavior).
-   - Coverage low → set `validator_feedback` to the per-file gaps. Loop to step 1.
-
-5. **Append the round to the log** — iteration number, behavior name, files changed, outcome, failure detail if any.
-
-6. On hard infra failure (connection refused, missing service, etc.), stop. Do not retry; surface to the user.
-
-### Iteration cap
-
-If `iterations >= max_iterations` without success, pause and ask via AskUserQuestion:
-
-- Question: "Task {task.id} did not converge after {max_iterations} iterations.\n\nLast result: {summary}\n\nFull log: `.molcajete/plans/{plan-name}/runs/{task.id}.log`\n\nWhat next?"
-- Header: "Loop Paused"
-- Options: "Mark task failed (I'll investigate)" / "Continue for another 10 iterations" / "Cancel"
-
-Act on the user's choice.
-
-### Sub-Tasks
-
-When `task.sub_tasks` is non-null, run the loop above per sub-task in dependency order, scoped to each sub-task's `description` and `files_to_modify`. Mark each sub-task `implemented` or `failed` in plan.json as you go. After all sub-tasks pass, run one final scoped test + coverage pass at the parent-task level (same Bash command as the loop) before proceeding to Step 11. If any sub-task fails, mark the parent failed and stop.
-
-## Step 11: Update Plan State (final)
-
-1. **Task status:**
-   - If the loop exited with `pass` and all named behaviors covered: set `task.status` to `"implemented"` and write `task.summary` describing what was implemented, key decisions, and watch-outs for dependent tasks.
-   - If the loop exited at the iteration cap and the user chose "Mark task failed", OR a hard fault occurred: set `task.status` to `"failed"` and write `task.errors` describing what went wrong.
-
-2. **Plan-level status:**
-   - Count tasks by status
-   - If ALL tasks are `"implemented"`: set plan `status` to `"implemented"`
-   - If this task `"failed"`: set plan `status` to `"failed"`
-   - Otherwise: keep plan `status` as `"in_progress"`
-
-3. Write the updated plan JSON to `.molcajete/plans/{plan-name}/plan.json`
+This file is the durable per-slice record. The harness aggregates these for UC and feature completion.
 
 ## Step 12: Report
 
-Tell the user what happened:
+Tell the user:
 
-- **Iterations** -- number of Implementer + Validator rounds
-- **Behaviors covered** -- list of behaviors the loop closed
-- **Files created/modified** -- aggregated across all rounds
-- **Coverage** -- final coverage percentage from the Validator's last `pass`
-- **Task summary** -- the summary written to plan.json
-- **Plan progress** -- "Completed {task.id} ({X}/{Y} tasks done)"
-- **Run log** -- path to `.molcajete/plans/{plan-name}/runs/{task.id}.log`
+- **Slice** — `{id}: {name}` ({objective})
+- **Scenarios covered** — `covers`
+- **Files created / modified** — aggregated from `files.create` + `files.modify` (plus the materialized `test_file`)
+- **Coverage** — final coverage percentage from the last passing test run
+- **Summary** — what got built or covered
+- **Slice record** — path to `.molcajete/slices/{id}.json`
 
-Then suggest next steps:
+Then list the next slices whose `depends_on` is now satisfied by completed slices in the same UC: "Next slices ready:\n{list: id, name}\n\nRun `/m:build {next-id}` to continue."
 
-- **If more pending tasks have met dependencies:** "Next tasks ready:\n{list: id, title}\n\nRun `/m:build {plan-name} <T-NNN>` to continue."
-- **If all tasks are implemented:** "All {Y} tasks complete. Plan '{plan-name}' is fully implemented."
-- **If this task failed:** "Task {task.id} failed. Review the run log, fix the issue, and re-run `/m:build {plan-name} {task.id}` to retry."
-- **If remaining tasks are blocked:** "Remaining tasks are blocked by failed dependencies. Fix the failed tasks first."
+If every slice in the UC is now implemented, suggest: "All slices for {use_case} complete. The use case is fully built."

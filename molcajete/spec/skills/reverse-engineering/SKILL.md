@@ -259,7 +259,7 @@ that includes:
 
 The parent command does NOT re-read the files the subagent created — it trusts the subagent's report and presents the results to the user.
 
-> **Note:** Reverse commands stop at spec extraction. Coverage tests are created during the build phase via coverage-recovery tasks emitted by `/m:reverse-plan` and executed by `/m:build`'s Implementer + Validator loop.
+> **Note:** Reverse commands emit `coverage` slices alongside the extracted specs (see the slicing skill). The harness runs each coverage slice through the GREEN-first / mutation-RED protocol; CodeWriter only adds tests to existing files.
 
 ## Template Reference
 

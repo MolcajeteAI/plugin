@@ -22,19 +22,18 @@ Molcajete.ai is a spec-driven development framework built on [Claude Code](https
 
 The framework ships two components:
 
-- **`m` plugin** — A Claude Code plugin with slash commands and skills organized into four modules: spec, plan, build, and research.
+- **`m` plugin** — A Claude Code plugin with slash commands and skills organized into modules: spec, build, research, and shared.
 - **`@MolcajeteAI/cli`** — A Node.js CLI ([source](https://github.com/MolcajeteAI/molcajete)) that orchestrates spec development in unattended mode, running the full spec-to-build pipeline without manual interaction.
 
 ### The Pipeline
 
 ```
-Feature idea → EARS Requirements → Use Cases → Scenarios → Build
+Feature idea → EARS Requirements → Use Cases → Slices → Build
 ```
 
-1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects.
-2. **Plan** — Generate implementation plans from specs. Map requirements and scenarios to code via architecture documents that link spec IDs to source files.
-3. **Build** — Execute plans task-by-task with agents that read the specs and architecture, write code, and validate against the scenarios defined in each use case.
-4. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
+1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. The spec pass also emits the slice DAG, interface contracts, and test scaffolds for each use case — there is no separate planning step.
+2. **Build** — Execute the slice DAG with a TDD red/green protocol. Each slice runs against its own scaffold, its interfaces file, and the named exports of its dependency slices. The harness owns RED/GREEN validation and the mutation check.
+3. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
 
 ### Why Specs?
 
@@ -118,18 +117,11 @@ Create and maintain structured specifications from freeform descriptions or exis
 | `/m:reverse-usecase` | Reverse-engineer a use case from existing code |
 | `/m:reverse-scenario` | Reverse-engineer a scenario from a code path |
 
-### Plan Module
-
-| Command | Description |
-|---------|-------------|
-| `/m:plan` | Generate an implementation plan from specs |
-| `/m:reverse-plan` | Generate a coverage-recovery plan that adds tests until the project meets its coverage threshold |
-
 ### Build Module
 
 | Command | Description |
 |---------|-------------|
-| `/m:build` | Execute a task from an implementation plan |
+| `/m:build` | Build a single slice from a use case's slice DAG |
 | `/m:setup` | Initialize project with foundational docs and tooling detection |
 
 ### Research and Shared
@@ -147,9 +139,9 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each skil
 |--------|-------|----------------|
 | spec | `feature-authoring` | EARS syntax, fit criteria, non-goals positioning, creation interview |
 | spec | `usecase-authoring` | UC file structure, flat scenarios, side effects rules |
-| spec | `architecture` | ARCHITECTURE.md schema, C4 diagrams, code map, population rules |
+| spec | `architecture` | ARCHITECTURE.md schema, C4 diagrams, code map, population rules, table filling |
 | spec | `reverse-engineering` | Code-to-spec extraction patterns, scope discovery, dispatcher integration |
-| plan | `planning` | Implementation plan generation and task sequencing |
+| spec | `slicing` | Slice DAG schema, interfaces file, test scaffold contract, implement vs coverage objectives |
 | build | `setup` | Project initialization, domain structure, tooling detection |
 | research | `research-methods` | 3-tier research routing (quick, explain, deep) with source evaluation |
 | research | `headless-research` | Unattended research execution for CLI mode |
@@ -198,13 +190,10 @@ prd/
 molcajete/
 ├── .claude-plugin/
 │   └── plugin.json       # Plugin manifest (commands, skills, version)
-├── spec/                  # Spec module — feature and UC authoring
+├── spec/                  # Spec module — feature, UC, architecture, slicing
 │   ├── commands/
 │   └── skills/
-├── plan/                  # Plan module — implementation planning
-│   ├── commands/
-│   └── skills/
-├── build/                 # Build module — task execution
+├── build/                 # Build module — slice execution
 │   ├── commands/
 │   └── skills/
 ├── research/              # Research module — multi-tier research
@@ -219,7 +208,7 @@ molcajete/
 
 - **Commands** — User-facing slash commands (e.g., `/m:feature`). Markdown prompts with YAML frontmatter specifying model, tools, and behavior.
 - **Skills** — Structured knowledge documents loaded by commands at runtime. Encode conventions, templates, and rules that commands follow.
-- **Modules** — Logical groupings (spec, plan, build, research, shared) that own a stage of the pipeline.
+- **Modules** — Logical groupings (spec, build, research, shared) that own a stage of the pipeline.
 
 ---
 
@@ -233,7 +222,7 @@ molcajete/
 Guidelines:
 - Commands are plain Markdown with YAML frontmatter
 - Skills use YAML frontmatter with `name` and `description` fields
-- Place new commands and skills in the module they belong to (spec, plan, build, research, or shared)
+- Place new commands and skills in the module they belong to (spec, build, research, or shared)
 
 ---
 

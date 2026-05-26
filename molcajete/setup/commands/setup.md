@@ -90,4 +90,4 @@ Tell the user what was written and what to do next:
 
 > Created `prd/PROJECT.md`, `prd/TECH-STACK.md`, `prd/ACTORS.md`, `prd/GLOSSARY.md`, `prd/MODULES.md`, `prd/DOMAINS.md`, `prd/FEATURES.md`, `.molcajete/settings.json`. The Testing rows in TECH-STACK.md were filled where I could detect a runner; the build loop infers the rest from manifests at run time.
 >
-> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan` and `/m:build`.
+> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:build <UC-XXXX> <S-XXXX>` to execute its slices.
