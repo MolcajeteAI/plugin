@@ -24,6 +24,7 @@
     "./research/skills/research-methods/SKILL.md",
     "./shared/skills/code-documentation/SKILL.md",
     "./shared/skills/git-committing/SKILL.md",
+    "./shared/skills/git-conflict-resolution/SKILL.md",
     "./shared/skills/id-generation/SKILL.md",
     "./shared/skills/testing/SKILL.md",
     "./spec/skills/architecture/SKILL.md",
