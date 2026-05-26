@@ -1,7 +1,7 @@
 ---
-description: Generate a plan for wiring BDD to existing code (reverse path)
+description: Generate a coverage-recovery plan that adds tests until the project meets its coverage threshold
 model: claude-opus-4-6
-argument-hint: "[FEAT-XXXX | UC-XXXX | SC-XXXX ...]"
+argument-hint: "[module-name | path | FEAT-XXXX | UC-XXXX ...]"
 allowed-tools:
   - Read
   - Write
@@ -14,7 +14,7 @@ allowed-tools:
 
 # Reverse Plan Command
 
-You generate plans for wiring BDD step definitions to existing code. You scan for use cases that need BDD coverage, verify Gherkin exists, and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `molcajete build` will execute. The output format is strictly JSON — never markdown. Every task uses `wire-bdd` intent — the application already works, tasks create step definitions that exercise it.
+You generate **coverage-recovery plans**: tasks that add tests to existing code until the project meets its coverage threshold. You scan the codebase, identify modules and files whose coverage is below the threshold from `.molcajete/settings.json` `testing.threshold`, and emit behavior tasks with `intent: cover`. The output is strictly JSON — `/m:build` runs the same Implementer + Validator loop on `cover` tasks as on `implement` tasks; only the Implementer's framing differs ("add a test that exercises path X" rather than "implement behavior Y").
 
 **Scope argument:** $ARGUMENTS
 
@@ -25,179 +25,127 @@ You generate plans for wiring BDD step definitions to existing code. You scan fo
 Read both skills that govern this command:
 
 1. `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/SKILL.md` — plan file format, task decomposition, context budgets, done signals, naming
-2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — BDD scaffold context, tagging rules
+2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — testing principles and coverage gate
 
 Follow these skills' rules for all subsequent steps.
 
 ## Step 2: Verify Prerequisites
 
-1. Verify `prd/PROJECT.md` and `prd/MODULES.md` both exist. If either is missing:
+1. Verify `prd/PROJECT.md`, `prd/MODULES.md`, and `prd/TECH-STACK.md` exist. If any is missing:
 
-   "Project foundation not found. Run `/m:setup` first to create PROJECT.md and MODULES.md."
+   "Project foundation not found. Run `/m:setup` first."
 
    Then stop.
 
-2. Create `.molcajete/plans/` directory if it doesn't exist:
+2. Verify `.molcajete/settings.json` exists and contains `testing.threshold`. If missing:
+
+   "Testing threshold not configured. Run `/m:setup` to initialize `testing.threshold` in `.molcajete/settings.json`."
+
+   Then stop.
+
+3. Create `.molcajete/plans/` directory if it doesn't exist:
    ```bash
    mkdir -p .molcajete/plans
    ```
 
 ## Step 3: Parse Arguments
 
-Parse `$ARGUMENTS` for entity IDs:
+Parse `$ARGUMENTS`:
 
-- **No arguments** → full PRD scan mode
-- **With arguments** → parse tokens matching `FEAT-XXXX`, `UC-XXXX`, or `SC-XXXX` patterns; scope the plan to those entities
+- **No arguments** → scan every module listed in `prd/MODULES.md` and `prd/TECH-STACK.md` for coverage gaps
+- **Module name** (matches an ID in `prd/MODULES.md`) → scope to that module's directory
+- **Path** (matches an existing directory under the working tree) → scope to that directory
+- **FEAT-XXXX / UC-XXXX** → resolve to the implementation files via the feature's `ARCHITECTURE.md#Code Map`; scope to those files
 
-If arguments are provided, validate every ID exists in the PRD:
-- `FEAT-XXXX` → must appear in `prd/FEATURES.md`
-- `UC-XXXX` → must exist as `prd/modules/*/features/*/use-cases/UC-XXXX-*.md`
-- `SC-XXXX` → must exist as a scenario heading in some UC file (grep `prd/modules/*/features/*/use-cases/*.md` for `### SC-XXXX`)
-
-If any ID is not found, report which ones are invalid and stop.
+If a token does not resolve to any of the above, report it as unknown and stop.
 
 ## Step 4: Load Project Context
 
 Read project-level files:
 - `prd/PROJECT.md` — project description (required)
-- `prd/TECH-STACK.md` — technology choices (if exists)
-- `prd/ACTORS.md` — system actors (if exists)
+- `prd/TECH-STACK.md` — technology choices, required for derived test/coverage commands per module
 - `prd/MODULES.md` — module registry (required)
-- `prd/DOMAINS.md` — domain tag registry (if exists)
-- `prd/FEATURES.md` — master feature registry
+- `prd/FEATURES.md` — feature registry (helps task descriptions reference the right feature when known)
 
-Per-feature files will be loaded in the next step based on scope.
+## Step 5: Run Coverage Per Module
 
-## Step 5: Scan for Plannable Work
+For each in-scope module, locate its `Module` section in `prd/TECH-STACK.md` and derive the coverage command:
 
-### Mode A: With Arguments (explicit scope)
+1. If `.molcajete/settings.json` `testing.commands.coverage` is set, use it (run from the module's `Directory`).
+2. Otherwise, derive a conventional coverage command from `Modules.{name}.Testing` (Vitest → `npx vitest run --coverage`, Jest → `npx jest --coverage`, pytest → `pytest --cov`, go test → `go test -cover ./...`, etc.).
 
-Plan work for exactly the provided IDs — **no status filtering**. The user is explicitly telling you what to work on.
+If the runner is unknown and no override is set, skip that module and record the skip — do not guess.
 
-- `FEAT-XXXX` → include all UCs under that feature. Glob `prd/modules/*/features/FEAT-XXXX-*/` to find it, then read `USE-CASES.md` and all UC files in `use-cases/`.
-- `UC-XXXX` → include that specific UC. Glob `prd/modules/*/features/*/use-cases/UC-XXXX-*.md` to find it.
-- `SC-XXXX` → include the parent UC. Grep `prd/modules/*/features/*/use-cases/*.md` for `### SC-XXXX` to find the UC file, then include the whole UC (scenarios aren't planned individually).
+Run each module's coverage command. Parse the report to obtain per-file coverage percentages and a list of uncovered branches / line ranges. Aggregate into a structured map:
 
-For each in-scope feature, extract the module from the path and also read:
-- `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-- `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` (if exists)
+```
+{
+  module-name: {
+    directory,
+    threshold,
+    files: [
+      { path, coverage_pct, gaps: [ { kind: "branch" | "line", description, line_range } ] }
+    ]
+  }
+}
+```
 
-### Mode B: No Arguments (full scan)
+If a module's coverage command fails to run (no test command, no test files yet), record the failure and continue.
 
-Find everything that needs implementation:
+## Step 6: Identify Coverage Gaps
 
-1. Read `prd/FEATURES.md` for all features across all domains.
-2. For each feature, read `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md`.
-3. Collect UCs with status `pending` or `dirty` in the USE-CASES.md table.
-4. Also include features with status `implemented` that have UCs ready.
-5. For each in-scope feature, read `REQUIREMENTS.md` and `ARCHITECTURE.md` (if exists).
-6. Build the full picture of all pending work.
+For each module, keep only files whose coverage is below the module's threshold (default: `.molcajete/settings.json` `testing.threshold`, falling back to 80). Group gaps into **behavior clusters** per file — adjacent or thematically related uncovered branches that the build agent can reasonably address as a single task.
 
-If nothing plannable is found: tell the user "No use cases need BDD wiring. Use `/m:reverse-feature`, `/m:reverse-usecase`, or `/m:reverse-spec` to extract specs from code first." Then stop.
+If no module has gaps below threshold, tell the user "All in-scope modules already meet the coverage threshold; no coverage-recovery tasks needed." Then stop.
 
-## Step 6: Verify Gherkin
+## Step 7: Log Scope Summary
 
-For each plannable UC:
+Log the scope summary as plain text:
 
-1. Each UC has exactly one `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. Use `Glob` with pattern `bdd/features/**/{UC-XXXX}-*.feature` (or `*.feature.md` for MDG projects) to locate it — the `UC-XXXX` filename prefix makes the match deterministic and slug-tolerant.
-2. Verify the `.feature` file exists and contains at least one `Scenario:` or `Scenario Outline:`.
-3. Read the feature file to count scenarios and extract step patterns.
-
-Report gaps:
-- If Gherkin missing for a UC: "UC-XXXX ({name}) has no Gherkin. Run `/m:scenario UC-XXXX` first."
-
-If **all** UCs are missing Gherkin, stop with the gap report.
-
-If **some** UCs have gaps, report the gaps as plain text, then automatically proceed with only the verified UCs.
-
-## Step 7: Collect TEST-ISSUES
-
-For each in-scope UC, check for a sibling testability-concerns file and fold surviving recommendations into the plan. See the planning skill's "Companion `plan.md` (reverse)" section for the full rules.
-
-1. **Discover** — for each UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`, look for a sibling named `UC-XXXX-{slug}-TEST-ISSUES.md` (same basename + `-TEST-ISSUES.md`). Skip UCs that have no such file.
-
-2. **Parse** — read each TEST-ISSUES file. The format follows `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`. Extract each REC's Scenario, Area, Why it might matter, and Category fields.
-
-3. **Filter by Testing Decisions** — for each REC, read the owning feature's `ARCHITECTURE.md`. If it has a `## Testing Decisions` section containing a decision that covers the same area/category, **skip** that REC — the concern is already resolved.
-
-4. **Classify** — for each surviving REC:
-   - **Scenario-local** if the REC's `Scenario:` field names a single in-scope `SC-XXXX`.
-   - **Global** if the REC lacks a `Scenario:` field, OR the same REC text/area appears in TEST-ISSUES files across ≥2 scoped UCs.
-
-5. **Remember the set** — keep the surviving classified RECs available for Step 9 (JSON fold-in) and Step 10 (MD write decision). If zero RECs survive, note that `plan.md` will not be written in Step 10.
-
-
-## Step 8: Log Scope Summary
-
-Log the scope summary as plain text for the user to see, then continue immediately:
-
-- **Features in scope** — list with UC counts
-- **Use cases to plan** — list with scenario counts and status
-- **Total scenarios** — aggregate count
-- **Missing Gherkin** (if any were excluded) — list of excluded UCs
+- **Modules scanned** — list with current coverage percentage and threshold
+- **Files needing coverage** — list per module, with coverage percentage and number of uncovered gap clusters
+- **Modules skipped** — list with the reason (no runner, command failed, etc.)
 
 Do not ask for confirmation or offer to narrow scope.
 
-## Step 9: Generate Task Breakdown
+## Step 8: Generate Task Breakdown
 
-Read all in-scope materials:
-- UC files with their scenarios
-- Feature REQUIREMENTS.md and ARCHITECTURE.md files
-- Gherkin .feature files for the in-scope UCs
-- `bdd/steps/INDEX.md` (if exists) for existing step definitions
-
-If any ARCHITECTURE.md contains a Code Map section with entries, use it to identify the existing implementation files that step definitions need to exercise. Include the ARCHITECTURE.md path in each task's Architecture field so build tasks can load it for context.
-
-Read the plan schema — it defines the exact JSON structure you must produce:
+Read the plan schema:
 ```
 ${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-schema.json
 ```
 
-Build a JSON object matching this schema. The top-level object has `title`, `generated`, `status`, `scope`, `base_branch`, and `tasks` (array). Decompose into tasks following the planning skill rules:
+Build a JSON object matching this schema. For each file with coverage gaps, emit one task (or more, if context-budget splitting is required):
 
-1. **BDD-aligned tasks** — each task advances at least one Gherkin scenario. Map scenarios to tasks by examining what step definitions need to be written for those assertions to pass.
-
-2. **Infrastructure tasks** — only when necessary as prerequisites (test harness setup, shared step helpers). These tasks have null `scenario` (BDD skipped).
-
-3. **Context budget** — estimate each task at ≤ 200K tokens. Consider: source files to read + spec files + Gherkin + step definition work. Split if over budget.
-
-4. **Task fields** — for each task include all fields from the plan schema:
+1. **Task shape:**
    - `id`: `T-001`, `T-002`, etc. (flat sequential)
-   - `title`: verb-noun describing what step definitions get written
-   - `use_case`: the UC-XXXX this task advances
-   - `feature`: parent feature ID (FEAT-XXXX)
-   - `module`: the module the feature belongs to
-   - `architecture`: path to the feature's ARCHITECTURE.md
-   - `intent`: `wire-bdd` (reverse plan always uses wire-bdd)
+   - `title`: `Cover {file-relative-path}`
+   - `use_case`: when the file is mapped to a UC via some feature's `ARCHITECTURE.md#Code Map`, set this; otherwise `null`.
+   - `feature`: same — set when the file is mapped via a feature's Code Map, otherwise `null`.
+   - `module`: the module ID containing the file
+   - `architecture`: path to the feature's `ARCHITECTURE.md` when known, otherwise `null`.
+   - `intent`: `cover` (this command only emits `cover`)
    - `status`: `pending`
    - `estimated_context`: `~{N}K tokens`
-   - `scenario`: `"SC-XXXX"` for filtered BDD gate; null for chores (BDD skipped)
-   - `depends_on`: `["T-NNN"]` or `[]`
-   - `description`: what step definitions to create from scratch, which existing implementation files they exercise, include path to relevant `.feature` file(s), constraints
-   - `files_to_modify`: step definition file paths (not application code)
+   - `depends_on`: `[]` (coverage tasks are typically independent; add dependencies only when one cover task introduces a shared test harness that another reuses)
+   - `description`: names the file under test, the current coverage percentage, and the uncovered behaviors or branches to target. Do not enumerate test file paths or assertion lists — the build agent decides those. Example: "Add tests for `src/auth/refresh.ts` (currently 42%). Uncovered behaviors: expired refresh token rejection, replay-protection failure path, network-error retry."
+   - `files_to_modify`: the production file(s) under test. Test files are not enumerated; the Implementer chooses placement per the module's existing test conventions.
+   - `sub_tasks`: `null` unless context-budget splitting is needed
    - `summary`: `null`
    - `errors`: `[]`
 
-   When ARCHITECTURE.md has a Code Map, reference the existing implementation files in each task's description so the build agent knows what code the step definitions should exercise.
+2. **Plan-level fields:**
+   - `base_branch`: current git branch (`git branch --show-current`)
+   - `title`: `Coverage Recovery — {scope summary}`
+   - `scope`: the original argument tokens (or `["full-scan"]` if none)
 
-5. **Plan-level fields** — also populate:
-   - `base_branch`: current git branch (run `git branch --show-current`)
+3. **Order tasks** by module, then by lowest coverage first within each module. Files closest to threshold are not necessarily easiest, but lowest-coverage files generally have the most impactful gaps.
 
-   Do **not** add a `bdd_command` field or any equivalent test-runner command. BDD invocation is owned exclusively by the project's verify hook — plans must never carry a test command.
-
-6. **Order by dependency chain** — infrastructure first, shared step helpers before scenario-specific steps, happy-path before error-handling.
-
-7. **Fold TEST-ISSUES into the JSON** — using the classified RECs from Step 7:
-   - **Global RECs** → add one sub-task under T-001 per global REC, describing the infrastructure change needed for `molcajete build` to run the scenarios. Sub-task IDs follow `T-001-M`. Absorb infrastructure per the planning skill's "Infrastructure Absorption" rule — no standalone top-level infrastructure task. Append the prerequisite file paths to T-001's `files_to_modify`.
-   - **Scenario-local RECs** → append a `Prerequisites:` paragraph to the owning scenario's task `description`. The paragraph lists each REC by ID with its source TEST-ISSUES file path and the required change. Add the prerequisite file paths to the owning task's `files_to_modify`. Only split into a sub-task when the combined work exceeds the 200K context budget.
-
-   This keeps the JSON self-sufficient — `molcajete build` never reads `plan.md`.
-
-## Step 10: Write Plan File
+## Step 9: Write Plan File
 
 1. Generate the directory name:
    - Timestamp: current time as `YYYYMMDDHHmm`
-   - Slug: derived from scope per the planning skill rules (feature name kebab-case, UC name kebab-case, `mixed`, or `full-scan`)
+   - Slug: `coverage-{module-name}` (single module), `coverage-mixed` (multiple modules), or `coverage-full-scan`
    - Directory: `{YYYYMMDDHHmm}-{slug}`
 
 2. Create the plan directory:
@@ -205,19 +153,17 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    mkdir -p .molcajete/plans/{YYYYMMDDHHmm}-{slug}
    ```
 
-3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `molcajete build`.
+3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `/m:build`.
 
-4. **Conditionally write `plan.md`.** If any classified RECs survived Step 7, render `plan.md` per the planning skill's "Companion `plan.md` (reverse)" section using the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/reverse-plan-template.md`, and write it to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. The MD lists scenarios by ID + short description (never full Gherkin bodies) and details each prerequisite with its source TEST-ISSUES link, category, why it blocks tests, required changes, and the task it maps to. If no RECs survived, **do not** create `plan.md`.
+4. **Write `plan.md` second.** Render `plan.md` per the planning skill's "Companion `plan.md` (reverse / coverage-recovery)" section. Use the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/reverse-plan-template.md`. Structure: header, modules with current coverage and threshold, behavior tasks per file with gap clusters, coverage gate in Verification.
 
-## Step 11: Report
+## Step 10: Report
 
 Tell the user:
 
-- Plan JSON path
-- `plan.md` path when written; otherwise state "no blocking testability prerequisites detected — `plan.md` skipped"
+- Plan JSON path and `plan.md` path
 - Task count and total estimated context budget
-- Features and UCs covered
-- Any UCs excluded due to missing Gherkin
-- TEST-ISSUES summary: count of RECs folded into the plan (global + scenario-local) and count filtered out by Testing Decisions
+- Modules covered with current coverage and threshold
+- Any modules skipped and why
 
-Suggest next step: "Review the plan file, then run `molcajete build {plan-name}` to start implementation."
+Suggest next step: "Review `plan.md`, then run `/m:build {plan-name} <T-NNN>` to start adding tests. The same Implementer + Validator loop runs on `cover` tasks; tasks finish when the file's gaps are closed and the project coverage gate passes."

@@ -45,16 +45,10 @@
 - **Type:** {monorepo | multi-repo}
 - **Package manager:** {e.g., pnpm}
 
-## BDD
-- **Framework:** {e.g., Behave | Cucumber.js | godog}
-- **Language:** {e.g., Python | TypeScript | Go}
-- **Format:** {e.g., Gherkin `.feature` files in `bdd/features/`}
-
 ## Tooling
 
 | Module | Root | Language | Format Command | Lint Command |
 |--------|------|----------|----------------|--------------|
-| {e.g., bdd} | {`bdd/`} | {Python} | {`ruff format --check bdd/`} | {`ruff check bdd/`} |
 | {e.g., server} | {`server/`} | {Go} | {`cd server && gofmt -l .`} | {`cd server && golangci-lint run ./...`} |
 | {e.g., web} | {`apps/web/`} | {TypeScript} | {`cd apps/web && npx biome format --check .`} | {`cd apps/web && npx biome lint .`} |
 

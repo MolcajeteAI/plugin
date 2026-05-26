@@ -1,66 +1,69 @@
 <!--
-Reverse plan.md template — companion to plan.json, produced by /m:reverse-plan.
+Reverse / coverage-recovery plan.md template — companion to plan.json,
+produced by /m:reverse-plan.
 
-Only write this file when at least one scoped UC has a materially-blocking
-REC entry in its `UC-XXXX-{slug}-TEST-ISSUES.md` sibling. If no such REC
-exists (or all have been resolved in the feature's
-ARCHITECTURE.md#Testing Decisions), skip MD generation entirely.
-
-This file lists scenarios by ID + short description and details the
-prerequisites that `molcajete build` must satisfy before it can run the
-Gherkin scenarios. Regenerated from plan.json + TEST-ISSUES source files
-on every plan write; never hand-edit.
+This file is a human-readable WYSIWYG preview of the coverage-recovery
+work the build loop will execute. It is regenerated from plan.json +
+coverage scan results on every plan write; never hand-edit. Authoring
+rules live in `molcajete/plan/skills/planning/SKILL.md` →
+"Companion plan.md (reverse / coverage-recovery)".
 
 Do NOT include execution state fields: status, summary, errors,
 estimated_context, depends_on.
 -->
 
-# {plan.title} — Reverse Plan
+# {plan.title} — Coverage Recovery
 
 ## Context
 
-Wiring BDD step definitions to existing code for {N} scenario(s) across
-{M} use case(s). This file exists because testability prerequisites must
-be resolved before `molcajete build` can run the scenarios.
+Coverage-recovery plan for {N} module(s). The Implementer + Validator loop
+in `/m:build` will add tests for the behaviors listed below until each
+file reaches the project coverage threshold from
+`.molcajete/settings.json` `testing.threshold`.
 
-## Scenarios to wire
-
-<!--
-ID + one-line description only, derived from each task's scenario field and
-the matching Scenario line in the .feature file. NO full Gherkin body.
--->
-
-- `SC-XXXX` — {one-line scenario summary} · UC: [UC-XXXX](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md)
-- `SC-YYYY` — {...}
-
-## Global prerequisites
+## Modules
 
 <!--
-Only render this section when at least one REC is classified as global
-(no Scenario field, or same area appears across ≥2 scoped UCs).
-Global RECs are absorbed into T-001 as sub-tasks in plan.json.
+One subsection per in-scope module. Omit modules already at or above
+threshold. For each module include current coverage and threshold, then
+the per-file gaps the planner identified.
 -->
 
-### PRE-G-NN: {short title}
+### {module-name}
 
-- **Source:** [{UC-XXXX-...-TEST-ISSUES.md}](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}-TEST-ISSUES.md) / REC-NNN
-- **Category:** {fixture | selector | mock | injection | environment | data-seed}
-- **Why it blocks tests:** {1–3 sentences}
-- **Required changes for `molcajete build`:**
-  - {file/change 1}
-  - {file/change 2}
-- **Maps to task:** T-001 (infrastructure absorbed, per planning skill)
+- **Current coverage:** {pct}%
+- **Threshold:** {threshold}%
+- **Files needing coverage:**
+  - `{file-relative-path}` — {pct}% — {short note on the gap}
+  - `{file-relative-path}` — {pct}% — {short note on the gap}
 
-## Per-scenario prerequisites
+## Tasks
+
+<!-- One section per top-level task in plan.tasks. Order matches JSON order. -->
+
+### T-NNN — Cover {file-relative-path}
+
+- **File under test:** `{file-relative-path}`
+- **Current coverage:** {pct}%
+
+**Uncovered behaviors / branches**
 
 <!--
-Only render this section when at least one REC is scenario-local.
-Group by scenario ID. Each REC links back to its source TEST-ISSUES file.
+The gap clusters as the planner identified them. These are the behaviors
+the Implementer will write tests for. The Implementer chooses actual
+test placement and assertion shape; the planner does not enumerate
+test file paths or assertions.
 -->
 
-### SC-XXXX
+- {behavior or branch description, with line range when known}
+- {behavior or branch description}
 
-- **PRE-SC-NN** — {short title} · [REC source](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}-TEST-ISSUES.md) · Category: {…}
-  - Why it blocks: {…}
-  - Required changes: {…}
-  - Maps to task: T-NNN
+**Files to modify**
+
+- `{file-relative-path}` — production file under test
+
+**Verification**
+
+- Coverage gate: this file reaches `.molcajete/settings.json`
+  `testing.threshold` AND total project coverage stays at or above the
+  threshold. Confirmed by the Validator subagent during `/m:build`.

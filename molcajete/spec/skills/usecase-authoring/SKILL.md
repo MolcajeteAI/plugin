@@ -2,20 +2,20 @@
 name: usecase-authoring
 description: >-
   Rules and templates for creating and updating use case files. Defines
-  UC file structure with flat scenario blocks, mandatory Side Effects field
-  with non-side-effects, YAML frontmatter schema, UC-XXXX ID assignment,
-  USE-CASES.md row management, and the creation interview pattern. Used by
-  /m:plan.
+  UC file structure with flat inline scenario blocks, mandatory Side Effects
+  field with non-side-effects, YAML frontmatter schema, UC-XXXX ID
+  assignment, USE-CASES.md row management, and the creation interview
+  pattern.
 ---
 
 # Use Case Authoring
 
-Rules for creating and maintaining use case files: one file per UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. The /m:usecase command references this skill to run the creation interview and generate the UC file.
+Rules for creating and maintaining use case files: one file per UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. The /m:usecase command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
 
 ## When to Use
 
-- Creating a new use case with /m:plan
-- Updating an existing use case with /m:plan
+- Creating a new use case with /m:usecase or /m:spec
+- Updating an existing use case with /m:update-usecase
 - Understanding the structure and rules for UC files
 
 ## Module-Scoped Use Cases
@@ -51,17 +51,6 @@ Example -- patient submits registration (patient module):
 
 The console module then has its own UC ("Review Registration") where the trigger is "Administrator sees a new item in the pending registrations queue."
 
-**Gherkin mapping:** Side Effects become `And` assertion clauses, so cross-module consequences are naturally expressed in Gherkin without leaking into the `When` (Steps) or `Then` (Outcomes) layers:
-
-```gherkin
-When the patient fills in the registration form
-And the system validates input
-Then the patient sees "Registration submitted for review"
-And a "registration.submitted" event is published with "patient_id, timestamp"
-```
-
-The last `And` asserts the cross-module boundary crossing. The consuming module's Gherkin tests what happens on the receiving end.
-
 **Single-module features are unaffected.** This section applies only when a feature exists in 2+ modules.
 
 ## UC File Structure
@@ -93,7 +82,7 @@ Blockquote format. One sentence only. Describes the actor's goal, not the system
 - {Actor state: authenticated, has permission, etc.}
 ```
 
-Bullet list of conditions that must be true before any scenario can begin. These are shared across all scenarios and map to a Gherkin `Background` block.
+Bullet list of conditions that must be true before any scenario can begin. These are shared across all scenarios.
 
 ### 4. Trigger
 
@@ -105,17 +94,7 @@ Bullet list of conditions that must be true before any scenario can begin. These
 
 One sentence only. Either an actor action ("User clicks Submit") or a system event ("Cron job fires at midnight").
 
-### 5. Gherkin Tags
-
-```
-## Gherkin Tags
-
-`@FEAT-XXXX @UC-XXXX`
-```
-
-Both tags on a single line in backticks. Used by /m:plan to tag generated Gherkin scenarios.
-
-### 6. Scenarios
+### 5. Scenarios
 
 Scenarios are the core of the UC file. Every scenario -- success, error, edge case -- has the same shape and the same level of detail. There is no distinction between "main" and "alternative" flows.
 
@@ -163,11 +142,11 @@ Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Sc
 
 | Field | Format | Rules |
 |-------|--------|-------|
-| **Given** | Bullet list | State specific to THIS scenario only. UC-level Preconditions are not repeated here. Maps to Gherkin `Given` / `And` after Background. |
-| **Steps** | Numbered list | Actor/system interaction. Each step is one action. Maps to Gherkin `When` / `And`. |
+| **Given** | Bullet list | State specific to THIS scenario only. UC-level Preconditions are not repeated here. |
+| **Steps** | Numbered list | Actor/system interaction. Each step is one action. |
 | **UI** (optional) | Fenced code block (ASCII art) or Markdown image reference | Inline within Steps. Shows screen state after a step that produces a visual change. Omit for non-visual scenarios. |
-| **Outcomes** | Bullet list | What is true after this scenario completes. Maps to Gherkin `Then` clauses. |
-| **Side Effects** | Bullet list | Events, DB writes, and explicit non-side-effects. Maps to Gherkin `And` / `And no` clauses. |
+| **Outcomes** | Bullet list | What is true after this scenario completes — what the actor observes. |
+| **Side Effects** | Bullet list | Events, DB writes, outgoing calls, and explicit non-side-effects. These are the test's assertion targets when the build loop writes tests for this scenario. |
 
 #### Scenario Naming
 
@@ -178,7 +157,7 @@ Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Sc
 
 #### Scenario Separators
 
-Every scenario block is preceded and followed by a `---` horizontal rule. This includes before the first scenario (after the Gherkin Tags section) and after the last scenario.
+Every scenario block is preceded and followed by a `---` horizontal rule. This includes before the first scenario (after the Trigger section) and after the last scenario.
 
 #### Step Verb Conventions
 
@@ -246,7 +225,7 @@ A UC file can have UI blocks in some scenarios and none in others. Do not add em
 
 ## Side Effects Rules
 
-Side Effects is the most critical field for downstream agents. The Tester agent maps side effects to Gherkin `And` clauses and non-side-effects to `And no ...` clauses. Missing or vague side effects produce incomplete test coverage.
+Side Effects is the most critical field for the build loop. The Implementer subagent uses side effects as the assertion targets when writing tests for this scenario — they correspond to the Five Exit Doors in `shared/skills/testing/SKILL.md`. Missing or vague side effects produce incomplete test coverage.
 
 ### Three Categories
 
@@ -269,7 +248,7 @@ Side Effects is the most critical field for downstream agents. The Tester agent 
 
 - Every scenario must have at least one side effect or at least one non-side-effect. A scenario that changes nothing is not a scenario.
 - Non-side-effects start with "No" and name the thing that does NOT happen.
-- Non-side-effects are just as important as side effects -- they tell the Tester agent what to assert does NOT occur.
+- Non-side-effects are just as important as side effects -- they tell the Implementer what to assert does NOT occur.
 - Event names follow `{domain}.{entity}.{verb}` convention (e.g., `auth.session.created`, `billing.invoice.sent`).
 - Payload fields are listed in backtick-wrapped comma-separated format.
 
@@ -306,15 +285,15 @@ Write Steps and Outcomes as if narrating the actor's experience. If a step descr
 
 ### Core Principle
 
-All scenarios assume end-to-end execution against real infrastructure. No mocked databases, no stubbed network calls, no fake services. Fixtures and data reset before/after every scenario are the default data strategy.
+All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write specs as if everything is testable with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `prd/tech-stack.md`.
 
 ### Authoring Rule
 
-Write Given/Steps/Outcomes/Side Effects as if everything is testable end-to-end. Never design scenarios around mocking. If a scenario requires a database row, the Given step seeds a real row. If a scenario publishes an event, the Then step asserts the event was published on the real bus.
+Write Given/Steps/Outcomes/Side Effects as if everything is testable end-to-end through the public entry point of the relevant `Application`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
 
 ### Potential Concerns
 
-During authoring (Specs First or Code First), the agent may notice areas that could challenge E2E execution (e.g., a third-party API with no sandbox, time-dependent logic requiring clock manipulation). These are flagged silently -- they do NOT interrupt the workflow and do NOT change the spec.
+During authoring, the agent may notice areas that could challenge end-to-end execution (e.g., a third-party API with no sandbox, time-dependent logic requiring clock manipulation). These are flagged silently in the final report -- they do NOT interrupt the workflow and do NOT change the spec.
 
 **Concern categories** (closed set):
 
@@ -327,36 +306,9 @@ During authoring (Specs First or Code First), the agent may notice areas that co
 | `environment` | Feature flags, A/B conditions, or environment-specific behavior |
 | `data-seed` | Large or interdependent dataset required for realistic test state |
 
-### Recommendations File (Reverse Path Only)
-
-When running reverse commands, if the agent detects potential E2E concerns, it generates a recommendations file alongside the UC file:
-
-- **Naming:** `{UC-ID}-TEST-ISSUES.md` alongside the UC file (e.g., `UC-0KTg-001-TEST-ISSUES.md`)
-- **Template:** `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`
-- **Developer-only guidance** -- NOT consumed by models during spec authoring or Gherkin generation
-- **Only created during reverse commands** -- Specs First commands report concerns in the final output instead
-
 ### Testing Decisions in ARCHITECTURE.md
 
-Resolved E2E testing decisions are recorded in the feature's ARCHITECTURE.md under a `## Testing Decisions` section. Commands check this section before flagging concerns -- if a decision already exists for a service or pattern, the concern is not re-flagged.
-
-## Gherkin Mapping
-
-This table defines how UC elements map to Gherkin output for the Tester agent. One `.feature` file per UC at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. The `{module}` and `{domain}` come from the parent feature's REQUIREMENTS.md frontmatter — every feature has exactly one domain.
-
-**One feature → one domain → one BDD directory.** The test *subject* is one UC; the *observation surface* is everything the user experiences as a consequence. Side effects on this UC **must** assert everything the user observes as a consequence of performing the UC, including effects that cross into other features or domains (emails sent, notifications shown, analytics events fired, downstream writes). These are observations of *this* UC, not tests of those other features. See **Test Subject vs. Observation Surface** in `gherkin/SKILL.md` for the full rule and examples.
-
-| UC Element | Gherkin Output |
-|------------|----------------|
-| UC `name` | `Feature: {Use Case Name}` line |
-| UC `Objective` | 1-sentence description immediately under the `Feature:` line |
-| UC `Preconditions` | `Background: Given ...` |
-| UC `Gherkin Tags` | Feature-level tags: `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority}` |
-| Scenario `Given` | Additional `Given` / `And` after Background |
-| Scenario `Steps` | `When` / `And` clauses |
-| Scenario `Outcomes` | `Then` clauses |
-| Scenario `Side Effects` (positive) | `And` clauses (assertions on the UC's downstream effects — emails sent, events emitted, DB rows written) |
-| Scenario `Side Effects` ("No ...") | `And no ...` clauses |
+Resolved testing decisions are recorded in the feature's ARCHITECTURE.md under a `## Testing Decisions` section. Commands check this section before flagging concerns -- if a decision already exists for a service or pattern, the concern is not re-flagged.
 
 ## YAML Frontmatter Schema
 
@@ -366,9 +318,8 @@ This table defines how UC elements map to Gherkin output for the Tester agent. O
 | `name` | string | Verb-noun goal phrase (e.g., "Create Feature") |
 | `feature` | string | Parent feature ID: `FEAT-XXXX` |
 | `status` | string | `pending` on creation |
-| `version` | integer | Starts at `1`. Incremented by /m:plan on each edit |
+| `version` | integer | Starts at `1`. Incremented by /m:update-usecase on each edit |
 | `actor` | string | Primary actor role (must exist in prd/ACTORS.md) |
-| `tag` | string | `@UC-XXXX` -- used for Gherkin scenario filtering |
 
 ## UC-XXXX ID Assignment
 
@@ -456,7 +407,7 @@ After the scenario is confirmed, ask about UI for this scenario:
 If the user describes UI, generate an ASCII art mockup, present it for confirmation via AskUserQuestion, and note which step it belongs to. If the user provides image file paths, note them for the Write Files step.
 
 For the **Side Effects** field specifically, always remind the user:
-"Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become 'And no ...' assertions in Gherkin tests."
+"Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become 'And no ...' assertions in tests."
 
 After reviewing all extracted scenarios, ask:
 "Would you like to add another scenario?"
@@ -471,22 +422,25 @@ After all sections are confirmed:
 2. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/` directory if it does not exist
 3. If any scenario has image files, create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming
 4. Write `UC-XXXX-{slug}.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter version to `1`
-6. Add row to the feature's `USE-CASES.md`
+5. Add row to the feature's `USE-CASES.md`
 
 ## Update Mode
 
-/m:plan uses this skill in update mode:
+/m:update-usecase uses this skill in update mode:
 - Read the current UC file
 - Compare with the user's change description
 - Propose specific changes via AskUserQuestion ("Here's what I'd change:\n\n{diff}\n\nDoes this look correct?")
 - Apply after confirmation
 - Increment `version` in frontmatter
 - Do NOT run the creation interview
-- Do NOT change the UC-XXXX ID or tag
+- Do NOT change the UC-XXXX ID
+
+## Test Subject vs. Observation Surface
+
+See `shared/skills/testing/SKILL.md` → **Test Subject vs. Observation Surface** for the canonical rule. Authoring implication: side effects in a UC's scenarios must list every user-observable consequence of the use case, even when produced by code in other features (emails sent, notifications shown, downstream writes). These are observations of the UC under test, not tests of those other features — the build loop will assert on them when generating tests.
 
 ## Template Reference
 
 | Template | Purpose |
 |----------|---------|
 | [UC-template.md](./templates/UC-template.md) | UC file for each use case |
-| [UC-TEST-ISSUES-template.md](./templates/UC-TEST-ISSUES-template.md) | Testability recommendations (reverse path only) |

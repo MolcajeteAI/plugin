@@ -1,7 +1,7 @@
 <!--
 Greenfield plan.md template — companion to plan.json, produced by /m:plan.
 
-This file is a human-readable WYSIWYG preview of what `molcajete build` will
+This file is a human-readable WYSIWYG preview of what `/m:build` will
 produce. It is regenerated from plan.json + PRD context on every plan write;
 never hand-edit. Authoring rules live in
 `molcajete/plan/skills/planning/SKILL.md` → "Companion plan.md (greenfield)".
@@ -18,7 +18,7 @@ estimated_context, depends_on.
 1–3 paragraphs on why this plan exists:
 - what problem/need drove it (from scoped features' REQUIREMENTS.md "why")
 - what the user asked for (the plan's scope)
-- intended outcome after `molcajete build` finishes
+- intended outcome after `/m:build` finishes
 -->
 
 ## Scope
@@ -48,12 +48,12 @@ Source: REQUIREMENTS.md "out of scope" sections + planner inference.
 
 - Feature: [FEAT-XXXX — name](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/README.md)
 - Use case: [UC-XXXX — name](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md)
-- Scenario: [SC-XXXX — name](../../../prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md#sc-xxxx)
 - Architecture: [ARCHITECTURE.md]({task.architecture})
 
 **What changes**
 
-<!-- 1–2 paragraphs — narrative version of task.description. User-facing prose. -->
+<!-- 1–2 paragraphs — narrative version of task.description. Names the
+behavior(s) the build agent must cover. -->
 
 **Important snippets**
 
@@ -80,6 +80,6 @@ files_to_modify. These are sketches, not final code.
 
 **Verification**
 
-- BDD gate: scenario `@{task.scenario}` (executed by the project's verify hook)
-- Manual smoke: {1–3 user-level steps derived from Gherkin Given/When/Then}
+- Coverage gate: full test suite passes and coverage meets `.molcajete/settings.json` `testing.threshold`, executed by the Validator subagent during `/m:build`
+- Manual smoke: {1–3 user-level steps derived from the UC's scenario Steps and Outcomes}
 - File-level assertions: {expected files + key exports/functions}

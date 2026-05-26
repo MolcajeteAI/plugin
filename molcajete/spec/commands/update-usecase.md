@@ -1,5 +1,5 @@
 ---
-description: Update an existing use case and propagate changes to Gherkin
+description: Update an existing use case (spec only)
 model: claude-opus-4-6
 argument-hint: <UC-XXXX> <change description>
 allowed-tools:
@@ -15,20 +15,19 @@ allowed-tools:
 
 # Update Use Case
 
-You are updating an existing use case based on a change description. You will load the current spec, propose specific changes, apply after confirmation, bump the version, and propagate changes to any existing Gherkin files.
+You are updating an existing use case based on a change description. You will load the current spec, propose specific changes, apply after confirmation, and bump the version.
 
 **Input:** $ARGUMENTS
 
 **All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response.
 
-## Step 1: Load Skills
+## Step 1: Load Skill
 
-Read both skills that govern this command:
+Read the skill that governs this command:
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` -- update mode rules, flat scenario structure, Side Effects conventions
-2. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` -- generation rules, tagging, step writing
+1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` -- update mode rules, flat inline scenario structure, Side Effects conventions
 
-Follow the usecase-authoring skill's Update Mode rules: propose specific changes, do NOT run the creation interview, do NOT change the UC ID or tag.
+Follow the skill's Update Mode rules: propose specific changes, do NOT run the creation interview, do NOT change the UC ID.
 
 ## Step 2: Parse Arguments
 
@@ -107,9 +106,9 @@ Apply the confirmed changes to the UC file:
 
 2. Increment the `version` field in the YAML frontmatter.
 
-3. Do NOT change the UC-XXXX ID or tag.
+3. Do NOT change the UC-XXXX ID.
 
-6. If new scenarios were added, generate SC IDs for them:
+4. If new scenarios were added, generate SC IDs for them:
 
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js N
@@ -117,43 +116,7 @@ node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js N
 
 Prepend `SC-` to each output line.
 
-## Step 7: Gherkin Propagation
-
-Grep `bdd/features/` for `@UC-XXXX`. Each UC owns exactly one `.feature` file (at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`), so the grep should resolve to a single file. If multiple files match, report inconsistent state and stop. If no `.feature` file contains this tag, skip to Step 8.
-
-If a `.feature` file exists with `@UC-XXXX`:
-
-### 7.1 Determine Gherkin Changes
-
-Based on the spec changes applied in Step 6, determine what Gherkin changes are needed:
-
-- **Preconditions changed** -- update the `Background:` block (Given/And clauses)
-- **Scenario Given changed** -- update `Given`/`And` clauses in the matching `@SC-XXXX` scenario
-- **Scenario Steps changed** -- update `When`/`And` clauses in the matching `@SC-XXXX` scenario
-- **Scenario Outcomes changed** -- update `Then`/`And` clauses in the matching `@SC-XXXX` scenario
-- **Scenario Side Effects changed** -- update trailing `And`/`And no` clauses in the matching `@SC-XXXX` scenario
-- **New scenarios added** -- append new scenario blocks with the new `@SC-XXXX` tags
-- **Step text changed** -- find and update matching step definitions (check `bdd/steps/INDEX.md` or grep step definition files)
-
-### 7.2 Preview Gherkin Changes
-
-Use AskUserQuestion to preview the Gherkin changes:
-- Question: "The following Gherkin changes are needed to match the updated spec:\n\n**{feature-file-path}:**\n{describe each change -- before/after for modified blocks, full content for new scenarios}\n\n{if step definitions changed}**Step definitions:**\n{list step text changes}{/if}\n\nDoes this look correct?"
-- Header: "Gherkin Changes"
-- Options: "Yes, apply these changes" / "Edit" (user corrects via Other)
-
-If the user wants edits, revise and present again.
-
-### 7.3 Apply Gherkin Changes
-
-1. Edit the `.feature` file with the confirmed changes.
-2. For modified scenarios: add `@dirty` to the scenario's tag line if not already present. Remove `@pending` if present.
-3. For newly added scenarios: add `@pending` to the scenario's tag line.
-4. If step definitions changed, edit the corresponding step definition files.
-5. If new step definitions are needed, append them to the appropriate step file following the gherkin skill's step file placement rules.
-6. Update `bdd/features/INDEX.md` and `bdd/steps/INDEX.md` if new scenarios or steps were added.
-
-## Step 8: Testability Notes
+## Step 7: Testability Notes
 
 After applying changes, scan the updated scenarios for new testability signals per the usecase-authoring skill's E2E Testing Philosophy:
 
@@ -161,12 +124,10 @@ After applying changes, scan the updated scenarios for new testability signals p
 - Do NOT create a recommendations file on the Specs First path
 - Do NOT use AskUserQuestion for testability concerns
 
-## Step 9: Report
+## Step 8: Report
 
 Tell the user what changed:
 
 - List each spec file that was modified and summarize the changes
 - Note the version bump (e.g., "version: 1 -> 2")
-- If Gherkin was updated, list the Gherkin files modified and summarize changes
-- If Gherkin was NOT updated (no existing feature file), note: "No existing Gherkin files found for this UC. Run `/m:scenario UC-XXXX` to generate Gherkin when ready."
-- If testability signals were detected in Step 8, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."
+- If testability signals were detected in Step 7, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."

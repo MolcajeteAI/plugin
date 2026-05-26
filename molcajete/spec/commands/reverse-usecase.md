@@ -1,5 +1,5 @@
 ---
-description: Reverse-engineer a use case from existing code (cascades to scenarios)
+description: Reverse-engineer a use case from existing code (cascades to inline scenarios)
 model: claude-opus-4-6
 argument-hint: "[FEAT-XXXX] <freeform description of interaction>"
 allowed-tools:
@@ -15,9 +15,7 @@ allowed-tools:
 
 # Reverse-Engineer Use Case from Code
 
-You are extracting a use case spec from existing code, including all its scenarios. Instead of interviewing the user for scenarios, you scan the codebase within a feature's scope to discover interaction flows, extract the structured use case, update ARCHITECTURE.md's Code Map, and generate Gherkin artifacts.
-
-This command runs as a two-task dispatcher. T1 researches the code and extracts the UC spec. T2 generates Gherkin. A user review checkpoint separates them.
+You are extracting a use case spec from existing code, including all its inline scenarios. Instead of interviewing the user for scenarios, you scan the codebase within a feature's scope to discover interaction flows, extract the structured use case, and update ARCHITECTURE.md's Code Map.
 
 **Use case input:** $ARGUMENTS
 
@@ -25,11 +23,10 @@ This command runs as a two-task dispatcher. T1 researches the code and extracts 
 
 ## Step 1: Load Skills
 
-Read all skills that govern this command:
+Read both skills that govern this command:
 
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md` — research methodology, extraction patterns, ARCHITECTURE.md enrichment, ID resolution
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat scenario structure, Side Effects conventions, UC template
-3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — Gherkin generation, tagging, scaffold, step stubs
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat inline scenario structure, Side Effects conventions, UC template
 
 Follow these skills' rules for all subsequent steps.
 
@@ -143,73 +140,30 @@ The subagent prompt must include:
    - Update ARCHITECTURE.md: add new entries to Component Inventory, API Surface, and Code Map for this UC and its scenarios. If ARCHITECTURE.md doesn't have enrichment sections yet, add them using the enriched template structure
    - Compare discovered actors against `prd/ACTORS.md` and add any new ones. Compare discovered technologies against `prd/TECH-STACK.md` and add any new ones. Follow the project-level discovery rules from the reverse-engineering skill.
    - Generate IDs: run `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}` for 1 UC + N SCs
-   - **Testability analysis:** Run the testability analysis per the reverse-engineering skill's Testability Analysis section. Check the feature's ARCHITECTURE.md `## Testing Decisions` first -- skip concerns that already have a recorded decision. If unresolved concerns are found, generate a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`. Do not use AskUserQuestion for testability concerns.
 
 5. **Files to write:**
    - Create directory if needed: `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/`
-   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md` (scenarios inline in the UC file)
    - Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — add row: `| UC-XXXX | {name} | pending | {description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |`
    - Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — add Code Map entries for UC-XXXX and all SC-XXXX IDs, update frontmatter `use_cases` and `scenarios` arrays, update `last_update` date
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
-   - `UC-XXXX-TEST-ISSUES.md` — testability recommendations (conditional, only when concerns are found)
 
 6. **Report format:** The subagent must end with a structured report listing:
-   - UC ID, name, scenario count, and file path
+   - UC ID, name, inline scenario count, and file path
    - Scenario IDs and names
    - ARCHITECTURE.md changes (new Code Map entries, new Component Inventory rows)
    - Project-level updates: {count} new actors added to ACTORS.md, {count} new tech stack entries added to TECH-STACK.md (list names)
-   - Testability: recommendations file generated (path) or "no concerns found"
 
-## Step 7: Report T1 Results
+## Step 7: Report
 
-After the subagent returns, present the results via AskUserQuestion:
+After the subagent returns, tell the user what was created:
 
-- Question: "**Use Case Extracted**\n\n**{UC-XXXX}: {name}** (under {FEAT-XXXX})\n- {scenario count} scenarios extracted\n- Scenarios: {list SC-XXXX: {name}}\n- ARCHITECTURE.md updated with Code Map entries\n\nPlease review the UC file at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. Edit if needed, then continue to generate Gherkin.\n\nReady to proceed with Gherkin generation?"
-- Header: "UC Ready for Review"
-- Options: "Proceed with Gherkin generation" / "I need to review and edit first — I'll re-run when ready"
-
-If the user chooses to review first, stop.
-
-## Step 8: Launch T2 — Gherkin Generation
-
-Use the Agent tool to launch a general-purpose subagent for Gherkin generation.
-
-The subagent prompt must include:
-
-1. **Skills to load:**
-   - `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md`
-   - `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` (Gherkin Mapping table)
-
-2. **Files to read:**
-   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md`
-   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`
-   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`
-   - `prd/TECH-STACK.md` (if exists) for language/framework detection
-
-3. **The specific task:**
-   - Run scaffold setup from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md`
-   - Read `module:` and `domain:` from REQUIREMENTS.md frontmatter — every feature has exactly one domain. **One feature → one domain → one BDD directory.** Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of this UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**
-   - Write the `.feature` file to `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature` — **one file per use case**; the file represents this UC
-   - Feature-level tags: `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}`. Scenario-level tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag on a scenario
-   - Generate scenarios using the Gherkin Mapping table
-   - Dedup: grep `bdd/features/` for `@UC-XXXX` — if a match exists, append only new scenarios to that UC's file (never merge scenarios across UCs). If multiple files match, report inconsistent state and stop
-   - Update `bdd/features/INDEX.md` (Module → Domain → UC grouping)
-   - Run splitting check if the UC file exceeds 15 scenarios
-
-4. **Report format:** The subagent must end with a structured report listing:
-   - Feature file path and scenario count
-
-## Step 9: Report
-
-Tell the user what was created:
-
-- `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` — UC file with flat scenario structure (extracted from code)
+- `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` — UC file with flat inline scenario structure (extracted from code)
 - `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` — updated with new row
 - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` — updated with Code Map entries
-- Feature file path + scenario count
 
 Suggest next steps:
 - "Use `/m:reverse-usecase FEAT-XXXX <description>` to extract more use cases from this feature's code."
-- "Use `/m:reverse-scenario UC-XXXX <description>` to extract additional scenarios."
-- "Use `/m:reverse-plan FEAT-XXXX` to plan BDD wiring."
+- "Use `/m:reverse-scenario UC-XXXX <description>` to extract additional scenarios into this UC."
+- "Use `/m:reverse-plan` to generate a coverage-recovery plan when this UC needs more test coverage."

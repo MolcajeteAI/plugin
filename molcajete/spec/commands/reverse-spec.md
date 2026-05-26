@@ -15,9 +15,7 @@ allowed-tools:
 
 # Reverse-Engineer Spec from Code
 
-You are extracting product specs from an existing codebase — discovering features, use cases, and scenarios from code rather than authoring them from scratch. This is the broadest reverse command: it can discover and extract multiple features in a single invocation.
-
-The command runs as a two-task dispatcher to protect the 200K context limit. T1 researches the code and extracts PRD specs. T2 generates Gherkin artifacts. A user review checkpoint separates them.
+You are extracting product specs from an existing codebase — discovering features, use cases, and inline scenarios from code rather than authoring them from scratch. This is the broadest reverse command: it can discover and extract multiple features in a single invocation.
 
 **All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response.
 
@@ -27,8 +25,7 @@ Read all skills that govern this command:
 
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md` — research methodology, extraction patterns, ARCHITECTURE.md enrichment, dispatcher integration
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md` — EARS syntax, Fit Criteria, feature structure, templates
-3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat scenario structure, Side Effects conventions, UC template
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — Gherkin generation, tagging, scaffold, step stubs
+3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat inline scenario structure, Side Effects conventions, UC template
 
 Follow these skills' rules for all subsequent steps.
 
@@ -107,79 +104,32 @@ For each feature group, the subagent prompt must include:
    - Populate ARCHITECTURE.md: Component Inventory, Data Model, API Surface, Integration Points, Event Topology, Code Map
    - Compare discovered actors against `prd/ACTORS.md` and add any new ones. Compare discovered technologies against `prd/TECH-STACK.md` and add any new ones. Follow the project-level discovery rules from the reverse-engineering skill.
    - Generate IDs: run `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {count}` for all needed IDs (FEAT-, UC-, SC-, FR-, NFR-, US-, ADR-)
-   - **Testability analysis:** For each extracted UC, run the testability analysis per the reverse-engineering skill's Testability Analysis section. Check the feature's ARCHITECTURE.md `## Testing Decisions` first -- skip concerns that already have a recorded decision. If unresolved concerns are found, generate a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`. Do not use AskUserQuestion for testability concerns.
 4. **Files to write:**
 
    For each feature, in each selected module:
    - `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/REQUIREMENTS-template.md` — with `module: {module}` and `domain: {domain}` in frontmatter
    - `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/templates/USE-CASES-template.md`
    - `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`
-   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` for each use case, using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
+   - `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` for each use case, using template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md` (scenarios inline in the UC file)
    - Append row to `prd/FEATURES.md` under the `## {domain}` section: `| FEAT-XXXX | {name} | {description} | pending |`
 
    **Common to both:**
    - Edit `prd/ACTORS.md` — append rows for newly discovered actors (if any)
    - Edit `prd/TECH-STACK.md` — add newly discovered tech stack entries (if any)
-   - `UC-XXXX-TEST-ISSUES.md` — testability recommendations (conditional, only when concerns are found)
 
 5. **Report format:** The subagent must end with a structured report listing:
    - Feature ID, name, and file path
-   - Use case IDs, names, scenario counts, and file paths
+   - Use case IDs, names, inline scenario counts, and file paths
    - ARCHITECTURE.md enrichment summary (which sections populated)
    - Project-level updates: {count} new actors added to ACTORS.md, {count} new tech stack entries added to TECH-STACK.md (list names)
-   - Testability: {count} recommendations files generated (list paths)
 
-## Step 7: Report T1 Results
+## Step 7: Report
 
-After each subagent returns, compile the results into a summary.
-
-Use AskUserQuestion to present all created specs:
-
-- Question: "**Research + Spec Extraction Complete**\n\n{for each feature:\n  **{FEAT-XXXX}: {name}** (module: {module}, domain: {domain})\n  - REQUIREMENTS.md: {FR count} functional, {NFR count} non-functional requirements\n  - ARCHITECTURE.md: enriched with {sections list}\n  - Use Cases:\n    {for each UC: UC-XXXX: {name} ({scenario count} scenarios)}\n}\n\nPlease review the generated specs in `prd/modules/`. Edit any specs that need adjustment, then continue to generate Gherkin.\n\nReady to proceed with Gherkin generation?"
-- Header: "Specs Ready for Review"
-- Options: "Proceed with Gherkin generation" / "I need to review and edit first — I'll re-run when ready"
-
-If the user chooses to review first, stop. They will re-run or continue manually.
-
-## Step 8: Launch T2 — Gherkin Generation
-
-Use the Agent tool to launch a general-purpose subagent for Gherkin generation across all extracted features.
-
-The subagent prompt must include:
-
-1. **Skills to load:**
-   - `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md`
-   - `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` (Gherkin Mapping table)
-
-2. **Files to read:**
-   - All PRD spec files created by T1 (REQUIREMENTS.md, UC files, ARCHITECTURE.md for each feature)
-   - `prd/TECH-STACK.md` (if exists) for language/framework detection
-
-3. **The specific task:**
-   - Run scaffold setup from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md`
-   - For each UC across all features:
-     - Read `module:` and `domain:` from that feature's REQUIREMENTS.md frontmatter — every feature has exactly one domain. **One feature → one domain → one BDD directory.** Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of the UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**
-     - Emit a dedicated `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature` — **one file per use case**; never merge scenarios across UCs
-     - Feature-level tags: `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}`. Scenario-level tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag on a scenario
-     - Dedup per UC: grep `bdd/features/` for `@UC-XXXX` — if a match exists, append only new scenarios to that UC's file. If multiple files match, report inconsistent state and stop
-   - Update `bdd/features/INDEX.md` (Module → Domain → UC grouping)
-   - Run splitting check on any UC file exceeding 15 scenarios
-
-4. **Report format:** The subagent must end with a structured report listing:
-   - Feature files created (paths, scenario counts)
-   - Any splitting performed
-
-## Step 9: Report
-
-Tell the user what was created across all features:
+After each subagent returns, compile the results into a summary and tell the user what was created across all features:
 
 **Specs Created:**
 - Features (FEAT-XXXX) with file paths
-- Use cases (UC-XXXX) with scenario counts
+- Use cases (UC-XXXX) with inline scenario counts
 - ARCHITECTURE.md files enriched with implementation research
 
-**Gherkin Created:**
-- Feature files with scenario counts
-- Updated indexes
-
-Suggest next step: "Review the specs and Gherkin, then run `/m:reverse-plan FEAT-XXXX` to plan BDD wiring for a specific feature."
+Suggest next step: "Review the extracted specs, then run `/m:reverse-plan` to generate a coverage-recovery plan when modules need more test coverage."

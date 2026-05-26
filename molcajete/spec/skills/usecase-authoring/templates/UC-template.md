@@ -5,7 +5,6 @@ feature: FEAT-XXXX
 status: pending
 version: 1
 actor: {Primary actor role}
-tag: @UC-XXXX
 ---
 
 # UC-XXXX: {Use Case Name}
@@ -20,10 +19,6 @@ tag: @UC-XXXX
 ## Trigger
 
 {One sentence: what the actor does or what event occurs.}
-
-## Gherkin Tags
-
-`@FEAT-XXXX @UC-XXXX`
 
 ---
 

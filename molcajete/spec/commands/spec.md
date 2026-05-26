@@ -17,18 +17,17 @@ allowed-tools:
 
 # Spec Command
 
-You are the broadest spec-authoring command. Unlike the granular commands (`feature`, `usecase`, `scenario`) which operate on a single entity, you take free-form natural language and orchestrate creation or update of features, use cases, and Gherkin scenarios — potentially spanning multiple entities in a single invocation.
+You are the broadest spec-authoring command. Unlike the granular commands (`feature`, `usecase`) which operate on a single entity, you take free-form natural language and orchestrate creation or update of features and use cases — potentially spanning multiple entities in a single invocation. Scenarios live inline inside each use case.
 
 **All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response. This keeps you in control of the conversation flow.
 
 ## Step 1: Load Skills
 
-Read all four authoring skills since this command can touch any layer:
+Read all three authoring skills since this command can touch any layer:
 
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md` — EARS syntax, Fit Criteria, feature interview
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat scenario structure, UC interview, E2E Testing Philosophy
-3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — Gherkin generation, tagging, scaffold, indexes, E2E-First Step Writing
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — ID generation rules
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat inline scenario structure, UC interview, E2E Testing Philosophy
+3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — ID generation rules
 
 Follow these skills' rules for all subsequent steps. In particular, follow the E2E Testing Philosophy from the usecase-authoring skill: all scenarios assume E2E execution against real infrastructure, no mocked databases or stubbed services. Write specs as if everything is testable end-to-end.
 
@@ -117,7 +116,6 @@ Use a single AskUserQuestion to show the full picture before any changes:
   - **New Use Cases** — list with parent feature, name, and one-line description each
   - **Modified Features** — list with FEAT-XXXX and summary of changes
   - **Modified Use Cases** — list with UC-XXXX and summary of changes
-  - **Gherkin Generation** — which UCs will get .feature files generated
 
   Only include sections that have entries.
 
@@ -237,8 +235,6 @@ For each selected module, create the feature directory:
 For each modified feature:
 - Edit `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` with the confirmed changes (new FRs, NFRs, acceptance criteria).
 
-**Gherkin Propagation:** For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. If found, add `@dirty` to each scenario's tag line in the `.feature` file. Remove `@pending` if present.
-
 ### 11.3 New Use Cases
 
 For each new use case:
@@ -248,12 +244,11 @@ For each new use case:
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
 
 2. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
-   - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor, tag (@UC-XXXX)
+   - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor
    - Title: `# UC-XXXX: {Use Case Name}`
    - Objective blockquote
    - Preconditions section
    - Trigger section
-   - Gherkin Tags: `@FEAT-XXXX @UC-XXXX`
    - All confirmed scenarios in flat structure — each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
 
 3. Add a new row to `prd/modules/{module}/features/FEAT-XXXX-{slug}/USE-CASES.md`:
@@ -266,126 +261,21 @@ For each new use case:
 For each modified use case:
 - Edit the UC file with new/changed scenarios.
 - Increment `version` in YAML frontmatter.
-- Increment `version` in YAML frontmatter.
 
-## Step 11: Gherkin Generation
-
-For each **new** use case that has scenarios, generate Gherkin files (Steps 11.1–11.7).
-
-For each **modified** use case, propagate Gherkin changes instead (Step 11.7).
-
-### 11.1 Scaffold Setup (once)
-
-Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md` (steps 2a–2h):
-- Check for existing scaffold, create if missing
-- Detect modules, language, format
-- Create INDEX.md files and world module
-- Persist BDD settings to `.molcajete/settings.json`
-- Validate existing indexes, rebuild if drift detected
-
-### 11.2 Module and Domain Resolution
-
-Resolve the target `.feature` file path for each UC. For each feature, read from its REQUIREMENTS.md frontmatter:
-- `module:` → `{module}` directory segment
-- `domain:` → `{domain}` directory segment. Every feature has exactly one domain.
-
-**One feature → one domain → one BDD directory.** Every scenario in a UC's file tests the same subject. Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of the UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**.
-
-Each UC gets its own `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`.
-
-Use a single AskUserQuestion for all UCs at once:
-- Question: "Place each UC's .feature file at:\n\n{for each UC: **{UC-XXXX}: {name}** → `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`}\n\nExisting subtrees under bdd/features/: {list of existing `{module}/{domain}/` subtrees}"
-- Header: "Module/Domain"
-- Options: "Confirm" / "Override" (user provides via Other)
-
-### 11.3 Generate Feature Files
-
-For each UC with scenarios, follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md`:
-
-1. **Dedup** — Grep `bdd/features/` for `@UC-XXXX`. If a match exists, append only new scenarios to that UC's file — never merge scenarios across UCs. Skip exact duplicates, warn on near-duplicates. If multiple files match a single `@UC-XXXX`, report inconsistent state and stop.
-2. **Construct** — Build .feature file content using the Gherkin Mapping table from the usecase-authoring skill. Feature-level tags: `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}` (the file represents the UC; `Feature:` line = UC name; description = UC objective). Scenario-level tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag on a scenario — one feature, one domain. All newly generated scenarios must include `@pending` after `@SC-XXXX` and before classification tags.
-3. **Write** — Write to `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature` (one file per UC, kebab-case). Create `bdd/features/{module}/{domain}/` if missing. If appending to this UC's existing file, use Edit to append new scenarios.
-
-### 11.4 Generate Step Stubs
-
-For each step in the generated feature files:
-1. Read `bdd/steps/INDEX.md` for existing reusable patterns.
-2. Check for existing match → reuse. Otherwise create new stub with:
-   - Docstring describing what the step does
-   - Parameter descriptions with types
-   - `TODO: implement step` placeholder body
-3. Place in correct file: `common_steps`, `api_steps`, `db_steps`, or `{domain}_steps`.
-4. If the target step file exists → append. If not → create from language-appropriate template in `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/templates/`.
-
-### 11.5 Update Indexes
-
-Follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` step 3d — update both `bdd/features/INDEX.md` and `bdd/steps/INDEX.md` together. Never leave partial index state.
-
-### 11.6 Gherkin Preview
-
-Use AskUserQuestion to show a summary of generated Gherkin:
-- Question: "**Generated Gherkin:**\n\n{for each feature file: file path, scenario count, tag summary}\n\nWould you like to see the full content of any file?"
-- Header: "Gherkin Summary"
-- Options: "Looks good" / "Show full content" / "Edit" (user corrects via Other)
-
-If the user selects "Show full content", display the full Gherkin via AskUserQuestion and ask for confirmation.
-
-### 11.7 Gherkin Propagation (Modified UCs)
-
-For each modified use case, propagate changes to existing Gherkin files. Skip this step for new use cases (they were handled in 11.3).
-
-Grep `bdd/features/` for `@UC-XXXX`. If no `.feature` file contains this tag, treat as a new UC and follow Steps 11.3–11.7 for it instead.
-
-If a `.feature` file exists with `@UC-XXXX`:
-
-#### 11.7.1 Determine Gherkin Changes
-
-Based on the spec changes applied in Step 10.4, determine what Gherkin changes are needed:
-
-- **Preconditions changed** — update the `Background:` block (Given/And clauses)
-- **Scenario Given changed** — update `Given`/`And` clauses in the matching `@SC-XXXX` scenario
-- **Scenario Steps changed** — update `When`/`And` clauses in the matching `@SC-XXXX` scenario
-- **Scenario Outcomes changed** — update `Then`/`And` clauses in the matching `@SC-XXXX` scenario
-- **Scenario Side Effects changed** — update trailing `And`/`And no` clauses in the matching `@SC-XXXX` scenario
-- **New scenarios added** — append new scenario blocks with the new `@SC-XXXX` tags
-- **Step text changed** — find and update matching step definitions (check `bdd/steps/INDEX.md` or grep step definition files)
-
-#### 11.7.2 Preview Gherkin Changes
-
-Use AskUserQuestion to preview the Gherkin changes:
-- Question: "The following Gherkin changes are needed to match the updated spec:\n\n**{feature-file-path}:**\n{describe each change — before/after for modified blocks, full content for new scenarios}\n\n{if step definitions changed}**Step definitions:**\n{list step text changes}{/if}\n\nDoes this look correct?"
-- Header: "Gherkin Changes"
-- Options: "Yes, apply these changes" / "Edit" (user corrects via Other)
-
-If the user wants edits, revise and present again.
-
-#### 11.7.3 Apply Gherkin Changes
-
-1. Edit the `.feature` file with the confirmed changes.
-2. For modified scenarios: add `@dirty` to the scenario's tag line if not already present. Remove `@pending` if present (the scenario was implemented before the spec change).
-3. For newly added scenarios within the modified UC: add `@pending` to the scenario's tag line.
-4. If step definitions changed, edit the corresponding step definition files.
-5. If new step definitions are needed, append them to the appropriate step file following the gherkin skill's step file placement rules.
-6. Update `bdd/features/INDEX.md` and `bdd/steps/INDEX.md` if new scenarios or steps were added.
-
-## Step 12: Report
+## Step 11: Report
 
 Tell the user a structured summary of everything created and updated:
 
 **Created:**
 - New features (FEAT-XXXX) with file paths
-- New use cases (UC-XXXX) with file paths
-- New .feature files with scenario counts
-- New step definition stubs with file paths
+- New use cases (UC-XXXX) with file paths and inline scenario counts
 
 **Updated:**
 - Modified features (FEAT-XXXX) with change summary
 - Modified use cases (UC-XXXX) with change summary
 - Updated FEATURES.md rows
 - Updated USE-CASES.md rows
-- Updated INDEX.md files
 
 Suggest next steps based on what was created:
 - If new features without UCs: "Use `/m:usecase FEAT-XXXX` or `/m:spec` to add use cases."
-- If new UCs without Gherkin: "Use `/m:scenario UC-XXXX` to generate Gherkin."
-- If everything is specified: "Use `/m:plan UC-XXXX` to generate implementation plans."
+- If everything is specified: "Use `/m:plan UC-XXXX` to generate an implementation plan."

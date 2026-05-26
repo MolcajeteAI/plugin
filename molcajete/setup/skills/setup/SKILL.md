@@ -3,8 +3,9 @@ name: setup
 description: >-
   Rules and templates for the /m:setup command. Defines the interview flow
   for generating PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md,
-  MODULES.md, DOMAINS.md, and master FEATURES.md. Covers codebase inference
-  for tech stack, actors, modules, and domain tags.
+  MODULES.md, DOMAINS.md, and master FEATURES.md, plus writing the testing
+  threshold into .molcajete/settings.json. Covers codebase inference for
+  tech stack, actors, modules, and domain tags.
 ---
 
 # Project Setup
@@ -45,20 +46,22 @@ The tech stack is organized by **module** -- each application, service, or packa
 5. Detect runtime environment: Docker Compose vs host-native, start/stop commands, compose file location.
 6. Detect services: from `docker-compose.yml` or other manifests, extract service names, types, ports, and health check commands.
 7. Detect applications: runnable apps with their ports, run commands, and types (frontend/backend).
-8. Detect BDD framework: check for `behave`, `@cucumber/cucumber`, `godog`, etc. in dependency manifests. Identify the step definition language and feature file location.
+8. Detect per-module testing tools: which test runner each module uses (Vitest, Jest, pytest, go test, etc.). Check `package.json` devDependencies, `pyproject.toml`/`requirements*.txt`, `go.mod`, `Cargo.toml`, and runner config files (`vitest.config.*`, `jest.config.*`, `pytest.ini`, `pyproject.toml [tool.pytest.ini_options]`). Fill `Modules.{name}.Testing` only when detection finds a clear runner. If nothing is detected, leave the row blank — the build loop infers the runner from the module's manifest at build time and does not need it pre-populated.
+
 9. Detect per-domain tooling: formatter and linter for each module/domain.
 10. Detect environment config: `.env` / `.env.example` files, key variables, seed data commands.
-11. Use AskUserQuestion to present the inferred stack organized by section: "I found the following tech stack in your codebase:\n\n{inferred stack: modules, runtime, services, applications, external services, repository structure, BDD, tooling, environment}\n\nIs this correct?"
+11. Use AskUserQuestion to present the inferred stack organized by section: "I found the following tech stack in your codebase:\n\n{inferred stack: modules, runtime, services, applications, external services, repository structure, tooling, environment}\n\nIs this correct?"
 
 **If no codebase exists**, use AskUserQuestion for each question:
 1. "What applications or services make up your project? For each one, what language and framework does it use?" (e.g., "Patient app: React + TypeScript, Backend API: Go + gqlgen")
 2. "What database, cache, or queue systems?"
 3. "How is the project hosted and what CI/CD do you use?"
 4. "Is this a monorepo or multi-repo? What package manager?"
-5. "What BDD framework will you use? (e.g., Behave, Cucumber.js, godog)"
-6. "What formatter and linter do you use per module?"
+5. "What formatter and linter do you use per module?"
 
-Fill in the TECH-STACK.md template with the confirmed answers, populating all applicable sections (Modules, Runtime, Services, Applications, External Services, Repository Structure, BDD, Tooling, Environment, Conventions).
+Do not ask the user which test runner to use. The build loop infers it from the module's manifest at build time once code exists.
+
+Fill in the TECH-STACK.md template with the confirmed answers, populating all applicable sections (Modules, Runtime, Services, Applications, External Services, Repository Structure, Tooling, Environment, Conventions). Leave each module's `Testing` row blank when no runner is detected.
 
 ### Stage 3: Actors
 
@@ -85,7 +88,7 @@ Modules are physical application layers -- each distinct app, service, console, 
 - "This appears to be a single-module project. I'll create one module: **{project-name-slug}** (type: app). You can add more modules later if your project grows. Does this look correct?"
 
 For each confirmed module, assign:
-- **ID:** Short kebab-case identifier (doubles as Gherkin tag)
+- **ID:** Short kebab-case identifier
 - **Module:** Human-readable name
 - **Description:** One sentence explaining what this module covers
 - **Directory:** `modules/{id}/` (relative path within `prd/`)
@@ -200,6 +203,17 @@ Add 3-5 additional terms extracted from the project description and tech stack (
 ### FEATURES.md Initial State
 
 Generate one master FEATURES.md at `prd/FEATURES.md` with one `## {domain}` section per domain from DOMAINS.md. All tables start empty. No features are populated at setup time -- they are added by /m:feature or /m:spec.
+
+## Testing Settings
+
+After generating the PRD documents, write the testing threshold to `.molcajete/settings.json`. The build loop's Validator subagent reads this file at every iteration.
+
+**Rules:**
+
+- If `.molcajete/settings.json` does not exist, create it with `{"testing": {"threshold": 80}}`.
+- If it exists with a `bdd` key (legacy), strip the `bdd` key and write the file back without it.
+- If it exists with no `testing` key, add `testing.threshold = 80`. Preserve any other existing keys.
+- If `testing.threshold` already exists, leave it alone.
 
 ## Regeneration
 

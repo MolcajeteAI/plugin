@@ -117,11 +117,7 @@ Apply the confirmed changes:
 
 3. Do NOT change the FEAT ID or tag.
 
-## Step 8: Gherkin Propagation
-
-Propagate `@dirty` to Gherkin files: For each UC under this feature, grep `bdd/features/` for `@UC-XXXX`. Each UC owns exactly one `.feature` file (at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`), so the grep should resolve to a single file — if multiple files match, report inconsistent state. Add `@dirty` to each scenario's tag line in that file and remove `@pending` if present.
-
-## Step 9: Testability Notes
+## Step 8: Testability Notes
 
 After applying changes, scan the updated requirements for new testability signals per the usecase-authoring skill's E2E Testing Philosophy:
 
@@ -129,12 +125,11 @@ After applying changes, scan the updated requirements for new testability signal
 - Do NOT create a recommendations file on the Specs First path
 - Do NOT use AskUserQuestion for testability concerns
 
-## Step 10: Report
+## Step 9: Report
 
 Tell the user what changed:
 
 - List each file that was modified
 - Summarize the changes applied
-- If Gherkin propagation was triggered: list the Gherkin files where `@dirty` was added
-- If testability signals were detected in Step 9, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."
+- If testability signals were detected in Step 8, include a **Testability Notes** block listing each concern with its category. Note: "Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`."
 - Note: "Use `/m:update-usecase UC-XXXX <description>` to refine individual use cases if needed."

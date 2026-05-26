@@ -1,12 +1,12 @@
 {
   "name": "m",
   "version": "3.0.3",
-  "description": "Spec-driven development plugin with setup, spec, and plan workflows",
+  "description": "Spec-driven development plugin with setup, spec, plan, and test-first build workflows",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
   },
-  "keywords": ["workflow", "development", "testing", "specs", "bdd"],
+  "keywords": ["workflow", "development", "testing", "specs", "tdd"],
   "commands": [
     "./build/commands/build.md",
     "./setup/commands/setup.md",
@@ -19,10 +19,8 @@
     "./spec/commands/reverse-scenario.md",
     "./spec/commands/reverse-spec.md",
     "./spec/commands/reverse-usecase.md",
-    "./spec/commands/scenario.md",
     "./spec/commands/spec.md",
     "./spec/commands/update-feature.md",
-    "./spec/commands/update-scenario.md",
     "./spec/commands/update-usecase.md",
     "./spec/commands/usecase.md"
   ],
@@ -33,9 +31,9 @@
     "./research/skills/headless-research/SKILL.md",
     "./research/skills/research-methods/SKILL.md",
     "./shared/skills/code-documentation/SKILL.md",
-    "./shared/skills/gherkin/SKILL.md",
     "./shared/skills/git-committing/SKILL.md",
     "./shared/skills/id-generation/SKILL.md",
+    "./shared/skills/testing/SKILL.md",
     "./spec/skills/architecture/SKILL.md",
     "./spec/skills/feature-authoring/SKILL.md",
     "./spec/skills/reverse-engineering/SKILL.md",

@@ -8,14 +8,13 @@
     {
       "id": "T-001",
       "title": "string",
-      "use_case": "UC-XXXX",
-      "feature": "FEAT-XXXX",
+      "use_case": "UC-XXXX | null",
+      "feature": "FEAT-XXXX | null",
       "module": "string",
-      "architecture": "prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md",
-      "intent": "implement | wire-bdd",
+      "architecture": "prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md | null",
+      "intent": "implement | cover",
       "status": "pending",
       "estimated_context": "~120K tokens",
-      "scenario": "SC-XXXX | null",
       "depends_on": [],
       "description": "string",
       "files_to_modify": ["path/to/file"],
@@ -38,7 +37,7 @@
   },
   "sub_task_rules": {
     "null_when_no_sub_tasks": true,
-    "inherit_from_parent": ["use_case", "feature", "module", "architecture", "intent", "scenario"],
+    "inherit_from_parent": ["use_case", "feature", "module", "architecture", "intent"],
     "depends_on_scope": "sibling sub-task IDs only",
     "shared_worktree": "all sub-tasks share the parent task worktree"
   }

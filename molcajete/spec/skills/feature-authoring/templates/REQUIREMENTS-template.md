@@ -2,7 +2,7 @@
 id: FEAT-XXXX
 name: {Feature Name}
 module: {module}
-domain: {domain} # The single domain this feature belongs to. Drives the BDD directory: bdd/features/{module}/{domain}/ — one feature, one domain.
+domain: {domain} # The single domain this feature belongs to — one feature, one domain.
 status: pending
 version: 1
 refs: [] # Optional: feature IDs this feature depends on (e.g., [FEAT-0A1b])
@@ -74,7 +74,7 @@ Linked to: UC-XXXX
 
 > The feature is complete when all of the following are true:
 
-- All use cases have Gherkin scenarios passing
-- All scenarios include side effect assertions
+- All behaviors named in the plan are covered
+- Coverage gate met against `.molcajete/settings.json` `testing.threshold`
 - Architecture.md diagrams reflect the built system
 - FEATURES.md status is `implemented`

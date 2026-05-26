@@ -13,7 +13,7 @@
     "claude-code",
     "plugin",
     "molcajete",
-    "bdd",
+    "tdd",
     "spec-driven"
   ],
   "publishConfig": {

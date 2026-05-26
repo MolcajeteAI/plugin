@@ -1,15 +1,15 @@
 ---
 name: reverse-engineering
 description: >-
-  Rules and methodology for extracting specs from existing codebases. Defines
-  research patterns, ARCHITECTURE.md population from code analysis, scope discovery,
-  extraction patterns mapping code constructs to spec elements, and dispatcher
-  integration for T1/T2 subagents.
+  Rules and methodology for extracting specs from existing codebases.
+  Defines research patterns, ARCHITECTURE.md population from code analysis,
+  scope discovery, extraction patterns mapping code constructs to spec
+  elements, and subagent dispatch for spec extraction.
 ---
 
 # Reverse Engineering
 
-Rules for extracting product specs from existing code. The reverse commands scan a codebase, extract structured specs (features, use cases, scenarios), populate ARCHITECTURE.md from code analysis, and generate Gherkin artifacts — the inverse of the Specs First (greenfield) pipeline.
+Rules for extracting product specs from existing code. The reverse commands scan a codebase, extract structured specs (features, use cases, inline scenarios), and populate ARCHITECTURE.md from code analysis — the inverse of the Specs First (greenfield) pipeline.
 
 ## When to Use
 
@@ -124,13 +124,9 @@ Look for what the code explicitly does NOT do in certain paths:
 - Early returns before DB writes → "No database record is created"
 - Guards that prevent notifications → "No notification is sent"
 
-## Testability Analysis
+## Testability Analysis (Reporting Only)
 
-During reverse engineering, identify areas that might challenge E2E execution. These are flagged in a recommendations file, not treated as design problems.
-
-### Purpose
-
-Silently detect code patterns that could complicate end-to-end testing. Findings go into a recommendations file for developer review. The spec itself is never altered -- E2E is always the default.
+During reverse engineering, identify areas that might challenge end-to-end testing with real internal stack + outer-edge mocking (see `shared/skills/testing/SKILL.md`). These are surfaced in the command's final report. Do not generate a sidecar file; do not interrupt the workflow.
 
 ### What to Look For
 
@@ -147,15 +143,11 @@ Silently detect code patterns that could complicate end-to-end testing. Findings
 
 ### Check ARCHITECTURE.md First
 
-Before flagging a concern, read the feature's ARCHITECTURE.md and look for a `## Testing Decisions` section. If a decision already exists for the service or pattern in question, skip it -- the developer has already resolved this concern.
+Before flagging a concern, read the feature's ARCHITECTURE.md and look for a `## Testing Decisions` section. If a decision already exists for the service or pattern in question, skip it — the developer has already resolved this concern.
 
-### Generate Recommendations File
+### No Interruptions, No Sidecar Files
 
-When concerns are found, create a recommendations file alongside the UC file using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`. Only create this file during reverse commands. If no concerns are found, do not create the file.
-
-### No Interruptions
-
-Do not use AskUserQuestion for testability concerns. Write the recommendations file silently and mention the count in the final report.
+Do not use AskUserQuestion for testability concerns. Do not write a sidecar file. Surface remaining concerns in the command's final report as a "Testability Notes" block, with the count and category per UC.
 
 ## Populating ARCHITECTURE.md
 
@@ -165,7 +157,7 @@ During reverse engineering, update `last_update` in the frontmatter to the curre
 
 ## Project-Level Discovery
 
-Reverse engineering may uncover actors, tech stack components, or features not yet documented in the project-level files. T1 subagents must compare what they find against what already exists and update accordingly.
+Reverse engineering may uncover actors, tech stack components, or features not yet documented in the project-level files. Subagents must compare what they find against what already exists and update accordingly.
 
 ### Actors (prd/ACTORS.md)
 
@@ -209,9 +201,9 @@ When code analysis reveals a technology not listed in TECH-STACK.md — a databa
 
 ## Dispatcher Integration
 
-Reverse commands that span multiple scope levels (reverse-spec, reverse-feature) use a two-task dispatcher pattern to protect the 200K context limit:
+Reverse commands that span multiple scope levels (reverse-spec, reverse-feature) use a two-step dispatcher pattern to protect the 200K context limit. Both steps produce specs only — no test code is written by reverse commands.
 
-### T1a: Codebase Research
+### Codebase Research
 
 Launched as an **Explore subagent** (`subagent_type: "Explore"`). This is read-only — no file writes. Receives:
 - Project context (PROJECT.md, TECH-STACK.md, ACTORS.md, FEATURES.md)
@@ -230,33 +222,22 @@ Produces a **structured research report** (returned as text, not written to file
 - Code map entries (`file:function()` notation)
 - Any new actors or tech stack entries discovered
 
-### T1b: Spec Writing
+### Spec Writing
 
-Launched as a **general-purpose subagent** after T1a completes. Receives:
-- The research report from T1a
+Launched as a **general-purpose subagent** after research completes. Receives:
+- The research report from the prior step
 - Project context (PROJECT.md, TECH-STACK.md, ACTORS.md, FEATURES.md)
 - Skill files for formatting rules
 
 Produces:
 - ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map)
-- PRD specs (REQUIREMENTS.md, UC files, USE-CASES.md rows, FEATURES.md rows)
+- PRD specs (REQUIREMENTS.md, UC files with inline scenarios, USE-CASES.md rows, FEATURES.md rows)
 - All IDs assigned (FEAT-, UC-, SC-, FR-, NFR-, US-, ADR-) using the id-generation skill (`shared/skills/id-generation/SKILL.md`)
 - Updates to ACTORS.md and TECH-STACK.md if new entries were discovered
 
-### T2: Gherkin Generation
-
-Launched as a subagent after user reviews T1 output. Receives:
-- All PRD spec files created by T1
-- ARCHITECTURE.md for code context
-- BDD scaffold settings from `.molcajete/settings.json`
-
-Produces:
-- `.feature` files with scenarios
-- Updated BDD indexes
-
 ### Subagent Launch Pattern
 
-**Explore subagent** (T1a — read-only research):
+**Explore subagent** (read-only research):
 
 ```
 Use the Agent tool with subagent_type: "Explore" and specify:
@@ -267,43 +248,23 @@ Use the Agent tool with subagent_type: "Explore" and specify:
 5. The output format: a structured research report (text, not files)
 ```
 
-The Explore agent cannot write files. It returns its findings as text, which the parent passes to T1b.
+The Explore agent cannot write files. It returns its findings as text, which the parent passes to the spec-writing subagent.
 
-**General-purpose subagent** (T1b — spec writing, T2 — Gherkin generation):
+**General-purpose subagent** (spec writing):
 
 ```
 Use the Agent tool (general-purpose, the default) with a detailed prompt
 that includes:
-1. The research findings from the prior Explore agent (for T1b)
+1. The research findings from the prior Explore agent
 2. Which skill files to load for formatting rules
 3. Which project context files to read
-4. The specific writing/generation task
+4. The specific writing task
 5. Where to write output files
 ```
 
 The parent command does NOT re-read the files the subagent created — it trusts the subagent's report and presents the results to the user.
 
-## Step Stub Convention
-
-When generating step definitions during T2 (Gherkin generation), stubs must throw a pending/not-implemented error rather than being empty:
-
-**JavaScript/TypeScript:**
-```javascript
-Then('the user receives a valid token', async function () {
-  throw new Error("TODO: implement step");
-});
-```
-
-**Python:**
-```python
-@then('the user receives a valid token')
-def step_impl(context):
-    raise NotImplementedError("TODO: implement step")
-```
-
-This ensures that running the BDD suite immediately shows which steps need implementation, and the build dispatcher can use "all scenarios passing" as its done signal. The literal string `"TODO: implement step"` is the canonical marker the build dispatcher greps for.
-
-> **Note:** Reverse commands stop at Gherkin generation. Step definitions are created during the build phase, after production code exists (Specs First path) or from existing code (Code First path). The stubs above are only relevant if step definitions are created outside the build pipeline.
+> **Note:** Reverse commands stop at spec extraction. Coverage tests are created during the build phase via `intent: cover` tasks emitted by `/m:reverse-plan` and executed by `/m:build`'s Implementer + Validator loop.
 
 ## Template Reference
 

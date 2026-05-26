@@ -173,7 +173,7 @@ Use AskUserQuestion:
 
 **If extracted from input:**
 Use AskUserQuestion:
-- Question: "Preconditions (shared across all scenarios):\n\n{extracted preconditions as bullet list}\n\nDo these look correct? These map to a Gherkin Background block."
+- Question: "Preconditions (shared across all scenarios):\n\n{extracted preconditions as bullet list}\n\nDo these look correct? These are shared state requirements that apply before every scenario in this use case."
 - Header: "Preconditions"
 - Options: "Yes, looks good" / "Edit" (user corrects via Other)
 
@@ -200,12 +200,12 @@ Use AskUserQuestion:
 
 For each scenario extracted from the input, present the full scenario block via AskUserQuestion:
 
-- Question: "**Scenario {N}: {Name}**\n\n**Given:**\n{given}\n\n**Steps:**\n{steps}\n\n**Outcomes:**\n{outcomes}\n\n**Side Effects:**\n{side_effects}\n\nDoes this look correct?\n\n_Reminder: Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become `And no ...` assertions in Gherkin tests._"
+- Question: "**Scenario {N}: {Name}**\n\n**Given:**\n{given}\n\n**Steps:**\n{steps}\n\n**Outcomes:**\n{outcomes}\n\n**Side Effects:**\n{side_effects}\n\nDoes this look correct?\n\n_Reminder: Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become `And no ...` assertions in tests._"
 - Header: "Scenario"
 - Options: "Yes, looks good" / "Edit" (user corrects via Other)
 
 If NO scenarios were extracted from the input, use AskUserQuestion to ask the user to describe the first scenario:
-- Question: "Describe the first scenario for this use case. Include what conditions are specific to this scenario (Given), the steps the actor and system take, the expected outcomes, and any side effects.\n\n_Reminder: Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become `And no ...` assertions in Gherkin tests._"
+- Question: "Describe the first scenario for this use case. Include what conditions are specific to this scenario (Given), the steps the actor and system take, the expected outcomes, and any side effects.\n\n_Reminder: Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become `And no ...` assertions in tests._"
 - Header: "Scenario"
 
 After reviewing the user's description, structure it into Given/Steps/Outcomes/Side Effects and present for confirmation using AskUserQuestion with the same format as the extracted-scenario case (Header: "Scenario", Options: "Yes, looks good" / "Edit").
@@ -273,12 +273,11 @@ Then read the template and generate the UC file:
 1. Read `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-template.md`
 
 2. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` with:
-   - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor, tag (@UC-XXXX)
+   - YAML frontmatter: id (UC-XXXX), name, feature (FEAT-XXXX), status (pending), version (1), actor
    - Title: `# UC-XXXX: {Use Case Name}`
    - Objective blockquote
    - Preconditions section
    - Trigger section
-   - Gherkin Tags: `@FEAT-XXXX @UC-XXXX`
    - All confirmed scenarios in flat structure -- each scenario preceded and followed by a `---` horizontal rule (including after the last scenario), each with SC-XXXX ID, Given/Steps/Outcomes/Side Effects
    - For scenarios with UI: include inline `**UI:**` blocks within Steps, indented under the confirmed step number. Use fenced code blocks for ASCII art or `![description](assets/{filename})` for images. Omit UI blocks for scenarios where the user said no UI.
 
@@ -310,4 +309,4 @@ If testability signals were detected in Step 9, include:
 
 These are informational only. Record any testing decisions in `ARCHITECTURE.md` under `## Testing Decisions`.
 
-Suggest next step: "Use `/m:scenario UC-XXXX` to generate Gherkin scenarios for this use case."
+Suggest next step: "Use `/m:plan UC-XXXX` to generate an implementation plan for this use case."

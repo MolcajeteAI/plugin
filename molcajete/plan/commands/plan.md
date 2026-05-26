@@ -14,7 +14,7 @@ allowed-tools:
 
 # Plan Command
 
-You generate implementation plans from PRD specs. You scan for unimplemented use cases, verify Gherkin exists, and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `molcajete build` will execute. The output format is strictly JSON — never markdown.
+You generate implementation plans from PRD specs. You scan for unimplemented use cases and produce a **JSON** plan file in `.molcajete/plans/` with a task breakdown that `/m:build` will execute. The output format is strictly JSON — never markdown.
 
 **Scope argument:** $ARGUMENTS
 
@@ -25,7 +25,7 @@ You generate implementation plans from PRD specs. You scan for unimplemented use
 Read both skills that govern this command:
 
 1. `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/SKILL.md` — plan file format, task decomposition, context budgets, done signals, naming
-2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — BDD scaffold context, tagging rules
+2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — testing principles and coverage gate that the plan's Verification sections must align with
 
 Follow these skills' rules for all subsequent steps.
 
@@ -94,43 +94,25 @@ Find everything that needs implementation:
 6. For each in-scope feature, read `REQUIREMENTS.md` and `ARCHITECTURE.md` (if exists).
 7. Build the full picture of all pending work.
 
-If nothing plannable is found: tell the user "No unimplemented specs found. All use cases are either already implemented or not yet specified. Use `/m:feature`, `/m:usecase`, or `/m:spec` to author new specs, then `/m:scenario` to generate Gherkin." Then stop.
+If nothing plannable is found: tell the user "No unimplemented specs found. All use cases are either already implemented or not yet specified. Use `/m:feature`, `/m:usecase`, or `/m:spec` to author new specs." Then stop.
 
-## Step 6: Verify Gherkin
-
-For each plannable UC:
-
-1. Each UC has exactly one `.feature` file at `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. Use `Glob` with pattern `bdd/features/**/{UC-XXXX}-*.feature` (or `*.feature.md` for MDG projects) to locate it — the `UC-XXXX` filename prefix makes the match deterministic and slug-tolerant.
-2. Verify the `.feature` file exists and contains at least one `Scenario:` or `Scenario Outline:`.
-3. Read the feature file to count scenarios and extract step patterns.
-
-Report gaps:
-- If Gherkin missing for a UC: "UC-XXXX ({name}) has no Gherkin. Run `/m:scenario UC-XXXX` first."
-
-If **all** UCs are missing Gherkin, stop with the gap report.
-
-If **some** UCs have gaps, report the gaps as plain text, then automatically proceed with only the verified UCs.
-
-## Step 7: Log Scope Summary
+## Step 6: Log Scope Summary
 
 Log the scope summary as plain text for the user to see, then continue immediately:
 
 - **Features in scope** — list with UC counts
 - **Use cases to plan** — list with scenario counts and status
 - **Total scenarios** — aggregate count
-- **Missing Gherkin** (if any were excluded) — list of excluded UCs
 
 Do not ask for confirmation or offer to narrow scope.
 
-## Step 8: Generate Task Breakdown
+## Step 7: Generate Task Breakdown
 
 Read all in-scope materials:
-- UC files with their scenarios
+- UC files with their inline scenarios
 - Feature REQUIREMENTS.md and ARCHITECTURE.md files
-- Gherkin .feature files for the in-scope UCs
-- `bdd/steps/INDEX.md` (if exists) for existing step definitions
 
-If any ARCHITECTURE.md contains a Code Map section with entries, use it to map scenarios to implementation files. Include the ARCHITECTURE.md path in each task's Architecture field so build tasks can load it for context.
+If any ARCHITECTURE.md contains a Code Map section with entries, use it to map UC scenarios to implementation files. Include the ARCHITECTURE.md path in each task's Architecture field so build tasks can load it for context.
 
 Read the plan schema — it defines the exact JSON structure you must produce:
 ```
@@ -139,11 +121,11 @@ ${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-schema.json
 
 Build a JSON object matching this schema. The top-level object has `title`, `generated`, `status`, `scope`, `base_branch`, and `tasks` (array). Decompose into tasks following the planning skill rules:
 
-1. **BDD-aligned tasks** — each task advances at least one Gherkin scenario. Map scenarios to tasks by examining what code needs to exist for those assertions to pass.
+1. **Behavior-cluster tasks** — each task names one behavior or a small cluster of related behaviors. Do not split into Red/Green/Refactor sub-tasks; task decomposition into test-and-code units is the build agent's responsibility, not the planner's.
 
-2. **Infrastructure tasks** — only when necessary as prerequisites (database setup, test harness, shared middleware). These tasks have null `scenario` (BDD skipped).
+2. **Infrastructure tasks** — only when necessary as prerequisites (database setup, test harness, shared middleware). Per the planning skill's Infrastructure Absorption rule, prefer absorbing infrastructure into the first scenario task's sub-tasks rather than emitting it as a standalone top-level task.
 
-3. **Context budget** — estimate each task at ≤ 200K tokens. Consider: source files to read + spec files + Gherkin + implementation work. Split if over budget.
+3. **Context budget** — estimate each task at ≤ 200K tokens. Consider: source files to read + spec files + implementation work. Split into sub-tasks if over budget (for context only, never for phases).
 
 4. **Task fields** — for each task include all fields from the plan schema:
    - `id`: `T-001`, `T-002`, etc. (flat sequential)
@@ -152,24 +134,24 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    - `feature`: parent feature ID (FEAT-XXXX)
    - `module`: the module the feature belongs to
    - `architecture`: path to the feature's ARCHITECTURE.md (at `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`)
-   - `intent`: `implement` (Specs First plans always use implement)
+   - `intent`: `implement` (this command only emits `implement`)
    - `status`: `pending`
    - `estimated_context`: `~{N}K tokens`
-   - `scenario`: `"SC-XXXX"` for filtered BDD gate; null for chores (BDD skipped)
    - `depends_on`: `["T-NNN"]` or `[]`
-   - `description`: what to implement, why, constraints
-   - `files_to_modify`: expected file paths
+   - `description`: names the behavior or behaviors to deliver, why, and any constraints. Do NOT include test file paths or assertion lists — the build agent decides those.
+   - `files_to_modify`: expected production file paths
+   - `sub_tasks`: `null` unless context-budget splitting is needed
    - `summary`: `null`
    - `errors`: `[]`
 
 5. **Plan-level fields** — also populate:
    - `base_branch`: current git branch (run `git branch --show-current`)
 
-   Do **not** add a `bdd_command` field or any equivalent test-runner command. BDD invocation is owned exclusively by the project's verify hook — plans must never carry a test command.
+   Do **not** add a `bdd_command` field or any test-runner command. The Validator subagent reads project test/coverage commands at build time from `.molcajete/settings.json` `testing` or by convention.
 
 6. **Order by dependency chain** — infrastructure first, data models before APIs, core logic before edge cases, happy-path before error-handling.
 
-## Step 9: Write Plan File
+## Step 8: Write Plan File
 
 1. Generate the directory name:
    - Timestamp: current time as `YYYYMMDDHHmm`
@@ -181,17 +163,16 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    mkdir -p .molcajete/plans/{YYYYMMDDHHmm}-{slug}
    ```
 
-3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `molcajete build`.
+3. **Write `plan.json` first.** Write the plan JSON to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.json`. This is the source of truth for `/m:build`.
 
-4. **Derive and write `plan.md` second.** Using the JSON you just wrote plus the PRD context loaded in Steps 4–8 (REQUIREMENTS.md, ARCHITECTURE.md, UC files, Gherkin), render `plan.md` per the planning skill's "Companion `plan.md` (greenfield)" section. Use the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-template.md`. Write the result to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. Do not include execution-state fields (`status`, `summary`, `errors`, `estimated_context`, `depends_on`).
+4. **Derive and write `plan.md` second.** Using the JSON you just wrote plus the PRD context loaded in Steps 4–7 (REQUIREMENTS.md, ARCHITECTURE.md, UC files), render `plan.md` per the planning skill's "Companion `plan.md` (greenfield)" section. Use the skeleton at `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/templates/plan-template.md`. Write the result to `.molcajete/plans/{YYYYMMDDHHmm}-{slug}/plan.md`. Do not include execution-state fields (`status`, `summary`, `errors`, `estimated_context`, `depends_on`).
 
-## Step 10: Report
+## Step 9: Report
 
 Tell the user:
 
 - Plan JSON path and `plan.md` path
 - Task count and total estimated context budget
 - Features and UCs covered
-- Any UCs excluded due to missing Gherkin
 
-Suggest next step: "Review `plan.md` for a WYSIWYG preview, then run `molcajete build {plan-name}` to start implementation."
+Suggest next step: "Review `plan.md` for a WYSIWYG preview, then run `/m:build {plan-name} <T-NNN>` to start the test-first build loop."

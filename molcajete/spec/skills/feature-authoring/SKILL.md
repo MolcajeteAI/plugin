@@ -28,7 +28,7 @@ Before creating or locating a feature, resolve the target module and domain:
 
 All feature paths use the pattern `prd/modules/{module}/features/FEAT-XXXX-{slug}/`.
 
-The domain is the **BDD path segment** for every `.feature` file this feature owns: `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. **One feature → one domain → one BDD directory.** A use case tests exactly the domain it lives in. Outcomes that touch other systems (emails, notifications, downstream events) are recorded as **side effects** of the UC under test — they are validations of the same UC, not evidence that another domain is being tested.
+The domain is a spec-organization concept used to group related features (e.g., `identity`, `billing`, `notifications`) and to filter features in registries. Every feature belongs to exactly one domain. Outcomes that touch other systems (emails, notifications, downstream events) are recorded as **side effects** of the UC under test — they are validations of the same UC, not evidence that another domain is being tested.
 
 ### Module-Scoped Content (Multi-Module Features)
 
@@ -63,7 +63,7 @@ When creating a feature, after the module and domain are resolved and before the
 
 ## EARS Syntax
 
-All functional requirements MUST be written in EARS (Easy Approach to Requirements Syntax). Each sentence has a mandatory keyword and maps directly to a Gherkin `When/While/If-Then` clause.
+All functional requirements MUST be written in EARS (Easy Approach to Requirements Syntax). Each sentence has a mandatory keyword that frames the trigger and the system response.
 
 | Pattern | Keyword | Template | Use for |
 |---------|---------|----------|---------|

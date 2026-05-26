@@ -2,7 +2,6 @@
 
 > The permanent catalog of all product features.
 > Features are never removed -- they accumulate use cases over their lifetime.
-> The feature ID doubles as a tag (@FEAT-XXXX) for Gherkin traceability.
 
 ## Status Key
 

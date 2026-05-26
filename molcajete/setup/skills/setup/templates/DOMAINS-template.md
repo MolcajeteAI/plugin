@@ -1,8 +1,8 @@
 # Domains
 
 > Logical business concerns that cross module boundaries.
-> Use domain tags on features, use cases, and Gherkin scenarios to filter
-> by business area (e.g., run all @identity tests across all modules).
+> Use domain tags on features and use cases to filter by business area
+> (e.g., list every feature under @identity across all modules).
 
 | ID | Domain | Description |
 |----|--------|-------------|

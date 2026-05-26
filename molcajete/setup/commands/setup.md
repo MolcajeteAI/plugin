@@ -72,11 +72,11 @@ Launch an `Explore` sub-agent to scan for tech stack indicators **grouped by mod
    - Build tool (Vite, Webpack, esbuild, `go build`, etc.)
    - Key libraries (state management, GraphQL clients, ORMs, validation, i18n, etc.)
    - Styling (Tailwind, CSS modules, styled-components — frontend modules only)
-   - Testing tools (Vitest, Jest, Go test, pytest, etc.)
+   - Testing tools (Vitest, Jest, Go test, pytest, etc.) — check `package.json` devDependencies, `pyproject.toml`/`requirements*.txt`, `go.mod`, `Cargo.toml`; also look for config files (`vitest.config.*`, `jest.config.*`, `pytest.ini`, `pyproject.toml [tool.pytest.ini_options]`). For each module, also note: did the agent find a runner, or is the row unknown?
    - Lint/format tools (Biome, ESLint, golangci-lint, etc.)
 3. **Shared infrastructure:** Check docker-compose.yml for databases, caches, queues. Check .github/workflows/, vercel.json, netlify.toml for CI/CD and hosting.
 4. **External services:** Grep for API keys, SDK imports, or service client instantiations that indicate third-party services (payment processors, LLM providers, notification services, etc.)
-5. **Return a structured summary** organized as: one section per module (with directory, language, framework, libraries, tooling), then shared infrastructure, then external services.
+5. **Return a structured summary** organized as: one section per module (with directory, language, framework, libraries, tooling, **testing status: found `{runner}` | none detected**), then shared infrastructure, then external services.
 
 After the agent returns, use AskUserQuestion to present the inferred stack:
 - Question: "I found the following tech stack in your codebase:\n\n{inferred stack grouped by module, then shared infrastructure, then external services}\n\nIs this correct? Add or correct anything that's missing."
@@ -84,6 +84,8 @@ After the agent returns, use AskUserQuestion to present the inferred stack:
 - Options:
   - "Yes, that's correct" -- proceed
   - "Mostly correct, with changes" -- user provides corrections via Other
+
+If the Explore agent reports `Testing: none detected` for a module, leave that row blank. The build loop infers the runner from the module's manifest at build time (see `shared/skills/testing/SKILL.md` → "Runner Inference").
 
 ### If no codebase exists
 
@@ -97,7 +99,7 @@ Batch 2:
 - "How is the project hosted and what CI/CD do you use?" (e.g., Hetzner VPS + GitHub Actions)
 - "Is this a monorepo or multi-repo? What package manager?" (e.g., monorepo with pnpm)
 
-After gathering answers, use AskUserQuestion to present the composed tech stack for confirmation (one module section per application/service).
+After gathering answers, use AskUserQuestion to present the composed tech stack for confirmation (one module section per application/service). Leave each module's `Testing` row blank — the build loop will fill it in by reading the manifest once the module's code exists.
 
 ## Step 5: Interview -- Actors
 
@@ -162,7 +164,7 @@ If the project appears to be a single application (one framework, one entry poin
   - "I have multiple modules" -- user provides corrections via Other
 
 After confirmation, for each confirmed module assign:
-- **ID:** Short kebab-case identifier (doubles as Gherkin tag)
+- **ID:** Short kebab-case identifier
 - **Module:** Human-readable name
 - **Description:** One sentence explaining what this module covers
 - **Directory:** `modules/{id}/` (relative path within `prd/`)
@@ -201,10 +203,10 @@ After confirmation, record the domain tag list. DOMAINS.md will be written as a 
 
 **Global project files go directly in `prd/`.** Per-module files go in `prd/modules/{module}/`.
 
-First, create the prd directory and module directories:
+First, create the prd directory, the molcajete settings directory, and module directories:
 
 ```bash
-mkdir -p prd
+mkdir -p prd .molcajete
 ```
 
 Then for each confirmed module:
@@ -237,11 +239,30 @@ Read all templates from the setup skill and generate the documents:
 7. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/FEATURES-template.md`
    Write `prd/FEATURES.md` with the status key, then one `## {domain}` section per domain from DOMAINS.md. All tables start empty. No features are populated at setup time.
 
-## Step 9: Report
+## Step 9: Write Testing Settings
+
+The build loop's Validator subagent reads the coverage threshold from `.molcajete/settings.json`.
+
+1. If `.molcajete/settings.json` does not exist, write it with:
+
+   ```json
+   {
+     "testing": {
+       "threshold": 80
+     }
+   }
+   ```
+
+2. If `.molcajete/settings.json` already exists:
+   - Parse it. If it has a `bdd` key, remove that key.
+   - If it has no `testing.threshold`, add `testing.threshold = 80`.
+   - Write the result back.
+
+## Step 10: Report
 
 Tell the user what was created or updated.
 
-**Created files (Steps 3-8):**
+**Created files:**
 - `prd/PROJECT.md` -- project description
 - `prd/TECH-STACK.md` -- technology choices
 - `prd/ACTORS.md` -- system actors
@@ -249,7 +270,8 @@ Tell the user what was created or updated.
 - `prd/MODULES.md` -- module registry (physical application layers)
 - `prd/DOMAINS.md` -- domain tag registry (logical business concerns)
 - `prd/FEATURES.md` -- master feature inventory (sectioned by domain)
+- `.molcajete/settings.json` -- testing threshold (default 80%)
 - For each module:
   - `prd/modules/{module}/features/` -- directory for feature specs
 
-Explain the structure: "Your specs are organized by module. Features are registered in `prd/FEATURES.md` under their domain section. Use `/m:feature` to create your first feature."
+Explain the structure: "Your specs are organized by module. Features are registered in `prd/FEATURES.md` under their domain section. The build loop reads `prd/TECH-STACK.md` per module and the coverage threshold from `.molcajete/settings.json`. Use `/m:feature` to create your first feature."

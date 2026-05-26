@@ -1,5 +1,5 @@
 ---
-description: Reverse-engineer a single scenario from a code path (atomic, with Gherkin generation)
+description: Reverse-engineer a single scenario from a code path (inline into parent UC)
 model: claude-opus-4-6
 argument-hint: "[UC-XXXX] <freeform description of code path>"
 allowed-tools:
@@ -15,7 +15,7 @@ allowed-tools:
 
 # Reverse-Engineer Scenario from Code
 
-You are extracting scenarios from existing code and generating Gherkin feature files. This is the atomic reverse command — it scans a specific code path within a use case's scope, extracts scenario details, then generates BDD artifacts. It does not cascade to sub-entities.
+You are extracting a scenario from existing code and writing it inline into the parent use case. This is the atomic reverse command — it scans a specific code path within a use case's scope, extracts scenario details, and appends them to the UC file using the existing flat-scenario format. The UC file is the only output.
 
 **Input:** $ARGUMENTS
 
@@ -23,11 +23,10 @@ You are extracting scenarios from existing code and generating Gherkin feature f
 
 ## Step 1: Load Skills
 
-Read all skills that govern this command:
+Read both skills that govern this command:
 
-1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md` — research methodology, extraction patterns, ARCHITECTURE.md enrichment, ID resolution, step stub convention
-2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/SKILL.md` — generation rules, tagging, step writing, scaffold, detection, index maintenance
-3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat scenario structure, Gherkin Mapping table, Side Effects conventions
+1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md` — research methodology, extraction patterns, ARCHITECTURE.md enrichment, ID resolution
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` — flat inline scenario structure, Side Effects conventions
 
 Follow these skills' rules for all subsequent steps.
 
@@ -146,18 +145,6 @@ Edit the UC file (`prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-X
 1. Append each confirmed scenario in flat structure — each preceded and followed by a `---` horizontal rule, with SC-XXXX ID, Given/Steps/Outcomes/Side Effects.
 2. Increment the `version` number in the YAML frontmatter.
 
-## Step 7b: Testability Analysis
-
-After scenarios are confirmed but before writing to the UC file, run testability analysis per the reverse-engineering skill's Testability Analysis section:
-
-1. Check the feature's ARCHITECTURE.md for a `## Testing Decisions` section. Skip concerns that already have a recorded decision.
-2. Scan the extracted scenarios for testability signals (external API calls without sandbox, time-dependent logic, etc.).
-3. If unresolved concerns are found, create or append to the existing recommendations file for this UC:
-   - If `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-TEST-ISSUES.md` exists, append new concerns
-   - If it does not exist, create it using the template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/templates/UC-TEST-ISSUES-template.md`
-4. Do not use AskUserQuestion for testability concerns. Write the file silently.
-5. Report the count of concerns in the final output.
-
 ## Step 8: Update ARCHITECTURE.md
 
 If `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` exists:
@@ -167,105 +154,13 @@ If `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md` exists:
 3. Update `last_update` date in frontmatter to today.
 4. If the ARCHITECTURE.md doesn't have a Code Map section yet, add one using the structure from the reverse-engineering skill.
 
-## Step 9: Scaffold Setup
-
-Run the scaffold procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/scaffold.md` (steps 2a–2h):
-
-- Check for existing scaffold, create if missing
-- Detect modules, language, format
-- Create INDEX.md files and world module
-- Persist BDD settings to `.molcajete/settings.json`
-- Validate existing indexes, rebuild if drift detected
-
-## Step 10: Module/Domain and Tag Selection
-
-### 10.1 Module and Domain Resolution
-
-Read the parent feature's REQUIREMENTS.md frontmatter:
-- `module:` → `{module}` directory segment.
-- `domain:` → `{domain}` directory segment. Every feature has exactly one domain.
-
-**One feature → one domain → one BDD directory.** The test *subject* is this one UC; the *observation surface* is everything the user experiences as a consequence. Scenarios must assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes) — these are observations of this UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**.
-
-The target `.feature` file path is `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`.
-
-Use AskUserQuestion:
-- Question: "Place this UC's .feature file at:\n\n`bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`\n\nExisting UC files in this tree: {list of existing `bdd/features/{module}/{domain}/*.feature`}"
-- Header: "Module/Domain"
-- Options: "Confirm" / "Override" (user provides via Other)
-
-### 10.2 Classification Tags
-
-Propose tags for each scenario based on its nature:
-- First scenario / happy-path → `@smoke`
-- Error / edge case → `@regression`
-- Security / data integrity → `@critical`
-
-Also propose a feature-level priority tag.
-
-Use AskUserQuestion:
-- Question: "Proposed tags:\n\n**Feature-level:** `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}`\n\n{for each scenario: `@SC-XXXX @{classification-tag}` — {scenario name}}\n\nDo these look correct?"
-- Header: "Tags"
-- Options: "Yes, looks good" / "Edit" (user corrects via Other)
-
-## Step 11: Generate Gherkin
-
-### 11.1 Construct Feature File Content
-
-Using the Gherkin Mapping table from the usecase-authoring skill:
-
-- **Feature-level tags:** `@FEAT-XXXX @UC-XXXX @{domain} @{module} @{priority-tag}` (the file represents this UC)
-- **Feature line:** `Feature: {UC Name}` with description from UC objective
-- **Background:** from UC Preconditions (each precondition becomes a `Given` / `And` clause)
-- **Each scenario:**
-  - Tags: `@SC-XXXX @{classification-tag}`. Never add a second domain tag — one feature, one domain.
-  - `Scenario: {Scenario Name}`
-  - `Given` / `And` from scenario Given field
-  - `When` / `And` from scenario Steps field (one action per clause)
-  - `Then` from scenario Outcomes field (exact assertion values)
-  - `And` from positive Side Effects — assert on every user-observable side effect, even when it crosses into other features/domains (emails, notifications, analytics, downstream writes). These are observations of this UC, not tests of those other features. See `gherkin/SKILL.md` → **Test Subject vs. Observation Surface**
-  - `And no ...` from "No ..." Side Effects
-
-Follow the step writing rules from the gherkin skill (declarative Given, exact Then, parameterized patterns). Use `Scenario Outline` + `Examples` when multiple scenarios test the same flow with different inputs.
-
-### 11.2 Preview
-
-Use AskUserQuestion to show the full generated Gherkin for review:
-- Question: "Here's the generated Gherkin:\n\n```gherkin\n{full feature file content}\n```\n\nDoes this look correct?"
-- Header: "Preview"
-- Options: "Yes, looks good" / "Edit" (user corrects via Other)
-
-### 11.3 Check for Existing UC File
-
-Grep `bdd/features/` for `@UC-XXXX`. If the tag matches a file, that's this UC's existing `.feature`. Follow the dedup procedure from `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` step 3-pre:
-- Skip exact duplicate scenarios inside that UC's file.
-- Warn on near-duplicates.
-- Append only new scenarios to the same UC's file — never merge scenarios across UCs.
-
-If multiple files match, report the inconsistent state and stop.
-
-### 11.4 Write Feature File
-
-Write the `.feature` file to `bdd/features/{module}/{domain}/{UC-XXXX}-{uc-slug}.feature`. Create `bdd/features/{module}/{domain}/` if missing. If appending to this UC's existing file, use the Edit tool to append new scenarios at the end.
-
-## Step 12: Update Indexes
-
-Follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/generation.md` step 3d — update `bdd/features/INDEX.md`.
-
-## Step 13: Splitting Check
-
-Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/gherkin/references/splitting.md`. If the scenario count in the target feature file exceeds 15, run the splitting procedure.
-
-## Step 14: Report
+## Step 9: Report
 
 Tell the user what was created:
 
-- Scenarios appended to `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` (list SC-XXXX IDs and names)
+- Scenarios appended inline to `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md` (list SC-XXXX IDs and names)
 - ARCHITECTURE.md Code Map entries added
-- Feature file path + scenario count
-- Updated INDEX.md files
 
 Suggest next steps:
-- "Use `/m:reverse-scenario UC-XXXX <description>` to extract more scenarios from code."
-- "Use `/m:scenario UC-XXXX` to generate Gherkin from manually authored scenarios."
-- "Use `/m:reverse-plan UC-XXXX` to plan BDD wiring."
+- "Use `/m:reverse-scenario UC-XXXX <description>` to extract more scenarios into this UC."
+- "Use `/m:reverse-plan` to generate a coverage-recovery plan when this UC needs more test coverage."
