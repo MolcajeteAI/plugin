@@ -10,11 +10,6 @@ description: >-
 
 Lightweight, silent research that runs automatically inside spec-authoring commands. No user interaction. Target: 15-30 seconds.
 
-## When to Use
-
-- Before spec-writing in `/m:feature`, `/m:usecase`, `/m:spec`
-- When a command needs up-to-date context about a topic before generating specs
-- Called from spec-authoring commands before the creation interview
 
 ## Naming Convention
 

@@ -10,11 +10,6 @@ description: >-
 
 Standards for how agents create git commits during task execution. This skill defines message format, style detection, atomicity rules, and scope assessment. It does not define a user-facing command — it is reference material for agents that commit as part of their work.
 
-## When to Use
-
-- An agent has completed a task and needs to commit the changes
-- An agent needs to decide whether to commit now or continue accumulating changes
-- An agent needs to split a large set of changes into multiple commits
 
 ## Style Detection
 

@@ -10,11 +10,6 @@ description: >-
 
 Owns all ARCHITECTURE.md knowledge: frontmatter schema, section definitions, population rules, and the template. Both Specs First (greenfield) and Code First (brownfield) flows reference this skill when creating or populating ARCHITECTURE.md.
 
-## When to Use
-
-- Understanding the structure and rules for ARCHITECTURE.md
-- Creating an ARCHITECTURE.md scaffold for a new feature
-- Populating ARCHITECTURE.md sections from code analysis or implementation progress
 
 ## Frontmatter Schema
 

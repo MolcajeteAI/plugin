@@ -14,18 +14,10 @@
     "./plan/commands/reverse-plan.md",
     "./research/commands/research.md",
     "./shared/commands/doc.md",
-    "./spec/commands/feature.md",
-    "./spec/commands/reverse-feature.md",
-    "./spec/commands/reverse-scenario.md",
     "./spec/commands/reverse-spec.md",
-    "./spec/commands/reverse-usecase.md",
-    "./spec/commands/spec.md",
-    "./spec/commands/update-feature.md",
-    "./spec/commands/update-usecase.md",
-    "./spec/commands/usecase.md"
+    "./spec/commands/spec.md"
   ],
   "skills": [
-    "./build/skills/implementing/SKILL.md",
     "./setup/skills/setup/SKILL.md",
     "./plan/skills/planning/SKILL.md",
     "./research/skills/headless-research/SKILL.md",

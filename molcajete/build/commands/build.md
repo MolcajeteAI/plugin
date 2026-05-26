@@ -25,13 +25,8 @@ You implement a single plan task by running a two-subagent loop: an **Implemente
 
 ## Step 1: Load Skills
 
-Read all three skills that govern this command:
-
-1. `${CLAUDE_PLUGIN_ROOT}/build/skills/implementing/SKILL.md` -- plan authority, state transitions, Implementer + Validator procedures, error handling
-2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` -- subagent role definitions, outer-edge mocking, Five Exit Doors, reading `prd/tech-stack.md`, coverage gate, reactive refactor
-3. `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/SKILL.md` -- plan JSON schema reference
-
-Follow these skills' rules for all subsequent steps.
+1. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer rules, outer-edge mocking, runner inference, coverage gate
+2. `${CLAUDE_PLUGIN_ROOT}/plan/skills/planning/SKILL.md` — plan JSON schema
 
 ## Step 2: Verify Prerequisites
 
@@ -105,7 +100,7 @@ Then stop.
 
 4. Present the task to the user via AskUserQuestion:
 
-   - Question: "**{task.id}: {task.title}**\n\n**Intent:** {task.intent}\n**Use Case:** {task.use_case}\n**Feature:** {task.feature}\n**Module:** {task.module}\n\n**Description:**\n{task.description}\n\n**Files to modify:**\n{task.files_to_modify as bulleted list}\n\n{if task.sub_tasks}**Sub-tasks:** {count} sub-tasks{/if}\n\nReady to implement?"
+   - Question: "**{task.id}: {task.title}**\n\n**Use Case:** {task.use_case}\n**Feature:** {task.feature}\n**Module:** {task.module}\n\n**Description:**\n{task.description}\n\n**Files to modify:**\n{task.files_to_modify as bulleted list}\n\n{if task.sub_tasks}**Sub-tasks:** {count} sub-tasks{/if}\n\nReady to implement?"
    - Header: "Build Task"
    - Options: "Proceed" / "Cancel"
 
@@ -169,127 +164,61 @@ If no module's `Directory` covers the task's files, or the matched module is mis
 
 "`prd/TECH-STACK.md` is incomplete for the module containing {first file in files_to_modify}. Run `/m:setup` to fill in the `Framework` and `Key libraries` rows for that module, then retry."
 
-**Test runner resolution.** The `Testing` row is allowed to be blank — most projects don't need to pre-populate it. Resolve the runner in this order:
+**Test runner resolution.** Resolve per the testing skill's "Runner Inference" section. If ambiguous, ask via `AskUserQuestion` with the candidates as options. Cache the resolution for this invocation.
 
-1. If `Modules.{name}.Testing` in `prd/TECH-STACK.md` is filled and not templated, use it.
-2. Otherwise, infer the runner by reading the module's manifest once and applying the inference rules in `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` → "Runner Inference". This is a single file read per build (`package.json`, `pyproject.toml`, `go.mod`, `Cargo.toml`, or equivalent).
-3. If inference is ambiguous (e.g., both Jest and Vitest in devDependencies) or the manifest is unrecognized, ask via `AskUserQuestion`:
-   - Question: "Could not unambiguously infer a test runner for module **{name}**. Manifest signals: {signals}. Which runner should I use?"
-   - Header: "Test Runner — {name}"
-   - Options: list the candidates the inference found; `Other` for free-form.
+**Test + coverage commands.** If `.molcajete/settings.json testing.commands.{test,coverage}` is set, use those (with `{paths}` as the touched-files placeholder). Otherwise derive from the resolved runner's conventional scoping flag (see testing skill). If unknown, halt with a setup hint.
 
-Whatever runner is resolved, use it for the rest of the build. Do not write it back to `prd/TECH-STACK.md` unless the user asks.
-
-Determine the project's test and coverage commands. Coverage is **scoped to the touched files**, not the whole project — the Validator only judges what this task changed.
-
-1. If `.molcajete/settings.json` `testing.commands.test` and `testing.commands.coverage` are set, use them as base commands. Both should accept a `{paths}` placeholder for file-scoping; if the user's commands don't, append the runner's scoping flag (below) when the runner is known.
-2. Otherwise, derive conventional commands from the resolved runner. Both the test runner and the coverage filter must be scoped to the union of `task.files_to_modify` and the files the Implementer changes during the loop (the **touched set**):
-
-   | Runner | Scoped test command | Scoped coverage flag |
-   |---|---|---|
-   | Vitest | `npx vitest run {test_paths}` | `--coverage --coverage.include={src_path}` (one `--coverage.include` per touched source file) |
-   | Jest | `npx jest {test_paths}` | `--coverage --collectCoverageFrom={src_path}` (one flag per touched source file; quote globs) |
-   | pytest | `pytest {test_paths}` | `--cov={src_module_or_dir}` (one `--cov` per touched module/dir) |
-   | go test | `go test {pkg_paths}` | `-cover -coverpkg={pkg_paths}` |
-   | cargo test | `cargo test {test_filter}` | `--lib` plus `cargo llvm-cov --include-files {src_path}` if available |
-
-   If the runner is unknown, halt with: "Cannot derive test command for runner '{name}'. Set `testing.commands.test` and `testing.commands.coverage` in `.molcajete/settings.json` (use `{paths}` as the touched-files placeholder)."
-
-3. **Touched set discovery.** Before each Validator call, build the touched set as the union of:
+**Touched set.** Before each Validator call, build the touched set as the union of:
    - `task.files_to_modify` (production files the planner expected to change)
    - The files actually changed by the Implementer in any round so far this task (tracked across iterations)
    - Their colocated or sibling test files (per the module's existing test layout)
 
    Translate the touched set to runner-appropriate test_paths/pkg_paths/src_paths arguments before substituting into the command.
 
-## Step 10: Implement — Two-Subagent Loop
+## Step 10: Implement — Inline Loop
 
-Check `task.sub_tasks`:
+The orchestrator (you) is the Implementer. You write the test then the production code directly. You also run the test/coverage command via Bash and judge the result. No subagents — spawning one to run `npm test` is wasted Claude calls.
 
-### Path A: No Sub-Tasks (sub_tasks is null)
+### Loop setup
 
-Run the build loop directly on the task.
-
-#### 10.A.1 Loop Setup
-
-Initialize loop state:
 - `behaviors_covered`: empty list
 - `validator_feedback`: null
 - `iterations`: 0
 - `max_iterations`: 10
-- Create `.molcajete/plans/{plan-name}/runs/` if it does not exist
-- Open `.molcajete/plans/{plan-name}/runs/{task.id}.log` for appending each round
+- Create `.molcajete/plans/{plan-name}/runs/` if missing; open `.molcajete/plans/{plan-name}/runs/{task.id}.log`.
 
-#### 10.A.2 Loop Body
+### Loop body — repeat until done or `iterations >= max_iterations`
 
-Repeat until the task is done or `iterations >= max_iterations`:
+For each iteration:
 
-1. Increment `iterations`.
+1. **Pick the next uncovered behavior** named in `task.description`. If every named behavior is in `behaviors_covered`, run one final verify (step 4) and exit.
 
-2. **Capture the test-file set before the round.** Glob the task's expected test paths (or the conventional test directories for the module: `**/__tests__/`, `**/*.test.*`, `**/*.spec.*`, `**/test_*.py`, `*_test.go`, etc., scoped to the module's `Directory`). Record the set as `tests_before`.
+2. **Write the test first.** The test file must be created or extended before any production-code edit in this iteration. Use the resolved runner from Step 9 and the testing skill's conventions.
 
-3. **Implementer subagent.** Use the Agent tool with `subagent_type: general-purpose`. The prompt must contain:
-   - Skills to load: `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/build/skills/implementing/SKILL.md`.
-   - Task description and intent (`implement` or `cover`).
-   - Architecture doc contents (from `task.architecture`).
-   - The verbatim `Module` section of `prd/tech-stack.md` resolved in Step 9.
-   - `behaviors_covered` so far.
-   - `validator_feedback` from the previous round, if any.
-   - Instruction: pick the next uncovered behavior named in the task description; **write the test for that behavior first**, then write the production code in its final form. Return: list of files changed, the behavior just covered, a one-line note.
-   - Refuse to mark the task done — only the orchestrator does that.
+3. **Write production code in its final form.** No throwaway-minimum-then-refactor. If the task's `description` names uncovered code paths (coverage-recovery flavor), write only tests — touch production code only when a seam is genuinely untestable (reactive refactor).
 
-4. **Verify test-first order.** Capture `tests_after` the same way as step 2. If `tests_after` does not contain at least one new test path AND no existing test file was touched (check mtimes if needed), treat this round as a failure:
-   - Set `validator_feedback = "Implementer must write a test before production code; no new or modified test file was observed in this round."`
-   - Append the round to the log with this failure.
-   - Continue the loop.
+4. **Run the scoped test + coverage commands via Bash** (the commands resolved in Step 9, substituted with the current touched set). Read the result yourself:
+   - All scoped tests green + per-file coverage on every touched file ≥ `testing.threshold` → behavior done. Append to `behaviors_covered`. Clear `validator_feedback`. Loop to step 1.
+   - Tests failed → set `validator_feedback` to the failure details. Loop to step 1 (you'll address them on the next iteration as part of the same behavior).
+   - Coverage low → set `validator_feedback` to the per-file gaps. Loop to step 1.
 
-5. **Validator subagent.** Use the Agent tool with `subagent_type: general-purpose`. The prompt must contain:
-   - Skills to load: `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md`.
-   - The list of files changed by the Implementer this round.
-   - The cumulative **touched set** for this task (per Step 9.3).
-   - The fully-substituted test command and coverage command from Step 9 — scoped to the touched set.
-   - The threshold from `.molcajete/settings.json` `testing.threshold`.
-   - Instruction: run both commands; do NOT read the Implementer's reasoning; the coverage gate applies **only to the touched files**, not the whole project; return exactly one of `pass`, `tests_failed{failures}`, or `coverage_low{gaps}`. `coverage_low{gaps}` must list per-file uncovered branches limited to the touched set. Include enough structured detail in failure cases that the Implementer can fix without re-reading the suite.
+5. **Append the round to the log** — iteration number, behavior name, files changed, outcome, failure detail if any.
 
-6. **Append the round to the log** with: iteration number, behavior name, files changed, Implementer note, Validator outcome, failure detail (if any).
+6. On hard infra failure (connection refused, missing service, etc.), stop. Do not retry; surface to the user.
 
-7. **Loop control:**
-   - On `pass`: append the behavior to `behaviors_covered`. If every behavior named in the task description is now in `behaviors_covered`, exit the loop with success. Otherwise, clear `validator_feedback` and loop back to step 2.
-   - On `tests_failed` or `coverage_low`: set `validator_feedback` to the structured failure detail. Loop back to step 2. Do not append to `behaviors_covered`.
+### Iteration cap
 
-#### 10.A.3 Iteration Cap
+If `iterations >= max_iterations` without success, pause and ask via AskUserQuestion:
 
-If the loop exits because `iterations >= max_iterations` without success, do NOT mark the task implemented. Pause and ask the user via AskUserQuestion:
-
-- Question: "Task {task.id} did not converge after {max_iterations} Implementer + Validator rounds.\n\nLast Validator outcome: {summary}\n\nFull log: `.molcajete/plans/{plan-name}/runs/{task.id}.log`\n\nWhat next?"
+- Question: "Task {task.id} did not converge after {max_iterations} iterations.\n\nLast result: {summary}\n\nFull log: `.molcajete/plans/{plan-name}/runs/{task.id}.log`\n\nWhat next?"
 - Header: "Loop Paused"
 - Options: "Mark task failed (I'll investigate)" / "Continue for another 10 iterations" / "Cancel"
 
-Act on the user's choice. Do not silently retry past the cap.
+Act on the user's choice.
 
-### Path B: With Sub-Tasks (sub_tasks is an array)
+### Sub-Tasks
 
-Sub-tasks are a context-budget split. The two-subagent loop runs inside each sub-task the same way it runs at the parent-task level. Sub-tasks do not represent Red/Green/Refactor phases.
-
-Iterate through sub-tasks in order, respecting `depends_on`:
-
-For each sub-task:
-
-1. **Check dependencies** -- For each ID in `sub_task.depends_on`, verify the corresponding sibling sub-task has `status: "implemented"`. If a dependency has `status: "failed"`, mark this sub-task and the parent task as `failed` and stop.
-
-2. **Mark in_progress** -- Set `sub_task.status` to `"in_progress"` and write plan.json.
-
-3. **Run the loop** -- Apply the loop in Path A 10.A.1–10.A.3, scoped to the sub-task's `description` and `files_to_modify`. The sub-task inherits `intent`, `use_case`, `feature`, `module`, and `architecture` from the parent task. The coverage gate runs only at the parent-task level after all sub-tasks complete (see Step 11).
-
-4. **Update status** -- Set `sub_task.status` to `"implemented"` with `sub_task.summary`, or `"failed"` with `sub_task.errors`. Write plan.json.
-
-5. **Handle failure** -- If the sub-task failed:
-   - Set the parent `task.status` to `"failed"`
-   - Set `task.errors` to `["Sub-task {sub_task.id} failed: {sub_task.errors}"]`
-   - Write plan.json
-   - Report the failure to the user and stop
-
-After all sub-tasks complete successfully, run one final Validator pass at the parent-task level to confirm the full suite still passes and coverage is met. Then proceed to Step 11.
+When `task.sub_tasks` is non-null, run the loop above per sub-task in dependency order, scoped to each sub-task's `description` and `files_to_modify`. Mark each sub-task `implemented` or `failed` in plan.json as you go. After all sub-tasks pass, run one final scoped test + coverage pass at the parent-task level (same Bash command as the loop) before proceeding to Step 11. If any sub-task fails, mark the parent failed and stop.
 
 ## Step 11: Update Plan State (final)
 

@@ -11,11 +11,6 @@ description: >-
 
 Rules for extracting product specs from existing code. The reverse commands scan a codebase, extract structured specs (features, use cases, inline scenarios), and populate ARCHITECTURE.md from code analysis — the inverse of the Specs First (greenfield) pipeline.
 
-## When to Use
-
-- Extracting specs from a brownfield codebase with `/m:reverse-spec`, `/m:reverse-feature`, `/m:reverse-usecase`, `/m:reverse-scenario`
-- Understanding how to populate ARCHITECTURE.md during reverse engineering
-- Mapping code constructs to PRD spec elements
 
 ## Research Methodology
 
@@ -264,7 +259,7 @@ that includes:
 
 The parent command does NOT re-read the files the subagent created — it trusts the subagent's report and presents the results to the user.
 
-> **Note:** Reverse commands stop at spec extraction. Coverage tests are created during the build phase via `intent: cover` tasks emitted by `/m:reverse-plan` and executed by `/m:build`'s Implementer + Validator loop.
+> **Note:** Reverse commands stop at spec extraction. Coverage tests are created during the build phase via coverage-recovery tasks emitted by `/m:reverse-plan` and executed by `/m:build`'s Implementer + Validator loop.
 
 ## Template Reference
 

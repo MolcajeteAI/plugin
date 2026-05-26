@@ -10,11 +10,6 @@ description: >-
 
 Orchestrates deep research by launching parallel agents and synthesizing their findings into a single progressive guide. Every research request — regardless of topic — produces the same document format. The depth and breadth of each section adapts naturally to the topic.
 
-## When to Use
-
-- User wants to understand a technology, pattern, or concept before specifying it
-- User provides a URL, local path, or general topic to research
-- Any `/m:research` invocation
 
 ## Step 1: Detect Tech Stack
 

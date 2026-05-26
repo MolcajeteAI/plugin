@@ -134,7 +134,6 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
    - `feature`: parent feature ID (FEAT-XXXX)
    - `module`: the module the feature belongs to
    - `architecture`: path to the feature's ARCHITECTURE.md (at `prd/modules/{module}/features/FEAT-XXXX-{slug}/ARCHITECTURE.md`)
-   - `intent`: `implement` (this command only emits `implement`)
    - `status`: `pending`
    - `estimated_context`: `~{N}K tokens`
    - `depends_on`: `["T-NNN"]` or `[]`

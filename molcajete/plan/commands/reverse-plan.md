@@ -14,7 +14,7 @@ allowed-tools:
 
 # Reverse Plan Command
 
-You generate **coverage-recovery plans**: tasks that add tests to existing code until the project meets its coverage threshold. You scan the codebase, identify modules and files whose coverage is below the threshold from `.molcajete/settings.json` `testing.threshold`, and emit behavior tasks with `intent: cover`. The output is strictly JSON — `/m:build` runs the same Implementer + Validator loop on `cover` tasks as on `implement` tasks; only the Implementer's framing differs ("add a test that exercises path X" rather than "implement behavior Y").
+You generate **coverage-recovery plans**: tasks that add tests to existing code until the project meets its coverage threshold. You scan the codebase, identify modules and files whose coverage is below the threshold from `.molcajete/settings.json` `testing.threshold`, and emit behavior tasks whose `description` names the uncovered paths. The output is strictly JSON — `/m:build` runs the same Implementer + Validator loop as greenfield plans; the only difference is the descriptions are phrased as "Cover {file}: add tests for {uncovered behavior}", which the dev session reads to know it should add tests rather than implement new production code.
 
 **Scope argument:** $ARGUMENTS
 
@@ -124,7 +124,6 @@ Build a JSON object matching this schema. For each file with coverage gaps, emit
    - `feature`: same — set when the file is mapped via a feature's Code Map, otherwise `null`.
    - `module`: the module ID containing the file
    - `architecture`: path to the feature's `ARCHITECTURE.md` when known, otherwise `null`.
-   - `intent`: `cover` (this command only emits `cover`)
    - `status`: `pending`
    - `estimated_context`: `~{N}K tokens`
    - `depends_on`: `[]` (coverage tasks are typically independent; add dependencies only when one cover task introduces a shared test harness that another reuses)

@@ -11,11 +11,6 @@ description: >-
 
 Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES.md, and ARCHITECTURE.md scaffold. The /m:plan command references this skill to run the creation interview and generate all feature artifacts.
 
-## When to Use
-
-- Creating a new feature with /m:feature or /m:spec
-- Updating an existing feature's requirements with /m:update-feature
-- Understanding the structure and rules for REQUIREMENTS.md, USE-CASES.md, and ARCHITECTURE.md
 
 ## Module and Domain Resolution
 

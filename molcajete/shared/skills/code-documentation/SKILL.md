@@ -11,11 +11,6 @@ description: >-
 
 Rules for generating and updating README.md files that serve as directory-level navigation documents. These files are optimized for two audiences: humans exploring the codebase and LLMs scanning for relevance (read frontmatter first, then full content if relevant).
 
-## When to Use
-
-- Generating a README.md for a source directory
-- Updating an existing README.md after structural changes
-- Running the documentation task at the end of a build plan
 
 ## README.md Structure
 

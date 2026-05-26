@@ -4,19 +4,13 @@ description: >-
   Rules for generating implementation plans from PRD specs. Defines plan file
   format, task decomposition rules, context budgets, the coverage-gate done
   signal, task status lifecycle, naming conventions, and slug generation.
-  Used by /m:plan (intent: implement) and /m:reverse-plan (intent: cover).
+  Used by /m:plan (greenfield) and /m:reverse-plan (coverage-recovery).
 ---
 
 # Planning
 
 Rules for generating implementation plan files in `.molcajete/plans/`. Plans are **JSON files** inside directories — never markdown. A plan decomposes specified use cases (or coverage gaps, in the reverse case) into ordered tasks that the build command will execute via the two-subagent loop.
 
-## When to Use
-
-- Generating an implementation plan from specified use cases with `/m:plan`
-- Generating a coverage-recovery plan from existing code with `/m:reverse-plan`
-- Understanding task decomposition rules and context budgets
-- Referencing plan file format and naming conventions
 
 ## Plan File Format
 
@@ -119,7 +113,7 @@ Infrastructure work is **not** standalone top-level tasks. The first behavior ta
 - **Sub-task 1:** Builds shared infrastructure (test harness, database migrations, shared middleware)
 - **Sub-task 2:** Implements the behavior on top of that infrastructure
 
-Sub-tasks inherit `intent` and other fields from the parent. The coverage gate runs only at the parent-task level after all sub-tasks complete.
+Sub-tasks inherit `use_case`, `feature`, `module`, `architecture` from the parent. The coverage gate runs only at the parent-task level after all sub-tasks complete.
 
 ### Cross-Module Awareness
 
@@ -133,16 +127,14 @@ When ARCHITECTURE.md contains a Code Map section with entries, use it to:
 - Estimate context budgets more precisely
 - Identify shared files that appear across multiple scenarios — these may need infrastructure absorption into the first task's sub-tasks
 
-### Task Intent
+### Greenfield vs Coverage-Recovery Tasks
 
-Each task carries an `intent` field that tells the build loop what kind of work to do:
+The same task schema covers both kinds of work; the dev session infers from the task's `description`:
 
-| Intent | Set by | Meaning |
-|--------|--------|---------|
-| `implement` | `/m:plan` | Build new code from specs. The Implementer writes a test for each behavior, then production code in its final form. |
-| `cover` | `/m:reverse-plan` | Add tests to existing code until the project meets the coverage threshold. The Implementer writes tests for uncovered behaviors; production code is touched only when an untestable seam needs reactive refactor. |
+- **Greenfield** (emitted by `/m:plan`): description names a new production behavior. Implementer writes a test, then production code in its final form.
+- **Coverage-recovery** (emitted by `/m:reverse-plan`): description names an uncovered path in existing code. Implementer writes a test that exercises it; production code is touched only when an untestable seam needs reactive refactor.
 
-The build loop is the same for both intents — same Implementer + Validator pair, same coverage gate. Only the Implementer's framing differs.
+Both go through the same Implementer + Validator loop and the same coverage gate. Phrasing the description clearly is what tells the dev session which mode it's in — no separate field is needed.
 
 ### Task Sizing
 
@@ -169,7 +161,7 @@ Sub-tasks break a large task into sequential steps that share a single worktree 
 
 - **ID format:** `T-NNN-M` — parent task ID + dash + integer (e.g., `T-003-1`, `T-003-2`). Never use decimal IDs.
 - **`sub_tasks` field:** `null` when the task has no sub-tasks. An array of sub-task objects when decomposed.
-- **Inheritance:** Sub-tasks inherit `use_case`, `feature`, `module`, `architecture`, and `intent` from the parent task. These fields are not repeated in the sub-task object.
+- **Inheritance:** Sub-tasks inherit `use_case`, `feature`, `module`, and `architecture` from the parent task. These fields are not repeated in the sub-task object.
 - **Dependencies:** `depends_on` in a sub-task references **sibling sub-task IDs only** (e.g., `T-003-1`), never top-level task IDs.
 - **Shared worktree:** All sub-tasks run in the parent task's worktree — no separate branches.
 - **Validation split:** Sub-tasks get formatting + linting + completeness checks; the coverage gate runs only at the parent-task level after all sub-tasks complete.
@@ -180,7 +172,7 @@ The two-subagent loop runs inside each sub-task scoped to its own `description` 
 #### Sub-Task Object Shape
 
 See the `sub_task_schema` section in [plan-schema.json](./templates/plan-schema.json) for the exact fields. Key differences from top-level tasks:
-- No `use_case`, `feature`, `module`, `architecture`, or `intent` (inherited from parent)
+- No `use_case`, `feature`, `module`, or `architecture` (inherited from parent)
 - `depends_on` scoped to sibling IDs
 - `summary`, `errors` work the same as top-level tasks
 

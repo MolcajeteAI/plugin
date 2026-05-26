@@ -1,5 +1,5 @@
 ---
-description: Initialize project with foundational docs and tooling detection, or re-run to update tooling only
+description: Initialize project foundation in one shot — describe the project once, all 7 PRD files written from that
 model: claude-opus-4-6
 allowed-tools:
   - Read
@@ -14,264 +14,80 @@ allowed-tools:
 
 # Set Up Project Foundation
 
-You are initializing a project's foundational documents. These documents are required by all other Molcajete commands (/m:plan, /m:spec).
+One AskUserQuestion: the user describes the project. From that single answer, write `prd/PROJECT.md`, `prd/TECH-STACK.md`, `prd/ACTORS.md`, `prd/GLOSSARY.md`, `prd/MODULES.md`, `prd/DOMAINS.md`, `prd/FEATURES.md`, and `.molcajete/settings.json`. Detect everything else from the codebase or the description.
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response. This keeps you in control of the conversation flow.
+**Use AskUserQuestion only for the description and the final confirmation.** No multi-stage interview.
 
 ## Step 1: Load Skill
 
-Read the setup skill for interview rules, codebase detection patterns, confirmation rules, and template references:
+Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` for templates and rules.
 
-```
-Read: ${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md
-```
+## Step 2: Regeneration Check
 
-Follow the skill's rules for all subsequent steps.
-
-## Step 2: Check for Existing Documents and Parse Flags
-
-Check if `prd/PROJECT.md` already exists.
-
-If it exists, use AskUserQuestion:
-- Question: "Foundational documents already exist (PROJECT.md found). What would you like to do?"
+If `prd/PROJECT.md` already exists, ask via AskUserQuestion:
+- Question: "Foundation already exists. Regenerate from scratch (loses any edits)?"
 - Header: "Setup Mode"
-- Options:
-  - "Regenerate all" -- full interview: regenerate PRD documents
-  - "No changes" -- stop without changes
+- Options: "Cancel" / "Regenerate all"
 
-If "Regenerate all" → proceed to Step 3.
-If "No changes" → stop.
+On "Cancel", stop. On "Regenerate all", continue.
 
-If `prd/PROJECT.md` does not exist, proceed to Step 3.
+## Step 3: Detect Existing Stack (parallel)
 
-## Step 3: Interview -- Project Description
+In a single parallel batch:
 
-Use AskUserQuestion to ask the user to describe their project. Ask:
-- "What does this project do, who uses it, and what problem does it solve?"
+- Glob common module roots (`apps/*/`, `packages/*/`, `services/*/`, `cmd/*/`) and read manifests (`package.json`, `pyproject.toml`/`requirements*.txt`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, `build.gradle{,.kts}`) when found.
+- Read `docker-compose.yml`, `.github/workflows/*.yml`, `vercel.json`, `netlify.toml`, `biome.json`, `.eslintrc*`, `tailwind.config.*`, `prisma/schema.prisma`, `drizzle.config.ts` if present.
+- Grep for SDK imports indicating external services (Stripe, OpenRouter, Twilio, AWS SDK, etc.).
 
-If the user's answer is too brief (doesn't cover what/who/why), follow up with qualifying questions via AskUserQuestion until you have enough for a 1-2 paragraph description.
+From these, infer: modules (with directory + language + framework + key libraries + test runner via the testing skill's Runner Inference + lint/format tools), services (databases, caches, queues, hosting, CI/CD), external services, runtime (Docker Compose vs host-native), repository structure (mono vs multi), env file location, and starter actors (from auth middleware, admin routes, webhook handlers, etc.).
 
-After gathering the description, use AskUserQuestion to present it back:
-- Question: "Here's the project description I'll use for PROJECT.md:\n\n{extracted description}\n\nDoes this look correct?"
-- Header: "Project"
-- Options:
-  - "Yes, looks good" -- proceed
-  - "Edit" -- user provides corrections via Other
+If no codebase exists, skip this step — the project description from Step 4 is the only source.
 
-## Step 4: Interview -- Tech Stack
-
-### If a codebase exists
-
-Launch an `Explore` sub-agent to scan for tech stack indicators **grouped by module**. The agent should:
-
-1. **Discover modules:** Check for `apps/*/`, `packages/*/`, `services/*/`, `cmd/*/` directory structures. If none found, treat the project root as a single module.
-2. **Per module:** Read the module's directory and detect:
-   - Directory path (relative to project root)
-   - Language and version (from go.mod, package.json engines, tsconfig.json target, etc.)
-   - Framework (from dependencies: React, Next.js, Express, gqlgen, etc.)
-   - Build tool (Vite, Webpack, esbuild, `go build`, etc.)
-   - Key libraries (state management, GraphQL clients, ORMs, validation, i18n, etc.)
-   - Styling (Tailwind, CSS modules, styled-components — frontend modules only)
-   - Testing tools (Vitest, Jest, Go test, pytest, etc.) — check `package.json` devDependencies, `pyproject.toml`/`requirements*.txt`, `go.mod`, `Cargo.toml`; also look for config files (`vitest.config.*`, `jest.config.*`, `pytest.ini`, `pyproject.toml [tool.pytest.ini_options]`). For each module, also note: did the agent find a runner, or is the row unknown?
-   - Lint/format tools (Biome, ESLint, golangci-lint, etc.)
-3. **Shared infrastructure:** Check docker-compose.yml for databases, caches, queues. Check .github/workflows/, vercel.json, netlify.toml for CI/CD and hosting.
-4. **External services:** Grep for API keys, SDK imports, or service client instantiations that indicate third-party services (payment processors, LLM providers, notification services, etc.)
-5. **Return a structured summary** organized as: one section per module (with directory, language, framework, libraries, tooling, **testing status: found `{runner}` | none detected**), then shared infrastructure, then external services.
-
-After the agent returns, use AskUserQuestion to present the inferred stack:
-- Question: "I found the following tech stack in your codebase:\n\n{inferred stack grouped by module, then shared infrastructure, then external services}\n\nIs this correct? Add or correct anything that's missing."
-- Header: "Tech Stack"
-- Options:
-  - "Yes, that's correct" -- proceed
-  - "Mostly correct, with changes" -- user provides corrections via Other
-
-If the Explore agent reports `Testing: none detected` for a module, leave that row blank. The build loop infers the runner from the module's manifest at build time (see `shared/skills/testing/SKILL.md` → "Runner Inference").
-
-### If no codebase exists
-
-Use AskUserQuestion to ask each tech stack question. You may batch related questions into a single AskUserQuestion with multiple questions (up to 4):
-
-Batch 1:
-- "What applications or services make up your project? For each one, what language and framework does it use?" (e.g., "Patient app: React + TypeScript in apps/patient/, Backend: Go + gqlgen in server/")
-- "What database, cache, or queue systems?" (e.g., PostgreSQL + Redis)
-
-Batch 2:
-- "How is the project hosted and what CI/CD do you use?" (e.g., Hetzner VPS + GitHub Actions)
-- "Is this a monorepo or multi-repo? What package manager?" (e.g., monorepo with pnpm)
-
-After gathering answers, use AskUserQuestion to present the composed tech stack for confirmation (one module section per application/service). Leave each module's `Testing` row blank — the build loop will fill it in by reading the manifest once the module's code exists.
-
-## Step 5: Interview -- Actors
-
-### If actors can be inferred
-
-Launch an `Explore` sub-agent to scan for actor evidence in the codebase. The agent should check for:
-- Auth middleware with role checks (suggests role-based actors)
-- Admin panel routes or components (suggests admin actor)
-- API key validation (suggests external system actor)
-- Public vs. authenticated routes (suggests guest vs. authenticated actors)
-- Webhook handlers (suggests external system actor)
-- Multi-tenant patterns (suggests tenant/organization actor)
-
-Also extract potential actors from the project description gathered in Step 3 (user types mentioned, roles described).
-
-After inference, use AskUserQuestion to present suggested actors:
-- Question: "Based on your project, I identified these actors:\n\n{actor table with Role, Description, Constraints}\n\nDo these look correct? Are there others?"
-- Header: "Actors"
-- Options:
-  - "Yes, that's correct" -- proceed
-  - "Needs changes" -- user provides corrections via Other
-
-### If no actors can be inferred
+## Step 4: One Description
 
 Use AskUserQuestion:
-- Question: "Who interacts with this system? List the roles (human or system) along with any permissions or constraints. For example: 'Admin (human) -- full access; API Consumer (system) -- read-only.'"
-- Header: "Actors"
+- Question: "Describe the project in 2–4 sentences: what it does, who uses it, what problem it solves, and any tech-stack details the codebase scan wouldn't reveal (e.g., 'we'll use AWS SES for email', 'patient data is PHI'). I'll write the foundation documents from this."
+- Header: "Project Description"
 
-After gathering the answer, use AskUserQuestion to present the structured actor table for confirmation.
+Optionally include scoped follow-ups in the same AskUserQuestion call (up to 4) only if the project type genuinely needs disambiguation — for example, in a multi-app monorepo: "Which module is the primary user-facing one?" Do NOT ask about actors, domains, modules, or test runners — infer those.
 
-## Step 6: Interview -- Modules
+## Step 5: Compose
 
-Modules are physical application layers -- each distinct app, service, console, API, or package in the project. They determine how specs and features are organized on disk.
+Combine the description (Step 4) and the codebase findings (Step 3) into a single mental model. Resolve:
 
-### If a codebase exists
+- **Project description** — 1–2 paragraphs (PROJECT.md).
+- **Modules** — from directory structure, or single-module if root-level project. Each gets ID, name, description, directory.
+- **Tech stack per module** — from manifests; populate `Modules.{name}` rows including `Testing` when detection found a clear runner (otherwise leave blank — the build loop's Runner Inference handles it). Populate Services, Applications, External Services, Repository Structure, Tooling, Environment, Conventions sections from findings.
+- **Actors** — from auth middleware, admin routes, API key handlers, webhook receivers in the code, plus any mentioned in the description. Each row: Actor / Role / Description / Constraints.
+- **Domains** — logical business concerns (identity, billing, notifications, etc.) inferred from route prefixes, directory names, model names, or the description.
+- **Glossary** — 5 standard terms (Module, Domain Tag, Feature, Use Case, Actor) + 3–5 project-specific terms (the database name, the primary framework, domain language from the description).
 
-Launch an `Explore` sub-agent to infer modules from the project structure:
-- Check for `apps/`, `packages/`, `services/`, `cmd/` directories -- each subdirectory is a module
-- Check for monorepo workspace configurations (package.json workspaces, pnpm-workspace.yaml)
-- A single root application (e.g., one `package.json` + `src/`, one `go.mod` + `main.go`) is one module
+## Step 6: Present Composite for Confirmation
 
-After inference, use AskUserQuestion to present the inferred modules:
-- Question: "I found these physical modules in your project:\n\n{module table: ID | Module | Description}\n\nModules are physical application layers (apps, services, packages). Each maps to a deployable unit.\n\nDo these look correct?"
-- Header: "Modules"
-- Options:
-  - "Yes, that's correct" -- proceed
-  - "Needs changes" -- user provides corrections via Other
+Use one AskUserQuestion with the full composed foundation as the question text:
 
-### If no codebase exists
+- Question: "Here's the composed foundation I'll write:\n\n**Project:** {1-sentence summary}\n**Modules:** {list with directories}\n**Tech stack:** {one line per module: language + framework + runner}\n**Services:** {names + types}\n**External Services:** {names}\n**Actors:** {list with roles}\n**Domains:** {list}\n\nWrite all 7 PRD files + `.molcajete/settings.json` now?"
+- Header: "Foundation Ready"
+- Options: "Write all files" / "Edit one section" (user specifies via Other) / "Cancel"
 
-Use AskUserQuestion:
-- Question: "What are the physical modules in your project? A module is each distinct application, service, or package -- for example: a frontend app, a backend API, a shared library, a CLI tool.\n\nModules are physical application layers, not logical concerns."
-- Header: "Modules"
+If "Edit one section", apply the user's edit and re-present.
 
-### For single-module projects
+## Step 7: Write Files
 
-If the project appears to be a single application (one framework, one entry point, no monorepo structure), suggest one module using the project name or `app`:
-- Question: "This appears to be a single-module project. I'll create one module: **{project-name-slug}** (type: app). You can add more modules later if your project grows. Does this look correct?"
-- Header: "Modules"
-- Options:
-  - "Yes, one module is fine" -- proceed
-  - "I have multiple modules" -- user provides corrections via Other
-
-After confirmation, for each confirmed module assign:
-- **ID:** Short kebab-case identifier
-- **Module:** Human-readable name
-- **Description:** One sentence explaining what this module covers
-- **Directory:** `modules/{id}/` (relative path within `prd/`)
-
-Record the module list for document generation.
-
-## Step 7: Interview -- Domain Tags
-
-After modules are confirmed, identify logical business domains that cut across modules. Domain tags are lightweight labels used to organize features by business concern -- they are not tied to a specific module.
-
-### If a codebase exists
-
-Launch an `Explore` sub-agent to infer domain tags from code patterns:
-- Auth middleware, login routes, role checks suggest an `identity` domain
-- Payment routes, billing models, subscription logic suggest a `billing` domain
-- Notification handlers, email templates suggest a `notifications` domain
-- Dashboard routes, analytics endpoints suggest an `analytics` domain
-- Onboarding flows, setup wizards suggest an `onboarding` domain
-
-After inference, use AskUserQuestion to present the suggested domain tags:
-- Question: "What logical business domains does your project have?\n\n{suggested domains}\n\nDomains are logical concerns (identity, billing, analytics) used as tags to filter features and tests across modules."
-- Header: "Domain Tags"
-- Options:
-  - "Yes, that's correct" -- proceed
-  - "Needs changes" -- user provides corrections via Other
-
-### If no codebase exists
-
-Use AskUserQuestion:
-- Question: "What logical business domains does your project have?\n\nDomains are logical concerns (identity, billing, analytics) used as tags to filter features and tests across modules."
-- Header: "Domain Tags"
-
-After confirmation, record the domain tag list. DOMAINS.md will be written as a lightweight tag registry (ID, Domain, Description -- no types or directories).
-
-## Step 8: Generate Documents
-
-**Global project files go directly in `prd/`.** Per-module files go in `prd/modules/{module}/`.
-
-First, create the prd directory, the molcajete settings directory, and module directories:
+In a single parallel batch:
 
 ```bash
 mkdir -p prd .molcajete
 ```
 
-Then for each confirmed module:
-```bash
-mkdir -p prd/modules/{module}/features
-```
+Per module: `mkdir -p prd/modules/{module}/features`.
 
-Read all templates from the setup skill and generate the documents:
+Read templates from `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/` (PROJECT, TECH-STACK, ACTORS, GLOSSARY, MODULES, DOMAINS, FEATURES) and write each file. Write `.molcajete/settings.json` as `{"testing": {"threshold": 80}}` if it doesn't exist; preserve existing keys when it does.
 
-1. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/PROJECT-template.md`
-   Write `prd/PROJECT.md` filled with the confirmed project description.
+## Step 8: Report
 
-2. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/TECH-STACK-template.md`
-   Write `prd/TECH-STACK.md` filled with the confirmed tech stack.
+Tell the user what was written and what to do next:
 
-3. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/ACTORS-template.md`
-   Write `prd/ACTORS.md` filled with the confirmed actors.
-
-4. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/GLOSSARY-template.md`
-   Write `prd/GLOSSARY.md` with starter terms:
-   - 5 standard terms: Domain, Feature, Use Case, Actor, Side Effect (adapted to this project's domain)
-   - 3-5 additional terms extracted from the project description and tech stack (e.g., the database name, the primary framework, domain-specific terms)
-
-5. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/MODULES-template.md`
-   Write `prd/MODULES.md` filled with the confirmed modules table.
-
-6. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/DOMAINS-template.md`
-   Write `prd/DOMAINS.md` filled with the confirmed domain tags as a lightweight tag registry.
-
-7. Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/FEATURES-template.md`
-   Write `prd/FEATURES.md` with the status key, then one `## {domain}` section per domain from DOMAINS.md. All tables start empty. No features are populated at setup time.
-
-## Step 9: Write Testing Settings
-
-The build loop's Validator subagent reads the coverage threshold from `.molcajete/settings.json`.
-
-1. If `.molcajete/settings.json` does not exist, write it with:
-
-   ```json
-   {
-     "testing": {
-       "threshold": 80
-     }
-   }
-   ```
-
-2. If `.molcajete/settings.json` already exists:
-   - Parse it. If it has a `bdd` key, remove that key.
-   - If it has no `testing.threshold`, add `testing.threshold = 80`.
-   - Write the result back.
-
-## Step 10: Report
-
-Tell the user what was created or updated.
-
-**Created files:**
-- `prd/PROJECT.md` -- project description
-- `prd/TECH-STACK.md` -- technology choices
-- `prd/ACTORS.md` -- system actors
-- `prd/GLOSSARY.md` -- domain vocabulary with starter terms
-- `prd/MODULES.md` -- module registry (physical application layers)
-- `prd/DOMAINS.md` -- domain tag registry (logical business concerns)
-- `prd/FEATURES.md` -- master feature inventory (sectioned by domain)
-- `.molcajete/settings.json` -- testing threshold (default 80%)
-- For each module:
-  - `prd/modules/{module}/features/` -- directory for feature specs
-
-Explain the structure: "Your specs are organized by module. Features are registered in `prd/FEATURES.md` under their domain section. The build loop reads `prd/TECH-STACK.md` per module and the coverage threshold from `.molcajete/settings.json`. Use `/m:feature` to create your first feature."
+> Created `prd/PROJECT.md`, `prd/TECH-STACK.md`, `prd/ACTORS.md`, `prd/GLOSSARY.md`, `prd/MODULES.md`, `prd/DOMAINS.md`, `prd/FEATURES.md`, `.molcajete/settings.json`. The Testing rows in TECH-STACK.md were filled where I could detect a runner; the build loop infers the rest from manifests at run time.
+>
+> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan` and `/m:build`.

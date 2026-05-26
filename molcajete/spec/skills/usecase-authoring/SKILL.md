@@ -12,11 +12,6 @@ description: >-
 
 Rules for creating and maintaining use case files: one file per UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. The /m:usecase command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
 
-## When to Use
-
-- Creating a new use case with /m:usecase or /m:spec
-- Updating an existing use case with /m:update-usecase
-- Understanding the structure and rules for UC files
 
 ## Module-Scoped Use Cases
 
