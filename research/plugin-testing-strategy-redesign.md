@@ -1,3 +1,5 @@
+> **Superseded 2026-05-25:** BDD was removed from the Molcajete pipeline. See `plugin/prd/changelog.md` for the decision record. The redesign below is preserved for historical context only — do not act on it without reconciling against the current code.
+
 ---
 date: 2026-05-25
 query: >-

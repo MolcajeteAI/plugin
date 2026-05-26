@@ -146,7 +146,7 @@ Build a JSON object matching this schema. The top-level object has `title`, `gen
 5. **Plan-level fields** — also populate:
    - `base_branch`: current git branch (run `git branch --show-current`)
 
-   Do **not** add a `bdd_command` field or any test-runner command. The Validator subagent reads project test/coverage commands at build time from `.molcajete/settings.json` `testing` or by convention.
+   Do **not** add any test-runner command field. The Validator subagent reads project test/coverage commands at build time from `.molcajete/settings.json` `testing` or by convention.
 
 6. **Order by dependency chain** — infrastructure first, data models before APIs, core logic before edge cases, happy-path before error-handling.
 

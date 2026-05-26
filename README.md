@@ -1,6 +1,6 @@
 ---
 module: molcajete-ai
-purpose: Spec-driven development framework for Claude Code — EARS requirements, BDD scenarios, and automated build dispatch
+purpose: Spec-driven development framework for Claude Code — EARS requirements, use cases with explicit side effects, and automated build dispatch
 last-updated: 2026-04-03
 ---
 
@@ -11,7 +11,7 @@ Without a structured specification, you're not engineering — you're gambling. 
 The problem isn't the agent. It's the gap between your intent and the code.
 Molcajete.ai closes that gap.
 
-It puts a layer of structured specifications between what you want and what gets built — EARS requirements, use cases with explicit side effects, Gherkin scenarios, and architecture documents that agents can actually follow. Not as suggestions. As constraints.
+It puts a layer of structured specifications between what you want and what gets built — EARS requirements, use cases with explicit side effects, and architecture documents that agents can actually follow. Not as suggestions. As constraints.
 
 The specs become the source of truth. The code is derived from them — deterministically, traceably, repeatably.
 You don't just get working software. You get software you understand, can test, and can hand to anyone on your team.
@@ -22,24 +22,24 @@ Molcajete.ai is a spec-driven development framework built on [Claude Code](https
 
 The framework ships two components:
 
-- **`m` plugin** — A Claude Code plugin with 17 slash commands and 12 skills organized into four modules: spec, plan, build, and research.
+- **`m` plugin** — A Claude Code plugin with slash commands and skills organized into four modules: spec, plan, build, and research.
 - **`@MolcajeteAI/cli`** — A Node.js CLI ([source](https://github.com/MolcajeteAI/molcajete)) that orchestrates spec development in unattended mode, running the full spec-to-build pipeline without manual interaction.
 
 ### The Pipeline
 
 ```
-Feature idea → EARS Requirements → Use Cases → Scenarios → Gherkin → Build
+Feature idea → EARS Requirements → Use Cases → Scenarios → Build
 ```
 
 1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects.
-2. **Plan** — Generate implementation plans from specs. Wire BDD scenarios to code via architecture documents that map spec IDs to source files.
-3. **Build** — Execute plans task-by-task with agents that read the specs and architecture, write code, and validate against Gherkin scenarios.
+2. **Plan** — Generate implementation plans from specs. Map requirements and scenarios to code via architecture documents that link spec IDs to source files.
+3. **Build** — Execute plans task-by-task with agents that read the specs and architecture, write code, and validate against the scenarios defined in each use case.
 4. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
 
 ### Why Specs?
 
 - **Deterministic agent behavior** — Agents follow structured requirements, not ambiguous prose. Same spec, same output.
-- **Traceable coverage** — Every requirement has a fit criterion, every use case maps to Gherkin scenarios, every scenario maps to code via the architecture document.
+- **Traceable coverage** — Every requirement has a fit criterion, every use case has scenarios with explicit outcomes and side effects, every scenario maps to code via the architecture document.
 - **Reversible** — Extract specs from existing codebases with reverse commands, then use the same pipeline to extend them.
 - **Unattended execution** — The `@MolcajeteAI/cli` runs the pipeline end-to-end without human-in-the-loop, using specs as the contract.
 
@@ -109,11 +109,10 @@ Create and maintain structured specifications from freeform descriptions or exis
 |---------|-------------|
 | `/m:feature` | Create a new feature with EARS requirements via creation interview |
 | `/m:usecase` | Create a new use case with flat scenario structure |
-| `/m:scenario` | Generate Gherkin feature files from a use case |
 | `/m:spec` | Create or update features, use cases, and scenarios from natural language |
 | `/m:update-feature` | Update an existing feature's requirements |
-| `/m:update-usecase` | Update a use case and propagate changes to Gherkin |
-| `/m:update-scenario` | Update a scenario and propagate changes to Gherkin |
+| `/m:update-usecase` | Update a use case and its inline scenarios |
+| `/m:update-scenario` | Update a single scenario within a use case |
 | `/m:reverse-spec` | Reverse-engineer specs from existing code (broadest scope) |
 | `/m:reverse-feature` | Reverse-engineer a feature from existing code |
 | `/m:reverse-usecase` | Reverse-engineer a use case from existing code |
@@ -124,7 +123,7 @@ Create and maintain structured specifications from freeform descriptions or exis
 | Command | Description |
 |---------|-------------|
 | `/m:plan` | Generate an implementation plan from specs |
-| `/m:reverse-plan` | Generate a plan for wiring BDD to existing code |
+| `/m:reverse-plan` | Generate a coverage-recovery plan that adds tests until the project meets its coverage threshold |
 
 ### Build Module
 
@@ -147,7 +146,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each skil
 | Module | Skill | What it encodes |
 |--------|-------|----------------|
 | spec | `feature-authoring` | EARS syntax, fit criteria, non-goals positioning, creation interview |
-| spec | `usecase-authoring` | UC file structure, flat scenarios, side effects rules, Gherkin mapping |
+| spec | `usecase-authoring` | UC file structure, flat scenarios, side effects rules |
 | spec | `architecture` | ARCHITECTURE.md schema, C4 diagrams, code map, population rules |
 | spec | `reverse-engineering` | Code-to-spec extraction patterns, scope discovery, dispatcher integration |
 | plan | `planning` | Implementation plan generation and task sequencing |
@@ -155,9 +154,10 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each skil
 | research | `research-methods` | 3-tier research routing (quick, explain, deep) with source evaluation |
 | research | `headless-research` | Unattended research execution for CLI mode |
 | shared | `code-documentation` | README structure and documentation conventions |
-| shared | `gherkin` | BDD scenario generation and step definition patterns |
 | shared | `git-committing` | Commit message standards and orchestration workflow |
+| shared | `git-conflict-resolution` | Merge/rebase conflict anatomy and resolution strategies |
 | shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
+| shared | `testing` | Test-first discipline, outer-edge mocking, scoped coverage gates |
 
 ---
 
@@ -186,7 +186,7 @@ prd/
 
 - **EARS requirements** — Every functional requirement uses explicit keywords (When, While, If/Then) and includes a measurable fit criterion
 - **Flat scenarios** — No main/alternative flow distinction. Every scenario (success, error, edge case) has the same shape: Given, Steps, Outcomes, Side Effects
-- **Side effects are mandatory** — Every scenario declares what changes (events, DB writes) AND what does not change (non-side-effects become `And no ...` assertions in Gherkin)
+- **Side effects are mandatory** — Every scenario declares what changes (events, DB writes) AND what does not change (non-side-effects become `And no ...` assertions)
 - **Architecture as bridge** — ARCHITECTURE.md maps spec IDs to source files, giving agents precise context for implementation
 - **Base-62 IDs** — All artifacts use timestamp-based IDs (e.g., `FEAT-0S9A`, `UC-0KTg`, `SC-001`) that are permanent and never reused
 

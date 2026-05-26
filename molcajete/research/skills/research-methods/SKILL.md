@@ -13,7 +13,7 @@ Orchestrates deep research by launching parallel agents and synthesizing their f
 
 ## Step 1: Detect Tech Stack
 
-1. Check `.molcajete/settings.json` for cached BDD settings (Framework, Language)
+1. Check `.molcajete/settings.json` for cached tech-stack settings (Framework, Language)
 2. If not cached, scan project root for stack indicators: `package.json`, `go.mod`, `Cargo.toml`, `pyproject.toml`, `requirements.txt`, `Gemfile`, `pom.xml`, `build.gradle`, `composer.json`, `mix.exs`
 3. Store the detected stack as `DETECTED_STACK` — pass to all agents so they tailor results to the project's language and ecosystem
 

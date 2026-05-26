@@ -22,7 +22,7 @@ From the user's description and the codebase scan, compose:
 - **DOMAINS.md** — logical concerns (identity, billing, notifications, etc.) inferred from route prefixes, model names, or the description.
 - **GLOSSARY.md** — 5 standard terms (Module, Domain Tag, Feature, Use Case, Actor) + 3–5 project-specific terms.
 - **FEATURES.md** — one `## {domain}` section per domain, all tables empty.
-- **.molcajete/settings.json** — `{"testing": {"threshold": 80}}`. Strip any legacy `bdd` key.
+- **.molcajete/settings.json** — `{"testing": {"threshold": 80}}`.
 
 ## Codebase Detection (when present)
 
