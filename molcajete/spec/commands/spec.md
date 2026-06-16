@@ -93,7 +93,7 @@ Write in dependency order: parents before children.
 1. `mkdir -p prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases`
 2. Write REQUIREMENTS.md (from template, with module + domain frontmatter; follow feature-authoring section order)
 3. Write empty USE-CASES.md
-4. Write ARCHITECTURE.md scaffold from `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`. Populate every applicable table per the architecture skill's **Table Filling** rules — Component Inventory, API Surface, Code Map, Testing Decisions, and Event Topology / Integration Points where the feature has rows for them. Leave a table empty only when the feature genuinely has no rows. An ARCHITECTURE.md with empty mandatory tables blocks Step 9.
+4. Write ARCHITECTURE.md scaffold from `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`. Populate every applicable table per the architecture skill's **Table Filling** rules — Component Inventory, API Surface, Code Map, and Event Topology / Integration Points where the feature has rows for them. Leave a table empty only when the feature genuinely has no rows. An ARCHITECTURE.md with empty mandatory tables blocks Step 9.
 5. Append FEATURES.md row
 
 **Modified Features:** Edit REQUIREMENTS.md. Refresh ARCHITECTURE.md tables affected by the new/changed requirements per the architecture skill's additive Population Rules.
@@ -113,6 +113,6 @@ Tell the user what was created and updated, grouped by use case so the slice DAG
 - For each new or modified UC: list slice IDs (UC-XXXX-NNN) with their `covers` lists and the derived test file paths (computed from frontmatter + `prd/MODULES.md` per the slicing skill's Test File Convention) that the CodeWriter will materialize at build time.
 - For each new or modified feature: confirm which ARCHITECTURE.md tables were populated.
 
-If testability signals were detected in any new scenario (external APIs without sandbox, time/randomness, env-flag branches), list them as **Testability Notes** with category and confirm they were recorded in the parent feature's ARCHITECTURE.md `## Testing Decisions` table.
+If testability signals were detected in any new scenario (external APIs without sandbox, time/randomness, env-flag branches), surface them inline in the report as a brief **Testability Notes** list with category. They are advisory output, not a recorded table.
 
 Suggest next step: "Run `molcajete build <UC-XXXX>` to execute the slice DAG for that use case."

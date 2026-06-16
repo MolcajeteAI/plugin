@@ -110,13 +110,6 @@ stateDiagram-v2
 | Spec ID | Spec Name | Implementation Files |
 |---------|-----------|---------------------|
 
-## Testing Decisions
-
-> Resolved E2E testing decisions. Reverse commands check this section before flagging concerns.
-
-| Service/Pattern | Decision | Reason |
-|-----------------|----------|--------|
-
 <!-- Generate ADR IDs by running: node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js -->
 
 ## Architecture Decisions

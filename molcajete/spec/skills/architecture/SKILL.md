@@ -114,20 +114,6 @@ Links spec IDs to implementation files. This table is the primary bridge between
 
 Every UC and SC gets a Code Map entry.
 
-### Testing Decisions
-
-Records resolved E2E testing decisions for this feature. Reverse commands check this section before flagging testability concerns -- if a decision exists for a service or pattern, the concern is not re-flagged.
-
-This section does **not** record per-slice test file paths. Those are derived mechanically from the slicing skill's "Test File Convention" (slice frontmatter + `prd/MODULES.md`) and never written into ARCHITECTURE.md, since duplicating them would invite drift.
-
-| Column | Content |
-|--------|---------|
-| Service/Pattern | The external service, code pattern, or infrastructure component |
-| Decision | `e2e`, `mock`, or `injection` -- how this will be tested |
-| Reason | Why this decision was made |
-
-Initially empty when scaffolded. Populated by developers after reviewing testability recommendations.
-
 ### Architecture Decisions
 
 Non-obvious choices that future agents should not reverse. Uses the format:
@@ -173,7 +159,6 @@ For every new use case or scenario added under this feature, populate at minimum
 | Component Inventory | Slice `files.create` + `files.modify` aggregated across the UC's slices | Files traced from entry-point grep through the call chain |
 | API Surface | Endpoint references in REQUIREMENTS.md and UC scenario steps | Route registrations and handlers found in the codebase |
 | Code Map | `Spec ID → file:function()` derived from each slice's `provides` and target files | `Spec ID → file:function()` derived from the discovery scan |
-| Testing Decisions | Testability notes surfaced by the spec command | Same — recorded so subsequent reverse passes do not re-flag |
 | Event Topology | Events named in scenarios' Side Effects | Producer/consumer pairs traced through the event-bus call sites |
 | Integration Points | External systems named in scenarios | External clients located in the codebase |
 
