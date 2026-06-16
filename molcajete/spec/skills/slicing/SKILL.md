@@ -66,7 +66,7 @@ files:
   modify: [path/to/existing-file] # production files this slice changes
 depends_on: [UC-XXXX-NNN]         # prior slice IDs this slice relies on
 provides: [namedExport]           # exports the slice publishes for downstream slices
-test_file: path/to/test-file      # repo-relative path the CodeWriter writes the test scaffold to
+entry_type: http                  # driving-port kind this slice tests (must be in MODULES.md Driving Ports for the module)
 covers: [SC-XXXX, FR-XXXX]        # scenarios and requirements this slice closes
 last_update: YYYY-MM-DD
 ---
@@ -81,8 +81,10 @@ Field semantics:
 - `files.modify` — production files this slice changes. Must exist when the slice runs.
 - `depends_on` — slice IDs whose `provides` exports this slice relies on. Cycles are illegal. The harness scheduler keeps a slice pending until every dependency reaches `implemented`.
 - `provides` — named exports this slice publishes for downstream slices. The harness greps these out of the slice's source files and forwards just the signatures to dependents — never the full source.
-- `test_file` — repo-relative path where the CodeWriter writes the actualized scaffold test file (translated from the Tests section).
+- `entry_type` — the driving-port kind this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`, or any project-specific kebab-case value). The value MUST appear in the `Driving Ports` list of the slice's module row in `prd/MODULES.md`. The build halts if the value is unknown to the module.
 - `covers` — `SC-XXXX` scenario IDs and `FR-XXXX` requirement IDs this slice closes. Every scenario in the UC must be covered by exactly one slice.
+
+The slice's test file path is **not** declared here — it is derived from frontmatter and `prd/MODULES.md`. See the "Test File Convention" section below.
 
 ### Body Structure
 
@@ -149,6 +151,41 @@ A nested-bullet test plan. Each leaf is one assertion. The CodeWriter translates
 ```
 
 The structure is BDD-flavored without invoking any BDD tooling. There is no `.feature` file, no Gherkin parser — the bullets are just Markdown that the CodeWriter turns into runner code.
+
+## Test File Convention
+
+Integration/component test files are placed at a **canonical path derived from slice frontmatter and `prd/MODULES.md`** — never declared in the slice file, never chosen by the agent at slice authoring time. The path is a pure function of existing fields:
+
+```
+{module.Tests}/features/{feature-dir-name}/use-cases/{uc-dir-name}/{NNN}-{entry-type}-{slice-name}.{test-ext}
+```
+
+| Token | Resolution |
+|-------|-----------|
+| `{module.Tests}` | The `Tests` column of the module's row in `prd/MODULES.md`. Set per-module by `/m:setup` from `{module.Directory}` plus language convention. |
+| `{feature-dir-name}` | The slice's parent feature dir under `prd/modules/{module}/features/`, e.g. `FEAT-0Fy0-user-onboarding` |
+| `{uc-dir-name}` | The slice's parent UC dir under `.../use-cases/`, e.g. `UC-0KTg-register` (without the `.slices` suffix) |
+| `{NNN}` | The zero-padded sequence number portion of the slice's `id` (e.g., `001` for `UC-0KTg-001`) |
+| `{entry-type}` | The slice's `entry_type` frontmatter value — the driving-port kind whose surface this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`). Must appear in the module's `Driving Ports` list in `prd/MODULES.md`. |
+| `{slice-name}` | The slice's frontmatter `name` (kebab-case) |
+| `{test-ext}` | Per-runner extension from `prd/TECH-STACK.md` Testing row or runner inference: `test.ts` (Vitest/Jest), `_test.py` (pytest), `_test.go` (Go), `_spec.rb` (RSpec), etc. |
+
+The UC ID is **deliberately omitted** from the filename because the parent directory already encodes it. The full slice ID is always reconstructable as `{parent-uc-id}-{NNN}`.
+
+The `{entry-type}-` segment makes the driving-port kind grep-discoverable across the test tree without fragmenting features into separate directories. To find every integration test driven by GraphQL: `find tests -name '*-graphql-*.test.*'`. To find every event-handler test: `find tests -name '*-event-*.test.*'`.
+
+Worked examples:
+
+| Project | Path |
+|---------|------|
+| TS/Vitest HTTP route slice | `tests/auth/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/001-http-validate-email.test.ts` |
+| TS/Vitest event-handler slice | `tests/auth/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/003-event-fanout-welcome.test.ts` |
+| Python/pytest cron slice (monorepo) | `packages/auth/tests/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/004-cron-cleanup-unverified_test.py` |
+| Go co-located GraphQL slice | `internal/auth/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/001-graphql-resolve-profile_test.go` |
+
+This convention applies to **integration/component tests** (tests driven through an entry point, covering a slice's contract end-to-end). Pure algorithmic unit tests for leaf logic stay co-located with their source (`src/utils/prime.test.ts`) and are not subject to this layout.
+
+Build-time validation: the build command computes the derived path and refuses to dispatch if (a) frontmatter contains a stray `test_file:` line that disagrees with the derived path, (b) the slice's `feature` or `use_case` frontmatter doesn't match its parent feature/UC directory, (c) two slices in the same UC resolve to the same canonical path, (d) `entry_type` is missing or not present in the module's `Driving Ports` list in `prd/MODULES.md`, or (e) the module row in MODULES.md has no `Tests` value.
 
 ## Slicing Rules
 

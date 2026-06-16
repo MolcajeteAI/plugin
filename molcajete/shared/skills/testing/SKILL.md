@@ -132,3 +132,7 @@ When the task is a coverage-recovery task (description names uncovered paths in 
 ## Test Naming
 
 `when X then Y`. Describe blocks (or runner equivalent) mirror the behavior hierarchy.
+
+## Where Integration/Component Tests Live
+
+Test files for slices are placed at a canonical path derived from the slice's frontmatter and `prd/MODULES.md`. The agent does not pick the path — it is computed. See the slicing skill's "Test File Convention" for the formula and the build command's Step 5 for validation. Pure algorithmic unit tests stay co-located with their source (e.g., `src/utils/prime.test.ts`) and are not subject to the spec-mirrored layout.

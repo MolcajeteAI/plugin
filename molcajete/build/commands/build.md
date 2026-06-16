@@ -66,7 +66,7 @@ Then stop.
 ## Step 4: Load Slice File
 
 1. Read the resolved slice file.
-2. Parse the frontmatter (`id`, `name`, `use_case`, `feature`, `objective`, `files.create`, `files.modify`, `depends_on`, `provides`, `test_file`, `covers`, `last_update`).
+2. Parse the frontmatter (`id`, `name`, `use_case`, `feature`, `objective`, `files.create`, `files.modify`, `depends_on`, `provides`, `entry_type`, `covers`, `last_update`). The slice **must not** declare `test_file` — that field is derived (see Step 5).
 3. Capture the body sections: `## Rationale`, `## Contracts` (with `### Types`, `### API Surface`, `### Behavior` subsections), `## Tests` (the nested bullet plan).
 
 ## Step 5: Validate Slice
@@ -83,9 +83,34 @@ Then stop.
 
    On violation, tell the user precisely which invariant failed and stop.
 
-3. **Present the slice** via AskUserQuestion:
+3. **Derive the test file path.** Apply the slicing skill's **Test File Convention** to compute `test_file` from frontmatter + `prd/MODULES.md`:
 
-   - Question: "**{id}: {name}**\n\n**Use Case:** {use_case}\n**Objective:** {objective}\n**Covers:** {covers}\n\n**Files (create):** {files.create}\n**Files (modify):** {files.modify}\n**Depends on:** {depends_on}\n**Test file (materialized at build):** {test_file}\n\nReady to build this slice?"
+   ```
+   {module.Tests}/features/{feature-dir-name}/use-cases/{uc-dir-name}/{NNN}-{entry-type}-{slice-name}.{test-ext}
+   ```
+
+   Where:
+   - `{module.Tests}` is the `Tests` column of the slice's module in `prd/MODULES.md`. If the module row has no `Tests` value, halt with: "Module '{module}' has no `Tests` value in `prd/MODULES.md`. Add it (see the setup skill's per-language defaults) and re-run."
+   - `{feature-dir-name}` is the slice's parent feature directory name under `prd/modules/{module}/features/` (resolved from the slice file's path on disk).
+   - `{uc-dir-name}` is the slice's parent UC directory name under `.../use-cases/` (without the `.slices` suffix).
+   - `{NNN}` is the zero-padded sequence number from the slice's `id` (e.g., `001` for `UC-0KTg-001`).
+   - `{entry-type}` is the slice's `entry_type` frontmatter value.
+   - `{slice-name}` is the slice's frontmatter `name`.
+   - `{test-ext}` is the per-runner extension resolved from `prd/TECH-STACK.md` Testing row or runner inference (e.g., `test.ts`, `_test.py`, `_test.go`).
+
+   Validate:
+   - The slice's `feature` frontmatter must match the FEAT prefix in `{feature-dir-name}`. If not, halt: "Slice {id} frontmatter `feature: {value}` does not match parent feature directory `{feature-dir-name}`. Fix one or the other and re-run."
+   - The slice's `use_case` frontmatter must match the UC prefix in `{uc-dir-name}`. If not, halt with the analogous message.
+   - The slice file must not declare `test_file:` in its frontmatter. If it does, halt: "Slice {id} declares `test_file` in frontmatter — this field is derived. Remove it from the frontmatter."
+   - The slice must declare `entry_type:` in its frontmatter. If missing, halt: "Slice {id} is missing `entry_type` in frontmatter. Set it to one of the module's `Driving Ports` values from `prd/MODULES.md` (e.g., `http`, `event`, `cron`) and re-run."
+   - The slice's `entry_type` value must appear in the module's `Driving Ports` list in `prd/MODULES.md`. If not, halt: "Slice {id} `entry_type: {value}` is not declared in `prd/MODULES.md` for module '{module}'. Add it under the module's `Driving Ports` column (re-running `/m:setup` will detect new driving ports automatically) or change the slice's `entry_type` to a value already listed."
+   - The derived path must not collide with any other slice in the same UC. Scan sibling slice files under the same `.slices/` directory and apply the same derivation to each; if two slices resolve to the same canonical path, halt: "Slice {id} and slice {other-id} resolve to the same `test_file`. Rename one of them."
+
+   Cache the derived `test_file` on the in-memory slice for the rest of the build. (The harness's `slice-data.ts` performs the same derivation; this step keeps the interactive command symmetric.)
+
+4. **Present the slice** via AskUserQuestion:
+
+   - Question: "**{id}: {name}**\n\n**Use Case:** {use_case}\n**Objective:** {objective}\n**Entry type (driving port):** {entry_type}\n**Covers:** {covers}\n\n**Files (create):** {files.create}\n**Files (modify):** {files.modify}\n**Depends on:** {depends_on}\n**Test file (derived, materialized at build):** {derived_test_file}\n\nReady to build this slice?"
    - Header: "Build Slice"
    - Options: "Proceed" / "Cancel"
 
@@ -120,7 +145,7 @@ Resolve the test runner per the testing skill's "Runner Inference". Cache it for
 
 ## Step 7: Phase 1 — Scaffold
 
-The scaffold phase translates the slice's `## Tests` nested-bullet plan into actual test code in the project's runner. The output goes to `slice.test_file`. **Do not write production code in this phase.**
+The scaffold phase translates the slice's `## Tests` nested-bullet plan into actual test code in the project's runner. The output goes to the **derived `test_file` path computed in Step 5.3** — never a path declared in the slice frontmatter. **Do not write production code in this phase.**
 
 1. Read the `## Tests` section of the slice file.
 2. Map the bullet structure to runner-equivalent grouping:
@@ -130,7 +155,7 @@ The scaffold phase translates the slice's `## Tests` nested-bullet plan into act
 3. For `objective: implement` slices: `it` bodies are intentionally empty (or contain only a single `expect.fail("not implemented")` placeholder when the runner requires it). The initial run must be deterministically RED.
 4. For `objective: coverage` slices: `it` bodies contain the full assertions implied by the bullet text against the existing implementation. The initial run must be deterministically GREEN.
 5. Add the imports the assertions will need — for `implement` slices these may not yet resolve (the modules don't exist), and that's part of the expected RED state.
-6. Write the file at `slice.test_file`. Create parent directories as needed.
+6. Write the file at the **derived** `test_file` path. Create parent directories as needed.
 
 ## Step 8: Phase 1 Check — Initial Test Run
 

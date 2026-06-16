@@ -118,6 +118,8 @@ Every UC and SC gets a Code Map entry.
 
 Records resolved E2E testing decisions for this feature. Reverse commands check this section before flagging testability concerns -- if a decision exists for a service or pattern, the concern is not re-flagged.
 
+This section does **not** record per-slice test file paths. Those are derived mechanically from the slicing skill's "Test File Convention" (slice frontmatter + `prd/MODULES.md`) and never written into ARCHITECTURE.md, since duplicating them would invite drift.
+
 | Column | Content |
 |--------|---------|
 | Service/Pattern | The external service, code pattern, or infrastructure component |

@@ -9,7 +9,7 @@ files:
   modify: []
 depends_on: []
 provides: [namedExport]
-test_file: path/to/test-file
+entry_type: http
 covers: [SC-XXXX]
 last_update: YYYY-MM-DD
 ---
