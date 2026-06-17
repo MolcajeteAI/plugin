@@ -204,6 +204,16 @@ Omit the `## UI` section when:
 
 When a feature has a UI section, its elements should inform functional requirement language. UI is specification, not decoration. Screen names, button labels, and form fields that appear in mockups are the vocabulary for EARS triggers and responses. A requirement that says "the user submits the form" is stronger when the UI section shows exactly which form, with which fields, and what the confirmation screen looks like.
 
+## Feature Status
+
+Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | dirty | implemented` (legacy `deprecated` preserved when present). The field is the feature's first-class state, written directly by spec-phase commands and `/m:build` per the `status-rollup` shared skill.
+
+- New feature → `status: pending`.
+- Modified feature (via a UC change) → recomputed by rolling up over child UC statuses per the `status-rollup` skill.
+- Built feature (every UC `implemented`) → `status: implemented`.
+
+Authors do not edit this field manually. Anyone wanting to know "is this feature implemented?" reads the `status:` field at the top of `REQUIREMENTS.md`. See the `status-rollup` skill for the roll-up rule.
+
 ## FEAT-XXXX ID Assignment
 
 When creating a new feature, generate a unique ID using a 4-character timestamp code.

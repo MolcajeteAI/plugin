@@ -4,6 +4,7 @@ name: kebab-case-name
 use_case: UC-XXXX
 feature: FEAT-XXXX
 objective: implement
+status: pending
 files:
   create: [path/to/new-file]
   modify: []

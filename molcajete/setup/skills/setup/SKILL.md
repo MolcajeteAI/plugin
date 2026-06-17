@@ -210,6 +210,19 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Source of truth:** This catalog entry and the updated path conventions in the slicing / feature-authoring / usecase-authoring skills.
 - **Safety:** If any planned target path already exists (collision), abort that feature's migration and surface the conflict in the report. Never overwrite. Leave the source files in place when conflicts block a feature so the user can resolve manually before re-running.
 
+### `slice-status-frontmatter`
+
+- **Artifact:** Slice files at `specs/features/{module}/FEAT-*/UC-*/SLICE-NNN-*.md`.
+- **Category:** SCHEMA GAPS
+- **Detection:** Any slice file whose frontmatter does not contain a `status:` line. Slices written by `/m:plan` after the introduction of first-class slice status have this field; older slices may not.
+- **Fix:** Walk every affected slice and backfill the `status:` field:
+  1. If a corresponding `.molcajete/slices/{id}.json` durable record exists and contains `"status": "implemented"`, write `status: implemented` into the slice's frontmatter.
+  2. Otherwise, write `status: pending`.
+  3. After every slice in a UC has been backfilled, recompute the UC's frontmatter `status:` by rolling up over its sibling slice statuses (per the `status-rollup` shared skill) and write the result to `UC-XXXX-{slug}.md`.
+  4. After every UC under a feature has been backfilled, recompute the feature's frontmatter `status:` by rolling up over its child UC statuses and write the result to `REQUIREMENTS.md`.
+- **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` (semantics + roll-up rule) and the per-slice `.molcajete/slices/{id}.json` durable records (seed values for previously-implemented slices).
+- **Safety:** Backfill is additive — only writes the missing `status:` line and recomputes roll-ups. Never edits or removes other frontmatter fields. Never modifies the `.molcajete/slices/{id}.json` files.
+
 ## Extending the Drift Catalog
 
 When a plugin update adds a new host-facing artifact or extends an existing template, add a new entry to this catalog with the same five fields. The update flow in `setup.md` reads this section verbatim — there is no separate registry to keep in sync.

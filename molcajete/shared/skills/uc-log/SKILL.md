@@ -1,18 +1,24 @@
 ---
 name: uc-log
 description: >-
-  Per-UC change log + UC status frontmatter mechanics. Defines the CHANGELOG.md
-  sidecar file path, TODO/DONE section layout, entry line format, status
-  transitions (pending → dirty → implemented), and how the UC status field
-  rolls up from its log entries. Referenced by /m:spec, /m:fix, /m:change,
-  /m:cover, /m:plan, and /m:build.
+  Per-UC change log mechanics. Defines the CHANGELOG.md sidecar file path,
+  TODO/DONE section layout, entry line format, and entry-status transitions
+  (pending → dirty → implemented). Referenced by /m:spec, /m:fix, /m:change,
+  /m:cover, /m:plan, and /m:build. The changelog is a context log + marker
+  file; it is NOT the source of truth for artifact status (see status-rollup).
 ---
 
-# UC Log
+# UC Changelog
 
-Every use case carries a sidecar log file that records each spec-phase change requested for that UC and tracks it through plan and build. The log is the contract between the spec-phase commands (`/m:spec`, `/m:fix`, `/m:change`, `/m:cover`), the architect (`/m:plan`), and the executor (`/m:build`).
+Every use case carries a sidecar changelog file that records each spec-phase change requested for that UC and tracks it through plan and build. The changelog is the contract between the spec-phase commands (`/m:spec`, `/m:fix`, `/m:change`, `/m:cover`), the architect (`/m:plan`), and the executor (`/m:build`).
 
-The log answers two questions: **what changed and why** (for plan) and **what's still outstanding** (for plan and build).
+The changelog answers two questions: **what changed and why** (for plan) and **what's still outstanding** (for plan and build).
+
+## The changelog is not the status source of truth
+
+Artifact status (slice, UC, feature) lives on each artifact's frontmatter `status:` field. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:build`.
+
+This skill defines only the changelog file mechanics. Commands write `status` directly to the relevant frontmatter; the changelog mechanics described below do not affect that.
 
 ## File Path
 
@@ -91,35 +97,12 @@ No other transitions. A `pending` entry never becomes `implemented` without firs
 
 `/m:plan` refuses to operate if any of the referenced UCs' TODO sections mix `command:cover` entries with other commands. Mixed-mode pending entries must be split across separate plan runs.
 
-## UC Status Frontmatter
-
-Every `UC-XXXX-{slug}.md` (the UC spec file) carries a `status` field in its frontmatter. The field is a roll-up of the UC's log state:
-
-```yaml
----
-id: UC-XXXX
-name: ...
-feature: FEAT-XXXX
-status: pending | dirty | implemented
-version: 1
-actor: ...
----
-```
-
-- **`pending`** — UC has never been built. Every log entry is `pending` or `dirty`; there is no `implemented` entry yet.
-- **`dirty`** — UC was previously built (at least one log entry is `implemented`) and now has at least one new `pending` or `dirty` entry.
-- **`implemented`** — Every log entry is `implemented`. No outstanding changes.
-
-`/m:spec`, `/m:fix`, `/m:change`, and `/m:cover` recompute and write this field after appending a log entry. `/m:build` recomputes and writes this field after flipping the last outstanding entry to `implemented`.
-
-The legacy value `deprecated` is preserved when already present; this skill does not manage that transition.
-
 ## Two "dirty" Meanings
 
 The word `dirty` appears at two levels with intentionally different meanings. Do not conflate them:
 
-- **Entry-level `dirty`** — "in flight." The entry has been planned but the build hasn't completed.
-- **UC-level `dirty`** — "was complete, now has new unfinished work." The UC has both `implemented` history *and* outstanding pending/dirty entries.
+- **Entry-level `dirty`** (managed here) — "in flight." The changelog entry has been planned but the build hasn't completed.
+- **Artifact-level `dirty`** (managed by `status-rollup`) — "was complete, now has new unfinished work." Lives on the slice / UC / feature frontmatter.
 
 ## Idempotency
 

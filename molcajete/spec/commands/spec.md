@@ -31,7 +31,8 @@ Read in one batch:
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md`
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
 
 ## Step 2: Verify Prerequisites
 
@@ -113,25 +114,35 @@ Write in dependency order: parents before children.
 
 **No slice files. No code files. No tests.** `/m:spec` is spec prose only.
 
-## Step 10: Append Log Entry and Set UC Status
+## Step 10: Append Changelog Entry and Update Statuses
 
-For every UC touched in Step 9 (new or modified), use the `uc-log` shared skill to:
+For every UC touched in Step 9 (new or modified), use the `uc-log` shared skill to append the changelog entry, then apply the direct-write status rules from the `status-rollup` shared skill.
 
-1. Append a new entry to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
+1. **Append a changelog entry** to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
    - timestamp (UTC, `YYYYMMDDTHHMMSS`)
    - status: `pending`
    - command: `spec`
    - plan: `—`
    - reason: one-line description of what was created or changed (e.g., "added UC for password reset", "added FR-0Pq2 to require email verification")
-2. Recompute and write the UC's frontmatter `status` per the roll-up rules in the `uc-log` skill. For brand-new UCs the status is `pending`. For previously-`implemented` UCs that were just modified, the status becomes `dirty`.
+2. **Set the UC's frontmatter `status`** directly:
+   - **Brand-new UC** → `status: pending`.
+   - **Modifying a previously-`implemented` UC** → `status: dirty`.
+   - **Modifying a `pending` or `dirty` UC** → status unchanged.
+3. **Recompute the parent feature's frontmatter `status`** by rolling up over its child UCs. Read each UC's `status:` from `UC-XXXX-{slug}.md` frontmatter (not the changelog). Apply the roll-up rule from the `status-rollup` skill:
+   - All UCs `implemented` → feature `implemented`.
+   - At least one UC `dirty`, OR mixed `pending` + `implemented` → feature `dirty`.
+   - All UCs `pending` or `dirty` with no `implemented` → feature `pending`.
+   Write the result to the feature's REQUIREMENTS.md frontmatter `status`.
+
+The changelog is **not** the status source of truth. Status is written directly per the `status-rollup` skill.
 
 ## Step 11: Report
 
 Tell the user what was created and updated, grouped by UC. For each:
 
 - The new or modified files (`UC-XXXX-{slug}.md`, `CHANGELOG.md`, REQUIREMENTS.md edits, FEATURES.md row, etc.).
-- The new UC status (`pending` or `dirty`).
-- The log entry that was appended.
+- The new UC status (`pending` or `dirty`) and the new Feature status if it changed.
+- The changelog entry that was appended.
 
 If testability signals were detected in any new scenario (external APIs without sandbox, time/randomness, env-flag branches), surface them inline in the report as a brief **Testability Notes** list with category. They are advisory output, not a recorded table.
 

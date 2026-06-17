@@ -39,7 +39,8 @@ Read in one batch:
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
 5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md`
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
 
 ## Step 2: Verify Prerequisites
 
@@ -94,7 +95,8 @@ For every UC touched in Step 7 (new or modified), use the `uc-log` shared skill 
    - command: `cover`
    - plan: `—`
    - reason: one-line description of what was extracted (e.g., "extracted UC from src/auth/register.ts", "appended duplicate-email scenario from validateRegisterInput")
-2. Set the UC's frontmatter `status` to `pending` per the `uc-log` skill's roll-up rules.
+2. **Set the UC's frontmatter `status` to `pending`** directly per the `status-rollup` skill (new UCs always start at `pending`).
+3. **Recompute the parent feature's frontmatter `status`** by rolling up over its child UCs' frontmatter `status:` values (not the changelog). Apply the roll-up rule from the `status-rollup` skill and write the result to REQUIREMENTS.md.
 
 For brand-new UCs created by this command, also initialize the `CHANGELOG.md` file inside the UC's support folder (`UC-XXXX-{slug}/CHANGELOG.md`) with empty `TODO:` and `DONE:` sections before appending the entry.
 

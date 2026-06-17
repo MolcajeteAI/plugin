@@ -67,6 +67,7 @@ name: kebab-case-name
 use_case: UC-XXXX
 feature: FEAT-XXXX
 objective: implement              # implement | coverage
+status: pending                   # pending | dirty | implemented — first-class state per the status-rollup skill
 files:
   create: [path/to/new-file]      # production files this slice creates
   modify: [path/to/existing-file] # production files this slice changes
@@ -83,9 +84,10 @@ Field semantics:
 - `id` — `{parent UC ID}-NNN`. Sequential within the UC.
 - `name` — kebab-case label used in logs, branch names, and the slice filename (`SLICE-NNN-{name}.md`).
 - `objective` — `implement` or `coverage`. Picks the harness lifecycle.
+- `status` — `pending` | `dirty` | `implemented`. The slice's runtime state, written by `/m:plan` (initial value) and `/m:build` (on successful completion). This is the **only** runtime state on the slice file — `.molcajete/slices/{id}.json` is kept as a durable build outcome record for diagnostics but is not consulted for status decisions. See the `status-rollup` shared skill for the full semantics and roll-up rule.
 - `files.create` — production files this slice introduces. Must not exist when an `implement` slice runs for the first time.
 - `files.modify` — production files this slice changes. Must exist when the slice runs.
-- `depends_on` — slice IDs whose `provides` exports this slice relies on. Cycles are illegal. The harness scheduler keeps a slice pending until every dependency reaches `implemented`.
+- `depends_on` — slice IDs whose `provides` exports this slice relies on. Cycles are illegal. The harness scheduler keeps a slice pending until every dependency reaches `status: implemented` in its frontmatter.
 - `provides` — named exports this slice publishes for downstream slices. The harness greps these out of the slice's source files and forwards just the signatures to dependents — never the full source.
 - `entry_type` — the driving-port kind this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`, or any project-specific kebab-case value). The value MUST appear in the `Driving Ports` list of the slice's module row in `specs/MODULES.md`. The build halts if the value is unknown to the module.
 - `covers` — `SC-XXXX` scenario IDs and `FR-XXXX` requirement IDs this slice closes. Every scenario in the UC must be covered by exactly one slice.

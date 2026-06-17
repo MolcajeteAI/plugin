@@ -48,7 +48,8 @@ Read in one batch:
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md`
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
 
 ## Step 3: Verify Prerequisites
 
@@ -96,7 +97,8 @@ For every UC named in `$ARGUMENTS` (expanded from any FEAT IDs), use the `uc-log
    - command: `fix`
    - plan: `—`
    - reason: one paragraph capturing what the bug is. When the diagnosis was Spec correct/Code wrong, the reason names the misbehavior and the expected behavior (so `/m:plan` can write a regression test). When the diagnosis required a spec edit, the reason summarizes the spec edit too.
-2. Recompute and write the UC's frontmatter `status` per the `uc-log` skill's roll-up rules. A previously-`implemented` UC becomes `dirty`. A `pending` or `dirty` UC stays as it is.
+2. **Set the UC's frontmatter `status`** directly per the `status-rollup` skill: a previously-`implemented` UC becomes `dirty`; a `pending` or `dirty` UC stays as it is.
+3. **Recompute the parent feature's frontmatter `status`** by rolling up over its child UCs' frontmatter `status:` values (not the changelog). Apply the roll-up rule from the `status-rollup` skill and write the result to REQUIREMENTS.md.
 
 Append a log entry **even when the spec was untouched.** The point of the entry is to drive `/m:plan` to produce a regression test, regardless of whether the spec moved.
 

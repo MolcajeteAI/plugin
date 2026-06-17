@@ -108,15 +108,43 @@ For touched-files coverage, use the runner's per-file flag:
 
 ## Coverage Gate
 
-Threshold from `.molcajete/settings.json testing.threshold` (default 80).
+The gate is **four-dimensional**: lines, statements, branches, and funcs. The floor for each comes from `.molcajete/settings.json`:
+
+```json
+{
+  "testing": {
+    "thresholds": {
+      "lines": 80,
+      "statements": 80,
+      "branches": 80,
+      "funcs": 80
+    }
+  }
+}
+```
+
+**Backwards compatibility.** If `testing.threshold` (singular, a single number) is set and `testing.thresholds` (plural, the object) is not, apply the single number to all four dimensions. If both are present, the plural object wins. `/m:build` upgrades a legacy single-number setting on first read (Step 3) by writing the expanded form back without changing behavior.
 
 Coverage is **scoped to the touched files** — the union of `task.files_to_modify` and every file the Implementer has changed during the loop. The Validator never judges the whole project.
 
-`pass` requires: scoped test run green AND per-file coverage on every touched file at or above threshold.
+`pass` requires: scoped test run green AND, for every touched file, every one of the four dimensions at or above its floor. A file with lines at 100% but branches at 66% does NOT pass.
 
-`coverage_low` lists per-touched-file gaps with line ranges. The Implementer uses that report to pick the next behavior — prefer branches whose addition exercises a real path over padding totals.
+`coverage_low` lists per-touched-file gaps **per dimension**, with concrete locations:
 
-Unreachable defensive code: delete it. If it must stay, scope the runner's ignore directive to that branch only with a short comment explaining why.
+- Uncovered line ranges (for the `lines` / `statements` dimensions).
+- Uncovered branches with the conditional location (file:line and the condition text).
+- Uncovered functions by name.
+
+### Gap classification (build-time)
+
+For every gap reported by the runner, the Implementer must classify it before resolving:
+
+1. **Reachable behavior** — the gap maps to an `SC-XXXX` in the UC spec that the current test plan does not assert (or asserts only the happy path). **Resolution: add the missing test case.** Update the slice's `## Tests` plan if the new assertion belongs to a scenario not yet listed, and add the corresponding `SC-XXXX` to the slice's `covers` frontmatter if missing.
+2. **Defensive / unreachable** — the gap is a branch or function that cannot be reached from any specified scenario (typical examples: `if (!input) throw` guards on internal calls, default switch arms, error paths that the type system already forbids). **Resolution: delete the code.** If the code must stay for runtime safety, scope the runner's ignore directive to that branch only with a one-line comment that names the reason and links back to where the guarantee comes from.
+
+**Raising the floor is never a resolution.** The thresholds are a minimum bar; the goal under "every line fulfills a requirement" is to be close to 100% on every dimension. If the model is tempted to lower the floor, the gap is one of the two cases above — pick one.
+
+The Implementer prefers branches whose addition exercises a real path over padding totals — every test added in case 1 must come from a UC scenario, not a contrived input designed to clip a branch.
 
 ## Reactive Refactor
 

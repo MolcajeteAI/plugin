@@ -312,7 +312,7 @@ Resolved testing decisions are recorded in the feature's ARCHITECTURE.md under a
 | `id` | string | `UC-XXXX` -- 4-character timestamp ID |
 | `name` | string | Verb-noun goal phrase (e.g., "Create Feature") |
 | `feature` | string | Parent feature ID: `FEAT-XXXX` |
-| `status` | string | `pending` \| `dirty` \| `implemented` -- managed by the `uc-log` shared skill. `pending` on creation. |
+| `status` | string | `pending` \| `dirty` \| `implemented` -- the UC's first-class state. `pending` on creation. Written directly by spec-phase commands (when a previously-`implemented` UC is modified, status flips to `dirty`) and by `/m:build` (rolled up over sibling slice statuses on successful build). See the `status-rollup` shared skill for semantics and roll-up rule. Authors do not edit this field manually. |
 | `version` | integer | Starts at `1`. Incremented by /m:change on each edit |
 | `actor` | string | Primary actor role (must exist in specs/ACTORS.md) |
 
@@ -347,7 +347,7 @@ When creating a use case, add a new row to the feature's `USE-CASES.md`:
 **Column rules:**
 - **ID:** `UC-XXXX` -- the generated ID
 - **Name:** Verb-noun goal phrase (matches frontmatter `name`)
-- **Status:** `pending` on creation; managed by the `uc-log` shared skill thereafter.
+- **Status:** `pending` on creation; managed by the `status-rollup` shared skill thereafter (written by spec-phase commands and `/m:build`).
 - **Description:** One sentence -- enough for an agent to identify this use case
 - **File:** Relative Markdown link to `UC-XXXX-{slug}.md` (the UC spec file, a sibling of USE-CASES.md inside the FEAT folder)
 

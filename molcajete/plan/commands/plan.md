@@ -43,8 +43,9 @@ Read in one batch:
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md` (only when at least one referenced UC has a `command:cover` pending entry)
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md`
-6. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." The principles bind every architectural and test-scope decision made by this command.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — status semantics, roll-up rule, and which command writes which level.
+7. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." The principles bind every architectural and test-scope decision made by this command.
 
 ## Step 3: Verify Prerequisites
 
@@ -111,6 +112,14 @@ For **mode: cover**:
 - `provides` lists the existing exports the slice's tests pin (used by the mutation step).
 - If the existing code uses a driving-port kind not yet in the module's `Driving Ports` list in `specs/MODULES.md`, add it and surface the addition in the report.
 
+**Slice status (per the `status-rollup` skill):**
+
+- For each **new** slice file written, set frontmatter `status: pending`.
+- For each **existing** slice file that this plan supersedes (the spec changed and the slice's behavior may need to change), set frontmatter `status: dirty`. A slice is superseded when its `covers` list is touched by a pending changelog entry or when the spec edits invalidate its Tests section.
+- Slice files that stay `implemented` and are not touched by this plan keep their existing status.
+
+`/m:plan` does **not** write UC or Feature status — that responsibility belongs to spec-phase commands (which write `dirty` directly when modifying an `implemented` UC) and to `/m:build` (which rolls up after a slice completes).
+
 Slice files live inside the UC's support folder:
 
 ```
@@ -149,6 +158,13 @@ Shape:
 # Plan {descriptive-name}
 mode: default | cover
 
+## Context
+- Project: `specs/PROJECT.md`, `specs/MODULES.md`, `specs/TECH-STACK.md`
+- FEAT-XXXX-{slug}: `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md`, `…/ARCHITECTURE.md`, `…/USE-CASES.md`
+  - UC-XXXX-{slug}: `…/UC-XXXX-{slug}.md`
+  - UC-YYYY-{slug}: `…/UC-YYYY-{slug}.md`
+- FEAT-ZZZZ-{slug}: …
+
 ## FEAT-XXXX-{slug}
 ### UC-XXXX-{slug}
 - [ ] T-001 — SLICE-001-{slice-name}.md
@@ -169,13 +185,15 @@ Rules:
 - **Sub-task shape is fixed:** scaffold integration test → implement → mutation check → coverage gate. Enumerate sub-tasks only when the slice benefits from explicit decomposition; otherwise omit them and the build loop runs the four steps implicitly.
 - In **mode: cover**, omit the `implement` sub-task — the code already exists. The TDD loop becomes: scaffold integration test (must start GREEN) → mutation check → coverage gate.
 - **Integration is the default per-slice test type** (Principle 1). If a slice's heart is heavy algorithmic logic (parser, encoder, hash, math), it may be a **unit-test slice** — record the justification in the slice's `## Rationale` so `/m:build` knows to scaffold a unit test rather than an integration test.
+- The `## Context` section lists upstream paths for every FEAT and UC touched by this plan. `/m:build` cross-checks this list against derived paths; missing or stale entries surface as warnings. This is a documentation aid for the reader — the build derives the authoritative set from FEAT/UC headings.
 
-## Step 10: Update the UC Logs
+## Step 10: Update the UC Changelogs
 
 For every UC whose pending entries were consumed by this plan, use the `uc-log` shared skill to:
 
-1. For each consumed entry, flip its status from `pending` to `dirty` and set `plan:<plan-id>`. The entry stays in the `TODO:` section.
-2. Recompute and write the UC's frontmatter `status` per the `uc-log` skill's roll-up rules. (Typically no change at this step — `pending` and `dirty` both roll up the same way; the status only flips when `/m:build` lands.)
+1. For each consumed entry in the UC's CHANGELOG.md, flip its status from `pending` to `dirty` and set `plan:<plan-id>`. The entry stays in the `TODO:` section.
+
+`/m:plan` does **not** touch UC or Feature frontmatter `status`. UC status was already set to `dirty` by the spec-phase command that produced the changelog entries (when modifying a previously-`implemented` UC). Slice frontmatter `status` is written in Step 7.
 
 ## Step 11: Report
 
