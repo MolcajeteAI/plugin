@@ -130,7 +130,74 @@ Read templates from `./templates/` and write each file in a single parallel batc
 
 ## Regeneration
 
-When `specs/PROJECT.md` already exists, ask once (regenerate vs cancel). On regenerate, run the full one-shot composition again. The principles file follows its own regeneration prompt in Step 7a — not part of the foundation regeneration.
+When `specs/PROJECT.md` already exists, `/m:setup` offers three paths: **Cancel**, **Regenerate all** (full one-shot composition; loses local edits), or **Update** (drift detection + selective patch). The principles file follows its own regeneration prompt in Step 7a — not part of the foundation regeneration.
+
+## Drift Catalog
+
+When `/m:setup` runs in **Update mode**, it walks this catalog. Each entry is a discrete drift check: an artifact, a detection rule, and a fix action. New plugin features that produce host-facing artifacts add new entries; `/m:setup` propagates them to existing projects without overwriting user content.
+
+The catalog is the **single source of truth** for what update mode can repair. Categories:
+
+- **NEW ARTIFACTS** — files/blocks the plugin produces that the host lacks entirely.
+- **SCHEMA GAPS** — host files missing sections or fields the current template requires; existing content preserved.
+- **CONTENT DRIFT** — host files whose plugin-owned content differs from current defaults; team-owned content is preserved unless the user opts to overwrite.
+
+### `principles-host-file`
+
+- **Artifact:** `.claude/rules/principles.md`
+- **Category:** NEW ARTIFACT (when missing) or CONTENT DRIFT (when stale)
+- **Detection:** File does not exist, **OR** file exists but its content does not start with `# Engineering Principles` and contain headings matching the current plugin skill (`# Engineering Principles`, `## The Meta-Principle...`, `## 1. Integration Tests...`, `## 2. Hexagonal Architecture...`, `## 3. Dependency Injection...`, `## 4. 80% Coverage Floor...`, `## 5. Universal Software Craft`, `## 6. Principles Are Technology-Agnostic`, `## How Molcajete Enforces These`, `## Override`).
+- **Fix:** Run Step 7a logic. When the file exists but is stale, the existing per-file AskUserQuestion in Step 7a ("Keep existing / Regenerate from plugin skill") applies — update mode does not force overwrite.
+- **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` (body only, frontmatter stripped).
+
+### `principles-claude-md-block`
+
+- **Artifact:** Host `CLAUDE.md` fenced block between `<!-- molcajete:principles:start -->` and `<!-- molcajete:principles:end -->`.
+- **Category:** NEW ARTIFACT (when missing) or CONTENT DRIFT (when stale)
+- **Detection:** Host `CLAUDE.md` does not exist, **OR** sentinel markers are absent, **OR** content between markers does not byte-match the current default block (inlined in `setup.md` Step 7b).
+- **Fix:** Run Step 7b logic. The fenced block is always idempotent-replaced — never asks before overwriting, because the block is metadata the plugin fully owns. Content outside the markers is never touched.
+- **Source of truth:** `setup.md` Step 7b (inlined block).
+
+### `tech-stack-running-tests`
+
+- **Artifact:** `specs/TECH-STACK.md` per-module `Running tests:` field.
+- **Category:** SCHEMA GAP
+- **Detection:** For each `### {module-name}` section under `## Modules`, check whether a `- **Running tests:**` line is present. List every module missing the field.
+- **Fix:** For each affected module, re-run the Step 3 detection logic to derive the command (scan the module's manifest for `scripts.test` / `pyproject.toml` `[tool.pytest.ini_options]` / `Makefile` / Go conventional `go test ./...`). If detection finds nothing, prompt the user via AskUserQuestion per module with the discovered candidates or "skip module". Insert the line at the canonical position (after `Testing:` if present, otherwise before `Coverage:`).
+- **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/TECH-STACK-template.md` field order.
+
+### `tech-stack-coverage`
+
+- **Artifact:** `specs/TECH-STACK.md` per-module `Coverage:` field.
+- **Category:** SCHEMA GAP
+- **Detection:** Same shape as `tech-stack-running-tests`; check for `- **Coverage:**` line in each module section.
+- **Fix:** For each affected module, re-run the Step 3 detection logic to derive the coverage command. If the project does not expose a coverage collector, write `not available` (`/m:build` estimates against the 80% floor in that case).
+- **Source of truth:** Same as `tech-stack-running-tests`.
+
+### `settings-testing-threshold`
+
+- **Artifact:** `.molcajete/settings.json` `testing.threshold` key.
+- **Category:** CONTENT DRIFT
+- **Detection:** Read the file as JSON. Verify `testing.threshold` is present and is a number. List as drift when missing or non-numeric.
+- **Fix:** Read existing file (preserving all other keys and nested structure), merge in `testing.threshold = 80`, write back.
+- **Source of truth:** `setup.md` Step 7 (inlined default `{"testing": {"threshold": 80}}`).
+
+### `dot-claude-rules-dir`
+
+- **Artifact:** `.claude/rules/` directory.
+- **Category:** NEW ARTIFACT (when missing)
+- **Detection:** Directory does not exist.
+- **Fix:** `mkdir -p .claude/rules`. Usually paired with `principles-host-file` — the principles fix creates the directory if absent, so this entry only fires when the user has `.claude/rules/principles.md` in mind but the directory was deleted separately (rare).
+- **Source of truth:** `setup.md` Step 7 (foundation mkdir).
+
+## Extending the Drift Catalog
+
+When a plugin update adds a new host-facing artifact or extends an existing template, add a new entry to this catalog with the same five fields. The update flow in `setup.md` reads this section verbatim — there is no separate registry to keep in sync.
+
+Two rules for new entries:
+
+1. **Detection must be content-only.** No timestamps, no version numbers, no host metadata. The check should be deterministic given the host file and the current plugin defaults.
+2. **Fix must never delete or overwrite user-authored content silently.** When the artifact contains both plugin-owned and team-owned content, the fix either patches in place (inserting missing fields without touching existing ones) or asks via AskUserQuestion.
 
 ## Template Reference
 

@@ -25,11 +25,98 @@ Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` for templates and rules
 ## Step 2: Regeneration Check
 
 If `specs/PROJECT.md` already exists, ask via AskUserQuestion:
-- Question: "Foundation already exists. Regenerate from scratch (loses any edits)?"
+- Question: "Foundation already exists. What would you like to do?"
 - Header: "Setup Mode"
-- Options: "Cancel" / "Regenerate all"
+- Options:
+  - "Cancel" — stop, no changes.
+  - "Regenerate all" — full overwrite. Loses any local edits to foundation files.
+  - "Update (detect drift and patch)" — keep foundation content; detect what the plugin now produces that the host lacks; report and apply only what you approve.
 
-On "Cancel", stop. On "Regenerate all", continue.
+On **Cancel**, stop. On **Regenerate all**, continue to Step 3 (the existing flow). On **Update (detect drift and patch)**, branch to Steps 2u → 2v → 2w → 2x. Do not run Steps 3–8 — update mode is its own complete flow.
+
+## Step 2u: Detect Drift
+
+Update mode walks the **Drift Catalog** in `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` (loaded in Step 1). The catalog enumerates every drift check the plugin knows about; for each entry, run the **Detection** rule against the host and collect findings.
+
+For each finding, record:
+
+- `check-id` — the catalog entry's ID
+- `artifact` — the host path or block name
+- `category` — `NEW ARTIFACTS` / `SCHEMA GAPS` / `CONTENT DRIFT` (per the catalog)
+- `summary` — one-line description suitable for the report
+
+Findings that need per-module expansion (e.g., `tech-stack-running-tests` checks every module) produce one finding per affected module.
+
+If the collected findings list is empty, tell the user:
+
+> No updates needed. Setup is current with the plugin defaults.
+
+Stop. Do not proceed to Step 2v.
+
+## Step 2v: Report and Confirm
+
+Print the categorized report:
+
+```
+Drift detected against current plugin defaults:
+
+NEW ARTIFACTS
+- {summary for each NEW ARTIFACTS finding}
+
+SCHEMA GAPS
+- {summary for each SCHEMA GAPS finding}
+
+CONTENT DRIFT
+- {summary for each CONTENT DRIFT finding}
+```
+
+Omit any category that has zero findings. Then ask via AskUserQuestion:
+
+- Question: "Apply updates? You may want to commit local changes before proceeding."
+- Header: "Update"
+- Options:
+  - "Apply all" — apply every finding's fix action.
+  - "Apply selected" — pick which fixes to apply per category (Step 2w).
+  - "Skip" — exit update mode without changes.
+
+On **Skip**, stop. On **Apply all**, mark every finding as `selected` and go to Step 2x. On **Apply selected**, go to Step 2w.
+
+## Step 2w: Apply Selected
+
+For each category that has findings, issue a multi-select AskUserQuestion:
+
+- Question: "Pick which {category} fixes to apply:"
+- Header: short category name (e.g., "New Artifacts", "Schema Gaps", "Content Drift")
+- Options: one per finding in that category, labelled with the `summary` from Step 2u
+- `multiSelect: true`
+
+When a category has more than 4 findings, chain AskUserQuestion calls (4 options each) until the user has reviewed every finding in that category. Mark only the chosen findings as `selected`. Then proceed to Step 2x.
+
+## Step 2x: Apply Updates and Report
+
+For each finding marked `selected`, execute the catalog entry's **Fix** action:
+
+- **`principles-host-file`** → Step 7a logic. When the file exists but is stale, follow Step 7a's existing per-file AskUserQuestion ("Keep existing / Regenerate from plugin skill"); update mode does not force overwrite of host content.
+- **`principles-claude-md-block`** → Step 7b logic. Always idempotent-replaced; content outside markers untouched.
+- **`tech-stack-running-tests` / `tech-stack-coverage`** → For each affected module, re-run the manifest-scan portion of Step 3 to derive the command. When detection finds nothing for a coverage field, write `not available`. Insert the line at the canonical position per the catalog. Preserve every other line in the file.
+- **`settings-testing-threshold`** → Read `.molcajete/settings.json` as JSON, merge in `testing.threshold = 80` (preserve every other key and nested value), write back.
+- **`dot-claude-rules-dir`** → `mkdir -p .claude/rules`.
+
+For each finding, record one of: `Applied`, `Skipped (user declined per-file prompt)`, `Failed: {reason}`.
+
+After all fixes, print the per-finding result:
+
+```
+Update complete:
+
+- {finding.summary} — Applied
+- {finding.summary} — Skipped (user declined per-file prompt)
+- {finding.summary} — Failed: {reason}
+```
+
+End with the standard hand-off:
+
+> Next: review the changes, commit when satisfied. If `/m:plan` or `/m:build` were planning runs, re-run them so they pick up any new principles or schema additions.
 
 ## Step 3: Detect Existing Stack (parallel)
 
