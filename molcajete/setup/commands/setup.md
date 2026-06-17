@@ -77,12 +77,12 @@ Use one AskUserQuestion with the full composed foundation as the question text:
 
 If "Edit one section", apply the user's edit and re-present.
 
-## Step 7: Write Files
+## Step 7: Write Foundation Files
 
 In a single parallel batch:
 
 ```bash
-mkdir -p specs .molcajete
+mkdir -p specs .molcajete .claude/rules
 ```
 
 Per module: `mkdir -p specs/modules/{module}/features`.
@@ -91,10 +91,55 @@ Read templates from `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/` (PROJE
 
 Write `.molcajete/settings.json` as `{"testing": {"threshold": 80}}` if it doesn't exist; preserve existing keys when it does.
 
+## Step 7a: Write Engineering Principles File
+
+The host project receives a local copy of the engineering principles at `.claude/rules/principles.md`. This is the operative version that `/m:plan` and `/m:build` read; the team can edit it to adapt principles to their context.
+
+1. Read the plugin skill: `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md`.
+2. Strip the YAML frontmatter (everything between the leading `---` and the closing `---`, plus the closing line itself). Keep the body verbatim, starting at the `# Engineering Principles` heading.
+3. **If `.claude/rules/principles.md` does not exist**, write the stripped body there.
+4. **If `.claude/rules/principles.md` already exists**, ask via AskUserQuestion:
+   - Question: "Engineering principles already exist at `.claude/rules/principles.md`. Keep existing (preserves team edits) or regenerate from the plugin skill?"
+   - Header: "Principles"
+   - Options: "Keep existing" (default) / "Regenerate from plugin skill"
+   - On "Keep existing", do nothing.
+   - On "Regenerate from plugin skill", overwrite with the stripped body.
+
+## Step 7b: Inject CLAUDE.md Fenced Block
+
+The host project's `CLAUDE.md` carries a short, always-loaded summary of the engineering principles plus a pointer to the full file. The block uses sentinel markers so re-runs are idempotent.
+
+Compute the block:
+
+```
+<!-- molcajete:principles:start -->
+## Engineering Principles (Molcajete)
+
+Trust comes from tests, not code shape. Code can change; behavior is the contract.
+
+- Integration tests are the trust contract. Unit tests only for heavy algorithmic logic.
+- Hexagonal architecture: drive tests through driver ports with the real internal stack; mock only the outer-edge driven ports.
+- Dependency injection makes the outer edge swappable at test time.
+- 80% coverage floor on touched files (configurable via `.molcajete/settings.json testing.threshold`).
+- Small functions, clear module boundaries, no god files. Refactor to reuse; never duplicate.
+- Principles are technology-agnostic. The stack is recorded in `specs/TECH-STACK.md`.
+
+See `.claude/rules/principles.md` for full text and rationale. Re-read it before any architecture decision, test-scope decision, or refactor.
+<!-- molcajete:principles:end -->
+```
+
+Inject:
+
+1. **If `CLAUDE.md` does not exist at the host root**, create it with just the block as its contents.
+2. **If `CLAUDE.md` exists and contains both sentinel markers**, replace everything between them (inclusive of the markers themselves) with the new block. Do not touch any content outside the markers.
+3. **If `CLAUDE.md` exists and does not contain the markers**, append the block to the end of the file, preceded by a blank line.
+
+The injection is silent — no user prompt. The block is metadata that should always reflect the current plugin defaults.
+
 ## Step 8: Report
 
 Tell the user what was written and what to do next:
 
-> Created `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, `.molcajete/settings.json`. The **Running tests** and **Coverage** rows in TECH-STACK.md were filled where I could detect them; verify them before running `/m:build`. The Testing framework field was filled where detectable; the build loop infers the rest from manifests at run time.
+> Created `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, `.molcajete/settings.json`, `.claude/rules/principles.md`, and updated `CLAUDE.md` with the Molcajete principles block. The **Running tests** and **Coverage** rows in TECH-STACK.md were filled where I could detect them; verify them before running `/m:build`. The Testing framework field was filled where detectable; the build loop infers the rest from manifests at run time. Engineering principles are operative immediately — `/m:plan` and `/m:build` will read `.claude/rules/principles.md`; edit it to adapt principles to your project.
 >
 > Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:build <plan-id> T-001` to execute.

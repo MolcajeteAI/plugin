@@ -55,13 +55,14 @@ Stop.
 
 If the plan-id does not resolve to a folder under `.molcajete/plans/`, refuse with the available list and stop.
 
-## Step 2: Load Skills
+## Step 2: Load Skills and Principles
 
 Read in one batch:
 
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/SKILL.md` — slice file schema and Test File Convention.
 2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — runner inference, outer-edge mocking, coverage gate.
 3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — log entry transitions, UC status roll-up.
+4. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, and refactor in this command must respect these principles — Principle 5 (small functions, clear boundaries, no god files, refactor to reuse) is the day-to-day enforcement surface here.
 
 ## Step 3: Verify Prerequisites
 
@@ -161,6 +162,8 @@ Run the scoped test command against the derived test file only.
 
 - **mode: default** / `implement` slice: write production code in its final form to satisfy the slice's Contracts (Types / API Surface / Behavior) and turn the scaffold GREEN. Fill empty `it` bodies with concrete assertions as you implement. Honour `dependency_exports` signatures verbatim.
 - **mode: cover** / `coverage` slice: add more assertions to the scaffold to close coverage on `files.modify`. **Do not write production code.** The only exception is the testing skill's reactive refactor rule for genuinely untestable seams — in cover mode this is rare and surfaces as a `/m:fix` escalation, not a code change here.
+
+**Apply Principle 5 (universal software craft) while writing code.** Before adding a new helper, grep for an existing one and call it. Keep functions small (split when they outgrow one screen). Keep boundaries clear (no leaking internals across modules). If you find yourself extending a file past its responsibility, split the file. Never duplicate code that already exists.
 
 Run the scoped test + coverage commands.
 

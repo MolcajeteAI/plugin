@@ -112,10 +112,25 @@ Read templates from `./templates/` and write each file in a single parallel batc
 | MODULES.md | [MODULES-template.md](./templates/MODULES-template.md) | `specs/MODULES.md` |
 | DOMAINS.md | [DOMAINS-template.md](./templates/DOMAINS-template.md) | `specs/DOMAINS.md` |
 | FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `specs/FEATURES.md` |
+| principles.md | `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` (body only, frontmatter stripped) | `.claude/rules/principles.md` |
+| CLAUDE.md block | inlined in `setup.md` Step 7b | `<host-root>/CLAUDE.md` (fenced section between sentinel markers) |
+
+## Engineering Principles
+
+`/m:setup` writes a host-project copy of the engineering principles at `.claude/rules/principles.md` and injects a short summary into the host `CLAUDE.md` so any AI agent working in the project sees them.
+
+- **Source of truth (default):** `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md`. The plugin ships these.
+- **Host-project copy:** `.claude/rules/principles.md`. Team-editable. Operative version that `/m:plan` and `/m:build` read at run time.
+- **Always-on summary:** `CLAUDE.md` fenced section delimited by `<!-- molcajete:principles:start -->` and `<!-- molcajete:principles:end -->`.
+
+**Re-run behavior:**
+
+- `.claude/rules/principles.md` — written when absent. When present, `/m:setup` asks whether to keep (default, preserves team edits) or regenerate from the plugin skill.
+- `CLAUDE.md` fenced section — replaced in place when the markers are present; appended when the file exists but the markers are absent; the file is created with only the block when it doesn't exist. Content outside the markers is never touched. The block always reflects current plugin defaults.
 
 ## Regeneration
 
-When `specs/PROJECT.md` already exists, ask once (regenerate vs cancel). On regenerate, run the full one-shot composition again.
+When `specs/PROJECT.md` already exists, ask once (regenerate vs cancel). On regenerate, run the full one-shot composition again. The principles file follows its own regeneration prompt in Step 7a — not part of the foundation regeneration.
 
 ## Template Reference
 

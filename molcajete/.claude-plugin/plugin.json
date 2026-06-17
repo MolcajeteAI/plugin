@@ -34,6 +34,7 @@
     "./shared/skills/git-committing/SKILL.md",
     "./shared/skills/git-conflict-resolution/SKILL.md",
     "./shared/skills/id-generation/SKILL.md",
+    "./shared/skills/principles/SKILL.md",
     "./shared/skills/testing/SKILL.md",
     "./shared/skills/uc-log/SKILL.md",
     "./spec/skills/architecture/SKILL.md",

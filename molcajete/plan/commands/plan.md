@@ -35,7 +35,7 @@ Expand any FEAT IDs to the full list of UCs under that feature.
 
 If `$ARGUMENTS` is empty, ask via AskUserQuestion: "Which feature(s) or use case(s) do you want to plan? Pass at least one `FEAT-XXXX` or `UC-XXXX` ID."
 
-## Step 2: Load Skills
+## Step 2: Load Skills and Principles
 
 Read in one batch:
 
@@ -44,6 +44,7 @@ Read in one batch:
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md` (only when at least one referenced UC has a `command:cover` pending entry)
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
 5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md`
+6. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." The principles bind every architectural and test-scope decision made by this command.
 
 ## Step 3: Verify Prerequisites
 
@@ -77,9 +78,12 @@ Stop without writing.
 
 ## Step 6: Architecture Pass
 
+**Apply the engineering principles loaded in Step 2.** Architecture decisions follow Principle 2 (hexagonal default) and Principle 3 (DI). Test-scope decisions follow Principle 1 (integration first; unit only when the algorithm IS the contract, justified per slice).
+
 **mode: default.** Design or revise the architecture for the affected UCs:
 
-- Identify ports (driving and driven), adapters, domain boundaries, and any cross-cutting work (migrations, shared adapters, configuration).
+- Identify ports (driving and driven), adapters, domain boundaries, and any cross-cutting work (migrations, shared adapters, configuration). Driver ports come from `specs/MODULES.md`'s `Driving Ports` column.
+- Wire dependencies through DI per Principle 3 — no module-level globals or import-time side effects in what you scope.
 - Reflect the design back into the feature's `ARCHITECTURE.md` per the architecture skill's Table Filling rules. Add or update Component Inventory, API Surface, Code Map, and Event Topology rows as needed.
 
 **mode: cover.** Skip architectural design — the architecture is already in the code. Use the reverse-engineering skill to reconstruct the implicit structure and ensure each UC's `ARCHITECTURE.md` reflects what's actually shipped (Component Inventory, API Surface, Code Map, Event Topology). Reverse-spec discovery patterns from that skill apply here.
@@ -164,6 +168,7 @@ Rules:
 - The slice reference after the em dash is the slice filename (`UC-XXXX-NNN-{name}.md`), not the slice ID — the slice file is the source of truth.
 - **Sub-task shape is fixed:** scaffold integration test → implement → mutation check → coverage gate. Enumerate sub-tasks only when the slice benefits from explicit decomposition; otherwise omit them and the build loop runs the four steps implicitly.
 - In **mode: cover**, omit the `implement` sub-task — the code already exists. The TDD loop becomes: scaffold integration test (must start GREEN) → mutation check → coverage gate.
+- **Integration is the default per-slice test type** (Principle 1). If a slice's heart is heavy algorithmic logic (parser, encoder, hash, math), it may be a **unit-test slice** — record the justification in the slice's `## Rationale` so `/m:build` knows to scaffold a unit test rather than an integration test.
 
 ## Step 10: Update the UC Logs
 
