@@ -138,10 +138,19 @@ Parallel batch:
 
 ### 7.4 Phase 1 — Scaffold the test file
 
-Translate the slice's `## Tests` nested-bullet plan into runner-equivalent test code at the derived test path. Top-level bullets → outermost `describe` (use `SC-XXXX: {name}` as the block name when the bullet starts with `**SC-XXXX:`). Nested bullets → nested `describe`. Leaves → `it`.
+Translate the slice's `## Tests` nested-bullet plan into runner-equivalent test code at the derived test path. Top-level bullets → outermost `describe` (or runner-equivalent). Nested bullets → nested `describe`. Leaves → `it`.
+
+**Apply Principle 1's Test Writing Rules** (loaded in Step 2):
+
+- **1.1 Descriptive names** — every `describe` block and `it` test gets a behavior-describing name. **Never put a spec ID (SC-XXXX, FR-XXXX, UC-XXXX) in a block or test name.**
+- **1.2 IDs in leading-line comments** — at the very top of the test file, write `// UC-XXXX: {name}` and `// SLICE-NNN: {name}`. Immediately above each `describe` group derived from a top-level bullet, write `// SC-XXXX: {short description}` (or `// FR-XXXX: ...`). Above each `it` test, write the relevant `// SC-XXXX: ...` comment for the scenario it covers.
+- **1.3 Precise, realistic values** — assertions pin exact values. Compute expected values explicitly when they derive from inputs.
+- **1.4 Verbose explanatory comments** — every test (or every scenario block of tests) gets a multi-line comment with what's being tested, why it matters, and a concrete example.
+
+Lifecycle:
 
 - `objective: implement` (mode: default): `it` bodies are empty (or contain a single `expect.fail("not implemented")` placeholder when the runner requires it). Initial run must be RED.
-- `objective: coverage` (mode: cover): `it` bodies contain the full assertions implied by the bullet text. Initial run must be GREEN.
+- `objective: coverage` (mode: cover): `it` bodies contain the full assertions implied by the bullet text, following rule 1.3 (precise values). Initial run must be GREEN.
 
 Add imports the assertions need.
 
@@ -160,10 +169,17 @@ Run the scoped test command against the derived test file only.
 
 ### 7.6 Phase 2 — Implement or assert
 
-- **mode: default** / `implement` slice: write production code in its final form to satisfy the slice's Contracts (Types / API Surface / Behavior) and turn the scaffold GREEN. Fill empty `it` bodies with concrete assertions as you implement. Honour `dependency_exports` signatures verbatim.
+- **mode: default** / `implement` slice: write production code in its final form to satisfy the slice's Contracts (Types / API Surface / Behavior) and turn the scaffold GREEN. Fill empty `it` bodies with concrete assertions as you implement (per Principle 1.3 — precise values). Honour `dependency_exports` signatures verbatim.
 - **mode: cover** / `coverage` slice: add more assertions to the scaffold to close coverage on `files.modify`. **Do not write production code.** The only exception is the testing skill's reactive refactor rule for genuinely untestable seams — in cover mode this is rare and surfaces as a `/m:fix` escalation, not a code change here.
 
 **Apply Principle 5 (universal software craft) while writing code.** Before adding a new helper, grep for an existing one and call it. Keep functions small (split when they outgrow one screen). Keep boundaries clear (no leaking internals across modules). If you find yourself extending a file past its responsibility, split the file. Never duplicate code that already exists.
+
+**Apply Principle 5's Code Comments rules** (loaded in Step 2):
+
+- **5.1 Spec traceability** — at the top of every production file the build creates, write `// FEAT-XXXX: {feature name}`, `// UC-XXXX: {use case name}`, `// SLICE-NNN: {slice name}`. Above every function that satisfies specific scenarios, write `// SC-XXXX, SC-YYYY: {short description}`.
+- **5.2 Function header comments** — every non-trivial function gets a What / Why / Non-obvious comment block above its declaration. Trivial accessors can skip.
+- **5.3 Inline comments** — every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why. If a function has three blocks of work, it has at least three inline comments.
+- **5.4 Be generous, especially in complicated code** — comment generously in control flow, external-system interactions, domain-heavy logic, and performance-sensitive sections. When in doubt, comment.
 
 Run the scoped test + coverage commands.
 

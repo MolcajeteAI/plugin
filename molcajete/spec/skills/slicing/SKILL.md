@@ -142,7 +142,9 @@ Pre/postconditions and invariants — bullets, not code. The CodeWriter treats t
 
 ## Tests
 
-A nested-bullet test plan. Each leaf is one assertion. The CodeWriter translates this list into actual test code in the project's runner — top-level bullets become outermost `describe` blocks (or the runner-equivalent), nesting becomes nested `describe` blocks, leaves become `it` blocks with assertions.
+A nested-bullet test plan. Each leaf is one assertion. The CodeWriter translates this list into actual test code in the project's runner — top-level bullets group tests by scenario (rendered as outermost `describe` blocks or the runner-equivalent), nesting becomes nested `describe` blocks, leaves become `it` blocks with assertions.
+
+**Names are descriptive; IDs live in comments.** Use a behavior-describing name for every `describe` block and `it` test (never the spec ID). Place the spec ID and a short description in a **leading-line comment** above each block per Principle 1.2 in `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md`. The slice's `covers:` frontmatter array is the canonical machine-readable mapping from slice to scenarios; the comments are for humans.
 
 - **SC-XXXX: {scenario name}**
   - Given {context setup}

@@ -27,6 +27,116 @@ For Molcajete, integration tests are the **default test type**. They are written
 
 Unit tests are written **only** when the algorithm IS the contract: parsers, sort routines, encoders, hashing, math-heavy logic. The unit test exists because the integration test can't economically exercise every edge case. Picking unit over integration must be a **per-slice exception**, justified in the slice's plan.
 
+### Test Writing Rules
+
+Tests are not just verification — they are the most important documentation an AI-assisted codebase has. The next agent reads tests to learn what the code is supposed to do.
+
+Examples below use TypeScript with a Jest/Vitest-style runner because that surface is broadly familiar. The rules are language-agnostic — translate `describe` to test class (Java, C#, Solidity) or test module (Python, Go); `it` to method or function; `//` to the idiomatic comment for the language.
+
+**1.1 Descriptive test names.**
+
+Test method / `it` / function names read as sentences describing the behavior being verified. No spec IDs in the name. Avoid abbreviations beyond standard ones.
+
+Bad:
+
+```ts
+test_SC_REQ3()
+RegisterUser_SC_001_Test
+test1()
+it('SC-001 works')
+```
+
+Good:
+
+```ts
+it('rejects an empty email with a validation error', () => { ... })
+it('returns the user profile for an authenticated request', () => { ... })
+it('reverts when oracle equals operator', () => { ... })
+```
+
+**Why:** someone scanning the test file should know what each test asserts without reading the body.
+
+**1.2 IDs in comments, not in names.**
+
+Spec traceability lives in leading-line comments above tests, not in their names.
+
+- **File header** — `// UC-XXXX: {use case name}` at the top of every test file. One UC per file.
+- **`describe` / test group** — `// SLICE-NNN: {slice name}` at the top of each group. One slice per group.
+- **`it` / test method** — `// SC-XXXX: {short scenario description}` immediately above the test. When a single test covers multiple scenarios, list them comma-separated: `// SC-001, SC-002: Email validation rules`.
+
+The slice's `covers:` frontmatter array is the canonical machine-readable mapping. The comments are for humans.
+
+Example:
+
+```ts
+// UC-0KTg: Register User
+// SLICE-001: validate email
+
+describe('Email validation', () => {
+  // SC-001: Reject empty email
+  it('rejects an empty email with a validation error', () => { ... })
+
+  // SC-002: Reject malformed email
+  it('rejects an email without an @ symbol', () => { ... })
+})
+```
+
+The same shape works in any runner: file-header comment for the UC, group-header comment for the slice, method-header comment for the scenario. The exact comment syntax (`//`, `#`, `--`, `/* */`) follows the language.
+
+**Why:** names tell you what the test asserts. Comments tell you which spec line it ties back to. Don't conflate the two — names get read every time the file opens; IDs only matter when chasing traceability.
+
+**1.3 Precise, realistic values.**
+
+Assertions pin exact values that match production reality. When the expected value is computed from inputs, the test computes it explicitly so the calculation reads as documentation.
+
+Bad:
+
+```ts
+expect(balance).toBeGreaterThan(0)
+expect(user.email).toBeTruthy()
+expect(result).not.toBeNull()
+```
+
+Good:
+
+```ts
+expect(balance).toBe(1_500_000n)
+expect(user.email).toBe('ada@example.com')
+expect(result.status).toBe('approved')
+```
+
+When the expected value depends on inputs, show the calculation:
+
+```ts
+const fee = (amount * FEE_BPS) / 10_000n  // 0.5% of 1_000_000 = 5_000
+expect(result.fee).toBe(fee)
+```
+
+Vague assertions (`gt(0)`, `not null`, `truthy`) are forbidden unless the spec genuinely says "any positive value" or "any defined value" — rare, and the test must include a comment explaining the looseness.
+
+**Why:** a vague assertion documents nothing and catches almost no regressions. A precise assertion is a specification of expected behavior; the test fails the moment behavior drifts.
+
+**1.4 Verbose explanatory comments.**
+
+Every test (or every scenario block of tests) gets a multi-line comment explaining what's being tested, why it matters, and a concrete example. Treat the comment as the file's documentation.
+
+```ts
+// SC-002: Reject malformed email
+//
+// Email addresses must conform to RFC 5321: a local part, an `@`,
+// and a domain. The validator rejects strings missing the `@` or
+// with empty local/domain parts before the request reaches any
+// downstream code.
+//
+// Example: 'ada.example.com' (missing @) and '@example.com' (empty
+// local part) both produce a 422 with code = 'invalid_email'.
+it('rejects an email without an @ symbol', () => { ... })
+```
+
+Comments cover: what behavior is under test, why it exists (the business or safety reason), a concrete example that exercises the behavior, and any non-obvious edge cases.
+
+**Why:** tests are the only honest documentation an AI-assisted codebase has. The next agent — six months from now, possibly the same model, possibly a different one — reads tests to learn what the code is supposed to do. Skimping on comments is skimping on the only durable record.
+
 ## 2. Hexagonal Architecture Is the Default Shape
 
 Code is organized around two kinds of ports:
@@ -65,6 +175,93 @@ These rules apply regardless of stack. They are **navigation rules for the next 
 - **Patterns where they earn their keep.** Use well-known patterns (repository, command, observer, strategy) only where the situation calls for them. Don't impose patterns; recognize them.
 
 A 3000-line file or a duplicated function is fog of war that compounds with every iteration. Shape is what makes navigation possible.
+
+### Code Comments
+
+The same documentation discipline that applies to tests applies to production code. Code expresses *mechanism*; comments express *intent*. Without comments, intent is hidden inside implementation, and the next agent must reverse-engineer it from what the code does.
+
+Examples below stay in TypeScript for consistency with the test rules. The patterns apply identically in any language — translate `//` to the idiomatic comment for the runtime.
+
+**5.1 Spec traceability in code comments.**
+
+Production code carries leading-line comments tying files and functions back to the spec.
+
+- **File header** — `// FEAT-XXXX: {feature name}` and `// UC-XXXX: {use case name}` at the top of every production file produced for a feature/UC. Add `// SLICE-NNN: {slice name}` when the file is the work of a specific slice.
+- **Function / method** — `// SC-XXXX, SC-YYYY: {short description}` immediately above the function declaration when it satisfies specific scenarios. List all SC IDs the function helps satisfy; the slice's `covers:` array remains the canonical machine-readable mapping.
+
+```ts
+// FEAT-0Fy0: User Onboarding
+// UC-0KTg: Register User
+// SLICE-001: validate email
+
+// SC-001, SC-002: Email validation rules
+// Returns the normalized email on success or throws InvalidEmailError.
+export function validateRegistrationEmail(raw: string): string { ... }
+```
+
+**Why:** tests prove what the code does; the comment links it back to the spec line that said it should do that. Future refactors stay aligned because the link is visible at the call site, not buried in a separate doc.
+
+**5.2 Function / method header comments.**
+
+Every non-trivial function carries a header comment explaining what it does and why. Trivial accessors (one-line getters/setters that wrap a field) can skip. The header covers:
+
+- **What** — one or two sentences describing what the function does.
+- **Why** — one sentence explaining why it exists in business or domain terms.
+- **Non-obvious** — constraints, invariants, side effects the next reader needs to know.
+
+Bad: no comment, or a comment that just repeats the signature in English (`// Validates the email`).
+
+Good:
+
+```ts
+// Validates a registration email before any downstream code processes it.
+// Returns the normalized email (trimmed, lowercased) on success, or throws
+// InvalidEmailError with code='invalid_email'.
+//
+// Used during the public registration flow to keep malformed addresses
+// from reaching the user store. The format follows RFC 5321 plus the
+// local-part-non-empty constraint our user model requires.
+export function validateRegistrationEmail(raw: string): string { ... }
+```
+
+**Why:** the function signature tells you *what shape* of data goes in and out. Only the comment tells you *what the function is for* and *why it exists*.
+
+**5.3 Inline comments for non-obvious blocks.**
+
+Every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why. Don't comment obvious lines (`x = x + 1` doesn't need a comment); comment the *intent* of multi-line operations.
+
+```ts
+// Trim, lowercase, and strip surrounding angle brackets. The user-agent
+// header often wraps emails as "<ada@example.com>", which downstream
+// services reject.
+const normalized = raw.trim().toLowerCase().replace(/^<|>$/g, '');
+
+// Split on the (single) `@` and reject if either side is empty. RFC 5321
+// allows wider patterns, but our user model requires both parts.
+const [local, domain] = normalized.split('@');
+if (!local || !domain || !domain.includes('.')) {
+  throw new InvalidEmailError({ code: 'invalid_email', raw });
+}
+```
+
+A short rule: if a function has three blocks of work, it has at least three inline comments.
+
+**Why:** code expresses mechanism. Comments express intent. The next agent reading this code without comments has to reverse-engineer intent from mechanism — slow at best, wrong at worst.
+
+**5.4 Be generous, especially in complicated code.**
+
+When in doubt, comment. Trust comments more than terse code. The bar for adding a comment is low; the bar for skipping one is high. Almost every line of non-trivial code earns a comment, unless the line is literally trivial (`return x`, simple arithmetic on well-named variables, idiomatic one-liners).
+
+Especially in:
+
+- **Complicated control flow** — multi-branch conditions, early returns with side effects, error-handling chains.
+- **External-system interactions** — network, file system, hardware, external APIs. Comment what could go wrong and why the code handles it that way.
+- **Domain-heavy logic** — math, business rules, or invariants that aren't self-evident.
+- **Performance-sensitive sections** — comment the trade-off being made.
+
+Comments are not noise — they are the difference between code that an AI agent can extend safely and code that the next agent has to rewrite from scratch.
+
+**Why:** AI agents read code more than humans do. The cost of writing the comment is seconds; the cost of the next agent (or you, six months from now) re-reverse-engineering the code is much higher. Treat comments as the durable record of intent.
 
 ## 6. Principles Are Technology-Agnostic
 
