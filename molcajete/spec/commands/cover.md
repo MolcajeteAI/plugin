@@ -76,19 +76,19 @@ Use the Agent tool (`subagent_type: general-purpose`) with one task: read the co
 - Project context paths.
 - Confirmed file list.
 - Resolved scope (one of: features, single feature, single UC, single code path) and any inferred module + domain.
-- Instruction: produce REQUIREMENTS.md / UC folders (containing `usecase.md` and an initialized `.log`) / appended scenarios as appropriate, populate ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map, Event Topology) per the architecture skill's **Table Filling** rules — every applicable table must be populated. Generate all IDs in one batch call. Add newly discovered actors to ACTORS.md and newly discovered tech-stack entries to TECH-STACK.md per the reverse-engineering skill's project-level discovery rules.
+- Instruction: produce REQUIREMENTS.md, UC spec files (`UC-XXXX-{slug}.md` as siblings of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md), UC support folders (each containing an initialized `CHANGELOG.md`), and appended scenarios as appropriate. Populate ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map, Event Topology) per the architecture skill's **Table Filling** rules — every applicable table must be populated. Generate all IDs in one batch call. Add newly discovered actors to ACTORS.md and newly discovered tech-stack entries to TECH-STACK.md per the reverse-engineering skill's project-level discovery rules.
 
 **Do not emit slice files. Do not emit code files. Do not emit test files.** Slice authorship belongs to `/m:plan` (in `mode: cover`); tests are written by `/m:build`.
 
 While scanning the codebase, also collect any **existing test files** that live outside the canonical Test File Convention paths (e.g., tests co-located with source as `src/foo/bar.test.ts` when the module's `Tests` directory says `tests/` or similar). The subagent must produce a "Non-canonical Test Paths" list capturing every such file path it observed. `/m:cover` must **not** move or rewrite these files — they stay where they are.
 
-For single code path scope, the subagent appends one scenario block to the parent UC's `usecase.md` (with `---` separators) and increments the UC's frontmatter version.
+For single code path scope, the subagent appends one scenario block to the parent UC spec file `UC-XXXX-{slug}.md` (with `---` separators) and increments the UC's frontmatter version.
 
 ## Step 8: Append Log Entry and Set UC Status
 
 For every UC touched in Step 7 (new or modified), use the `uc-log` shared skill to:
 
-1. Append a new entry to the UC's `.log` (under `TODO:`, prepended) with:
+1. Append a new entry to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
    - timestamp (UTC, `YYYYMMDDTHHMMSS`)
    - status: `pending`
    - command: `cover`
@@ -96,7 +96,7 @@ For every UC touched in Step 7 (new or modified), use the `uc-log` shared skill 
    - reason: one-line description of what was extracted (e.g., "extracted UC from src/auth/register.ts", "appended duplicate-email scenario from validateRegisterInput")
 2. Set the UC's frontmatter `status` to `pending` per the `uc-log` skill's roll-up rules.
 
-For brand-new UCs created by this command, also initialize the `.log` file with empty `TODO:` and `DONE:` sections before appending the entry.
+For brand-new UCs created by this command, also initialize the `CHANGELOG.md` file inside the UC's support folder (`UC-XXXX-{slug}/CHANGELOG.md`) with empty `TODO:` and `DONE:` sections before appending the entry.
 
 ## Step 9: Report
 

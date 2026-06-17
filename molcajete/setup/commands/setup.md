@@ -172,7 +172,7 @@ In a single parallel batch:
 mkdir -p specs .molcajete .claude/rules
 ```
 
-Per module: `mkdir -p specs/modules/{module}/features`.
+Per module: `mkdir -p specs/features/{module}`. Every project — single- or multi-module — gets a per-module folder under `specs/features/`.
 
 Read templates from `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/` (PROJECT, TECH-STACK, ACTORS, GLOSSARY, MODULES, DOMAINS, FEATURES) and write each file under `specs/`. For TECH-STACK.md specifically: populate **Running tests** and **Coverage** for every module that ships testable code, using the commands detected in Step 3 (or marked `not available` when the project does not provide a coverage collector).
 

@@ -42,7 +42,7 @@ Read in one batch:
 Read in parallel:
 
 - Project-level: `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md` (skip missing optional files)
-- Per-feature: For every feature in FEATURES.md, read `specs/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` and `USE-CASES.md`. Parallelize aggressively; on very large projects launch one Explore subagent per domain.
+- Per-feature: For every feature in FEATURES.md, read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` and `USE-CASES.md`. Parallelize aggressively; on very large projects launch one Explore subagent per domain.
 
 ## Step 4: Research (optional)
 
@@ -61,9 +61,9 @@ Parse the free-form text against the loaded context. Classify each entity into:
 | Category | Trigger | Action |
 |----------|---------|--------|
 | **New Feature** | Capability not in any existing feature | Resolve module + domain; create feature dir + REQUIREMENTS.md + USE-CASES.md + ARCHITECTURE.md; add FEATURES.md row |
-| **New Use Case** | Workflow belonging to an existing feature | Create UC folder with `usecase.md` + `.log`; add USE-CASES.md row |
+| **New Use Case** | Workflow belonging to an existing feature | Create UC spec file (`UC-XXXX-{slug}.md`) + support folder with `CHANGELOG.md`; add USE-CASES.md row |
 | **Modified Feature** | Adds/changes requirements | Update REQUIREMENTS.md (new FRs, NFRs, acceptance criteria) |
-| **Modified Use Case** | Adds/changes scenarios | Update `usecase.md`; increment version. UC `status` is updated by the `uc-log` skill in Step 10. |
+| **Modified Use Case** | Adds/changes scenarios | Update `UC-XXXX-{slug}.md`; increment version. UC `status` is updated by the `uc-log` skill in Step 10. |
 
 For new features, resolve module + domain per the feature-authoring skill's Module and Domain Resolution.
 
@@ -94,7 +94,7 @@ Assign prefixes in order.
 Write in dependency order: parents before children.
 
 **New Features** (per selected module):
-1. `mkdir -p specs/modules/{module}/features/FEAT-XXXX-{slug}` — UCs are direct children of this folder.
+1. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug}` — UCs are direct children of this folder.
 2. Write REQUIREMENTS.md (from template, with module + domain frontmatter; follow feature-authoring section order).
 3. Write empty USE-CASES.md.
 4. Write ARCHITECTURE.md scaffold from `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`. Populate every applicable table per the architecture skill's **Table Filling** rules — Component Inventory, API Surface, Code Map, and Event Topology / Integration Points where the feature has rows for them. Leave a table empty only when the feature genuinely has no rows. An ARCHITECTURE.md with empty mandatory tables blocks Step 9.
@@ -104,12 +104,12 @@ Write in dependency order: parents before children.
 
 **New Use Cases** — for every new UC:
 
-1. `mkdir -p specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}` — slice files (when `/m:plan` produces them later) will live as siblings of `usecase.md` inside this folder.
-2. Write `usecase.md` (frontmatter: id, name, feature, status: pending, version: 1, actor; title; objective; preconditions; trigger; inline scenarios with `---` separators).
-3. Initialize the change log file `UC-XXXX-{slug}.log` per the `uc-log` shared skill (empty TODO/DONE sections). Step 10 appends the first entry.
-4. Append USE-CASES.md row (file link points to `UC-XXXX-{slug}/usecase.md`). Update the parent feature's ARCHITECTURE.md per the architecture skill: every file that the UC's scenarios imply must have a Component Inventory row; every `SC-` and the UC itself must have a Code Map row; new endpoints must appear in API Surface. Update the `use_cases` and `scenarios` frontmatter arrays and `last_update`.
+1. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}` — the UC's support folder. Slice files (when `/m:plan` produces them later) and `CHANGELOG.md` live inside this folder.
+2. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) with frontmatter (id, name, feature, status: pending, version: 1, actor) + title + objective + preconditions + trigger + inline scenarios with `---` separators.
+3. Initialize the change log file `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/CHANGELOG.md` per the `uc-log` shared skill (empty TODO/DONE sections). Step 10 appends the first entry.
+4. Append USE-CASES.md row (file link points to `UC-XXXX-{slug}.md`, a direct sibling). Update the parent feature's ARCHITECTURE.md per the architecture skill: every file that the UC's scenarios imply must have a Component Inventory row; every `SC-` and the UC itself must have a Code Map row; new endpoints must appear in API Surface. Update the `use_cases` and `scenarios` frontmatter arrays and `last_update`.
 
-**Modified Use Cases:** Edit `usecase.md`; increment frontmatter `version`; never change ID. Update ARCHITECTURE.md rows for any newly touched files. Do **not** edit, add, or delete slice files — slice authorship belongs to `/m:plan`.
+**Modified Use Cases:** Edit `UC-XXXX-{slug}.md`; increment frontmatter `version`; never change ID. Update ARCHITECTURE.md rows for any newly touched files. Do **not** edit, add, or delete slice files — slice authorship belongs to `/m:plan`.
 
 **No slice files. No code files. No tests.** `/m:spec` is spec prose only.
 
@@ -117,7 +117,7 @@ Write in dependency order: parents before children.
 
 For every UC touched in Step 9 (new or modified), use the `uc-log` shared skill to:
 
-1. Append a new entry to the UC's `.log` (under `TODO:`, prepended) with:
+1. Append a new entry to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
    - timestamp (UTC, `YYYYMMDDTHHMMSS`)
    - status: `pending`
    - command: `spec`
@@ -129,7 +129,7 @@ For every UC touched in Step 9 (new or modified), use the `uc-log` shared skill 
 
 Tell the user what was created and updated, grouped by UC. For each:
 
-- The new or modified files (`usecase.md`, `.log`, REQUIREMENTS.md edits, FEATURES.md row, etc.).
+- The new or modified files (`UC-XXXX-{slug}.md`, `CHANGELOG.md`, REQUIREMENTS.md edits, FEATURES.md row, etc.).
 - The new UC status (`pending` or `dirty`).
 - The log entry that was appended.
 

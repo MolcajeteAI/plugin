@@ -55,9 +55,9 @@ Read in one batch:
 
 For each FEAT/UC ID:
 
-- Resolve the spec path. Read `specs/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/usecase.md` for UC IDs.
+- Resolve the spec path. Read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` for UC IDs.
 - Read the feature's `ARCHITECTURE.md`.
-- Read the UC's `.log` (for context on prior changes).
+- Read the UC's `CHANGELOG.md` (for context on prior changes).
 
 ## Step 5: Draft the Spec Edit
 
@@ -66,7 +66,7 @@ From the description in `$ARGUMENTS`, draft the spec edit per UC. The edit may:
 - Change an existing scenario's Steps / Outcomes / Side Effects.
 - Add or remove scenarios.
 - Add, modify, or retire FRs/NFRs at the feature level (when the change scope justifies it).
-- Add a new UC under the feature (when the request implies a workflow that doesn't fit any existing UC). Use the usecase-authoring skill's Step 4 (Write Files) to create the new UC folder, `usecase.md`, and `.log`.
+- Add a new UC under the feature (when the request implies a workflow that doesn't fit any existing UC). Use the usecase-authoring skill's Step 4 (Write Files) to create the new UC spec file (`UC-XXXX-{slug}.md`), support folder, and `CHANGELOG.md`.
 
 Present a diff-style review via a single AskUserQuestion per affected UC:
 
@@ -80,7 +80,7 @@ If after review the user determines no spec edit is needed, refuse:
 
 ## Step 6: Apply Spec Edits
 
-For each affected UC, edit `usecase.md`. Increment frontmatter `version`. Update the feature's `REQUIREMENTS.md` and `ARCHITECTURE.md` per the architecture skill's additive rules — Component Inventory / API Surface / Code Map rows for any newly-implied files or endpoints.
+For each affected UC, edit `UC-XXXX-{slug}.md` (the UC spec file, a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE). Increment frontmatter `version`. Update the feature's `REQUIREMENTS.md` and `ARCHITECTURE.md` per the architecture skill's additive rules — Component Inventory / API Surface / Code Map rows for any newly-implied files or endpoints.
 
 `/m:change` does **not** produce slices, plans, code, or tests. It does not edit existing slice files (`/m:plan` will decide whether to add, modify, or supersede them in its next run).
 
@@ -88,7 +88,7 @@ For each affected UC, edit `usecase.md`. Increment frontmatter `version`. Update
 
 For every UC affected, use the `uc-log` shared skill to:
 
-1. Append a new entry to the UC's `.log` (under `TODO:`, prepended) with:
+1. Append a new entry to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
    - timestamp (UTC, `YYYYMMDDTHHMMSS`)
    - status: `pending`
    - command: `change`

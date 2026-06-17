@@ -1,7 +1,7 @@
 ---
 name: uc-log
 description: >-
-  Per-UC change log + UC status frontmatter mechanics. Defines the .log
+  Per-UC change log + UC status frontmatter mechanics. Defines the CHANGELOG.md
   sidecar file path, TODO/DONE section layout, entry line format, status
   transitions (pending → dirty → implemented), and how the UC status field
   rolls up from its log entries. Referenced by /m:spec, /m:fix, /m:change,
@@ -16,14 +16,14 @@ The log answers two questions: **what changed and why** (for plan) and **what's 
 
 ## File Path
 
-The log lives next to the UC file, named after the UC's full identifier:
+The log lives inside the UC's support folder:
 
 ```
-specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/UC-XXXX-{slug}.log
+specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/CHANGELOG.md
 ```
 
 - One log per UC. Never share a log across UCs.
-- The filename mirrors the UC folder name with a `.log` extension.
+- The filename is always literal `CHANGELOG.md` — it does not encode the UC ID (the parent directory already does).
 - Created lazily by the first spec-phase command that touches the UC.
 
 ## File Shape
@@ -93,7 +93,7 @@ No other transitions. A `pending` entry never becomes `implemented` without firs
 
 ## UC Status Frontmatter
 
-Every `usecase.md` carries a `status` field in its frontmatter. The field is a roll-up of the UC's log state:
+Every `UC-XXXX-{slug}.md` (the UC spec file) carries a `status` field in its frontmatter. The field is a roll-up of the UC's log state:
 
 ```yaml
 ---

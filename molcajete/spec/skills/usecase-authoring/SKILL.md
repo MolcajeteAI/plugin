@@ -10,7 +10,7 @@ description: >-
 
 # Use Case Authoring
 
-Rules for creating and maintaining use case files: one folder per UC at `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/`, containing `usecase.md` (the spec), `UC-XXXX-{slug}.log` (the change log), and any slice files as siblings. The /m:spec command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
+Rules for creating and maintaining use case files: each UC is two artifacts at the feature level. The UC spec lives at `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md). A support folder `UC-XXXX-{slug}/` (sibling of the spec file) holds `CHANGELOG.md` and any slice files. The /m:spec command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
 
 
 ## Module-Scoped Use Cases
@@ -198,7 +198,7 @@ Scenarios that involve screens or visual interactions can include optional `**UI
 
 **Asset management:**
 
-- UC-level images go in `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/`
+- UC-level images go in `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/` (inside the UC's support folder)
 - File naming: `{UC-ID}-{descriptive-slug}.{ext}` (e.g., `UC-A1B2-login-form.png`)
 - Lowercase, hyphens, no spaces
 - Supported formats: PNG, JPG
@@ -334,14 +334,14 @@ Use case slugs follow the same rules as feature slugs (defined in the feature-au
 - "Login Flow" → `login-flow`
 - "Create Feature" → `create-feature`
 
-**Folder format:** `UC-XXXX-{slug}/` containing `usecase.md` and `UC-XXXX-{slug}.log` (e.g., `UC-0S9A-login-flow/usecase.md`).
+**Layout:** UC spec file is `UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md). UC support folder is `UC-XXXX-{slug}/` containing `CHANGELOG.md` and slice files. Example: `UC-0S9A-login-flow.md` + `UC-0S9A-login-flow/CHANGELOG.md` + `UC-0S9A-login-flow/SLICE-001-validate-input.md`.
 
 ## USE-CASES.md Row Management
 
 When creating a use case, add a new row to the feature's `USE-CASES.md`:
 
 ```
-| UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [usecase.md](UC-XXXX-{slug}/usecase.md) |
+| UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](UC-XXXX-{slug}.md) |
 ```
 
 **Column rules:**
@@ -349,7 +349,7 @@ When creating a use case, add a new row to the feature's `USE-CASES.md`:
 - **Name:** Verb-noun goal phrase (matches frontmatter `name`)
 - **Status:** `pending` on creation; managed by the `uc-log` shared skill thereafter.
 - **Description:** One sentence -- enough for an agent to identify this use case
-- **File:** Relative Markdown link to `UC-XXXX-{slug}/usecase.md`
+- **File:** Relative Markdown link to `UC-XXXX-{slug}.md` (the UC spec file, a sibling of USE-CASES.md inside the FEAT folder)
 
 **When updating a use case,** do NOT change the ID.
 
@@ -414,10 +414,10 @@ Repeat the scenario review loop until the user confirms they have no more scenar
 
 After all sections are confirmed:
 1. Generate UC-XXXX ID (4-character timestamp code)
-2. Create the UC folder `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/`.
-3. If any scenario has image files, create `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming.
-4. Write `UC-XXXX-{slug}/usecase.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter `version: 1` and `status: pending`.
-5. Initialize the change log `UC-XXXX-{slug}/UC-XXXX-{slug}.log` via the `uc-log` shared skill (empty TODO/DONE sections; the calling command appends the first entry).
+2. Create the UC support folder `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/` (this holds CHANGELOG.md and slice files).
+3. If any scenario has image files, create `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming.
+4. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter `version: 1` and `status: pending`.
+5. Initialize the change log `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/CHANGELOG.md` via the `uc-log` shared skill (empty TODO/DONE sections; the calling command appends the first entry).
 6. Add row to the feature's `USE-CASES.md`.
 
 ## Update Mode

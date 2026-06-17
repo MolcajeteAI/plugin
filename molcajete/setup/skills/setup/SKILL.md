@@ -101,7 +101,7 @@ Present the composite foundation in **one** AskUserQuestion. Options: write all 
 
 ## Document Generation
 
-Read templates from `./templates/` and write each file in a single parallel batch after confirmation. Global files in `specs/`; per-module directories under `specs/modules/{module}/features/` (UCs are direct children of each FEAT folder — no `use-cases/` subfolder).
+Read templates from `./templates/` and write each file in a single parallel batch after confirmation. Global files in `specs/`; per-module directories under `specs/features/{module}/`. Each FEAT folder holds REQUIREMENTS.md, USE-CASES.md, ARCHITECTURE.md, plus the UC spec files (`UC-XXXX-{slug}.md`) and UC support folders (`UC-XXXX-{slug}/`) as siblings.
 
 | Document | Template | Location |
 |----------|----------|----------|
@@ -189,6 +189,26 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Detection:** Directory does not exist.
 - **Fix:** `mkdir -p .claude/rules`. Usually paired with `principles-host-file` — the principles fix creates the directory if absent, so this entry only fires when the user has `.claude/rules/principles.md` in mind but the directory was deleted separately (rare).
 - **Source of truth:** `setup.md` Step 7 (foundation mkdir).
+
+### `legacy-spec-layout-migration`
+
+- **Artifact:** entire `specs/` tree.
+- **Category:** SCHEMA GAPS (structural migration; no plugin-owned content is overwritten, but files are moved and renamed).
+- **Detection:** Any of:
+  - `specs/modules/` directory exists.
+  - Any `specs/features/**/UC-*/usecase.md` file exists (old UC-as-folder-with-usecase.md layout).
+  - Any `specs/features/**/UC-*/UC-*-NNN-*.md` slice files exist (old slice naming).
+  - Any `specs/features/**/UC-*/UC-*.log` files exist (old log naming).
+- **Fix:** Walk every legacy feature folder under `specs/modules/{module}/features/` and migrate per these rules. The target path always includes `{module}/`. Use **AskUserQuestion** with the full list of planned moves (grouped by feature) before applying — the user confirms once for the whole migration.
+  1. Move `specs/modules/{module}/features/FEAT-*` → `specs/features/{module}/FEAT-*` (preserve REQUIREMENTS.md, USE-CASES.md, ARCHITECTURE.md, assets/, all child UC files and folders).
+  2. For each UC folder `FEAT-*/UC-AAAA-{slug}/` that contains a legacy `usecase.md`:
+     - Move `UC-AAAA-{slug}/usecase.md` up one level to `FEAT-*/UC-AAAA-{slug}.md` (the UC spec becomes a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE).
+     - Rename `UC-AAAA-{slug}/UC-AAAA-{slug}.log` → `UC-AAAA-{slug}/CHANGELOG.md`.
+     - Rename each slice `UC-AAAA-{slug}/UC-AAAA-NNN-{name}.md` → `UC-AAAA-{slug}/SLICE-NNN-{name}.md`.
+  3. Update USE-CASES.md file links inside each FEAT folder: replace `UC-AAAA-{slug}/usecase.md` with `UC-AAAA-{slug}.md`.
+  4. Remove the now-empty `specs/modules/` directory tree (only after every feature has migrated successfully).
+- **Source of truth:** This catalog entry and the updated path conventions in the slicing / feature-authoring / usecase-authoring skills.
+- **Safety:** If any planned target path already exists (collision), abort that feature's migration and surface the conflict in the report. Never overwrite. Leave the source files in place when conflicts block a feature so the user can resolve manually before re-running.
 
 ## Extending the Drift Catalog
 

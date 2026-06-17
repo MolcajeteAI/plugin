@@ -21,7 +21,7 @@ Slice IDs derive from the parent UC and a 3-digit sequence: **`{UC-id}-NNN`** (e
 - The UC ID itself is timestamp-based (base-62), so cross-UC collisions are impossible.
 - Within a UC, NNN is assigned sequentially: `001`, `002`, `003`, …
 - Cross-dev collisions only happen when two devs are adding slices to the same UC on parallel branches — git surfaces them at merge time.
-- `/m:plan` computes the next NNN by scanning existing slice files in the UC's folder (siblings of `usecase.md`) and taking `max(NNN) + 1`.
+- `/m:plan` computes the next NNN by scanning existing `SLICE-NNN-*.md` files in the UC's support folder and taking `max(NNN) + 1`.
 - Slice IDs are short enough to type when launching a single slice and self-describing — you see the UC the moment you read the ID.
 
 Slice IDs are NOT generated via the base-62 `generate-id.js` script. That script is for entity-level IDs (FEAT, UC, SC, FR, NFR, US, ADR). Slices are an organizational layer below the UC and reuse the UC's ID as their root.
@@ -37,15 +37,19 @@ The lifecycle (scaffold-write → RED/GREEN check → implement → GREEN check 
 
 ## What Plan Emits Per Use Case
 
-Slice files are written as **siblings of the UC's `usecase.md`**, inside the UC folder. No `use-cases/` parent, no `.slices/` subfolder.
+Each UC has two artifacts at the feature level: the UC spec file `UC-XXXX-{slug}.md` (sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE) and a support folder `UC-XXXX-{slug}/` (sibling of the spec file). The folder contains `CHANGELOG.md` and the slice files. Slice filenames are `SLICE-NNN-{kebab-name}.md`.
 
 ```
-specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/
-├── usecase.md
-├── UC-XXXX-{slug}.log
-├── UC-XXXX-001-{kebab-name}.md
-├── UC-XXXX-002-{kebab-name}.md
-└── UC-XXXX-003-{kebab-name}.md
+specs/features/{module}/FEAT-XXXX-{slug}/
+├── REQUIREMENTS.md
+├── USE-CASES.md
+├── ARCHITECTURE.md
+├── UC-XXXX-{slug}.md
+└── UC-XXXX-{slug}/
+    ├── CHANGELOG.md
+    ├── SLICE-001-{kebab-name}.md
+    ├── SLICE-002-{kebab-name}.md
+    └── SLICE-003-{kebab-name}.md
 ```
 
 The DAG is implicit — every slice's `depends_on` field names the prior slice IDs it relies on. No separate index file. The parent feature's `ARCHITECTURE.md` is updated in the same plan pass (see the architecture skill's **Table Filling** rules).
@@ -77,7 +81,7 @@ last_update: YYYY-MM-DD
 Field semantics:
 
 - `id` — `{parent UC ID}-NNN`. Sequential within the UC.
-- `name` — kebab-case label used in logs, branch names, and the filename.
+- `name` — kebab-case label used in logs, branch names, and the slice filename (`SLICE-NNN-{name}.md`).
 - `objective` — `implement` or `coverage`. Picks the harness lifecycle.
 - `files.create` — production files this slice introduces. Must not exist when an `implement` slice runs for the first time.
 - `files.modify` — production files this slice changes. Must exist when the slice runs.
@@ -165,8 +169,8 @@ Integration/component test files are placed at a **canonical path derived from s
 | Token | Resolution |
 |-------|-----------|
 | `{module.Tests}` | The `Tests` column of the module's row in `specs/MODULES.md`. Set per-module by `/m:setup` from `{module.Directory}` plus language convention. |
-| `{feature-dir-name}` | The slice's parent feature dir under `specs/modules/{module}/features/`, e.g. `FEAT-0Fy0-user-onboarding` |
-| `{uc-dir-name}` | The slice's parent UC dir (a direct child of the feature dir), e.g. `UC-0KTg-register` |
+| `{feature-dir-name}` | The slice's parent feature dir under `specs/features/{module}/`, e.g. `FEAT-0Fy0-user-onboarding` |
+| `{uc-dir-name}` | The slice's parent UC support dir (a sibling of the UC spec file inside the feature dir), e.g. `UC-0KTg-register` |
 | `{NNN}` | The zero-padded sequence number portion of the slice's `id` (e.g., `001` for `UC-0KTg-001`) |
 | `{entry-type}` | The slice's `entry_type` frontmatter value — the driving-port kind whose surface this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`). Must appear in the module's `Driving Ports` list in `specs/MODULES.md`. |
 | `{slice-name}` | The slice's frontmatter `name` (kebab-case) |

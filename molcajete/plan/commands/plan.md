@@ -19,7 +19,7 @@ allowed-tools:
 
 `/m:plan` produces:
 
-- Slice files (siblings of `usecase.md`).
+- Slice files written into the UC's support folder (`UC-XXXX-{slug}/SLICE-NNN-{kebab-name}.md`).
 - A plan folder under `.molcajete/plans/<timestamp>-<descriptive-name>/` with `plan.md` inside.
 - Updated log entries (status flipped from `pending` to `dirty`, plan-id stamped).
 
@@ -48,15 +48,15 @@ Read in one batch:
 
 ## Step 3: Verify Prerequisites
 
-`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each referenced UC must have an existing `usecase.md` and `.log` file.
+`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each referenced UC must have an existing `UC-XXXX-{slug}.md` spec file and a `CHANGELOG.md` inside its support folder.
 
 ## Step 4: Read the Pending Work
 
 For each referenced UC, read:
 
-- `usecase.md` (specs, scenarios)
+- `UC-XXXX-{slug}.md` (the UC spec — specs, scenarios)
 - The feature's `REQUIREMENTS.md`, `ARCHITECTURE.md`
-- The UC's `.log`: collect every entry under `TODO:` whose status is `pending`. Skip entries already marked `dirty` (a prior plan owns them) and `implemented` entries (in `DONE:`).
+- The UC's `CHANGELOG.md` (inside its support folder): collect every entry under `TODO:` whose status is `pending`. Skip entries already marked `dirty` (a prior plan owns them) and `implemented` entries (in `DONE:`).
 
 If a referenced UC has **zero `pending` log entries**, ask via AskUserQuestion: "{UC} has no pending changes. Plan anyway? (Re-planning may overwrite slice files that already match the current spec.)"
 
@@ -111,13 +111,13 @@ For **mode: cover**:
 - `provides` lists the existing exports the slice's tests pin (used by the mutation step).
 - If the existing code uses a driving-port kind not yet in the module's `Driving Ports` list in `specs/MODULES.md`, add it and surface the addition in the report.
 
-Slice file paths are siblings of the UC's `usecase.md`:
+Slice files live inside the UC's support folder:
 
 ```
-specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/UC-XXXX-NNN-{kebab-name}.md
+specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/SLICE-NNN-{kebab-name}.md
 ```
 
-Slice ID `NNN` is sequential within the UC. Scan the UC folder for existing `UC-XXXX-NNN-*.md` siblings, take `max(NNN)`, and continue. New UCs start at `001`.
+Slice ID `NNN` is sequential within the UC. Scan the UC's support folder for existing `SLICE-NNN-*.md` files, take `max(NNN)`, and continue. New UCs start at `001`.
 
 Use the slice template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/templates/slice-template.md`. Pick the contract language tag from `specs/TECH-STACK.md`. **Do not emit a `test_file` field** — the canonical test path is derived from frontmatter and `specs/MODULES.md` at build time.
 
@@ -151,21 +151,21 @@ mode: default | cover
 
 ## FEAT-XXXX-{slug}
 ### UC-XXXX-{slug}
-- [ ] T-001 — UC-XXXX-001-{slice-name}.md
+- [ ] T-001 — SLICE-001-{slice-name}.md
   - [ ] T-001.1 — scaffold integration test
   - [ ] T-001.2 — implement
   - [ ] T-001.3 — mutation check
   - [ ] T-001.4 — coverage gate
-- [ ] T-002 — UC-XXXX-002-{slice-name}.md
+- [ ] T-002 — SLICE-002-{slice-name}.md
 
 ### UC-YYYY-{slug}
-- [ ] T-003 — UC-YYYY-001-{slice-name}.md
+- [ ] T-003 — SLICE-001-{slice-name}.md
 ```
 
 Rules:
 
 - `T-NNN` is assigned plan-locally and starts at `001`. Numbering crosses FEAT/UC boundaries within the plan.
-- The slice reference after the em dash is the slice filename (`UC-XXXX-NNN-{name}.md`), not the slice ID — the slice file is the source of truth.
+- The slice reference after the em dash is the slice filename (`SLICE-NNN-{name}.md`), not the slice ID — the slice file is the source of truth.
 - **Sub-task shape is fixed:** scaffold integration test → implement → mutation check → coverage gate. Enumerate sub-tasks only when the slice benefits from explicit decomposition; otherwise omit them and the build loop runs the four steps implicitly.
 - In **mode: cover**, omit the `implement` sub-task — the code already exists. The TDD loop becomes: scaffold integration test (must start GREEN) → mutation check → coverage gate.
 - **Integration is the default per-slice test type** (Principle 1). If a slice's heart is heavy algorithmic logic (parser, encoder, hash, math), it may be a **unit-test slice** — record the justification in the slice's `## Rationale` so `/m:build` knows to scaffold a unit test rather than an integration test.

@@ -58,9 +58,9 @@ Read in one batch:
 
 For each FEAT/UC ID:
 
-- Resolve the spec path. Read `specs/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/usecase.md` for UC IDs.
+- Resolve the spec path. Read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` for UC IDs.
 - Read the feature's `ARCHITECTURE.md`.
-- Read the UC's `.log` (for context on prior changes).
+- Read the UC's `CHANGELOG.md` (for context on prior changes).
 
 ## Step 5: Diagnose
 
@@ -80,7 +80,7 @@ Options: "Proceed" / "Edit" (user provides corrections via Other) / "Cancel".
 
 ## Step 6: Apply Spec Edits (if any)
 
-For each UC where the diagnosis was **Spec silent** or **Spec wrong**, edit `usecase.md` accordingly. Increment frontmatter `version`. Update the feature's ARCHITECTURE.md tables only if the edit changed the Component Inventory / API Surface / Code Map surface (per the architecture skill's additive rules).
+For each UC where the diagnosis was **Spec silent** or **Spec wrong**, edit `UC-XXXX-{slug}.md` (the UC spec file, a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE) accordingly. Increment frontmatter `version`. Update the feature's ARCHITECTURE.md tables only if the edit changed the Component Inventory / API Surface / Code Map surface (per the architecture skill's additive rules).
 
 For UCs where the diagnosis was **Spec correct, code wrong**, write nothing to disk in this step.
 
@@ -90,7 +90,7 @@ For UCs where the diagnosis was **Spec correct, code wrong**, write nothing to d
 
 For every UC named in `$ARGUMENTS` (expanded from any FEAT IDs), use the `uc-log` shared skill to:
 
-1. Append a new entry to the UC's `.log` (under `TODO:`, prepended) with:
+1. Append a new entry to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
    - timestamp (UTC, `YYYYMMDDTHHMMSS`)
    - status: `pending`
    - command: `fix`
