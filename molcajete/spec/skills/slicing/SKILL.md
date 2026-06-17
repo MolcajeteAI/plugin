@@ -4,15 +4,15 @@ description: >-
   Decompose a use case into ordered, independently-executable slices.
   Owns the slice file format — one Markdown file per slice, holding the
   contract surface and the test plan as language-tagged snippets and nested
-  bullets. Referenced by spec (forward) and reverse-spec (coverage) to emit
-  the per-slice plans the harness consumes.
+  bullets. Referenced by /m:plan (default and cover modes) to emit the
+  per-slice files the build consumes.
 ---
 
 # Slicing
 
 A **slice** is one vertical unit of work — a coherent, end-to-end piece of behavior that can be implemented and tested in isolation. The full slice set for a use case is a DAG: each slice declares the slices it depends on and the named exports it provides downstream.
 
-Spec emits **one Markdown file per slice**, co-located with the parent UC. The harness loads one slice at a time and passes only that slice's file to the CodeWriter — payload stays small, slices stay independently runnable.
+`/m:plan` emits **one Markdown file per slice**, co-located with the parent UC. The build loop loads one slice at a time and passes only that slice's file to the CodeWriter — payload stays small, slices stay independently runnable.
 
 ## Slice IDs
 
@@ -21,8 +21,8 @@ Slice IDs derive from the parent UC and a 3-digit sequence: **`{UC-id}-NNN`** (e
 - The UC ID itself is timestamp-based (base-62), so cross-UC collisions are impossible.
 - Within a UC, NNN is assigned sequentially: `001`, `002`, `003`, …
 - Cross-dev collisions only happen when two devs are adding slices to the same UC on parallel branches — git surfaces them at merge time.
-- The spec command computes the next NNN by scanning existing files in the UC's `.slices/` folder and taking `max(NNN) + 1`.
-- Slice IDs are short enough to type when launching a single slice (`molcajete build UC-J10A-003`) and self-describing — you see the UC the moment you read the ID.
+- `/m:plan` computes the next NNN by scanning existing slice files in the UC's folder (siblings of `usecase.md`) and taking `max(NNN) + 1`.
+- Slice IDs are short enough to type when launching a single slice and self-describing — you see the UC the moment you read the ID.
 
 Slice IDs are NOT generated via the base-62 `generate-id.js` script. That script is for entity-level IDs (FEAT, UC, SC, FR, NFR, US, ADR). Slices are an organizational layer below the UC and reuse the UC's ID as their root.
 
@@ -31,22 +31,24 @@ Slice IDs are NOT generated via the base-62 `generate-id.js` script. That script
 Every slice carries one of two objectives. The objective is declarative — the harness picks the lifecycle from it.
 
 - **`implement`** — Net-new behavior. The materialized scaffold tests must start RED. The CodeWriter writes production code until they turn GREEN. If the scaffold starts GREEN unexpectedly, the harness mutates the targeted files and expects RED — passing means the implementation already satisfies the slice; failing means the scaffold is vacuous.
-- **`coverage`** — Test recovery on existing code. The materialized scaffold tests must start GREEN. The CodeWriter adds more assertions. The harness then mutates the targeted files and expects RED — that's the success condition. Used by `/m:reverse-spec` against shipped code.
+- **`coverage`** — Test recovery on existing code. The materialized scaffold tests must start GREEN. The CodeWriter adds more assertions. The harness then mutates the targeted files and expects RED — that's the success condition. Used by `/m:plan` in `mode: cover` against shipped code.
 
 The lifecycle (scaffold-write → RED/GREEN check → implement → GREEN check → mutation) is owned by the harness, not the slice file. The slice file declares **what** the slice is; the harness decides **how** to run it based on `objective`.
 
-## What Spec Emits Per Use Case
+## What Plan Emits Per Use Case
+
+Slice files are written as **siblings of the UC's `usecase.md`**, inside the UC folder. No `use-cases/` parent, no `.slices/` subfolder.
 
 ```
-prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/
-├── UC-XXXX-{slug}.md
-└── UC-XXXX-{slug}.slices/
-    ├── UC-XXXX-001-{kebab-name}.md
-    ├── UC-XXXX-002-{kebab-name}.md
-    └── UC-XXXX-003-{kebab-name}.md
+specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/
+├── usecase.md
+├── UC-XXXX-{slug}.log
+├── UC-XXXX-001-{kebab-name}.md
+├── UC-XXXX-002-{kebab-name}.md
+└── UC-XXXX-003-{kebab-name}.md
 ```
 
-The DAG is implicit — every slice's `depends_on` field names the prior slice IDs it relies on. No separate index file. The parent feature's `ARCHITECTURE.md` is updated in the same spec pass (see the architecture skill's **Table Filling** rules).
+The DAG is implicit — every slice's `depends_on` field names the prior slice IDs it relies on. No separate index file. The parent feature's `ARCHITECTURE.md` is updated in the same plan pass (see the architecture skill's **Table Filling** rules).
 
 ## Slice File Schema
 
@@ -81,10 +83,10 @@ Field semantics:
 - `files.modify` — production files this slice changes. Must exist when the slice runs.
 - `depends_on` — slice IDs whose `provides` exports this slice relies on. Cycles are illegal. The harness scheduler keeps a slice pending until every dependency reaches `implemented`.
 - `provides` — named exports this slice publishes for downstream slices. The harness greps these out of the slice's source files and forwards just the signatures to dependents — never the full source.
-- `entry_type` — the driving-port kind this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`, or any project-specific kebab-case value). The value MUST appear in the `Driving Ports` list of the slice's module row in `prd/MODULES.md`. The build halts if the value is unknown to the module.
+- `entry_type` — the driving-port kind this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`, or any project-specific kebab-case value). The value MUST appear in the `Driving Ports` list of the slice's module row in `specs/MODULES.md`. The build halts if the value is unknown to the module.
 - `covers` — `SC-XXXX` scenario IDs and `FR-XXXX` requirement IDs this slice closes. Every scenario in the UC must be covered by exactly one slice.
 
-The slice's test file path is **not** declared here — it is derived from frontmatter and `prd/MODULES.md`. See the "Test File Convention" section below.
+The slice's test file path is **not** declared here — it is derived from frontmatter and `specs/MODULES.md`. See the "Test File Convention" section below.
 
 ### Body Structure
 
@@ -154,21 +156,21 @@ The structure is BDD-flavored without invoking any BDD tooling. There is no `.fe
 
 ## Test File Convention
 
-Integration/component test files are placed at a **canonical path derived from slice frontmatter and `prd/MODULES.md`** — never declared in the slice file, never chosen by the agent at slice authoring time. The path is a pure function of existing fields:
+Integration/component test files are placed at a **canonical path derived from slice frontmatter and `specs/MODULES.md`** — never declared in the slice file, never chosen by the agent at slice authoring time. The path is a pure function of existing fields:
 
 ```
-{module.Tests}/features/{feature-dir-name}/use-cases/{uc-dir-name}/{NNN}-{entry-type}-{slice-name}.{test-ext}
+{module.Tests}/features/{feature-dir-name}/{uc-dir-name}/{NNN}-{entry-type}-{slice-name}.{test-ext}
 ```
 
 | Token | Resolution |
 |-------|-----------|
-| `{module.Tests}` | The `Tests` column of the module's row in `prd/MODULES.md`. Set per-module by `/m:setup` from `{module.Directory}` plus language convention. |
-| `{feature-dir-name}` | The slice's parent feature dir under `prd/modules/{module}/features/`, e.g. `FEAT-0Fy0-user-onboarding` |
-| `{uc-dir-name}` | The slice's parent UC dir under `.../use-cases/`, e.g. `UC-0KTg-register` (without the `.slices` suffix) |
+| `{module.Tests}` | The `Tests` column of the module's row in `specs/MODULES.md`. Set per-module by `/m:setup` from `{module.Directory}` plus language convention. |
+| `{feature-dir-name}` | The slice's parent feature dir under `specs/modules/{module}/features/`, e.g. `FEAT-0Fy0-user-onboarding` |
+| `{uc-dir-name}` | The slice's parent UC dir (a direct child of the feature dir), e.g. `UC-0KTg-register` |
 | `{NNN}` | The zero-padded sequence number portion of the slice's `id` (e.g., `001` for `UC-0KTg-001`) |
-| `{entry-type}` | The slice's `entry_type` frontmatter value — the driving-port kind whose surface this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`). Must appear in the module's `Driving Ports` list in `prd/MODULES.md`. |
+| `{entry-type}` | The slice's `entry_type` frontmatter value — the driving-port kind whose surface this slice's tests drive (e.g., `http`, `graphql`, `event`, `cron`, `queue`, `service`). Must appear in the module's `Driving Ports` list in `specs/MODULES.md`. |
 | `{slice-name}` | The slice's frontmatter `name` (kebab-case) |
-| `{test-ext}` | Per-runner extension from `prd/TECH-STACK.md` Testing row or runner inference: `test.ts` (Vitest/Jest), `_test.py` (pytest), `_test.go` (Go), `_spec.rb` (RSpec), etc. |
+| `{test-ext}` | Per-runner extension from `specs/TECH-STACK.md` Testing row or runner inference: `test.ts` (Vitest/Jest), `_test.py` (pytest), `_test.go` (Go), `_spec.rb` (RSpec), etc. |
 
 The UC ID is **deliberately omitted** from the filename because the parent directory already encodes it. The full slice ID is always reconstructable as `{parent-uc-id}-{NNN}`.
 
@@ -178,14 +180,14 @@ Worked examples:
 
 | Project | Path |
 |---------|------|
-| TS/Vitest HTTP route slice | `tests/auth/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/001-http-validate-email.test.ts` |
-| TS/Vitest event-handler slice | `tests/auth/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/003-event-fanout-welcome.test.ts` |
-| Python/pytest cron slice (monorepo) | `packages/auth/tests/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/004-cron-cleanup-unverified_test.py` |
-| Go co-located GraphQL slice | `internal/auth/features/FEAT-0Fy0-user-onboarding/use-cases/UC-0KTg-register/001-graphql-resolve-profile_test.go` |
+| TS/Vitest HTTP route slice | `tests/auth/features/FEAT-0Fy0-user-onboarding/UC-0KTg-register/001-http-validate-email.test.ts` |
+| TS/Vitest event-handler slice | `tests/auth/features/FEAT-0Fy0-user-onboarding/UC-0KTg-register/003-event-fanout-welcome.test.ts` |
+| Python/pytest cron slice (monorepo) | `packages/auth/tests/features/FEAT-0Fy0-user-onboarding/UC-0KTg-register/004-cron-cleanup-unverified_test.py` |
+| Go co-located GraphQL slice | `internal/auth/features/FEAT-0Fy0-user-onboarding/UC-0KTg-register/001-graphql-resolve-profile_test.go` |
 
 This convention applies to **integration/component tests** (tests driven through an entry point, covering a slice's contract end-to-end). Pure algorithmic unit tests for leaf logic stay co-located with their source (`src/utils/prime.test.ts`) and are not subject to this layout.
 
-Build-time validation: the build command computes the derived path and refuses to dispatch if (a) frontmatter contains a stray `test_file:` line that disagrees with the derived path, (b) the slice's `feature` or `use_case` frontmatter doesn't match its parent feature/UC directory, (c) two slices in the same UC resolve to the same canonical path, (d) `entry_type` is missing or not present in the module's `Driving Ports` list in `prd/MODULES.md`, or (e) the module row in MODULES.md has no `Tests` value.
+Build-time validation: the build command computes the derived path and refuses to dispatch if (a) frontmatter contains a stray `test_file:` line that disagrees with the derived path, (b) the slice's `feature` or `use_case` frontmatter doesn't match its parent feature/UC directory, (c) two slices in the same UC resolve to the same canonical path, (d) `entry_type` is missing or not present in the module's `Driving Ports` list in `specs/MODULES.md`, or (e) the module row in MODULES.md has no `Tests` value.
 
 ## Slicing Rules
 
@@ -198,7 +200,7 @@ Build-time validation: the build command computes the derived path and refuses t
 
 ## Reverse (Coverage) Slicing
 
-When emitted by `/m:reverse-spec` for existing code:
+When emitted by `/m:plan` in `mode: cover` for existing code:
 
 - `objective: coverage`.
 - `files.create` is empty — coverage slices never introduce production files.

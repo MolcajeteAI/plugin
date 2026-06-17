@@ -88,7 +88,7 @@ If detection finds multiple signals (e.g., a module has both HTTP routes and eve
 
 ### Re-running setup on an existing project
 
-When `prd/PROJECT.md` already exists and the user opts to regenerate (or runs setup on a project whose MODULES.md predates this column), the re-run must:
+When `specs/PROJECT.md` already exists and the user opts to regenerate (or runs setup on a project whose MODULES.md predates this column), the re-run must:
 
 1. Re-detect driving ports for every module from the current codebase.
 2. Add the `Driving Ports` column if it is missing.
@@ -101,21 +101,21 @@ Present the composite foundation in **one** AskUserQuestion. Options: write all 
 
 ## Document Generation
 
-Read templates from `./templates/` and write each file in a single parallel batch after confirmation. Global files in `prd/`; per-module directories under `prd/modules/{module}/features/`.
+Read templates from `./templates/` and write each file in a single parallel batch after confirmation. Global files in `specs/`; per-module directories under `specs/modules/{module}/features/` (UCs are direct children of each FEAT folder — no `use-cases/` subfolder).
 
 | Document | Template | Location |
 |----------|----------|----------|
-| PROJECT.md | [PROJECT-template.md](./templates/PROJECT-template.md) | `prd/PROJECT.md` |
-| TECH-STACK.md | [TECH-STACK-template.md](./templates/TECH-STACK-template.md) | `prd/TECH-STACK.md` |
-| ACTORS.md | [ACTORS-template.md](./templates/ACTORS-template.md) | `prd/ACTORS.md` |
-| GLOSSARY.md | [GLOSSARY-template.md](./templates/GLOSSARY-template.md) | `prd/GLOSSARY.md` |
-| MODULES.md | [MODULES-template.md](./templates/MODULES-template.md) | `prd/MODULES.md` |
-| DOMAINS.md | [DOMAINS-template.md](./templates/DOMAINS-template.md) | `prd/DOMAINS.md` |
-| FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `prd/FEATURES.md` |
+| PROJECT.md | [PROJECT-template.md](./templates/PROJECT-template.md) | `specs/PROJECT.md` |
+| TECH-STACK.md | [TECH-STACK-template.md](./templates/TECH-STACK-template.md) | `specs/TECH-STACK.md` |
+| ACTORS.md | [ACTORS-template.md](./templates/ACTORS-template.md) | `specs/ACTORS.md` |
+| GLOSSARY.md | [GLOSSARY-template.md](./templates/GLOSSARY-template.md) | `specs/GLOSSARY.md` |
+| MODULES.md | [MODULES-template.md](./templates/MODULES-template.md) | `specs/MODULES.md` |
+| DOMAINS.md | [DOMAINS-template.md](./templates/DOMAINS-template.md) | `specs/DOMAINS.md` |
+| FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `specs/FEATURES.md` |
 
 ## Regeneration
 
-When `prd/PROJECT.md` already exists, ask once (regenerate vs cancel). On regenerate, run the full one-shot composition again.
+When `specs/PROJECT.md` already exists, ask once (regenerate vs cancel). On regenerate, run the full one-shot composition again.
 
 ## Template Reference
 

@@ -150,11 +150,11 @@ The brief's "Current Best Practices" and "Key Libraries/APIs" sections directly 
 
 ## Table Filling
 
-ARCHITECTURE.md ships with empty tables in the scaffold so the file remains valid before the architecture pass runs. Both forward spec and reverse-spec MUST populate the tables before declaring the architecture pass complete — the harness reads them downstream to scope slices, route mutations, and locate implementation files. An ARCHITECTURE.md with empty Component Inventory, API Surface, or Code Map blocks the spec pass.
+ARCHITECTURE.md ships with empty tables in the scaffold so the file remains valid before the architecture pass runs. `/m:spec` (forward) and `/m:cover` (reverse) MUST populate the tables before declaring the architecture pass complete — `/m:plan` reads them downstream to scope slices, route mutations, and locate implementation files. An ARCHITECTURE.md with empty Component Inventory, API Surface, or Code Map blocks the plan pass.
 
 For every new use case or scenario added under this feature, populate at minimum:
 
-| Table | Forward spec source | Reverse-spec source |
+| Table | Forward (/m:spec) source | Reverse (/m:cover) source |
 |-------|---------------------|---------------------|
 | Component Inventory | Slice `files.create` + `files.modify` aggregated across the UC's slices | Files traced from entry-point grep through the call chain |
 | API Surface | Endpoint references in REQUIREMENTS.md and UC scenario steps | Route registrations and handlers found in the codebase |

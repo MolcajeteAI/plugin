@@ -10,7 +10,7 @@ description: >-
 
 # Use Case Authoring
 
-Rules for creating and maintaining use case files: one file per UC at `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/UC-XXXX-{slug}.md`. The /m:usecase command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
+Rules for creating and maintaining use case files: one folder per UC at `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/`, containing `usecase.md` (the spec), `UC-XXXX-{slug}.log` (the change log), and any slice files as siblings. The /m:spec command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
 
 
 ## Module-Scoped Use Cases
@@ -191,18 +191,18 @@ Scenarios that involve screens or visual interactions can include optional `**UI
 **Content types:**
 
 - **ASCII art mockups** (default) -- fenced code blocks showing layout, key elements, and hierarchy. Generate from the user's description.
-- **Image references** -- Markdown images pointing to `use-cases/assets/`:
+- **Image references** -- Markdown images pointing to the UC's own `assets/` folder:
   ```
   ![Confirmation screen](assets/UC-XXXX-confirmation.png)
   ```
 
 **Asset management:**
 
-- UC-level images go in `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/`
+- UC-level images go in `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/`
 - File naming: `{UC-ID}-{descriptive-slug}.{ext}` (e.g., `UC-A1B2-login-form.png`)
 - Lowercase, hyphens, no spaces
 - Supported formats: PNG, JPG
-- Create the `use-cases/assets/` directory only when images are needed
+- Create the UC's `assets/` directory only when images are needed
 
 **When to include:**
 
@@ -280,7 +280,7 @@ Write Steps and Outcomes as if narrating the actor's experience. If a step descr
 
 ### Core Principle
 
-All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write specs as if everything is testable with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `prd/tech-stack.md`.
+All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write specs as if everything is testable with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`.
 
 ### Authoring Rule
 
@@ -312,9 +312,9 @@ Resolved testing decisions are recorded in the feature's ARCHITECTURE.md under a
 | `id` | string | `UC-XXXX` -- 4-character timestamp ID |
 | `name` | string | Verb-noun goal phrase (e.g., "Create Feature") |
 | `feature` | string | Parent feature ID: `FEAT-XXXX` |
-| `status` | string | `pending` on creation |
-| `version` | integer | Starts at `1`. Incremented by /m:update-usecase on each edit |
-| `actor` | string | Primary actor role (must exist in prd/ACTORS.md) |
+| `status` | string | `pending` \| `dirty` \| `implemented` -- managed by the `uc-log` shared skill. `pending` on creation. |
+| `version` | integer | Starts at `1`. Incremented by /m:change on each edit |
+| `actor` | string | Primary actor role (must exist in specs/ACTORS.md) |
 
 ## UC-XXXX ID Assignment
 
@@ -334,22 +334,22 @@ Use case slugs follow the same rules as feature slugs (defined in the feature-au
 - "Login Flow" → `login-flow`
 - "Create Feature" → `create-feature`
 
-**Filename format:** `UC-XXXX-{slug}.md` (e.g., `UC-0S9A-login-flow.md`)
+**Folder format:** `UC-XXXX-{slug}/` containing `usecase.md` and `UC-XXXX-{slug}.log` (e.g., `UC-0S9A-login-flow/usecase.md`).
 
 ## USE-CASES.md Row Management
 
 When creating a use case, add a new row to the feature's `USE-CASES.md`:
 
 ```
-| UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [UC-XXXX-{slug}.md](use-cases/UC-XXXX-{slug}.md) |
+| UC-XXXX | {Use Case Name} | pending | {One-sentence description} | [usecase.md](UC-XXXX-{slug}/usecase.md) |
 ```
 
 **Column rules:**
 - **ID:** `UC-XXXX` -- the generated ID
 - **Name:** Verb-noun goal phrase (matches frontmatter `name`)
-- **Status:** `pending` on creation
+- **Status:** `pending` on creation; managed by the `uc-log` shared skill thereafter.
 - **Description:** One sentence -- enough for an agent to identify this use case
-- **File:** Relative Markdown link to `use-cases/UC-XXXX-{slug}.md`
+- **File:** Relative Markdown link to `UC-XXXX-{slug}/usecase.md`
 
 **When updating a use case,** do NOT change the ID.
 
@@ -368,7 +368,7 @@ From the user's freeform input, attempt to extract:
 - Trigger
 - Scenarios (each with Given, Steps, Outcomes, Side Effects)
 
-Cross-reference `prd/ACTORS.md` to validate the actor exists.
+Cross-reference `specs/ACTORS.md` to validate the actor exists.
 
 ### Step 2: Review Shared Context
 
@@ -414,14 +414,15 @@ Repeat the scenario review loop until the user confirms they have no more scenar
 
 After all sections are confirmed:
 1. Generate UC-XXXX ID (4-character timestamp code)
-2. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/` directory if it does not exist
-3. If any scenario has image files, create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming
-4. Write `UC-XXXX-{slug}.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter version to `1`
-5. Add row to the feature's `USE-CASES.md`
+2. Create the UC folder `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/`.
+3. If any scenario has image files, create `specs/modules/{module}/features/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming.
+4. Write `UC-XXXX-{slug}/usecase.md` using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter `version: 1` and `status: pending`.
+5. Initialize the change log `UC-XXXX-{slug}/UC-XXXX-{slug}.log` via the `uc-log` shared skill (empty TODO/DONE sections; the calling command appends the first entry).
+6. Add row to the feature's `USE-CASES.md`.
 
 ## Update Mode
 
-/m:update-usecase uses this skill in update mode:
+`/m:change` (and `/m:fix` when it touches the spec) uses this skill in update mode:
 - Read the current UC file
 - Compare with the user's change description
 - Propose specific changes via AskUserQuestion ("Here's what I'd change:\n\n{diff}\n\nDoes this look correct?")

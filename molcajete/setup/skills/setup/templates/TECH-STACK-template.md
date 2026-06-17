@@ -10,9 +10,11 @@
 - **Key libraries:** {e.g., urql 5 (GraphQL), Zustand 5 (state), Zod (validation)}
 - **Styling:** {e.g., Tailwind CSS 4, Radix UI + shadcn/ui}
 - **Testing:** {e.g., Vitest 4 + Testing Library}
+- **Running tests:** {exact command(s) to run the tests for this module. e.g., `cd apps/web && pnpm test` or `pytest packages/api/tests`}
+- **Coverage:** {exact command and where to read stats. e.g., `pnpm test -- --coverage` produces `coverage/coverage-summary.json`. If the module does not expose coverage stats, write `not available`. Molcajete will estimate against the 80% floor when this field is `not available`.}
 - **Lint/Format:** {e.g., Biome 2.3}
 
-{Repeat for each module/application. Omit fields that don't apply (e.g., no Styling for a backend service). For single-app projects, use one module section.}
+{Repeat for each module/application. Omit fields that don't apply (e.g., no Styling for a backend service). For single-app projects, use one module section. The **Running tests** and **Coverage** fields are required for every module that ships testable code — `/m:build` reads them to run the TDD loop and the 80% coverage gate.}
 
 ## Runtime
 - **Type:** {e.g., Docker Compose | host-native | hybrid}

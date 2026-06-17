@@ -154,7 +154,7 @@ During reverse engineering, update `last_update` in the frontmatter to the curre
 
 Reverse engineering may uncover actors, tech stack components, or features not yet documented in the project-level files. Subagents must compare what they find against what already exists and update accordingly.
 
-### Actors (prd/ACTORS.md)
+### Actors (specs/ACTORS.md)
 
 When code analysis reveals an actor not listed in ACTORS.md — a new user role, system actor, or external service that triggers or receives actions — add a row:
 
@@ -173,7 +173,7 @@ When code analysis reveals an actor not listed in ACTORS.md — a new user role,
 - Use the naming style already present in ACTORS.md (if it says "End User", don't add "end-user")
 - If ACTORS.md doesn't exist, create it using the template at `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/ACTORS-template.md`
 
-### Tech Stack (prd/TECH-STACK.md)
+### Tech Stack (specs/TECH-STACK.md)
 
 When code analysis reveals a technology not listed in TECH-STACK.md — a database, framework, queue system, external service SDK, or infrastructure component — add it to the appropriate section.
 
@@ -196,7 +196,7 @@ When code analysis reveals a technology not listed in TECH-STACK.md — a databa
 
 ## Dispatcher Integration
 
-Reverse commands that span multiple scope levels (reverse-spec, reverse-feature) use a two-step dispatcher pattern to protect the 200K context limit. Both steps produce specs only — no test code is written by reverse commands.
+`/m:cover` spans multiple scope levels (a broad capability may map to multiple features; a single code path appends to one UC) and uses a two-step dispatcher pattern to protect the 200K context limit. The command produces specs only — no test code is written by `/m:cover`; tests come later via `/m:plan` (mode: cover) + `/m:build`.
 
 ### Codebase Research
 

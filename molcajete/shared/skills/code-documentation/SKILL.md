@@ -132,7 +132,7 @@ Do not generate README.md files for these directories:
 - `.git/`
 - `.molcajete/`
 - `__tests__/` (document tests from parent directory)
-- `prd/` (PRD has its own documentation structure)
+- `specs/` (spec tree has its own documentation structure)
 - Asset-only directories (only images, fonts, or static files)
 
 ## Update Triggers

@@ -2,7 +2,7 @@
 name: testing
 description: >-
   Technology-agnostic rules for the test-first build loop. Implementer and
-  Validator role contracts, outer-edge mocking, reading prd/tech-stack.md,
+  Validator role contracts, outer-edge mocking, reading specs/TECH-STACK.md,
   Runner Inference, coverage gate scoped to touched files, reactive refactor.
 ---
 
@@ -18,7 +18,7 @@ The build loop runs two agents in series; only the Validator's signal closes a t
 
 For one behavior at a time: write the test first (file order is the only enforcement), then write production code in its final form to make it pass.
 
-**Receives:** task description, architecture doc, the relevant `Module` section of `prd/tech-stack.md`, current code state, list of behaviors already covered, previous Validator feedback if any.
+**Receives:** task description, architecture doc, the relevant `Module` section of `specs/TECH-STACK.md`, current code state, list of behaviors already covered, previous Validator feedback if any.
 
 **Returns:** list of files changed, the behavior just covered, a one-line note.
 
@@ -43,7 +43,7 @@ Write production code in its final form on the first pass. No throwaway-minimum-
 ## Test Type Selection
 
 - **Unit** — leaf logic with no external collaborators.
-- **Component** — anything crossing a boundary (handlers, resolvers, services, repositories). Default for everything under `Applications` in `prd/tech-stack.md`.
+- **Component** — anything crossing a boundary (handlers, resolvers, services, repositories). Default for everything under `Applications` in `specs/TECH-STACK.md`.
 - **Smoke** — optional, at the use-case edge. Sparingly.
 
 When in doubt, prefer component.
@@ -62,7 +62,7 @@ Cross-boundary effects the subject *causes* (welcome email enqueued, downstream 
 
 One assertion target per test. Split if a single test would assert on three independent things.
 
-## Reading `prd/tech-stack.md`
+## Reading `specs/TECH-STACK.md`
 
 Resolve the `Module` whose `Directory` contains the file under test. Use its rows:
 
@@ -92,7 +92,7 @@ When `Modules.{name}.Testing` is blank, read the module's manifest once and pick
 | TS/JS + React / Next / Express / NestJS, no test runner present | Jest |
 | None of the above | Halt and ask the user |
 
-Two or more direct signals (e.g., Jest AND Vitest in devDeps) → ambiguous; ask the user. Cache the resolution on the in-memory loop state for this invocation; do not write back to `prd/tech-stack.md` unless asked.
+Two or more direct signals (e.g., Jest AND Vitest in devDeps) → ambiguous; ask the user. Cache the resolution on the in-memory loop state for this invocation; do not write back to `specs/TECH-STACK.md` unless asked.
 
 ### Scoped command shapes
 
@@ -135,4 +135,4 @@ When the task is a coverage-recovery task (description names uncovered paths in 
 
 ## Where Integration/Component Tests Live
 
-Test files for slices are placed at a canonical path derived from the slice's frontmatter and `prd/MODULES.md`. The agent does not pick the path — it is computed. See the slicing skill's "Test File Convention" for the formula and the build command's Step 5 for validation. Pure algorithmic unit tests stay co-located with their source (e.g., `src/utils/prime.test.ts`) and are not subject to the spec-mirrored layout.
+Test files for slices are placed at a canonical path derived from the slice's frontmatter and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the slicing skill's "Test File Convention" for the formula and the build command's Step 7.2 for validation. Pure algorithmic unit tests stay co-located with their source (e.g., `src/utils/prime.test.ts`) and are not subject to the spec-mirrored layout.

@@ -16,12 +16,12 @@ Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES
 
 Before creating or locating a feature, resolve the target module and domain:
 
-1. Read `prd/MODULES.md` for the list of registered modules. Read `prd/DOMAINS.md` for the list of registered domains.
+1. Read `specs/MODULES.md` for the list of registered modules. Read `specs/DOMAINS.md` for the list of registered domains.
 2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask via AskUserQuestion: "Which modules does this feature apply to?\n\n{module table from MODULES.md}" — multi-select. Keep auto-select when only one module exists.
 3. Ask which domain this feature belongs to via AskUserQuestion: "Which domain does this feature belong to?\n\n{domain table from DOMAINS.md}" — **single-select**. Every feature belongs to exactly one domain. If the feature seems to span multiple domains, that is a signal it should be split into multiple features (one per domain), not assigned multiple domains.
 4. Use the selected module and domain for all path operations.
 
-All feature paths use the pattern `prd/modules/{module}/features/FEAT-XXXX-{slug}/`.
+All feature paths use the pattern `specs/modules/{module}/features/FEAT-XXXX-{slug}/`.
 
 The domain is a spec-organization concept used to group related features (e.g., `identity`, `billing`, `notifications`) and to filter features in registries. Every feature belongs to exactly one domain. Outcomes that touch other systems (emails, notifications, downstream events) are recorded as **side effects** of the UC under test — they are validations of the same UC, not evidence that another domain is being tested.
 
@@ -50,7 +50,7 @@ When a feature spans 2+ modules, each module's REQUIREMENTS.md must focus on tha
 
 When creating a feature, after the module and domain are resolved and before the creation interview:
 
-1. Read `prd/FEATURES.md` and check if there are existing features this new feature depends on.
+1. Read `specs/FEATURES.md` and check if there are existing features this new feature depends on.
 2. If dependency candidates exist, ask via AskUserQuestion:
    "Does this feature depend on any existing features?\n\n{features table}\n\nSelect any that apply, or skip."
    Options: list each candidate feature + "None -- no dependencies"
@@ -180,11 +180,11 @@ ASCII art conveys layout and element hierarchy. It is always the default -- gene
 ![Dashboard overview](assets/overview-dashboard.png)
 ```
 
-Images are a post-creation enhancement. The `assets/` directory is created inside the feature directory after the feature directory exists. When the user provides image files (file paths), copy them to `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/` with descriptive names and reference them in the `## UI` section.
+Images are a post-creation enhancement. The `assets/` directory is created inside the feature directory after the feature directory exists. When the user provides image files (file paths), copy them to `specs/modules/{module}/features/FEAT-XXXX-{slug}/assets/` with descriptive names and reference them in the `## UI` section.
 
 ### Asset Management
 
-- Feature-level images go in `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/`
+- Feature-level images go in `specs/modules/{module}/features/FEAT-XXXX-{slug}/assets/`
 - File naming: `{descriptive-slug}.{ext}` -- lowercase, hyphens, no spaces, max 50 character slug
 - Supported formats: PNG, JPG
 - When the user provides image file paths during creation or update, copy the files and add references
@@ -247,7 +247,7 @@ The slug is appended to the FEAT ID with a hyphen: `FEAT-XXXX-{slug}` (e.g., `FE
 
 ## FEATURES.md Row Management
 
-When creating a feature, add a new row to `prd/FEATURES.md` under the `## {domain}` section.
+When creating a feature, add a new row to `specs/FEATURES.md` under the `## {domain}` section.
 
 **Format:**
 ```
@@ -320,12 +320,12 @@ If the user describes the UI, generate ASCII art mockups from their description 
 
 After all sections are confirmed:
 1. Generate FEAT-XXXX ID (4-character timestamp code)
-2. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/` directory. Create `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/` subdirectory.
-3. If the user provided image file paths, create `prd/modules/{module}/features/FEAT-XXXX-{slug}/assets/` and copy image files with descriptive names. For use-case-level assets, use `prd/modules/{module}/features/FEAT-XXXX-{slug}/use-cases/assets/`.
-4. Write `prd/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI. Frontmatter: `module: {module}`, `domain: {domain}` (single value).
+2. Create `specs/modules/{module}/features/FEAT-XXXX-{slug}/` directory. Use cases are direct children of this folder — there is no `use-cases/` subdirectory.
+3. If the user provided image file paths, create `specs/modules/{module}/features/FEAT-XXXX-{slug}/assets/` and copy image files with descriptive names. UC-level assets live inside each UC's own folder (`UC-XXXX-{slug}/assets/`) and are created later by `/m:spec` when the UC is authored.
+4. Write `specs/modules/{module}/features/FEAT-XXXX-{slug}/REQUIREMENTS.md` using [REQUIREMENTS-template.md](./templates/REQUIREMENTS-template.md) -- include `## UI` section with confirmed ASCII art and/or image references if UI content was provided; omit `## UI` section entirely if user said no UI. Frontmatter: `module: {module}`, `domain: {domain}` (single value).
 5. Write `USE-CASES.md` using [USE-CASES-template.md](./templates/USE-CASES-template.md) (empty table).
 6. Write `ARCHITECTURE.md` scaffold using the template at `spec/skills/architecture/templates/ARCHITECTURE-template.md`
-7. Add row to `prd/FEATURES.md` under the `## {domain}` section (format from the Row Management section above)
+7. Add row to `specs/FEATURES.md` under the `## {domain}` section (format from the Row Management section above)
 
 ## Update Mode
 

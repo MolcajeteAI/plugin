@@ -1,29 +1,41 @@
 {
   "name": "m",
   "version": "3.0.3",
-  "description": "Spec-driven development plugin with setup, spec, and slice-driven test-first build workflows",
+  "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec, /m:fix, /m:change, /m:cover feed /m:plan, which produces the plan /m:build executes.",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
   },
-  "keywords": ["workflow", "development", "testing", "specs", "tdd"],
+  "keywords": [
+    "workflow",
+    "development",
+    "testing",
+    "specs",
+    "tdd",
+    "plan",
+    "lifecycle"
+  ],
   "commands": [
     "./build/commands/build.md",
-    "./setup/commands/setup.md",
+    "./plan/commands/plan.md",
     "./research/commands/research.md",
+    "./setup/commands/setup.md",
     "./shared/commands/doc.md",
-    "./spec/commands/reverse-spec.md",
+    "./spec/commands/change.md",
+    "./spec/commands/cover.md",
+    "./spec/commands/fix.md",
     "./spec/commands/spec.md"
   ],
   "skills": [
-    "./setup/skills/setup/SKILL.md",
     "./research/skills/headless-research/SKILL.md",
     "./research/skills/research-methods/SKILL.md",
+    "./setup/skills/setup/SKILL.md",
     "./shared/skills/code-documentation/SKILL.md",
     "./shared/skills/git-committing/SKILL.md",
     "./shared/skills/git-conflict-resolution/SKILL.md",
     "./shared/skills/id-generation/SKILL.md",
     "./shared/skills/testing/SKILL.md",
+    "./shared/skills/uc-log/SKILL.md",
     "./spec/skills/architecture/SKILL.md",
     "./spec/skills/feature-authoring/SKILL.md",
     "./spec/skills/reverse-engineering/SKILL.md",
