@@ -1,0 +1,32 @@
+{
+  "name": "@molcajete/plugin",
+  "version": "3.1.0",
+  "description": "Claude Code plugin for spec-driven development (the m plugin).",
+  "author": {
+    "name": "Ivan Torres",
+    "email": "ivantorresedge@gmail.com"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/MolcajeteAI/plugin",
+  "repository": "https://github.com/MolcajeteAI/plugin",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "molcajete",
+    "tdd",
+    "spec-driven"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "files": [
+    ".claude-plugin/",
+    "build/",
+    "setup/",
+    "plan/",
+    "research/",
+    "shared/",
+    "spec/"
+  ],
+  "packageManager": "pnpm@8.15.6+sha256.01c01eeb990e379b31ef19c03e9d06a14afa5250b82e81303f88721c99ff2e6f"
+}

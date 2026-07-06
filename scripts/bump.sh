@@ -3,6 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PLUGIN_JSON="$SCRIPT_DIR/../molcajete/.claude-plugin/plugin.json"
+PACKAGE_JSON="$SCRIPT_DIR/../molcajete/package.json"
 
 current=$(grep -o '"version": "[^"]*"' "$PLUGIN_JSON" | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 IFS='.' read -r major minor patch <<< "$current"
@@ -16,4 +17,11 @@ esac
 
 new="$major.$minor.$patch"
 sed -i '' "s/\"version\": \"$current\"/\"version\": \"$new\"/" "$PLUGIN_JSON"
-echo "$current -> $new"
+sed -i '' "s/\"version\": \"$current\"/\"version\": \"$new\"/" "$PACKAGE_JSON"
+
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+git -C "$REPO_ROOT" add "$PLUGIN_JSON" "$PACKAGE_JSON"
+git -C "$REPO_ROOT" commit -m "Bumps version to $new"
+git -C "$REPO_ROOT" tag -a "v$new" -m "v$new"
+
+echo "$current -> $new (tagged v$new)"

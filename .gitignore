@@ -35,8 +35,8 @@ temp/
 .env.local
 
 # Molcajete
-plans/
-research/
+./plans/
+./research/
 
 # Other
 debt-list.md

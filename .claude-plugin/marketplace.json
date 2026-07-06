@@ -8,16 +8,7 @@
     {
       "name": "m",
       "source": "./molcajete",
-      "description": "Core development workflow with generic agents and discoverable skills"
-    },
-    {
-      "name": "legacy",
-      "source": "./legacy",
-      "description": "Migrate deprecated .molcajete/ files to the current m plugin format"
+      "description": "Spec-driven development with EARS requirements, use cases, and implementation planning"
     }
-  ],
-  "enabledPlugins": {
-    "legacy@Molcajete.ai": true,
-    "m@Molcajete.ai": true
-  }
+  ]
 }
