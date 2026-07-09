@@ -19,8 +19,10 @@ allowed-tools:
 
 The plan's `mode` (`default` or `cover`) decides whether `/m:build` writes production code:
 
-- **mode: default** — writes production code, integration tests (always), unit tests (when required).
-- **mode: cover** — writes integration tests (always) and unit tests (when required). **No production code.** Tests assert behavior of code that already exists.
+- **mode: default** — writes production code and integration tests.
+- **mode: cover** — writes integration tests only. **No production code.** Tests assert behavior of code that already exists.
+
+Molcajete generates **integration tests exclusively** per Principle 1 of the engineering principles. `/m:build` never scaffolds unit tests; if the host team wants unit tests for algorithmic code, they write them outside this lifecycle.
 
 **Do NOT commit code.** The user reviews your output and commits themselves.
 
@@ -166,7 +168,7 @@ Substitute the expected initial color from the slice's `objective` (`implement` 
    - `objective: coverage` (mode: cover) — `files.create` must be empty; every path in `files.modify` must exist.
 3. **Derive test file path.** Apply the slicing skill's Test File Convention from frontmatter + `specs/MODULES.md`:
    ```
-   {module.Tests}/features/{feature-dir-name}/{uc-dir-name}/{NNN}-{entry-type}-{slice-name}.{test-ext}
+   {module.Tests}/{feature-dir-name}/{uc-dir-name}/{NNN}-{entry-type}-{slice-name}.{test-ext}
    ```
    Apply the validation rules in the slicing skill's "Build-time validation" list verbatim.
 
@@ -195,6 +197,12 @@ Lifecycle:
 - `objective: coverage` (mode: cover): `it` bodies contain the full assertions implied by the bullet text, following rule 1.3 (precise values). Initial run must be GREEN.
 
 Add imports the assertions need.
+
+**Consult referenced non-canonical tests.** If the slice frontmatter has a `references:` list (populated by `/m:plan` in cover mode when the developer accepted entries from `/m:cover`'s "Non-canonical Test Paths"):
+
+- For every entry, `Read` the referenced file **before** you write the canonical test. Lift fixtures, setup blocks, seed data, and assertion patterns into the new integration test as first-class content — not verbatim copies. The reference is input; the canonical test is what Molcajete owns.
+- The referenced tests are **not** substitutes for integration coverage. Do not weaken the scenario coverage because a referenced unit test "already covers it" — every SC in the slice's `covers` needs an integration assertion at the driver port.
+- Referenced files with `mode: migrate` are held for deletion after 8.9 succeeds (see 8.10.a). Do not delete them here.
 
 Write the test file. Create parent directories as needed.
 
@@ -316,36 +324,88 @@ Two writes — one to the slice frontmatter (the source of truth for status), on
 
 The JSON file is kept for diagnostic context only. Status decisions read from the slice frontmatter; the JSON is no longer consulted as a state authority.
 
+**Handle `references` with `mode: migrate`.** For every entry in the slice frontmatter's `references:` list whose `mode` is `migrate`:
+
+1. Emit an AskUserQuestion: "The referenced test `{path}` was migrated into the canonical integration test at `{derived-test-path}`. Delete the original file now?"
+2. Options: **"Delete"** (removes the original file), **"Keep"** (leaves the original in place — note in Step 11 report that the migration is deferred).
+3. On "Delete", remove the file. Record the deletion (or the deferral) in the Step 11 report for this task.
+
+Never delete a referenced file when its `mode` is `reference` — those stay in place by definition.
+
 ## Step 9: Update Plan, Changelogs, and Statuses
 
-**Precondition.** This step runs only for tasks whose 8.9 verification block was emitted with every box ticked. If 8.9 halted for a task, skip that task's status updates entirely; Step 9 still runs for tasks that did pass 8.9. The failure-skip rule at the bottom of this step is unchanged.
+Step 9 runs at the end of every `/m:build` invocation regardless of individual task outcomes. It has two parts:
 
-After every requested task succeeds:
+- **9.A — Success-gated writes** (plan checkboxes, CHANGELOG entries): only applied for tasks whose 8.9 verification block emitted every box ticked. Failed tasks are skipped here.
+- **9.B — Idempotent status rollup** (UC and Feature frontmatter): applied **unconditionally** over the entire plan's scope. The rollup is a pure function of the slice frontmatter currently on disk; a failed slice stays `pending`/`dirty`, which is exactly what the rollup should read. Running it every time — even when nothing changed — keeps UC and Feature status honest against on-disk reality.
+
+### 9.A Success-gated writes
+
+For every task in this run whose 8.9 verification block was fully ticked:
 
 1. **Update `plan.md`.** Flip each completed task/sub-task checkbox from `[ ]` to `[x]`. Preserve the rest of the file verbatim.
-2. **Update each UC's CHANGELOG.md.** For every UC whose slices were completed by this run, use the `uc-log` shared skill to:
+2. **Update the UC's CHANGELOG.md.** Use the `uc-log` shared skill to:
    - Locate the changelog entry whose `plan:<plan-id>` matches and whose corresponding slices are now all `implemented`.
    - Flip its status from `dirty` to `implemented` and move the line from `TODO:` to `DONE:` (prepended at the top of `DONE:`).
-3. **Recompute UC frontmatter `status`** per the `status-rollup` skill: read each sibling slice's frontmatter `status:` inside the UC's support folder; apply the roll-up rule (all `implemented` → UC `implemented`; mix of `implemented` and `pending`/`dirty` → UC `dirty`; nothing `implemented` → UC `pending`). Write the result to `UC-XXXX-{slug}.md`.
-4. **Recompute Feature frontmatter `status`** per the same rule: read each child UC's frontmatter `status:` inside the FEAT folder; apply the roll-up rule; write the result to `REQUIREMENTS.md`.
 
-The CHANGELOG is for context only. Status decisions read from the artifact frontmatter, not from the changelog.
+Tasks that failed 8.9 skip 9.A entirely — their plan checkbox stays `[ ]`, their CHANGELOG entry stays `dirty` in `TODO:`.
+
+### 9.B Idempotent status rollup (unconditional)
+
+Regardless of which tasks passed or failed 8.9, walk the entire plan's scope and rewrite UC and Feature frontmatter from current on-disk state.
+
+**Scope resolution.** From `plan.md` (parsed in Step 4), enumerate:
+
+- Every `UC-XXXX` heading in the plan.
+- Every `FEAT-XXXX` heading in the plan.
+
+This set is fixed by the plan, not by which slices completed this run. A plan that references three UCs across two features rolls up all three UCs and both features on every `/m:build` invocation.
+
+**Per-UC rollup.** For each UC in scope, resolve its support folder (`specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/`) and:
+
+1. List every `SLICE-NNN-*.md` file in the folder.
+2. Read each slice file's frontmatter `status:` value.
+3. Apply the `status-rollup` skill's roll-up rule to the collected values:
+   - all children `implemented` → parent `implemented`
+   - at least one child `dirty`, OR mix of `implemented` and `pending`/`dirty` → parent `dirty`
+   - every child `pending` or `dirty` with none `implemented` → parent `pending`
+4. Write the resulting value to the UC's `UC-XXXX-{slug}.md` frontmatter `status:` field — **overwrite regardless of prior value**. If the value did not change, still record the read/write in the Step 10 mutation report (`After = unchanged`).
+5. If a UC has zero slice files, leave its frontmatter untouched and record `After = unchanged` with reason `no slices on disk yet`.
+
+**Per-Feature rollup.** For each Feature in scope, resolve its folder (`specs/features/{module}/FEAT-XXXX-{slug}/`) and:
+
+1. List every `UC-XXXX-*.md` file in the folder (siblings of `REQUIREMENTS.md`; ignore `USE-CASES.md` / `ARCHITECTURE.md` / `REQUIREMENTS.md` themselves).
+2. Read each UC file's frontmatter `status:` value.
+3. Apply the same roll-up rule.
+4. Write the resulting value to `REQUIREMENTS.md`'s frontmatter `status:` — **overwrite regardless of prior value**. Record the read/write in the Step 10 mutation report.
+5. If a Feature folder has zero UC spec files, leave `REQUIREMENTS.md` untouched and record `After = unchanged` with reason `no UCs on disk yet`.
+
+The CHANGELOG is for context only. Status decisions read from the artifact frontmatter, not from the changelog. The rollup never reads or modifies CHANGELOG.md entries — that is 9.A's concern.
 
 ## Step 10: Status Mutation Report (blocking)
 
-Before Step 11, emit this exact table. Each row is one artifact whose `status:` frontmatter (or CHANGELOG line, or plan checkbox) you changed during Step 9. If no rows would appear, you skipped Step 9 — re-read the precondition at the top of Step 9 and either run it or write an explicit "Step 9 skipped — reason: …" line.
+Before Step 11, emit this exact table. It must contain **one row for every artifact in the plan's scope** — every touched slice, every UC in the plan, every Feature in the plan, every CHANGELOG entry that could have flipped, every plan.md checkbox that could have flipped. Every row records what happened to that artifact this run, including rows for artifacts that were intentionally left unchanged. Silent under-firing is not permitted.
 
-- **If a slice failed (escalation written), do NOT flip its changelog entry or its slice's frontmatter `status` — leave them in the `dirty` state.** The user resolves the escalation and re-runs `/m:build` for that task. List the skipped artifacts as "unchanged" rows in the table below.
+- **If a slice failed (escalation written), do NOT flip its changelog entry or its slice's frontmatter `status` — leave them in the `dirty` state.** The user resolves the escalation and re-runs `/m:build` for that task. List the skipped artifacts as `unchanged` rows in the table below with the reason `slice failed — see escalation`.
+- **UC and Feature rollup rows always appear** (per Step 9.B's unconditional rollup), whether or not the value moved. If the value did not change (still `pending`, still `dirty`, still `implemented`), the `After` column reads `unchanged` and a footnote-linked reason column names why (e.g., `3 of 5 sibling slices still pending`, `all UCs already implemented — no change`, `no slices on disk yet`).
 
-| Artifact path                          | Field                | Before  | After       |
-|----------------------------------------|----------------------|---------|-------------|
-| `<slice path>`                         | status               | `<prev>`| implemented |
-| `<UC path>`                            | status               | `<prev>`| `<new>`     |
-| `<FEAT REQUIREMENTS.md>`               | status               | `<prev>`| `<new>`     |
-| `<UC CHANGELOG.md>`                    | entry `{plan-id}`    | dirty   | implemented |
-| `<plan.md>`                            | checkbox `T-NNN[.N]` | `[ ]`   | `[x]`       |
+| Artifact path                          | Field                | Before  | After                    | Reason (if unchanged)                            |
+|----------------------------------------|----------------------|---------|--------------------------|--------------------------------------------------|
+| `<slice path>`                         | status               | `<prev>`| implemented / unchanged  | e.g. `slice failed — see escalation`             |
+| `<UC path>`                            | status               | `<prev>`| `<new>` / unchanged      | e.g. `2 of 4 sibling slices still pending`       |
+| `<FEAT REQUIREMENTS.md>`               | status               | `<prev>`| `<new>` / unchanged      | e.g. `all UCs already implemented — no change`   |
+| `<UC CHANGELOG.md>`                    | entry `{plan-id}`    | dirty   | implemented / unchanged  | e.g. `entry unchanged — slice failed`            |
+| `<plan.md>`                            | checkbox `T-NNN[.N]` | `[ ]`   | `[x]` / unchanged        | e.g. `task failed 8.9`                           |
 
-If a status was intentionally left unchanged (roll-up not met because sibling slices are still `pending`/`dirty`, or the slice failed and was skipped), include a row with After = "unchanged" and a one-line reason in a footnote under the table.
+Row expectations:
+
+- Every slice touched by `$ARGUMENTS` gets exactly one row.
+- Every UC named in the plan's `## FEAT-XXXX / ### UC-XXXX` headings gets exactly one row.
+- Every Feature named in the plan's `## FEAT-XXXX` headings gets exactly one row.
+- Every plan.md checkbox for the requested tasks gets exactly one row.
+- Every UC's CHANGELOG entry matching this `plan-id` gets exactly one row.
+
+If the table contains no `UC-` or `FEAT-` rollup rows, Step 9.B did not run — halt and re-execute Step 9.B before continuing.
 
 ## Step 11: Report
 
@@ -355,7 +415,8 @@ Tell the user:
 - For each completed task: slice ID, name, objective, files touched, materialized test file path, and per-touched-file final coverage on all four dimensions (lines / statements / branches / funcs).
 - Any gaps that the 8.7 loop resolved by adding scenario tests or deleting defensive code — one line per resolution naming the location and the disposition.
 - For each escalation (if any): slice ID and escalation file path.
-- UC status changes (e.g., `UC-0KTg: dirty → implemented`) and Feature status changes if any rolled up.
+- Any migration deletions or deferrals from Step 8.10's `references` handling — one line per referenced file.
+- **Final status for every UC and Feature in the plan's scope.** One line per artifact regardless of whether it changed this run. Format: `FEAT-XXXX-{slug}: <status>` and `UC-XXXX-{slug}: <status>`. This is a snapshot of on-disk truth after Step 9.B's rollup — the user should be able to read this section and know the current state of every feature the plan touches without opening any files.
 - Plan checklist progress (e.g., "3 of 5 tasks complete in plan `{plan-id}`").
 
 If the host project's coverage collector wasn't available (per Step 7) and you estimated against the floor, note that explicitly: "Coverage was estimated; `specs/TECH-STACK.md` does not declare a coverage collector for module `{module}`."

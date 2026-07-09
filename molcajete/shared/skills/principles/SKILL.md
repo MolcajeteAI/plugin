@@ -23,9 +23,9 @@ Everything below follows from that.
 
 Integration tests drive the system through its public boundary — the same path real callers take. When they pass, the system *as a whole* satisfies the spec.
 
-For Molcajete, integration tests are the **default test type**. They are written first and own the coverage floor (see Principle 4).
+Integration tests are **the only test type Molcajete generates**. Every UC and feature is backed by integration tests, no exceptions. They are written first, drive through a driver port with the real internal stack, and own the coverage floor (see Principle 4).
 
-Unit tests are written **only** when the algorithm IS the contract: parsers, sort routines, encoders, hashing, math-heavy logic. The unit test exists because the integration test can't economically exercise every edge case. Picking unit over integration must be a **per-slice exception**, justified in the slice's plan.
+Molcajete does not produce unit tests. If the host team wants unit tests for algorithmic code (parsers, encoders, hash routines, math), they write and maintain those themselves — outside Molcajete's lifecycle. Pre-existing host-project unit tests are ignored for coverage math; the floor is met by integration tests only. A unit test's existence never waives the requirement for an integration test — every scenario in every UC still needs its integration coverage.
 
 ### Test Writing Rules
 
@@ -271,7 +271,7 @@ This document does not specify a language, framework, runner, DI container, ORM,
 
 | Command | Enforcement |
 |---------|-------------|
-| `/m:plan` | Designs architecture using hexagonal vocabulary. Each slice declares which driver port it drives and which driven ports its code reaches. Default sub-task is integration test; unit testing is an explicit, justified per-slice exception. |
+| `/m:plan` | Designs architecture using hexagonal vocabulary. Each slice declares which driver port it drives and which driven ports its code reaches. Every slice's sub-task shape is: scaffold integration test → implement → mutation check → coverage gate. |
 | `/m:build` | Writes code that respects Principle 5 — small functions, clear boundaries, no god files, refactor-to-reuse. Coverage gate enforces Principle 4 against the host project's collector (or estimates when absent). |
 | `uc-log` shared skill | Records every change. Principles don't decay over time because tests stay in place and the log makes new work explicit. |
 

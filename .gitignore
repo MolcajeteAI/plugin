@@ -38,5 +38,8 @@ temp/
 ./plans/
 ./research/
 
+# npm/pnpm pack output
+*.tgz
+
 # Other
 debt-list.md

@@ -40,13 +40,13 @@ Test file is created or extended before any production-code edit in the same rou
 
 Write production code in its final form on the first pass. No throwaway-minimum-then-refactor middle step.
 
-## Test Type Selection
+## Integration Tests Only
 
-- **Unit** — leaf logic with no external collaborators.
-- **Component** — anything crossing a boundary (handlers, resolvers, services, repositories). Default for everything under `Applications` in `specs/TECH-STACK.md`.
-- **Smoke** — optional, at the use-case edge. Sparingly.
+Molcajete generates **integration tests exclusively**. Every slice, every UC, every feature is backed by integration tests that drive through a driver port with the real internal stack. No unit tests, no component tests, no smoke tests are produced by `/m:build` or `/m:plan`.
 
-When in doubt, prefer component.
+If the host team wants unit tests for algorithmic code (parsers, encoders, hash routines, math), they write and maintain those themselves — outside Molcajete's lifecycle. Pre-existing unit tests in the host repo are left where they are and do not count toward Molcajete's coverage floor; the floor is met by integration tests only.
+
+The integration test is the contract for the slice's scenarios. Where the contract cannot be economically exercised through the driver port, the slice's design is wrong — either the seam or the scenario. Escalate; do not fall back to a unit test.
 
 ## Outer-Edge Mocking
 
@@ -161,6 +161,10 @@ When the task is a coverage-recovery task (description names uncovered paths in 
 
 `when X then Y`. Describe blocks (or runner equivalent) mirror the behavior hierarchy.
 
-## Where Integration/Component Tests Live
+## Where Integration Tests Live
 
-Test files for slices are placed at a canonical path derived from the slice's frontmatter and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the slicing skill's "Test File Convention" for the formula and the build command's Step 7.2 for validation. Pure algorithmic unit tests stay co-located with their source (e.g., `src/utils/prime.test.ts`) and are not subject to the spec-mirrored layout.
+Test files for slices are placed at a canonical path derived from the slice's frontmatter and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the slicing skill's "Test File Convention" for the formula and the build command's Step 8.2 for validation.
+
+The canonical layout is a **dedicated tests tree keyed by module**, mirroring the spec tree module → feature → UC → slice test. The `Tests` column of each module's row in `specs/MODULES.md` names this tree (typical values: `server/tests/{module}`, `tests/{module}`, `packages/{module}/tests`). **Integration tests do not live inside module source directories** — that would mix behavior tests with implementation code and break the "grep the tests tree to find every test for a feature" property.
+
+Molcajete does not generate unit tests. Any unit tests already in the repo are left where they are — Molcajete does not migrate, delete, or reason about them, and they do not count toward the coverage floor.

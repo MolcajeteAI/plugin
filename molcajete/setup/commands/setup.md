@@ -204,7 +204,7 @@ Compute the block:
 
 Trust comes from tests, not code shape. Code can change; behavior is the contract.
 
-- Integration tests are the trust contract. Unit tests only for heavy algorithmic logic.
+- Integration tests are the only test type Molcajete generates. Every UC and feature is backed by integration tests, no exceptions. Unit tests, if the team wants them for algorithmic code, live outside Molcajete's lifecycle and are not counted toward the coverage floor.
 - Hexagonal architecture: drive tests through driver ports with the real internal stack; mock only the outer-edge driven ports.
 - Dependency injection makes the outer edge swappable at test time.
 - 80% coverage floor on touched files (configurable via `.molcajete/settings.json testing.threshold`).

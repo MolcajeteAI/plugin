@@ -109,7 +109,7 @@ Tell the user what was created or updated:
 - ARCHITECTURE.md tables populated per feature.
 - New actors / tech-stack entries added.
 - Testability Notes per UC if any signals were detected (silent — surface here as a brief list, do not interrupt the flow). Advisory output, not a recorded table.
-- **Non-canonical Test Paths** — if the discovery scan found existing test files outside the canonical Test File Convention layout, list every such path under a clearly-labeled section. Include a one-line note: "Existing tests at non-canonical paths were not moved. You can migrate them to the canonical layout at your own pace; new integration tests will materialize at the canonical paths regardless." Omit this section if all test files are already canonical.
+- **Non-canonical Test Paths** — if the discovery scan found existing test files outside the canonical Test File Convention layout, list every such path under a clearly-labeled section. Include a one-line note: "`/m:plan` will consult this list when it decomposes these UCs and ask you per file whether to reference (default — read as input for the canonical integration test, leave original in place), migrate (same, plus delete original after 8.9 succeeds), or ignore." Omit this section if all test files are already canonical.
 
 End the report with the explicit hand-off:
 

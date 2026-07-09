@@ -79,7 +79,7 @@ Stop without writing.
 
 ## Step 6: Architecture Pass
 
-**Apply the engineering principles loaded in Step 2.** Architecture decisions follow Principle 2 (hexagonal default) and Principle 3 (DI). Test-scope decisions follow Principle 1 (integration first; unit only when the algorithm IS the contract, justified per slice).
+**Apply the engineering principles loaded in Step 2.** Architecture decisions follow Principle 2 (hexagonal default) and Principle 3 (DI). Test-scope decisions follow Principle 1: **every slice's tests are integration tests**. Molcajete does not scaffold unit tests — that is the host team's concern, outside this lifecycle. Do not emit "unit-test slice" annotations.
 
 **mode: default.** Design or revise the architecture for the affected UCs:
 
@@ -131,6 +131,37 @@ Slice ID `NNN` is sequential within the UC. Scan the UC's support folder for exi
 Use the slice template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/templates/slice-template.md`. Pick the contract language tag from `specs/TECH-STACK.md`. **Do not emit a `test_file` field** — the canonical test path is derived from frontmatter and `specs/MODULES.md` at build time.
 
 Every `SC-` in each UC must be covered by exactly one slice's `covers`.
+
+### Consult non-canonical existing tests (mode: cover only)
+
+Skip this in `mode: default`. In `mode: cover`, before writing slice files to disk, check whether `/m:cover` recorded any existing scattered tests worth consulting.
+
+For every UC in scope:
+
+1. Read the UC's `CHANGELOG.md`. Find the most recent `command: cover` entry (whether `pending`, `dirty`, or already `implemented`). If none exists, skip this UC.
+2. From the report `/m:cover` produced for that entry (or, if the report is not preserved, from a fresh discovery scan constrained to files matching the UC's `files.modify` from the newly-decomposed slices), collect the list of **non-canonical test file paths** — existing test files touching the UC's production code that live outside `{module.Tests}/{feature-dir-name}/{uc-dir-name}/`.
+3. If the list is empty, skip.
+4. For each non-canonical test file, prompt via AskUserQuestion once per file:
+
+   > "Existing test `{path}` touches code covered by `{UC-XXXX-slug}`. What should `/m:build` do with it when it scaffolds the canonical integration test?"
+
+   Options:
+
+   - **"Reference-only"** (default): `/m:build` reads the file when scaffolding the canonical test, lifts fixtures / setup / assertion patterns into the new integration test, leaves the original file in place. The original is not moved and not deleted.
+   - **"Migrate"**: same as reference-only, plus `/m:build` prompts (after 8.9 succeeds) to delete the original file since its content now lives at the canonical path.
+   - **"Ignore"**: `/m:build` never opens the file. Nothing is recorded on the slice.
+
+5. For each non-ignored decision, attach the entry to the slice whose `covers` overlaps the production code the test touches. If more than one candidate slice matches, prompt via AskUserQuestion asking which slice the reference should attach to (list the candidate slice IDs and names). Record the entry in the target slice's frontmatter `references:` list:
+
+   ```yaml
+   references:
+     - path: <relative path to original test file>
+       mode: reference   # or migrate
+   ```
+
+6. Skip silently for UCs where the last cover entry has no non-canonical paths recorded.
+
+This step never moves or deletes test files. It only decides what `/m:build` will do later.
 
 ## Step 8: Generate the Plan Folder
 
@@ -184,7 +215,7 @@ Rules:
 - The slice reference after the em dash is the slice filename (`SLICE-NNN-{name}.md`), not the slice ID — the slice file is the source of truth.
 - **Sub-task shape is fixed:** scaffold integration test → implement → mutation check → coverage gate. Enumerate sub-tasks only when the slice benefits from explicit decomposition; otherwise omit them and the build loop runs the four steps implicitly.
 - In **mode: cover**, omit the `implement` sub-task — the code already exists. The TDD loop becomes: scaffold integration test (must start GREEN) → mutation check → coverage gate.
-- **Integration is the default per-slice test type** (Principle 1). If a slice's heart is heavy algorithmic logic (parser, encoder, hash, math), it may be a **unit-test slice** — record the justification in the slice's `## Rationale` so `/m:build` knows to scaffold a unit test rather than an integration test.
+- **Every slice is an integration-test slice** (Principle 1). Never annotate a slice as unit-test or emit "unit-test slice" in the plan — Molcajete generates integration tests only.
 - The `## Context` section lists upstream paths for every FEAT and UC touched by this plan. `/m:build` cross-checks this list against derived paths; missing or stale entries surface as warnings. This is a documentation aid for the reader — the build derives the authoritative set from FEAT/UC headings.
 
 ## Step 10: Update the UC Changelogs
