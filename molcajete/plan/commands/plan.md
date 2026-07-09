@@ -67,15 +67,11 @@ Options: "Skip this UC" / "Re-plan anyway" / "Cancel".
 
 Inspect the originating commands of all pending entries across the referenced UCs.
 
-- All entries are `command:spec`, `command:fix`, or `command:change` → **mode: default**.
-- All entries are `command:cover` → **mode: cover**.
-- A mix of `cover` and any other command → **refuse**.
+- No `command:cover` entries (only `command:spec` / `command:fix` / `command:change`) → **mode: default**.
+- Only `command:cover` entries → **mode: cover**.
+- Both `command:cover` and any of `command:spec` / `command:fix` / `command:change` present → **mode: mixed**.
 
-Refusal message:
-
-> Mixed-mode plan refused. The referenced UCs have pending entries from both `/m:cover` (existing code) and `/m:spec`/`/m:fix`/`/m:change` (new behavior). Run two separate `/m:plan` invocations — one for the cover entries, one for the rest. The exact split: {list of UCs grouped by mode}.
-
-Stop without writing.
+Plan-level `mode` is a summary label. Slice-level `objective` (`implement` / `coverage`) carries the per-slice truth that `/m:build` dispatches on. In `mode: mixed`, one plan folder contains both objectives; the ordering rule in Step 7 ensures coverage slices execute before implement slices so existing behavior is pinned before it is changed.
 
 ## Step 6: Architecture Pass
 
@@ -88,6 +84,13 @@ Stop without writing.
 - Reflect the design back into the feature's `ARCHITECTURE.md` per the architecture skill's Table Filling rules. Add or update Component Inventory, API Surface, Code Map, and Event Topology rows as needed.
 
 **mode: cover.** Skip architectural design — the architecture is already in the code. Use the reverse-engineering skill to reconstruct the implicit structure and ensure each UC's `ARCHITECTURE.md` reflects what's actually shipped (Component Inventory, API Surface, Code Map, Event Topology). Reverse-spec discovery patterns from that skill apply here.
+
+**mode: mixed.** Do both, in order, per UC:
+
+1. Apply the `mode: cover` reverse-engineering pass first for the UC's existing behavior — ensure `ARCHITECTURE.md` reflects the shipped code (Component Inventory, API Surface, Code Map, Event Topology). This pins the current design as the baseline.
+2. Apply the `mode: default` design pass on top for the `command:spec` / `command:fix` / `command:change` entries — identify ports, adapters, and DI wiring for the new/modified behavior per Principles 2 and 3. Reflect the deltas into `ARCHITECTURE.md` via the architecture skill's Table Filling rules.
+
+The AskUserQuestion summary in mixed mode lists both the pinned current architecture and the new design deltas so the user can see the full picture before slicing.
 
 Present the architecture changes via a single AskUserQuestion before slicing:
 
@@ -111,6 +114,11 @@ For **mode: cover**:
 - `files.create` stays empty. `files.modify` lists the shipped files whose behavior the slice tests.
 - `provides` lists the existing exports the slice's tests pin (used by the mutation step).
 - If the existing code uses a driving-port kind not yet in the module's `Driving Ports` list in `specs/MODULES.md`, add it and surface the addition in the report.
+
+For **mode: mixed**:
+
+- Each pending entry drives its own slices. `command:cover` entries produce `objective: coverage` slices (apply the mode: cover rules above). `command:spec` / `command:fix` / `command:change` entries produce `objective: implement` slices (apply the mode: default rules above).
+- **Coverage-before-implement ordering.** Within each UC, assign sequential NNN so that every coverage slice added by this plan lands before any implement slice added by this plan. When appending to a UC that already has slice files, honor the existing `max(NNN) + 1` convention — the ordering rule applies only to slices this plan writes. The plan's `T-NNN` list in Step 9 follows the same order so `/m:build`'s "process in `T-NNN` ascending" rule pins existing behavior before writing new behavior automatically.
 
 **Slice status (per the `status-rollup` skill):**
 
@@ -187,7 +195,7 @@ Shape:
 
 ```markdown
 # Plan {descriptive-name}
-mode: default | cover
+mode: default | cover | mixed
 
 ## Context
 - Project: `specs/PROJECT.md`, `specs/MODULES.md`, `specs/TECH-STACK.md`
@@ -215,6 +223,7 @@ Rules:
 - The slice reference after the em dash is the slice filename (`SLICE-NNN-{name}.md`), not the slice ID — the slice file is the source of truth.
 - **Sub-task shape is fixed:** scaffold integration test → implement → mutation check → coverage gate. Enumerate sub-tasks only when the slice benefits from explicit decomposition; otherwise omit them and the build loop runs the four steps implicitly.
 - In **mode: cover**, omit the `implement` sub-task — the code already exists. The TDD loop becomes: scaffold integration test (must start GREEN) → mutation check → coverage gate.
+- In **mode: mixed**, sub-task shape is per-slice: coverage slices (`objective: coverage`) omit the `implement` sub-task per the mode: cover rule; implement slices (`objective: implement`) keep all four. Under each UC block, list every coverage `T-NNN` before any implement `T-NNN` so the on-disk `T-NNN` sequence matches the execution order the build will follow.
 - **Every slice is an integration-test slice** (Principle 1). Never annotate a slice as unit-test or emit "unit-test slice" in the plan — Molcajete generates integration tests only.
 - The `## Context` section lists upstream paths for every FEAT and UC touched by this plan. `/m:build` cross-checks this list against derived paths; missing or stale entries surface as warnings. This is a documentation aid for the reader — the build derives the authoritative set from FEAT/UC headings.
 
@@ -231,8 +240,8 @@ For every UC whose pending entries were consumed by this plan, use the `uc-log` 
 Tell the user:
 
 - The plan folder path: `.molcajete/plans/<plan-id>/`.
-- The mode (`default` or `cover`).
-- The slices written (paths and IDs), grouped by FEAT/UC.
+- The mode (`default`, `cover`, or `mixed`).
+- The slices written (paths and IDs), grouped by FEAT/UC. In `mode: mixed`, sub-group each UC's slices into "Coverage slices (pin existing behavior)" and "Implement slices (new behavior)" so the reader can see the split at a glance.
 - The pending log entries flipped to `dirty`.
 - The `plan.md` task list at a glance.
 

@@ -17,10 +17,11 @@ allowed-tools:
 
 `/m:build` executes a plan produced by `/m:plan`. It walks the tasks the user named, runs the TDD lifecycle for each, updates the plan checkboxes, and flips the corresponding log entries to `implemented`.
 
-The plan's `mode` (`default` or `cover`) decides whether `/m:build` writes production code:
+The plan's `mode` (`default`, `cover`, or `mixed`) is a summary label. The authoritative per-slice dispatch reads the slice's `objective` field (`implement` or `coverage`):
 
-- **mode: default** — writes production code and integration tests.
-- **mode: cover** — writes integration tests only. **No production code.** Tests assert behavior of code that already exists.
+- **mode: default** — every slice is `objective: implement`. Writes production code and integration tests.
+- **mode: cover** — every slice is `objective: coverage`. Writes integration tests only. **No production code.** Tests assert behavior of code that already exists.
+- **mode: mixed** — the plan contains both objectives. Per-slice dispatch is unchanged: `implement` slices write production code + tests; `coverage` slices write tests only. Coverage slices execute first (guaranteed by `T-NNN` ordering set at plan time), pinning existing behavior before implement slices modify it.
 
 Molcajete generates **integration tests exclusively** per Principle 1 of the engineering principles. `/m:build` never scaffolds unit tests; if the host team wants unit tests for algorithmic code, they write them outside this lifecycle.
 
@@ -86,7 +87,7 @@ The resolved object `{lines, statements, branches, funcs}` is the operative gate
 
 1. Read `.molcajete/plans/<plan-id>/plan.md`.
 2. Parse:
-   - **Mode line** (`mode: default` or `mode: cover`) at the top.
+   - **Mode line** (`mode: default`, `mode: cover`, or `mode: mixed`) at the top.
    - **FEAT / UC sections** (h2 / h3 headings).
    - **Task list** under each UC: `T-NNN` lines with optional `T-NNN.N` sub-tasks. Each task references a slice filename (e.g., `UC-0KTg-001-validate-email.md`).
 3. Build an in-memory task index: `T-NNN → { feat, uc, slice_file_path, sub_tasks }`. The slice file path is the UC folder plus the referenced filename.
@@ -124,6 +125,8 @@ This is a hard gate — these documents are the behavioral source of truth. Ever
 ## Step 6: Present the Build Plan
 
 Show the user via AskUserQuestion: "Executing plan `{plan-id}` in `mode: {mode}`. {N} task(s): {list of tasks with slice file references}. Proceed?"
+
+In `mode: mixed`, split the count line so the user sees the shape before confirming: "Executing plan `{plan-id}` in `mode: mixed`. {C} coverage task(s), {I} implement task(s) — coverage runs first. Proceed?" Follow with the task list grouped by objective.
 
 Options: "Proceed" / "Cancel".
 
@@ -412,7 +415,7 @@ If the table contains no `UC-` or `FEAT-` rollup rows, Step 9.B did not run — 
 Tell the user:
 
 - The plan ID and mode.
-- For each completed task: slice ID, name, objective, files touched, materialized test file path, and per-touched-file final coverage on all four dimensions (lines / statements / branches / funcs).
+- For each completed task: slice ID, name, objective, files touched, materialized test file path, and per-touched-file final coverage on all four dimensions (lines / statements / branches / funcs). In `mode: mixed`, group the completed-task list under two sub-headings — "Coverage (pinned existing behavior)" and "Implement (new behavior)" — so the reader can tell which slices pinned current behavior versus which built new code.
 - Any gaps that the 8.7 loop resolved by adding scenario tests or deleting defensive code — one line per resolution naming the location and the disposition.
 - For each escalation (if any): slice ID and escalation file path.
 - Any migration deletions or deferrals from Step 8.10's `references` handling — one line per referenced file.

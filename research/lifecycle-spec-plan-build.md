@@ -215,8 +215,8 @@ Update mode is driven by the **Drift Catalog** in `plugin/molcajete/setup/skills
 - Plan is never skipped, ever. `/m:cover` is a spec-phase command and still hands off to `/m:plan`.
 - `/m:fix` and `/m:change` always reference an existing spec ID as first arg(s).
 - Production code is only written by `/m:build`. Spec-phase and plan-phase commands never touch source files.
-- `/m:build` against a `mode:cover` plan writes tests only — never production code.
-- Plans are single-mode. Mixed pending entries (some from green-field commands, some from `/m:cover`) split into separate plan folders.
+- `/m:build` against a `mode:cover` plan writes tests only — never production code. The same per-slice rule applies inside a `mode:mixed` plan: coverage slices write tests only, implement slices write production code + tests.
+- Plans can be single-mode (`default`, `cover`) or `mixed` when a UC has pending entries from both `/m:cover` and `/m:spec` / `/m:fix` / `/m:change`. In mixed plans, coverage slices are ordered before implement slices so existing behavior is pinned with characterization tests before it is changed.
 - Slices belong to use cases, not to plans. The plan references slices; it does not own them.
 - Integration tests target a **80% coverage floor**. The plan scopes tests to hit this floor. Coverage tooling and threshold enforcement (collector, reports, CI gates) are the **host project's responsibility**, not Molcajete's.
 - The host project's `TECH-STACK.md` documents (1) how to run the tests and (2) how to read coverage stats. When the project doesn't provide a coverage collector, `/m:plan` and `/m:build` make a best-effort estimate to reach the floor.

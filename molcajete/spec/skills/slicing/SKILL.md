@@ -35,6 +35,8 @@ Every slice carries one of two objectives. The objective is declarative — the 
 
 The lifecycle (scaffold-write → RED/GREEN check → implement → GREEN check → mutation) is owned by the harness, not the slice file. The slice file declares **what** the slice is; the harness decides **how** to run it based on `objective`.
 
+A single plan may carry slices of both objectives when it is emitted in `mode: mixed` (a UC has pending changelog entries from both `/m:cover` and `/m:spec` / `/m:fix` / `/m:change`). The harness still dispatches per slice on `objective` — no new lifecycle. The plan's `T-NNN` ordering guarantees coverage slices run before implement slices so existing behavior is pinned before it is changed.
+
 ## What Plan Emits Per Use Case
 
 Each UC has two artifacts at the feature level: the UC spec file `UC-XXXX-{slug}.md` (sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE) and a support folder `UC-XXXX-{slug}/` (sibling of the spec file). The folder contains `CHANGELOG.md` and the slice files. Slice filenames are `SLICE-NNN-{kebab-name}.md`.
@@ -211,6 +213,7 @@ Build-time validation: the build command computes the derived path and refuses t
 4. **Every scenario is covered exactly once.** Every `SC-` in the UC must appear in exactly one slice's `covers`. Same for `FR-` IDs.
 5. **Order is topological.** A slice's NNN must be greater than every NNN it depends on.
 6. **Granularity follows test seam.** A slice's Tests section is what gives it its boundary. If a single test file can validate the behavior end-to-end without cross-slice mocking, the granularity is right.
+7. **Coverage before implement in mixed plans.** In a `mode: mixed` plan, coverage slices added by the plan are assigned lower `NNN` than implement slices added by the plan within the same UC. The plan's `T-NNN` list follows the same order so the build's ascending walk pins existing behavior before writing new behavior. The rule applies only to slices this plan writes; slices already on disk keep their existing NNN.
 
 ## Reverse (Coverage) Slicing
 
