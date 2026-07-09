@@ -27,21 +27,21 @@
     "./spec/commands/spec.md"
   ],
   "skills": [
-    "./research/skills/headless-research/SKILL.md",
-    "./research/skills/research-methods/SKILL.md",
-    "./setup/skills/setup/SKILL.md",
-    "./shared/skills/code-documentation/SKILL.md",
-    "./shared/skills/git-committing/SKILL.md",
-    "./shared/skills/git-conflict-resolution/SKILL.md",
-    "./shared/skills/id-generation/SKILL.md",
-    "./shared/skills/principles/SKILL.md",
-    "./shared/skills/status-rollup/SKILL.md",
-    "./shared/skills/testing/SKILL.md",
-    "./shared/skills/uc-log/SKILL.md",
-    "./spec/skills/architecture/SKILL.md",
-    "./spec/skills/feature-authoring/SKILL.md",
-    "./spec/skills/reverse-engineering/SKILL.md",
-    "./spec/skills/slicing/SKILL.md",
-    "./spec/skills/usecase-authoring/SKILL.md"
+    "./research/skills/headless-research",
+    "./research/skills/research-methods",
+    "./setup/skills/setup",
+    "./shared/skills/code-documentation",
+    "./shared/skills/git-committing",
+    "./shared/skills/git-conflict-resolution",
+    "./shared/skills/id-generation",
+    "./shared/skills/principles",
+    "./shared/skills/status-rollup",
+    "./shared/skills/testing",
+    "./shared/skills/uc-log",
+    "./spec/skills/architecture",
+    "./spec/skills/feature-authoring",
+    "./spec/skills/reverse-engineering",
+    "./spec/skills/slicing",
+    "./spec/skills/usecase-authoring"
   ]
 }
