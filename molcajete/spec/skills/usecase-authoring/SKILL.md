@@ -15,38 +15,66 @@ Rules for creating and maintaining use case files: each UC is two artifacts at t
 
 ## Module-Scoped Use Cases
 
-When a feature exists in 2+ modules, each module's use cases must narrate from that module's perspective. The same business event may appear in multiple modules, but each UC describes it from its hosting module's actors and concerns.
+When a feature exists in 2+ modules, the same use case can appear in every module the capability touches. **All module-instances of the same use case share one UC-XXXX ID.** Contents are module-scoped: each module gets its own `UC-XXXX-{slug}.md` file written from that module's actors, triggers, scenarios, and side effects.
 
-**Core rule:** The UC actor, trigger, preconditions, and scenarios narrate from the hosting module's perspective.
+This mirrors how multi-module features work (one `FEAT-XXXX` shared across module folders, with module-scoped `REQUIREMENTS.md` in each). The rule extends downward: one `UC-XXXX`, one file per module, module-scoped content.
+
+**Core rule:** The UC-XXXX ID is generated **once** and reused in every module the UC applies to. Actor, trigger, preconditions, scenarios, and side effects narrate from each hosting module's perspective.
+
+**What is shared across module-instances:**
+- The UC-XXXX ID
+- The parent `FEAT-XXXX` (multi-module features already share one ID)
+
+**What may differ per module-instance:**
+- **UC name** (frontmatter `name:` and the `# UC-XXXX: {name}` heading) — use module-specific verb-noun goals so the file reads correctly from that module's perspective. "Submit Registration" (patient) vs. "Review Registration" (console).
+- **Slug** (`UC-XXXX-{slug}.md` filename) — derives from the module-scoped name, so it can differ.
+- **Actor, Trigger, Preconditions, Scenarios, Side Effects** — always module-scoped. Never copy identical content across module-instances.
 
 **Rules:**
-- **Actor selection:** Use the module's primary actor, not a generic "User". A `patient` module UC uses "Patient"; a `console` module UC uses "Administrator".
-- **Trigger and preconditions:** Describe the trigger as the module's actor experiences it. The same business event has different triggers per module (patient submits form vs. administrator reviews submission).
+- **ID reuse:** Generate the UC-XXXX code once via `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js` and reuse it for every module-instance. Do **not** generate a fresh ID per module.
+- **Actor selection:** Use each module's primary actor, not a generic "User". A `patient` module UC uses "Patient"; a `console` module UC uses "Administrator".
+- **Trigger and preconditions:** Describe the trigger as each module's actor experiences it. The same business event has different triggers per module (patient submits form vs. administrator reviews submission).
 - **Scenarios:** Scope Steps, Outcomes, and Side Effects to the module boundary. A patient module scenario ends when the patient sees confirmation. A console module scenario begins when the admin sees the pending item.
 - **Naming:** Use module-specific verb-noun goals. "Submit Registration" (patient) vs. "Review Registration" (console), not "Handle Registration" in both.
 
 **Anti-pattern table:**
 
-| Element | Module-blind (bad) | Module-scoped (good) |
-|---------|--------------------|----------------------|
-| UC name | "Handle Registration" (in both modules) | "Submit Registration" (patient), "Review Registration" (console) |
-| Actor | "User" (in both modules) | "Patient" (patient module), "Administrator" (console module) |
-| Trigger | "User initiates registration" (in both) | "Patient completes the registration form" (patient), "Administrator opens the pending registrations queue" (console) |
-| Outcome | "Registration is processed" (in both) | "Patient sees confirmation and welcome screen" (patient), "Administrator sees updated registration status" (console) |
+| Element | Module-blind (bad) | Split-ID (bad) | Shared-ID module-scoped (good) |
+|---------|--------------------|----------------|--------------------------------|
+| ID | Same UC-XXXX with identical content copied verbatim into both modules | `UC-0KTg` in patient, `UC-0KTh` in console (two IDs for the same capability) | `UC-0KTg` in both modules |
+| Name | "Handle Registration" (in both modules) | Same UC named differently but with independent IDs | "Submit Registration" (patient), "Review Registration" (console) |
+| Actor | "User" (in both modules) | Ambiguous — no single owner in cross-module reports | "Patient" (patient module), "Administrator" (console module) |
+| Trigger | "User initiates registration" (in both) | Correct per module but hard to trace back to one UC | "Patient completes the registration form" (patient), "Administrator opens the pending registrations queue" (console) |
+| Outcome | "Registration is processed" (in both) | — | "Patient sees confirmation and welcome screen" (patient), "Administrator sees updated registration status" (console) |
 
-**Cross-module interaction pattern:** Steps stay within the originating module's boundary -- the actor acts in their module. Cross-module consequences belong in **Side Effects**, where they name the event or artifact delivered to the other module. The consuming module has its own UC triggered by that event.
+**Cross-module interaction pattern:** Steps stay within the originating module's boundary — the actor acts in their module. Cross-module consequences belong in **Side Effects**, where they name the event or artifact delivered to the other module. The consuming module's UC-instance (same UC-XXXX ID) is triggered by that event.
 
-Example -- patient submits registration (patient module):
+Example — the shared UC-XXXX for a Registration flow, seen from both modules:
+
+**Patient module** — `specs/features/patient/FEAT-0Fy0-user-onboarding/UC-0KTg-submit-registration.md`
 
 | Field | Content |
 |-------|---------|
+| Name | Submit Registration |
+| Actor | Patient |
 | Steps | 1. Patient fills in the registration form 2. System validates input |
 | Outcomes | Patient sees "Registration submitted for review" confirmation |
 | Side Effects | `registration.submitted` event published with payload `patient_id, timestamp` |
 
-The console module then has its own UC ("Review Registration") where the trigger is "Administrator sees a new item in the pending registrations queue."
+**Console module** — `specs/features/console/FEAT-0Fy0-user-onboarding/UC-0KTg-review-registration.md`
 
-**Single-module features are unaffected.** This section applies only when a feature exists in 2+ modules.
+| Field | Content |
+|-------|---------|
+| Name | Review Registration |
+| Actor | Administrator |
+| Trigger | Administrator opens the pending registrations queue |
+| Steps | 1. Administrator selects a pending registration 2. System displays patient details |
+| Outcomes | Administrator sees the registration and can approve or reject it |
+| Side Effects | `registration.reviewed` event published with payload `patient_id, admin_id, decision, timestamp` |
+
+Same `UC-0KTg`. Two files. Two names. Two slugs. Module-scoped everything else.
+
+**Single-module features are unaffected.** This section applies only when a UC exists in 2+ module-instances. In single-module projects (or a single-module feature within a multi-module project) there is one UC file, no fan-out, and no shared-ID considerations.
 
 ## UC File Structure
 
@@ -324,7 +352,9 @@ When creating a new use case, generate a unique ID using a 4-character timestamp
 Run: `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js`
 Prepend `UC-` to the output (e.g., `UC-0S9A`).
 
-**IDs are permanent.** Once assigned, a UC-XXXX ID is never reused, even if the use case is deprecated.
+**Multi-module UCs share one ID.** When the parent feature exists in 2+ modules and this UC applies to more than one of them, generate the UC-XXXX code **once** and reuse it for every module-instance. Do not generate a fresh ID per module. See **Module-Scoped Use Cases** above for the full rule.
+
+**IDs are permanent.** Once assigned, a UC-XXXX ID is never reused for a different use case, even if the original use case is deprecated.
 
 ## Slug Generation
 
@@ -413,23 +443,42 @@ Repeat the scenario review loop until the user confirms they have no more scenar
 ### Step 4: Write Files
 
 After all sections are confirmed:
-1. Generate UC-XXXX ID (4-character timestamp code)
-2. Create the UC support folder `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/` (this holds CHANGELOG.md and slice files).
-3. If any scenario has image files, create `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming.
-4. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) using [UC-template.md](./templates/UC-template.md) -- fill all sections with confirmed content, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter `version: 1` and `status: pending`.
-5. Initialize the change log `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/CHANGELOG.md` via the `uc-log` shared skill (empty TODO/DONE sections; the calling command appends the first entry).
-6. Add row to the feature's `USE-CASES.md`.
+
+1. Generate UC-XXXX ID (4-character timestamp code) — **exactly once** for this use case, even when it will exist in multiple modules.
+2. Determine the set of modules this UC applies to. For single-module features, that is the feature's one module. For multi-module features, the interview (see Step 4a below) collected a per-module name and content for the UC — use every module the user selected.
+3. **For each module in the set:**
+   a. Compute the module-scoped slug from the module-scoped UC name (see the Slug Generation section).
+   b. Create the UC support folder `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/` (this holds CHANGELOG.md and slice files).
+   c. If any scenario has image files, create `.../UC-XXXX-{slug-for-module}/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming.
+   d. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}.md` using [UC-template.md](./templates/UC-template.md) — fill sections with the **module-scoped** content confirmed for this module, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter `version: 1` and `status: pending`. Every module-instance carries the **same** UC-XXXX ID but its own module-scoped `name:`, actor, trigger, scenarios, and side effects.
+   e. Initialize the change log `.../UC-XXXX-{slug-for-module}/CHANGELOG.md` via the `uc-log` shared skill (empty TODO/DONE sections; the calling command appends the first entry — for multi-module UCs the calling command fans out one entry per module-instance per the `uc-log` skill's Multi-Module UC Logging section).
+   f. Add a row to that feature-folder's `USE-CASES.md`.
+
+**Anti-pattern:** Do not generate one UC-XXXX ID per module. Do not copy identical scenarios across modules. Do not skip one module because "it's the same use case" — every module the UC applies to gets its own module-scoped file.
+
+### Step 4a: Multi-Module Interview Extension
+
+When the parent feature exists in 2+ modules, extend the review loop so that for each shared section (Name, Actor, Trigger, Preconditions, Scenarios) the user confirms **per module** or explicitly declares "identical across modules — use one canonical content." Ask via AskUserQuestion:
+
+> "This UC applies to {N} modules. For {section name}, do you want module-scoped content or the same content in every module?"
+> Options: "Module-scoped (I'll provide per module)" / "Same content everywhere" / "Skip this UC in {module X}"
+
+Any section the user marks "Skip this UC in {module X}" means the UC is not written to that module — the UC's module set narrows accordingly.
 
 ## Update Mode
 
 `/m:change` (and `/m:fix` when it touches the spec) uses this skill in update mode:
-- Read the current UC file
-- Compare with the user's change description
-- Propose specific changes via AskUserQuestion ("Here's what I'd change:\n\n{diff}\n\nDoes this look correct?")
-- Apply after confirmation
-- Increment `version` in frontmatter
-- Do NOT run the creation interview
-- Do NOT change the UC-XXXX ID
+
+- **Resolve every module-instance of the UC.** Glob `specs/features/*/FEAT-*/UC-XXXX-*.md` for the given UC-XXXX ID. The result is a set of one or more files. All of them share the same UC-XXXX ID; each is module-scoped.
+- Read every module-instance file (and the parent feature's `REQUIREMENTS.md` / `ARCHITECTURE.md`) so the proposed edit is informed by full cross-module context.
+- Compare the user's change description with the current content per module-instance.
+- Propose specific changes **per module-instance** via AskUserQuestion. When the edit only makes sense in one module, offer the user the option to narrow the fan-out. When the edit is the same everywhere, offer "apply to all instances." Example:
+  > "Here's what I'd change for {UC-XXXX} in {module}: {diff}. Apply here?"
+  > Options: "Apply here" / "Apply to all module-instances" / "Edit" / "Skip this module"
+- Apply after confirmation. Every touched module-instance file gets its frontmatter `version` incremented independently — versions are per-file, not per-UC-ID.
+- Do NOT run the creation interview.
+- Do NOT change the UC-XXXX ID.
+- Do NOT create new module-instances of the UC in this mode. If the change means the UC should now exist in a module it wasn't in before, that is a new authoring action (use `/m:spec` or `/m:change` with an explicit "add module-instance" affordance in a future revision — out of scope here).
 
 ## Test Subject vs. Observation Surface
 

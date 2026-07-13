@@ -80,7 +80,13 @@ For each new UC, after confirming the UC, ask once: "Add another scenario?" — 
 
 ## Step 8: Generate IDs
 
-Count total new entity IDs needed (features + use cases + scenarios + FRs + NFRs + USs). One batch call:
+Count total new entity IDs needed (features + use cases + scenarios + FRs + NFRs + USs). Count each **logical** entity **once**, regardless of how many modules it will exist in:
+
+- A single feature that spans 2+ modules counts as **one** FEAT-XXXX ID (reused across module folders).
+- A single use case that spans 2+ modules counts as **one** UC-XXXX ID (reused across module-scoped UC files — see `spec/skills/usecase-authoring/SKILL.md` → Module-Scoped Use Cases).
+- Scenarios (`SC-`), functional requirements (`FR-`), non-functional requirements (`NFR-`), and user stories (`US-`) are counted per module-instance when their content is module-scoped, because each module-instance's file gets its own set of scenarios/requirements.
+
+One batch call:
 
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {total_count}
@@ -103,36 +109,38 @@ Write in dependency order: parents before children.
 
 **Modified Features:** Edit REQUIREMENTS.md. Refresh ARCHITECTURE.md tables affected by the new/changed requirements per the architecture skill's additive Population Rules.
 
-**New Use Cases** — for every new UC:
+**New Use Cases** — for every new UC, iterate over every module the UC applies to (one iteration for single-module UCs, multiple iterations for shared-ID multi-module UCs per the usecase-authoring skill):
 
-1. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}` — the UC's support folder. Slice files (when `/m:plan` produces them later) and `CHANGELOG.md` live inside this folder.
-2. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) with frontmatter (id, name, feature, status: pending, version: 1, actor) + title + objective + preconditions + trigger + inline scenarios with `---` separators.
-3. Initialize the change log file `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/CHANGELOG.md` per the `uc-log` shared skill (empty TODO/DONE sections). Step 10 appends the first entry.
-4. Append USE-CASES.md row (file link points to `UC-XXXX-{slug}.md`, a direct sibling). Update the parent feature's ARCHITECTURE.md per the architecture skill: every file that the UC's scenarios imply must have a Component Inventory row; every `SC-` and the UC itself must have a Code Map row; new endpoints must appear in API Surface. Update the `use_cases` and `scenarios` frontmatter arrays and `last_update`.
+1. Compute the module-scoped slug from the module-scoped UC name confirmed for this module.
+2. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}` — the UC's support folder. Slice files (when `/m:plan` produces them later) and `CHANGELOG.md` live inside this folder.
+3. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) with frontmatter (id, name, feature, status: pending, version: 1, actor) + title + objective + preconditions + trigger + inline scenarios with `---` separators. **Every module-instance shares the same `UC-XXXX` ID but carries its own module-scoped `name:`, actor, trigger, scenarios, and side effects.**
+4. Initialize the change log file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/CHANGELOG.md` per the `uc-log` shared skill (empty TODO/DONE sections). Step 10 appends the first entry (fanned out across module-instances when multi-module).
+5. Append USE-CASES.md row to that module's feature folder (file link points to the module-scoped `UC-XXXX-{slug-for-module}.md`, a direct sibling). Update that module's feature ARCHITECTURE.md per the architecture skill: every file that this module-instance's scenarios imply must have a Component Inventory row; every `SC-` and the module-instance's UC itself must have a Code Map row; new endpoints must appear in API Surface. Update the `use_cases` and `scenarios` frontmatter arrays and `last_update`.
 
-**Modified Use Cases:** Edit `UC-XXXX-{slug}.md`; increment frontmatter `version`; never change ID. Update ARCHITECTURE.md rows for any newly touched files. Do **not** edit, add, or delete slice files — slice authorship belongs to `/m:plan`.
+**Modified Use Cases:** Resolve the UC-XXXX to its module-instances (glob `specs/features/*/FEAT-*/UC-XXXX-*.md`). Apply the edit to each affected module-instance's `UC-XXXX-{slug}.md`; increment frontmatter `version` per file; never change the UC-XXXX ID. Update each affected module's ARCHITECTURE.md rows for newly touched files. Do **not** edit, add, or delete slice files — slice authorship belongs to `/m:plan`.
 
 **No slice files. No code files. No tests.** `/m:spec` is spec prose only.
 
 ## Step 10: Append Changelog Entry and Update Statuses
 
-For every UC touched in Step 9 (new or modified), use the `uc-log` shared skill to append the changelog entry, then apply the direct-write status rules from the `status-rollup` shared skill.
+For every UC-XXXX touched in Step 9 (new or modified), iterate over every module-instance and use the `uc-log` shared skill to append the changelog entry, then apply the direct-write status rules from the `status-rollup` shared skill.
 
-1. **Append a changelog entry** to the UC's `CHANGELOG.md` (under `TODO:`, prepended) with:
-   - timestamp (UTC, `YYYYMMDDTHHMMSS`)
+1. **Append a changelog entry** to each module-instance's `CHANGELOG.md` (under `TODO:`, prepended) with:
+   - timestamp (UTC, `YYYYMMDDTHHMMSS`) — **same timestamp** across every module-instance of the same UC-XXXX in this run
    - status: `pending`
    - command: `spec`
    - plan: `—`
-   - reason: one-line description of what was created or changed (e.g., "added UC for password reset", "added FR-0Pq2 to require email verification")
-2. **Set the UC's frontmatter `status`** directly:
-   - **Brand-new UC** → `status: pending`.
-   - **Modifying a previously-`implemented` UC** → `status: dirty`.
-   - **Modifying a `pending` or `dirty` UC** → status unchanged.
-3. **Recompute the parent feature's frontmatter `status`** by rolling up over its child UCs. Read each UC's `status:` from `UC-XXXX-{slug}.md` frontmatter (not the changelog). Apply the roll-up rule from the `status-rollup` skill:
+   - modules: comma-separated list of module IDs the UC-XXXX exists in. Include this token whenever the UC has 2+ module-instances. Omit for single-module UCs.
+   - reason: one-line description of what was created or changed (e.g., "added UC for password reset", "added FR-0Pq2 to require email verification"). Reasons may differ per module-instance when the change is module-scoped.
+2. **Set each module-instance's frontmatter `status`** directly:
+   - **Brand-new UC instance** → `status: pending`.
+   - **Modifying a previously-`implemented` UC instance** → `status: dirty`.
+   - **Modifying a `pending` or `dirty` UC instance** → status unchanged.
+3. **Recompute each affected parent feature's frontmatter `status`** by rolling up over its child UCs. Read each UC's `status:` from that module's `UC-XXXX-{slug}.md` frontmatter (not the changelog). Apply the roll-up rule from the `status-rollup` skill:
    - All UCs `implemented` → feature `implemented`.
    - At least one UC `dirty`, OR mixed `pending` + `implemented` → feature `dirty`.
    - All UCs `pending` or `dirty` with no `implemented` → feature `pending`.
-   Write the result to the feature's REQUIREMENTS.md frontmatter `status`.
+   Write the result to each affected module's `REQUIREMENTS.md` frontmatter `status`.
 
 The changelog is **not** the status source of truth. Status is written directly per the `status-rollup` skill.
 

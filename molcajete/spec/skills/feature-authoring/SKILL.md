@@ -44,6 +44,8 @@ When a feature spans 2+ modules, each module's REQUIREMENTS.md must focus on tha
 | FR example | When a user registers, the system shall create an account. | When a patient completes the registration form, the system shall create their patient profile. | When an administrator searches for a patient, the system shall return matching patient records. |
 | Non-Goals | Does not handle billing. | Does not handle admin review of registrations -- see console module. | Does not handle patient-facing registration -- see patient module. |
 
+**Use cases inside a multi-module feature follow the same shared-ID, module-scoped-content pattern.** One `UC-XXXX` ID is reused across every module the use case applies to; each module gets its own module-scoped `UC-XXXX-{slug}.md`. See `spec/skills/usecase-authoring/SKILL.md` → **Module-Scoped Use Cases** for the full rule.
+
 **Single-module features are unaffected.** This rule applies only when a feature is created in 2+ modules.
 
 ## Refs Declaration

@@ -49,17 +49,21 @@ Read in one batch:
 
 ## Step 3: Verify Prerequisites
 
-`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each referenced UC must have an existing `UC-XXXX-{slug}.md` spec file and a `CHANGELOG.md` inside its support folder.
+`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each referenced `UC-XXXX` must resolve to at least one module-instance (an existing `UC-XXXX-{slug}.md` spec file with a `CHANGELOG.md` inside its support folder). Multi-module UCs must have one such module-instance per module.
 
 ## Step 4: Read the Pending Work
 
-For each referenced UC, read:
+Multi-module UCs share one `UC-XXXX` ID across every module the capability appears in (see `spec/skills/usecase-authoring/SKILL.md` → Module-Scoped Use Cases). For each referenced `UC-XXXX`, first **resolve its module-instances**: glob `specs/features/*/FEAT-*/UC-XXXX-*.md`. Every match is one module-instance of that UC. The module is the segment immediately under `specs/features/`.
 
-- `UC-XXXX-{slug}.md` (the UC spec — specs, scenarios)
-- The feature's `REQUIREMENTS.md`, `ARCHITECTURE.md`
-- The UC's `CHANGELOG.md` (inside its support folder): collect every entry under `TODO:` whose status is `pending`. Skip entries already marked `dirty` (a prior plan owns them) and `implemented` entries (in `DONE:`).
+For each module-instance of each referenced UC, read:
 
-If a referenced UC has **zero `pending` log entries**, ask via AskUserQuestion: "{UC} has no pending changes. Plan anyway? (Re-planning may overwrite slice files that already match the current spec.)"
+- `UC-XXXX-{slug}.md` (the module-scoped UC spec — specs, scenarios)
+- That module's feature `REQUIREMENTS.md`, `ARCHITECTURE.md`
+- That module-instance's `CHANGELOG.md` (inside its support folder): collect every entry under `TODO:` whose status is `pending`. Skip entries already marked `dirty` (a prior plan owns them) and `implemented` entries (in `DONE:`). Entries carrying a `modules:` token indicate fan-out from a prior spec-phase command; treat each module-instance's entry as an independent pending item to consume.
+
+If a referenced UC has **zero `pending` log entries across all its module-instances**, ask via AskUserQuestion: "{UC} has no pending changes. Plan anyway? (Re-planning may overwrite slice files that already match the current spec.)"
+
+If a referenced UC has pending entries in some module-instances but not others, plan only the module-instances with pending entries — untouched instances stay `implemented`.
 
 Options: "Skip this UC" / "Re-plan anyway" / "Cancel".
 
@@ -128,13 +132,13 @@ For **mode: mixed**:
 
 `/m:plan` does **not** write UC or Feature status — that responsibility belongs to spec-phase commands (which write `dirty` directly when modifying an `implemented` UC) and to `/m:build` (which rolls up after a slice completes).
 
-Slice files live inside the UC's support folder:
+Slice files live inside the module-instance's support folder:
 
 ```
 specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}/SLICE-NNN-{kebab-name}.md
 ```
 
-Slice ID `NNN` is sequential within the UC. Scan the UC's support folder for existing `SLICE-NNN-*.md` files, take `max(NNN)`, and continue. New UCs start at `001`.
+Slice ID `NNN` is sequential within each **module-instance** of the UC — not across module-instances. For a multi-module UC, `SLICE-001` may exist independently in `specs/features/patient/.../UC-XXXX-.../` and `specs/features/console/.../UC-XXXX-.../`. Scan each module-instance's support folder for existing `SLICE-NNN-*.md` files, take `max(NNN)` per instance, and continue. New module-instances start at `001` inside their own folder.
 
 Use the slice template at `${CLAUDE_PLUGIN_ROOT}/spec/skills/slicing/templates/slice-template.md`. Pick the contract language tag from `specs/TECH-STACK.md`. **Do not emit a `test_file` field** — the canonical test path is derived from frontmatter and `specs/MODULES.md` at build time.
 
@@ -199,12 +203,14 @@ mode: default | cover | mixed
 
 ## Context
 - Project: `specs/PROJECT.md`, `specs/MODULES.md`, `specs/TECH-STACK.md`
-- FEAT-XXXX-{slug}: `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md`, `…/ARCHITECTURE.md`, `…/USE-CASES.md`
+- FEAT-XXXX-{slug} (module: patient): `specs/features/patient/FEAT-XXXX-{slug}/REQUIREMENTS.md`, `…/ARCHITECTURE.md`, `…/USE-CASES.md`
   - UC-XXXX-{slug}: `…/UC-XXXX-{slug}.md`
   - UC-YYYY-{slug}: `…/UC-YYYY-{slug}.md`
-- FEAT-ZZZZ-{slug}: …
+- FEAT-XXXX-{slug} (module: console): `specs/features/console/FEAT-XXXX-{slug}/REQUIREMENTS.md`, `…/ARCHITECTURE.md`, `…/USE-CASES.md`
+  - UC-XXXX-{slug-for-console}: `…/UC-XXXX-{slug-for-console}.md`
+- FEAT-ZZZZ-{slug} (module: ...): …
 
-## FEAT-XXXX-{slug}
+## FEAT-XXXX-{slug} — patient
 ### UC-XXXX-{slug}
 - [ ] T-001 — SLICE-001-{slice-name}.md
   - [ ] T-001.1 — scaffold integration test
@@ -213,9 +219,16 @@ mode: default | cover | mixed
   - [ ] T-001.4 — coverage gate
 - [ ] T-002 — SLICE-002-{slice-name}.md
 
-### UC-YYYY-{slug}
+## FEAT-XXXX-{slug} — console
+### UC-XXXX-{slug-for-console}
 - [ ] T-003 — SLICE-001-{slice-name}.md
+
+## FEAT-ZZZZ-{slug} — patient
+### UC-YYYY-{slug}
+- [ ] T-004 — SLICE-001-{slice-name}.md
 ```
+
+**Multi-module grouping.** When a shared `UC-XXXX` exists in 2+ modules, each module-instance is listed under its own `## FEAT-{id}-{slug} — {module}` heading. Slices live in each module's own folder; `T-NNN` numbering still crosses FEAT/UC/module boundaries within the plan (there is one `T-NNN` sequence per plan, not per module).
 
 Rules:
 
@@ -229,9 +242,11 @@ Rules:
 
 ## Step 10: Update the UC Changelogs
 
-For every UC whose pending entries were consumed by this plan, use the `uc-log` shared skill to:
+For every module-instance of every UC whose pending entries were consumed by this plan, use the `uc-log` shared skill to:
 
-1. For each consumed entry in the UC's CHANGELOG.md, flip its status from `pending` to `dirty` and set `plan:<plan-id>`. The entry stays in the `TODO:` section.
+1. For each consumed entry in that module-instance's CHANGELOG.md, flip its status from `pending` to `dirty` and set `plan:<plan-id>`. The entry stays in the `TODO:` section. The `modules:` token, if present, is preserved unchanged.
+
+Multi-module UCs have one CHANGELOG.md per module-instance; each module-instance is updated independently. A module-instance whose entries were not consumed (e.g., the user narrowed the plan) stays `pending`.
 
 `/m:plan` does **not** touch UC or Feature frontmatter `status`. UC status was already set to `dirty` by the spec-phase command that produced the changelog entries (when modifying a previously-`implemented` UC). Slice frontmatter `status` is written in Step 7.
 
