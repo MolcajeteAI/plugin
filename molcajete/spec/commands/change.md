@@ -101,6 +101,8 @@ If after review the user determines no spec edit is needed **anywhere**, refuse:
 
 For each module-instance the user confirmed, edit its `UC-XXXX-{slug}.md` (the UC spec file, a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE for that module's feature folder). Increment frontmatter `version` on each edited file — versions are per-file. Update that module's `REQUIREMENTS.md` and `ARCHITECTURE.md` per the architecture skill's additive rules — Component Inventory / API Surface / Code Map rows for any newly-implied files or endpoints in that module.
 
+The spec edit **replaces** the old text — it describes only the new behavior. Do not retain the previous wording or annotate the spec with "previously X" / "changed from Y". The changelog entry's `reason` (Step 8) is the only record of what changed and why.
+
 Module-instances the user skipped are left untouched.
 
 `/m:change` does **not** produce slices, plans, code, or tests. It does not edit existing slice files (`/m:plan` will decide whether to add, modify, or supersede them in its next run).

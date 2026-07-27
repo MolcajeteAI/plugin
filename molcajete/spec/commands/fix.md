@@ -101,6 +101,8 @@ Options: "Proceed" / "Edit" (user provides corrections via Other) / "Cancel".
 
 For each module-instance where the diagnosis was **Spec silent** or **Spec wrong**, edit that module-instance's `UC-XXXX-{slug}.md` (the UC spec file, a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE for that module's feature folder). Increment frontmatter `version` on each edited file — versions are per-file. Update that module's ARCHITECTURE.md tables only if the edit changed the Component Inventory / API Surface / Code Map surface (per the architecture skill's additive rules).
 
+When editing a **Spec wrong** scenario or FR, **replace** the incorrect text with the correct behavior — do not keep the wrong wording or annotate it with "was X, now Y". The changelog `reason` records the correction.
+
 For module-instances where the diagnosis was **Spec correct, code wrong**, write nothing to disk in this step.
 
 `/m:fix` does **not** produce slices, plans, code, or tests. It does not edit existing slice files.
@@ -115,7 +117,7 @@ For every module-instance in each UC-XXXX target set (regardless of diagnosis �
    - command: `fix`
    - plan: `—`
    - modules: comma-separated list of module IDs in the target set (include whenever the UC has 2+ module-instances). Omit for single-module UCs.
-   - reason: one paragraph capturing the bug **as it manifests in this module**. When the diagnosis was Spec correct/Code wrong, the reason names the misbehavior and the expected behavior (so `/m:plan` can write a regression test). When the diagnosis required a spec edit, the reason summarizes the spec edit too. Reasons may differ per module-instance when the diagnosis differs.
+   - reason: one paragraph capturing the bug **as it manifests in this module**. When the diagnosis was Spec correct/Code wrong, the reason names the misbehavior and states the expected behavior **positively** — describe what the code should do, so `/m:plan` writes a regression test that asserts the correct behavior (Principle 1.5), not a test that merely proves the bug is absent. When the diagnosis required a spec edit, the reason summarizes the spec edit too. Reasons may differ per module-instance when the diagnosis differs.
 2. **Set that module-instance's frontmatter `status`** directly per the `status-rollup` skill: a previously-`implemented` UC becomes `dirty`; a `pending` or `dirty` UC stays as it is. Status is per-file.
 3. **Recompute each affected parent feature's frontmatter `status`** by rolling up over its child UCs' frontmatter `status:` values (per module) — not the changelog. Apply the roll-up rule from the `status-rollup` skill and write the result to each affected `REQUIREMENTS.md`.
 

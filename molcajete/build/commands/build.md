@@ -235,6 +235,13 @@ Run the scoped test command against the derived test file only.
 - **5.3 Inline comments** — every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why. If a function has three blocks of work, it has at least three inline comments.
 - **5.4 Be generous, especially in complicated code** — comment generously in control flow, external-system interactions, domain-heavy logic, and performance-sensitive sections. When in doubt, comment.
 
+**Reconcile first when the slice is `dirty`.** If this slice carries `status: dirty` (its UC changed via `/m:fix`, `/m:change`, or `/m:spec`), before writing any new code or assertion, reconcile the existing canonical test file and touched production files against the current UC spec (re-read in Step 5) per the testing skill's "Reconciling a Dirty Slice":
+
+- Delete test cases, assertions, comments, and production code that serve an `SC-`/`FR-`/`NFR-` the UC no longer contains (Principle 1.5 and 5.5).
+- Rewrite changed scenarios' assertions to the new expected values — do not keep the old expectation alongside.
+- Add positive test cases for every new FR and every new behaviorally-observable NFR (authz, validation, error handling, idempotency — anything reachable through the driver port).
+- Never write a test that asserts a retired behavior now fails or is absent, and never leave a comment narrating what the code used to do.
+
 Run the scoped test + coverage commands.
 
 - RED → retry up to 3 more times. Each retry: the only context is the failing test output plus the slice frontmatter. Do NOT re-read the slice body, dependency exports, or modify files.
@@ -266,13 +273,15 @@ If any dimension is GAP for any touched file, run the **gap-resolution loop** (m
 
 - **Reachable behavior** — gap maps to an `SC-XXXX` in the UC spec that the current test plan does not assert (or asserts only the happy path).
 - **Defensive / unreachable** — gap is a branch or function that cannot be reached from any specified scenario.
+- **Orphaned assertion / dead behavior** — the uncovered code serves an `SC-`/`FR-`/`NFR-` the UC spec no longer contains (see the testing skill's gap classification).
 
-Re-read the UC spec body (loaded in Step 5) for every gap you classify — the SC list is the only valid grounding. A gap you cannot map to any `SC-XXXX` AND cannot justify as defensive is a spec gap; halt with an escalation suggesting `/m:fix` or `/m:change`.
+Re-read the UC spec body (loaded in Step 5) for every gap you classify — the SC list is the only valid grounding. A gap you cannot map to any current `SC-XXXX`, cannot justify as defensive, and cannot tie to a retired scenario (orphaned) is a spec gap; halt with an escalation suggesting `/m:fix` or `/m:change`.
 
 **3. Resolve each gap.**
 
 - **Reachable** → add the missing test case to the test file. If the new assertion belongs to a scenario not yet listed in the slice's `## Tests` body, update the slice. If the `SC-XXXX` is not yet in the slice's `covers` frontmatter, add it.
 - **Defensive / unreachable** → delete the code. If it must stay for runtime safety (rare, e.g., reentrancy guard on a path the type system can't prove safe), apply the runner's per-branch ignore directive with a one-line comment naming the reason. Bare "this is hard to test" is not a valid reason.
+- **Orphaned assertion / dead behavior** → delete the code, its comments, and any test case that still references the retired scenario (Principle 1.5). Do not keep it alive with a test asserting the behavior is gone.
 
 **Raising any threshold is forbidden.** Do not edit `.molcajete/settings.json` to make the gate pass. If the floor feels wrong, surface that to the user via AskUserQuestion as a separate decision — never as a workaround.
 

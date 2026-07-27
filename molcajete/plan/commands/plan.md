@@ -127,7 +127,7 @@ For **mode: mixed**:
 **Slice status (per the `status-rollup` skill):**
 
 - For each **new** slice file written, set frontmatter `status: pending`.
-- For each **existing** slice file that this plan supersedes (the spec changed and the slice's behavior may need to change), set frontmatter `status: dirty`. A slice is superseded when its `covers` list is touched by a pending changelog entry or when the spec edits invalidate its Tests section.
+- For each **existing** slice file that this plan supersedes (the spec changed and the slice's behavior may need to change), set frontmatter `status: dirty`. A slice is superseded when its `covers` list is touched by a pending changelog entry or when the spec edits invalidate its Tests section. When marking a slice `dirty`, **reconcile its `covers` against the current UC**: drop any `SC-`/`FR-` ID the spec no longer contains, and make sure every new `SC-`/`FR-`/behaviorally-observable `NFR-` lands in exactly one slice's `covers` (the "covered exactly once" rule below). A dropped ID is a signal to `/m:build` to **delete** that scenario's tests and code (per Principle 1.5) — never to add a test that the behavior is gone.
 - Slice files that stay `implemented` and are not touched by this plan keep their existing status.
 
 `/m:plan` does **not** write UC or Feature status — that responsibility belongs to spec-phase commands (which write `dirty` directly when modifying an `implemented` UC) and to `/m:build` (which rolls up after a slice completes).
