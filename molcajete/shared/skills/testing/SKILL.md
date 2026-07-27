@@ -141,10 +141,22 @@ For every gap reported by the runner, the Implementer must classify it before re
 
 1. **Reachable behavior** — the gap maps to an `SC-XXXX` in the UC spec that the current test plan does not assert (or asserts only the happy path). **Resolution: add the missing test case.** Update the slice's `## Tests` plan if the new assertion belongs to a scenario not yet listed, and add the corresponding `SC-XXXX` to the slice's `covers` frontmatter if missing.
 2. **Defensive / unreachable** — the gap is a branch or function that cannot be reached from any specified scenario (typical examples: `if (!input) throw` guards on internal calls, default switch arms, error paths that the type system already forbids). **Resolution: delete the code.** If the code must stay for runtime safety, scope the runner's ignore directive to that branch only with a one-line comment that names the reason and links back to where the guarantee comes from.
+3. **Orphaned assertion / dead behavior** — a test case, assertion, comment, or production path that serves an `SC-`/`FR-`/`NFR-` no longer present in the current UC spec (typically because `/m:fix` or `/m:change` retired it). **Resolution: delete it** — the test case, its explanatory comment, and the now-dead production code together. This is proactive cleanup per Principle 1.5, not coverage padding: never keep the code alive by asserting the retired behavior is gone.
 
 **Raising the floor is never a resolution.** The thresholds are a minimum bar; the goal under "every line fulfills a requirement" is to be close to 100% on every dimension. If the model is tempted to lower the floor, the gap is one of the two cases above — pick one.
 
 The Implementer prefers branches whose addition exercises a real path over padding totals — every test added in case 1 must come from a UC scenario, not a contrived input designed to clip a branch.
+
+## Reconciling a Dirty Slice
+
+When a slice carries `status: dirty`, its UC changed via `/m:fix`, `/m:change`, or `/m:spec` and the existing canonical test file (and its production code) may now describe behavior the spec no longer contains. Before adding or adjusting any assertion, reconcile the file against the **current** UC spec:
+
+- Diff the UC's current `SC-`/`FR-`/`NFR-` set against the IDs the existing test file references (in `covers`, in `// SC-XXXX:` comments, and in the assertions themselves).
+- **Retired IDs** — delete their test cases, their explanatory comments, and the production code that existed only to serve them (per Principle 1.5 and the "Orphaned assertion / dead behavior" gap class).
+- **Changed IDs** — rewrite the assertion to the new expected values; do not keep the old expectation alongside.
+- **New FR / behaviorally-observable NFR** — add a positive test case that asserts the new behavior directly.
+
+Do **not** convert a retired scenario into a test that asserts it now fails or is absent. A removed behavior leaves no test behind — only the changelog records that it once existed.
 
 ## Reactive Refactor
 

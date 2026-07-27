@@ -137,6 +137,16 @@ Comments cover: what behavior is under test, why it exists (the business or safe
 
 **Why:** tests are the only honest documentation an AI-assisted codebase has. The next agent — six months from now, possibly the same model, possibly a different one — reads tests to learn what the code is supposed to do. Skimping on comments is skimping on the only durable record.
 
+**1.5 Test only current behavior.**
+
+Tests, comments, and code describe only what the system does **now**. When behavior changes, assert the new behavior directly and delete every trace of the old.
+
+- **Assert the new behavior, never the absence of the old.** A test whose purpose is to prove a removed capability is gone is forbidden — it is a tautology that pins nothing and rots into a lie. Do not write `expect(oldThing).toThrow()` or "no longer returns X" checks to memorialize a change. Assert what the code *does* now, with precise values (1.3).
+- **When a scenario / FR / NFR changes, rewrite its tests to the new expected values.** When one is removed, delete its test cases outright — and delete the explanatory comments (1.4) that traveled with them. Never leave a test asserting removed behavior; never add a "this used to…" comment to a test.
+- **Every new functional requirement gets a positive test.** Every new **behaviorally-observable** non-functional requirement — anything reachable through a driver port, e.g. authorization, input validation, error handling, idempotency, rate limiting — gets a positive test too. NFRs that cannot be exercised as driver-port behavior (raw latency, load, throughput) stay spec-only acceptance criteria; name them as out-of-scope for the automated loop rather than faking a test.
+
+**Why:** a test suite is a description of present behavior. A test that guards a scenario the spec no longer contains contradicts the spec, breaks on the next correct change, and teaches the next agent something false. The changelog — not the test file — is where "what changed" lives (see 5.5).
+
 ## 2. Hexagonal Architecture Is the Default Shape
 
 Code is organized around two kinds of ports:
@@ -262,6 +272,15 @@ Especially in:
 Comments are not noise — they are the difference between code that an AI agent can extend safely and code that the next agent has to rewrite from scratch.
 
 **Why:** AI agents read code more than humans do. The cost of writing the comment is seconds; the cost of the next agent (or you, six months from now) re-reverse-engineering the code is much higher. Treat comments as the durable record of intent.
+
+**5.5 Comments and code describe only current behavior.**
+
+The comment discipline above documents *what the code does now* — never what it used to do. This is the code-and-comment half of Principle 1.5.
+
+- **No comment narrates history.** `previously`, `used to`, `formerly`, `no longer`, `deprecated`, "changed from X to Y", "was Z before" have no place in code or test comments. A comment describing old behavior is a trap: the next reader believes it. The CHANGELOG is the only record of history.
+- **When behavior is removed, delete the code and comments that served it.** Do not annotate them as obsolete, comment them out, or wrap them in "kept for reference." Dead code and stale comments are fog of war; the git history and changelog preserve what was there.
+
+**Why:** the codebase must read as a truthful account of the system as it is today. Every stale comment or orphaned function is a contradiction the next agent has to detect and resolve before it can trust anything nearby.
 
 ## 6. Principles Are Technology-Agnostic
 
