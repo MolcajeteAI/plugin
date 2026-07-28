@@ -1,7 +1,7 @@
 {
   "name": "m",
-  "version": "3.8.0",
-  "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec and /m:cover feed /m:plan, while /m:fix and /m:change produce their own plan; /m:build executes the plan.",
+  "version": "3.9.0",
+  "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec and /m:cover feed /m:plan, while /m:fix and /m:change produce their own plan; /m:build executes the plan. Plus a spec-traceable code-review surface: /m:review, /m:preflight, /m:walkthrough.",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
@@ -19,6 +19,9 @@
     "./build/commands/build.md",
     "./plan/commands/plan.md",
     "./research/commands/research.md",
+    "./review/commands/review.md",
+    "./review/commands/preflight.md",
+    "./review/commands/walkthrough.md",
     "./setup/commands/setup.md",
     "./shared/commands/doc.md",
     "./spec/commands/change.md",
@@ -30,6 +33,7 @@
     "./plan/skills/plan-authoring",
     "./research/skills/headless-research",
     "./research/skills/research-methods",
+    "./review/skills/change-review",
     "./setup/skills/setup",
     "./shared/skills/code-documentation",
     "./shared/skills/git-committing",
