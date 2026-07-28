@@ -32,7 +32,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 ```
 
 1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
-2. **Plan** — A single prose plan (`specs/plans/<timestamp>-<slug>/plan.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
+2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
 3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
 4. **Review** — A spec-traceable review surface: `/m:review` writes a severity-scored review, `/m:preflight` surfaces and fixes issues interactively before you open a PR, and `/m:walkthrough` gives a guided, hierarchical tour of a change set.
 5. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
@@ -192,8 +192,7 @@ specs/
 │           └── UC-XXXX-{slug}/
 │               └── CHANGELOG.md       # Per-UC change log (markers, not the status source)
 └── plans/
-    └── <YYYYMMDDTHHMMSS>-<slug>/
-        └── plan.md                    # Prose plan: vertical `## [ ] T-NNN` tasks
+    └── <YYYYMMDDTHHMMSS>-<slug>.md     # Prose plan (one file): vertical `## [ ] T-NNN` tasks
 ```
 
 ### Key Conventions

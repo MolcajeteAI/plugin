@@ -78,7 +78,7 @@ For each changed path:
 3. **Cross-reference the spec tree** to confirm and enrich: `specs/features/{module}/FEAT-*/UC-XXXX-*.md`
    (the module is the segment under `specs/features/`); scenarios (`SC-XXXX`) live **inline** in the UC spec
    file. Read the touched UC's scenarios — they are the behavioral source of truth. The owning task's `Covers`
-   list in `specs/plans/*/plan.md` is the canonical machine-readable FEAT→UC→SC→file map when the change came
+   list in `specs/plans/*.md` is the canonical machine-readable FEAT→UC→SC→file map when the change came
    through a plan.
 4. **Integration test** — the canonical path is `{module.Tests}/{feature-dir}/{uc-dir}/{NNN}-{entry}-{task}.{ext}`
    (`module.Tests` from `specs/MODULES.md`). Grep the changed symbols against the module's tests tree to see

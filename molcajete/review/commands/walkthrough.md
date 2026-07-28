@@ -25,7 +25,7 @@ Read `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prereq
 
 ## Step 2: Resolve the Target and Map to Specs
 
-Follow the `change-review` skill's **Resolving the Change Set** (parse `$ARGUMENTS` — empty → current branch vs detected base; a branch; a PR number; or two refs — with base detection and AskUserQuestion confirmation) and **Mapping the Diff to Specs** to build the hierarchy: `FEAT → UC → SC → the changed files/functions under it`. Read each touched UC's scenarios (the behavioral source of truth) and, when the change came through a plan, the owning task's prose in `specs/plans/*/plan.md` — that prose states what the increment was meant to make real and why.
+Follow the `change-review` skill's **Resolving the Change Set** (parse `$ARGUMENTS` — empty → current branch vs detected base; a branch; a PR number; or two refs — with base detection and AskUserQuestion confirmation) and **Mapping the Diff to Specs** to build the hierarchy: `FEAT → UC → SC → the changed files/functions under it`. Read each touched UC's scenarios (the behavioral source of truth) and, when the change came through a plan, the owning task's prose in `specs/plans/*.md` — that prose states what the increment was meant to make real and why.
 
 Any changed file that maps to no `FEAT/UC/SC` is grouped under an **"Unmapped changes"** node at the end — mention it plainly (it has no spec authority), but still explain what it does.
 
@@ -42,7 +42,7 @@ Options: one per feature ("Start at {FEAT} — {name}"), plus "Walk everything t
 Descend the hierarchy one node at a time — feature → UC → scenario → the concrete diff under it. At each **scenario / change** node, explain three things in plain language:
 
 1. **What changed** — the concrete edit (files, functions), with clickable `path/to/file.ext:line` references so the user can open the exact spot in their editor.
-2. **Why** — tie it to the driving reason: the UC scenario it satisfies (quote the `SC-XXXX`), the task prose in `plan.md`, and the commit subject. If the change has no spec behind it, say so.
+2. **Why** — tie it to the driving reason: the UC scenario it satisfies (quote the `SC-XXXX`), the task prose in the plan file, and the commit subject. If the change has no spec behind it, say so.
 3. **What it means** — the consequence: the behavior a user or caller now gets, and anything downstream that depends on it.
 
 After each node, navigate via AskUserQuestion:

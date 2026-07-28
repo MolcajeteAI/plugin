@@ -2,7 +2,7 @@
 name: plan-authoring
 description: >-
   Owns the plan file format. One prose Markdown plan per /m:plan invocation,
-  written under specs/plans/<timestamp>-<slug>/plan.md. Decomposes a use case
+  written as a single file at specs/plans/<timestamp>-<slug>.md. Decomposes a use case
   into ordered, vertical, working-software tasks (never implementation layers),
   each a checkbox the build consumes. Referenced by /m:plan to emit the plan and
   by /m:build to execute it.
@@ -25,10 +25,10 @@ and no slice DAG index — the plan document is the whole artifact.
 
 ## Filing and Plan IDs
 
-`/m:plan` writes exactly one file per invocation:
+`/m:plan` writes exactly one file per invocation — a single Markdown file, not a folder:
 
 ```
-specs/plans/<YYYYMMDDTHHMMSS>-<slug>/plan.md
+specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md
 ```
 
 - **Plan ID = a UTC timestamp to the second**, ISO compact: `20260727T143052`. Second-level
@@ -38,7 +38,8 @@ specs/plans/<YYYYMMDDTHHMMSS>-<slug>/plan.md
   timestamp is the identity.
 - The plan lives under `specs/` because a plan is part of the recorded change history of the
   application — not a throwaway build artifact. It is tracked in git.
-- Every `/m:plan` invocation creates a **new** folder. Never amend an existing plan folder.
+- The plan ID is the filename without the `.md` extension (`<YYYYMMDDTHHMMSS>-<slug>`); `/m:build` resolves it to `specs/plans/<plan-id>.md`.
+- Every `/m:plan` invocation creates a **new** file. Never amend an existing plan file.
 
 ## Plan File Structure
 
@@ -256,10 +257,10 @@ prose of the task whose behavior overlaps it, with the mode inline — e.g. "con
 `src/legacy/foo.test.ts` (reference)" or "(migrate — delete after the canonical test is green)".
 This step never moves or deletes files.
 
-**P5 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Create a
-**new** folder `specs/plans/<YYYYMMDDTHHMMSS>-<slug>/` (UTC timestamp to the second) and write
-`plan.md` per the Plan File Structure above — summary, `**Specs:**` line (with the mode), optional
-context paragraph, and one `## [ ] T-NNN` section per task.
+**P5 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Write a
+**new** single file `specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md` (UTC timestamp to the second) per the
+Plan File Structure above — summary, `**Specs:**` line (with the mode), optional context paragraph,
+and one `## [ ] T-NNN` section per task.
 
 **P6 — Stamp the changelog.** For every consumed entry, use the `uc-log` skill to flip its status
 `pending → dirty` and set `plan:<plan-id>` (the folder name). The entry stays under `TODO:`; the

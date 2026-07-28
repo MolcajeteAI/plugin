@@ -21,7 +21,7 @@ allowed-tools:
 
 `/m:plan` produces:
 
-- A single prose plan file at `specs/plans/<timestamp>-<slug>/plan.md` — one `## [ ] T-NNN` task per vertical, working-software increment. No slice files.
+- A single prose plan file at `specs/plans/<timestamp>-<slug>.md` — one `## [ ] T-NNN` task per vertical, working-software increment. No slice files.
 - Updated log entries (status flipped from `pending` to `dirty`, plan-id stamped).
 
 `/m:plan` does **not** write production code or tests. Hand-off to `/m:build` is mandatory.
@@ -70,7 +70,7 @@ Options: "Skip this UC" / "Re-plan anyway" / "Cancel".
 
 ## Step 5: Produce the Plan
 
-Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the pending entries collected in Step 4. The procedure: picks the mode (`default` / `cover` / `mixed`) from the entries' originating commands; runs the architecture pass and presents it via AskUserQuestion (the review gate); decomposes the affected UCs into vertical tasks; writes `specs/plans/<plan-id>/plan.md`; and flips each consumed entry `pending → dirty` with the plan-id stamped.
+Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the pending entries collected in Step 4. The procedure: picks the mode (`default` / `cover` / `mixed`) from the entries' originating commands; runs the architecture pass and presents it via AskUserQuestion (the review gate); decomposes the affected UCs into vertical tasks; writes `specs/plans/<plan-id>.md`; and flips each consumed entry `pending → dirty` with the plan-id stamped.
 
 The context the procedure needs is already in memory from Steps 2–4 (loaded skills, the UC specs, `REQUIREMENTS.md`/`ARCHITECTURE.md`, and the pending entries).
 
@@ -78,7 +78,7 @@ The context the procedure needs is already in memory from Steps 2–4 (loaded sk
 
 Tell the user:
 
-- The plan file path: `specs/plans/<plan-id>/plan.md`.
+- The plan file path: `specs/plans/<plan-id>.md`.
 - The mode (`default`, `cover`, or `mixed`).
 - The tasks written — each `T-NNN`, its outcome, and the scenarios it covers. In `mode: mixed`, sub-group into "Coverage tasks (pin existing behavior)" and "Implement tasks (new behavior)" so the split is visible.
 - The pending log entries flipped to `dirty`.

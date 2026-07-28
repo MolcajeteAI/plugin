@@ -66,7 +66,7 @@ Spec traceability lives in leading-line comments above tests, not in their names
 - **`describe` / test group** — `// SC-XXXX: {short scenario description}` at the top of each group. One scenario per group.
 - **`it` / test method** — `// SC-XXXX: {short scenario description}` immediately above the test. When a single test covers multiple scenarios, list them comma-separated: `// SC-001, SC-002: Email validation rules`.
 
-The task's `Covers` list in `plan.md` is the canonical machine-readable mapping. The comments are for humans.
+The task's `Covers` list in the plan file is the canonical machine-readable mapping. The comments are for humans.
 
 Example:
 
@@ -199,7 +199,7 @@ Examples below stay in TypeScript for consistency with the test rules. The patte
 Production code carries leading-line comments tying files and functions back to the spec.
 
 - **File header** — `// FEAT-XXXX: {feature name}` and `// UC-XXXX: {use case name}` at the top of every production file produced for a feature/UC.
-- **Function / method** — `// SC-XXXX, SC-YYYY: {short description}` immediately above the function declaration when it satisfies specific scenarios. List all SC IDs the function helps satisfy; the task's `Covers` list in `plan.md` remains the canonical machine-readable mapping.
+- **Function / method** — `// SC-XXXX, SC-YYYY: {short description}` immediately above the function declaration when it satisfies specific scenarios. List all SC IDs the function helps satisfy; the task's `Covers` list in the plan file remains the canonical machine-readable mapping.
 
 ```ts
 // FEAT-0Fy0: User Onboarding

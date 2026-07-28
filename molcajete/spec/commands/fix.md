@@ -129,7 +129,7 @@ Append a log entry **even when the spec was untouched.** The point of the entry 
 
 Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the entries just logged in Step 8. A fix is always **`mode: default`** (implement tasks — a regression test that starts RED, then the code change that turns it GREEN). The reason text written in Step 8 states the expected behavior positively, so the tasks pin the correct behavior (Principle 1.5), not merely the absence of the bug.
 
-The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong diagnosis is caught here before any code is built), writes `specs/plans/<plan-id>/plan.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
+The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong diagnosis is caught here before any code is built), writes `specs/plans/<plan-id>.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
 
 For a purely local, single-scenario regression the plan is typically one task; do not manufacture extra tasks.
 
@@ -141,8 +141,8 @@ Tell the user:
 - The spec edits made (if any), per module-instance.
 - The log entry appended per module-instance (note the `modules:` token when multi-module).
 - The new status per module-instance and per affected feature.
-- The plan written: `specs/plans/<plan-id>/plan.md`, and its task(s).
+- The plan written: `specs/plans/<plan-id>.md`, and its task(s).
 
 End the report with the explicit hand-off:
 
-> Next: review `specs/plans/<plan-id>/plan.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the regression fix.
+> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the regression fix.

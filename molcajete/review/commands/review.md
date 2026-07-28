@@ -39,7 +39,7 @@ Read the PR body / commit subjects — they are the author's own claim of what t
 
 ## Step 3: Map Changed Files to Modules and Specs
 
-Follow the `change-review` skill's **Mapping the Diff to Specs**. For each changed path, resolve its module from `specs/MODULES.md`, read its `// FEAT/UC/SC` traceability comments, cross-reference the UC spec files (scenarios inline) and the owning task's `Covers` in `specs/plans/*/plan.md`, and locate the canonical integration test. Load the host rules that apply to the touched paths (`.claude/rules/*.md`) and the root `CLAUDE.md`. Record any changed file that maps to no spec as **unmapped** — a `missing-spec` candidate.
+Follow the `change-review` skill's **Mapping the Diff to Specs**. For each changed path, resolve its module from `specs/MODULES.md`, read its `// FEAT/UC/SC` traceability comments, cross-reference the UC spec files (scenarios inline) and the owning task's `Covers` in `specs/plans/*.md`, and locate the canonical integration test. Load the host rules that apply to the touched paths (`.claude/rules/*.md`) and the root `CLAUDE.md`. Record any changed file that maps to no spec as **unmapped** — a `missing-spec` candidate.
 
 ## Step 4: Fan Out Review Lenses (one output stream)
 

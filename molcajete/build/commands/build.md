@@ -36,7 +36,7 @@ Molcajete generates **integration tests exclusively** per Principle 1 of the eng
 
 `$ARGUMENTS` must contain:
 
-1. A plan ID as the first token. Format: `YYYYMMDDTHHMMSS-<slug>` (the folder name under `specs/plans/`).
+1. A plan ID as the first token. Format: `YYYYMMDDTHHMMSS-<slug>` (the plan file's name under `specs/plans/`, without the `.md` extension — the plan is `specs/plans/<plan-id>.md`).
 2. One or more task IDs, each `T-NNN`.
 
 Examples:
@@ -52,11 +52,11 @@ ls specs/plans/
 
 Then tell the user:
 
-> "Usage: `/m:build <plan-id> <T-NNN> [...]`. Available plans: {list of plan folder names}."
+> "Usage: `/m:build <plan-id> <T-NNN> [...]`. Available plans: {list of plan file names, without `.md`}."
 
 Stop.
 
-If the plan-id does not resolve to a folder under `specs/plans/`, refuse with the available list and stop.
+If the plan-id does not resolve to a file `specs/plans/<plan-id>.md`, refuse with the available list and stop.
 
 ## Step 2: Load Skills and Principles
 
@@ -85,7 +85,7 @@ The resolved object `{lines, statements, branches, funcs}` is the operative gate
 
 ## Step 4: Load the Plan
 
-1. Read `specs/plans/<plan-id>/plan.md`.
+1. Read `specs/plans/<plan-id>.md`.
 2. Parse:
    - **The `**Specs:**` line** — the FEAT and UC IDs the plan touches, the scenarios in scope, and the `**Mode:**` label.
    - **Each task** — every `## [ ] T-NNN — {outcome}` (or `## [x] T-NNN`) heading, its `**Covers:**` list, its `**Depends on:**` list, and the task prose beneath it up to the next `## ` heading.
@@ -160,7 +160,7 @@ From the task index (Step 4) and prose:
 
 ### 8.2 Validate the task
 
-1. **Check dependencies.** For each ID in `Depends on`, read its checkbox state in `plan.md`. The dependency is met when its heading reads `## [x] T-NNN`. If any dependency is still `[ ]`, halt: "Task `{T-NNN}` is blocked. Unmet deps: {list with each dep's checkbox state}." Stop.
+1. **Check dependencies.** For each ID in `Depends on`, read its checkbox state in the plan file. The dependency is met when its heading reads `## [x] T-NNN`. If any dependency is still `[ ]`, halt: "Task `{T-NNN}` is blocked. Unmet deps: {list with each dep's checkbox state}." Stop.
 2. **Check file invariants:**
    - implement task — every file the prose says it **creates** must NOT exist; every file it **modifies** must exist.
    - coverage task — it creates and modifies no production files; every file whose behavior it pins must exist.
@@ -299,7 +299,7 @@ The 8.9 block proves the tests are green, covered, and non-vacuous. It does **no
 Give the Reviewer, and only this:
 
 - The owning UC spec body (the `SC-XXXX` scenarios in the task's `Covers`, verbatim — the behavioral source of truth).
-- The task's `Covers` list and grading prose from `plan.md`.
+- The task's `Covers` list and grading prose from the plan file.
 - The scaffolded integration test file (final content).
 - The production files the task created or modified (final content).
 
@@ -320,7 +320,7 @@ The Reviewer returns exactly one of: `correct`, or `defects{list}` where each de
 
 Only reached when 8.9 emitted a fully-ticked block AND 8.10 returned `correct`.
 
-1. **Flip the checkbox in `plan.md`.** Change this task's heading from `## [ ] T-NNN — {outcome}` to `## [x] T-NNN — {outcome}`. Preserve the rest of the file verbatim. This is the task-level source of truth and is read for dependency gating (8.2) by later tasks in this same run.
+1. **Flip the checkbox in the plan file.** Change this task's heading from `## [ ] T-NNN — {outcome}` to `## [x] T-NNN — {outcome}`. Preserve the rest of the file verbatim. This is the task-level source of truth and is read for dependency gating (8.2) by later tasks in this same run.
 2. **Handle `migrate` references.** For every referenced test the task prose marked `migrate`, emit an AskUserQuestion: "The referenced test `{path}` was migrated into the canonical integration test at `{derived-test-path}`. Delete the original file now?" Options: **"Delete"** / **"Keep"** (note the deferral in the Step 11 report). Never delete a `reference`-marked file.
 
 There is no per-task JSON record and no slice file — the plan checkbox is the durable ledger. Diagnostics (mutation logs, retry counts) live only in the conversation and any escalation files.
@@ -331,7 +331,7 @@ Step 9 runs at the end of every `/m:build` invocation regardless of individual t
 
 ### 9.A Changelog entries (success-gated)
 
-For each touched UC, if **every** task in the plan that covers that UC's scenarios now reads `## [x]` in `plan.md`, use the `uc-log` shared skill to flip that UC's changelog entry for this `plan:<plan-id>` from `dirty` to `implemented` and move the line from `TODO:` to the top of `DONE:`. A UC with any still-`[ ]` covering task keeps its entry `dirty` in `TODO:`.
+For each touched UC, if **every** task in the plan that covers that UC's scenarios now reads `## [x]` in the plan file, use the `uc-log` shared skill to flip that UC's changelog entry for this `plan:<plan-id>` from `dirty` to `implemented` and move the line from `TODO:` to the top of `DONE:`. A UC with any still-`[ ]` covering task keeps its entry `dirty` in `TODO:`.
 
 ### 9.B Status roll-up (unconditional)
 
@@ -353,7 +353,7 @@ The CHANGELOG is for context only; status decisions read from artifact frontmatt
 
 After the tasks named in `$ARGUMENTS` are done, run one final review across every UC the plan touches (not only the tasks in this run). Confirm:
 
-- Every `SC-XXXX` in each touched UC appears in some task's `Covers` in `plan.md`, and — for tasks already `[x]` — is addressed by an assertion in that task's canonical test file.
+- Every `SC-XXXX` in each touched UC appears in some task's `Covers` in the plan file, and — for tasks already `[x]` — is addressed by an assertion in that task's canonical test file.
 - No `TODO`/`FIXME`/stub markers remain in the production files this plan touched.
 - No scenario in a touched UC is left uncovered by any task.
 
@@ -368,7 +368,7 @@ Before Step 11, emit this exact table with **one row for every artifact in the p
 
 | Artifact path              | Field                | Before  | After                    | Reason (if unchanged)                       |
 |----------------------------|----------------------|---------|--------------------------|---------------------------------------------|
-| `<plan.md>`                | checkbox `T-NNN`     | `[ ]`   | `[x]` / unchanged        | e.g. `task failed 8.10`                     |
+| `<plan file>`              | checkbox `T-NNN`     | `[ ]`   | `[x]` / unchanged        | e.g. `task failed 8.10`                     |
 | `<UC path>`                | status               | `<prev>`| `<new>` / unchanged      | e.g. `1 of 3 covering tasks still pending`  |
 | `<FEAT REQUIREMENTS.md>`   | status               | `<prev>`| `<new>` / unchanged      | e.g. `all UCs already implemented`          |
 | `<UC CHANGELOG.md>`        | entry `{plan-id}`    | dirty   | implemented / unchanged  | e.g. `entry unchanged — task failed`        |

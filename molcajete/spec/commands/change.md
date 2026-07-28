@@ -129,7 +129,7 @@ Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded i
 
 Direct the plan's **summary and context paragraph to be the consolidated change record**: state plainly what changed, in which UCs/features (naming each), and the approach — this is the single narrative the change produces, spanning every affected UC in one document (the per-UC `CHANGELOG.md` stays as the terse marker log). Because the UC specs already describe the new behavior, the tasks reconcile the code to match: `/m:build` will delete tests/code for retired scenarios and add tests for the new behavior (Principle 1.5).
 
-The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong interpretation is caught here before any code is built), writes `specs/plans/<plan-id>/plan.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
+The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong interpretation is caught here before any code is built), writes `specs/plans/<plan-id>.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
 
 ## Step 10: Report
 
@@ -139,8 +139,8 @@ Tell the user:
 - The log entry appended per module-instance (note the `modules:` token when multi-module).
 - The new status per module-instance and per affected feature.
 - Any module-instances that were resolved but skipped by the user.
-- The plan written: `specs/plans/<plan-id>/plan.md`, and its tasks.
+- The plan written: `specs/plans/<plan-id>.md`, and its tasks.
 
 End the report with the explicit hand-off:
 
-> Next: review `specs/plans/<plan-id>/plan.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the change.
+> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the change.

@@ -88,7 +88,7 @@ Fields:
 | `timestamp` | ISO 8601 compact: `YYYYMMDDTHHMMSS` (UTC) | `20260616T141530` | yes |
 | `status` | One of `pending`, `dirty`, `implemented` | `[pending]` | yes |
 | `command` | `spec` \| `fix` \| `change` \| `cover` | `command:change` | yes |
-| `plan` | Plan folder ID, or `—` if not yet planned | `plan:20260616T141530-add-checkout` | yes |
+| `plan` | Plan ID (the plan file name without `.md`), or `—` if not yet planned | `plan:20260616T141530-add-checkout` | yes |
 | `modules` | Comma-separated list of module IDs this event fanned out to | `modules:patient,console` | Only when the UC exists in 2+ module-instances. Omit for single-module UCs. |
 | `reason` | One-line description of what changed and why | free text | yes |
 
@@ -135,5 +135,5 @@ The word `dirty` appears at two levels with intentionally different meanings. Do
 Every operation on the log is idempotent at the entry level:
 
 - Re-running `/m:spec`, `/m:fix`, `/m:change`, or `/m:cover` with the same description appends a new entry; it does not edit prior entries. Duplicate descriptions are the author's responsibility to avoid.
-- Re-running `/m:plan` against the same pending entries always creates a new plan folder (per the lifecycle rule) but updates each consumed entry in place (status and plan-id).
+- Re-running `/m:plan` against the same pending entries always creates a new plan file (per the lifecycle rule) but updates each consumed entry in place (status and plan-id).
 - Re-running `/m:build` against an already-completed task is a no-op on the log.
