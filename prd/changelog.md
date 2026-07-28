@@ -2,6 +2,20 @@
 
 All notable changes to the `m` plugin are documented in this file.
 
+## 3.7.0 — 2026-07-27
+
+### Changed
+
+- **`/m:plan` now writes one prose plan instead of slice files.** The slice model (`SLICE-NNN-*.md` files with YAML frontmatter, a `provides`/`depends_on` DAG, and per-slice `status`) is gone. `/m:plan` emits a single Markdown document that reads like a plan: a summary, a `**Specs:**` line, and one `## [ ] T-NNN` section per task. Each task is a **vertical, working-software increment** — one behavior delivered across every layer it needs (UI → API → domain → data), never a layer in isolation. Each task carries two fields (`**Covers:**` scenarios and `**Depends on:**` prior tasks, both comma-separated) followed by descriptive prose that names the files, the entry point, what "green" means, and the trade-offs. The new `plan-authoring` skill owns this format and the Test File Convention; the `slicing` skill is removed.
+- **Plans live under `specs/plans/` and are tracked in git.** A plan is now part of the application's recorded change history, filed at `specs/plans/<YYYYMMDDTHHMMSS>-<slug>/plan.md` (timestamp-to-the-second ID). Plans previously lived in `.molcajete/plans/`.
+- **`/m:build` verifies correctness, not just green tests.** Every task now passes a **correctness review** (Step 8.10) after the mechanical gate: a separate Reviewer sub-agent reads the UC scenarios independently of the test's assertions and confirms the test pins a meaningful, user-observable exit for each covered scenario, the asserted expected values match what the spec says must happen (catching a test that encodes a wrong expectation), and the production code genuinely implements the behavior (no stubs). A task's checkbox flips only when both the mechanical gate (green + coverage + non-vacuous mutation) and the correctness review pass. A final **end-of-plan completeness sweep** reports any uncovered scenario or stray marker. The `principles` Meta-Principle's "cover the right thing" clause is now an enforced gate rather than an assumption, and the `testing` skill adds a third **Reviewer** role alongside Implementer and Validator.
+- **The UC is now the status leaf.** With slices gone, `/m:build` writes UC `status` directly from the plan's covering-task checkboxes (all `[x]` → `implemented`; some done → `dirty`; none → `pending`); Feature status still rolls up from its UCs. The `status-rollup` skill drops the slice level accordingly.
+
+### Migration
+
+- Existing slice-based plans and slice files are **not** migrated — the new format applies to plans created from here on.
+- The sibling `molcajete` CLI (unattended `molcajete build`) reads slice files and will not run against the new plan format until it is updated in a follow-up; the shared-skill drift check will flag the changed skills. This break is intentional.
+
 ## 3.4.0 — 2026-07-24
 
 ### Changed

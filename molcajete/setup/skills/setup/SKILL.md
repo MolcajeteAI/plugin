@@ -37,7 +37,7 @@ Per-module testing tool detection follows `${CLAUDE_PLUGIN_ROOT}/shared/skills/t
 
 ## Tests Column (MODULES.md)
 
-Every module gets a `Tests` value at setup time. It is the per-module root directory under which integration/component test files live (slice test files are derived from this root plus the slice's feature/UC dirs — see the slicing skill's "Test File Convention").
+Every module gets a `Tests` value at setup time. It is the per-module root directory under which integration/component test files live (task test files are derived from this root plus the task's feature/UC dirs — see the plan-authoring skill's "Test File Convention").
 
 Always per-module, derived from `{module.Directory}` using a language-aware default. Pick the row that matches the module's primary language:
 
@@ -52,11 +52,11 @@ Always per-module, derived from `{module.Directory}` using a language-aware defa
 | Go | `{module.Directory}` | Co-located convention; `_test.go` suffix discriminates test files |
 | Other | `{module.Directory}/tests` | Sensible fallback unless the runner requires otherwise |
 
-The default is a starting point. The user may override per module after setup — for example, monorepos may prefer `packages/{module}/tests`, and projects that vendor a `test/` directory at the repo root may centralize. The slice derivation function always reads `MODULES.md` at slice-load time, so changing a `Tests` value flows through every subsequent build.
+The default is a starting point. The user may override per module after setup — for example, monorepos may prefer `packages/{module}/tests`, and projects that vendor a `test/` directory at the repo root may centralize. The test-path derivation always reads `MODULES.md` at build time, so changing a `Tests` value flows through every subsequent build.
 
 ## Driving Ports Column (MODULES.md)
 
-Every module gets a `Driving Ports` value at setup time — a comma-separated list of kebab-case identifiers naming the kinds of entry points the module exposes. These identifiers become the per-slice `entry_type` taxonomy: a slice's `entry_type` must be one of the values in its module's `Driving Ports` list, and that value becomes part of the slice's canonical test filename (see the slicing skill's Test File Convention).
+Every module gets a `Driving Ports` value at setup time — a comma-separated list of kebab-case identifiers naming the kinds of entry points the module exposes. These identifiers become the per-task entry-point taxonomy: the entry point a task drives (named in its plan prose) must be one of the values in its module's `Driving Ports` list, and that value becomes part of the task's canonical test filename (see the plan-authoring skill's Test File Convention).
 
 Driving port — in the hexagonal sense — is the inbound side of the module: whoever or whatever calls in. Six recognized values plus any project-specific ones:
 
@@ -197,31 +197,16 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Detection:** Any of:
   - `specs/modules/` directory exists.
   - Any `specs/features/**/UC-*/usecase.md` file exists (old UC-as-folder-with-usecase.md layout).
-  - Any `specs/features/**/UC-*/UC-*-NNN-*.md` slice files exist (old slice naming).
   - Any `specs/features/**/UC-*/UC-*.log` files exist (old log naming).
 - **Fix:** Walk every legacy feature folder under `specs/modules/{module}/features/` and migrate per these rules. The target path always includes `{module}/`. Use **AskUserQuestion** with the full list of planned moves (grouped by feature) before applying — the user confirms once for the whole migration.
   1. Move `specs/modules/{module}/features/FEAT-*` → `specs/features/{module}/FEAT-*` (preserve REQUIREMENTS.md, USE-CASES.md, ARCHITECTURE.md, assets/, all child UC files and folders).
   2. For each UC folder `FEAT-*/UC-AAAA-{slug}/` that contains a legacy `usecase.md`:
      - Move `UC-AAAA-{slug}/usecase.md` up one level to `FEAT-*/UC-AAAA-{slug}.md` (the UC spec becomes a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE).
      - Rename `UC-AAAA-{slug}/UC-AAAA-{slug}.log` → `UC-AAAA-{slug}/CHANGELOG.md`.
-     - Rename each slice `UC-AAAA-{slug}/UC-AAAA-NNN-{name}.md` → `UC-AAAA-{slug}/SLICE-NNN-{name}.md`.
   3. Update USE-CASES.md file links inside each FEAT folder: replace `UC-AAAA-{slug}/usecase.md` with `UC-AAAA-{slug}.md`.
   4. Remove the now-empty `specs/modules/` directory tree (only after every feature has migrated successfully).
-- **Source of truth:** This catalog entry and the updated path conventions in the slicing / feature-authoring / usecase-authoring skills.
+- **Source of truth:** This catalog entry and the updated path conventions in the feature-authoring / usecase-authoring skills.
 - **Safety:** If any planned target path already exists (collision), abort that feature's migration and surface the conflict in the report. Never overwrite. Leave the source files in place when conflicts block a feature so the user can resolve manually before re-running.
-
-### `slice-status-frontmatter`
-
-- **Artifact:** Slice files at `specs/features/{module}/FEAT-*/UC-*/SLICE-NNN-*.md`.
-- **Category:** SCHEMA GAPS
-- **Detection:** Any slice file whose frontmatter does not contain a `status:` line. Slices written by `/m:plan` after the introduction of first-class slice status have this field; older slices may not.
-- **Fix:** Walk every affected slice and backfill the `status:` field:
-  1. If a corresponding `.molcajete/slices/{id}.json` durable record exists and contains `"status": "implemented"`, write `status: implemented` into the slice's frontmatter.
-  2. Otherwise, write `status: pending`.
-  3. After every slice in a UC has been backfilled, recompute the UC's frontmatter `status:` by rolling up over its sibling slice statuses (per the `status-rollup` shared skill) and write the result to `UC-XXXX-{slug}.md`.
-  4. After every UC under a feature has been backfilled, recompute the feature's frontmatter `status:` by rolling up over its child UC statuses and write the result to `REQUIREMENTS.md`.
-- **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` (semantics + roll-up rule) and the per-slice `.molcajete/slices/{id}.json` durable records (seed values for previously-implemented slices).
-- **Safety:** Backfill is additive — only writes the missing `status:` line and recomputes roll-ups. Never edits or removes other frontmatter fields. Never modifies the `.molcajete/slices/{id}.json` files.
 
 ## Extending the Drift Catalog
 

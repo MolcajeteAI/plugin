@@ -19,7 +19,7 @@ allowed-tools:
 
 The single spec-authoring entry point. Takes free-form natural language and creates or updates features, use cases, and inline scenarios — across any number of entities in one invocation.
 
-**`/m:spec` writes spec prose only.** It does not produce slices, plans, or code. After spec completes, the lifecycle continues with `/m:plan` → `/m:build`.
+**`/m:spec` writes spec prose only.** It does not produce plans or code. After spec completes, the lifecycle continues with `/m:plan` → `/m:build`.
 
 **Use AskUserQuestion for all user interaction.** Never plain-text questions.
 
@@ -94,7 +94,7 @@ node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {t
 
 Assign prefixes in order.
 
-`/m:spec` does **not** generate slice IDs. Slices are produced by `/m:plan`.
+`/m:spec` does **not** generate task IDs or plans. Tasks are produced by `/m:plan`.
 
 ## Step 9: Write Spec Documents
 
@@ -112,14 +112,14 @@ Write in dependency order: parents before children.
 **New Use Cases** — for every new UC, iterate over every module the UC applies to (one iteration for single-module UCs, multiple iterations for shared-ID multi-module UCs per the usecase-authoring skill):
 
 1. Compute the module-scoped slug from the module-scoped UC name confirmed for this module.
-2. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}` — the UC's support folder. Slice files (when `/m:plan` produces them later) and `CHANGELOG.md` live inside this folder.
+2. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}` — the UC's support folder. `CHANGELOG.md` lives inside this folder.
 3. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) with frontmatter (id, name, feature, status: pending, version: 1, actor) + title + objective + preconditions + trigger + inline scenarios with `---` separators. **Every module-instance shares the same `UC-XXXX` ID but carries its own module-scoped `name:`, actor, trigger, scenarios, and side effects.**
 4. Initialize the change log file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/CHANGELOG.md` per the `uc-log` shared skill (empty TODO/DONE sections). Step 10 appends the first entry (fanned out across module-instances when multi-module).
 5. Append USE-CASES.md row to that module's feature folder (file link points to the module-scoped `UC-XXXX-{slug-for-module}.md`, a direct sibling). Update that module's feature ARCHITECTURE.md per the architecture skill: every file that this module-instance's scenarios imply must have a Component Inventory row; every `SC-` and the module-instance's UC itself must have a Code Map row; new endpoints must appear in API Surface. Update the `use_cases` and `scenarios` frontmatter arrays and `last_update`.
 
-**Modified Use Cases:** Resolve the UC-XXXX to its module-instances (glob `specs/features/*/FEAT-*/UC-XXXX-*.md`). Apply the edit to each affected module-instance's `UC-XXXX-{slug}.md`; increment frontmatter `version` per file; never change the UC-XXXX ID. Update each affected module's ARCHITECTURE.md rows for newly touched files. Do **not** edit, add, or delete slice files — slice authorship belongs to `/m:plan`.
+**Modified Use Cases:** Resolve the UC-XXXX to its module-instances (glob `specs/features/*/FEAT-*/UC-XXXX-*.md`). Apply the edit to each affected module-instance's `UC-XXXX-{slug}.md`; increment frontmatter `version` per file; never change the UC-XXXX ID. Update each affected module's ARCHITECTURE.md rows for newly touched files. Do **not** write a plan — task decomposition belongs to `/m:plan`.
 
-**No slice files. No code files. No tests.** `/m:spec` is spec prose only.
+**No plans. No code files. No tests.** `/m:spec` is spec prose only.
 
 ## Step 10: Append Changelog Entry and Update Statuses
 
@@ -156,4 +156,4 @@ If testability signals were detected in any new scenario (external APIs without 
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the changes into slices and write the plan that `/m:build` will execute.
+> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the changes into tasks and write the plan that `/m:build` will execute.

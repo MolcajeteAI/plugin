@@ -20,7 +20,7 @@ allowed-tools:
 - If the spec already says the right thing and only the code is wrong, `/m:fix` writes nothing to the spec — it just appends a `pending` log entry so `/m:plan` can produce a one-task regression plan.
 - If the spec was wrong or silent on the case, `/m:fix` updates the spec (and may add a new scenario or UC) before logging the entry.
 
-`/m:fix` never writes production code, tests, slices, or plans. Hand-off to `/m:plan` is mandatory.
+`/m:fix` never writes production code, tests, or plans. Hand-off to `/m:plan` is mandatory.
 
 **Use AskUserQuestion for all user interaction.**
 
@@ -105,7 +105,7 @@ When editing a **Spec wrong** scenario or FR, **replace** the incorrect text wit
 
 For module-instances where the diagnosis was **Spec correct, code wrong**, write nothing to disk in this step.
 
-`/m:fix` does **not** produce slices, plans, code, or tests. It does not edit existing slice files.
+`/m:fix` does **not** produce plans, code, or tests. Task decomposition belongs to `/m:plan`.
 
 ## Step 8: Append Log Entries and Update UC Status
 

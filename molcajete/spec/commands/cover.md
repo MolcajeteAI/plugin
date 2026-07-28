@@ -17,7 +17,7 @@ allowed-tools:
 
 `/m:cover` extracts product specs from an existing codebase: features, use cases, and inline scenarios. The code already exists; this command captures it so the lifecycle can later cover it with integration tests.
 
-**Spec phase only.** `/m:cover` writes spec prose, populates ARCHITECTURE.md, appends a log entry, and hands off to `/m:plan`. It does **not** produce slices, plans, code, or tests.
+**Spec phase only.** `/m:cover` writes spec prose, populates ARCHITECTURE.md, appends a log entry, and hands off to `/m:plan`. It does **not** produce plans, code, or tests.
 
 Scope is inferred from the freeform argument:
 
@@ -89,7 +89,7 @@ Use the Agent tool (`subagent_type: general-purpose`) with one task: read the co
 
 Same-ID / different-content is the correct pattern here. Distinct IDs for the same capability across modules is an anti-pattern the subagent must avoid.
 
-**Do not emit slice files. Do not emit code files. Do not emit test files.** Slice authorship belongs to `/m:plan` (in `mode: cover`); tests are written by `/m:build`.
+**Do not emit a plan. Do not emit code files. Do not emit test files.** Task decomposition belongs to `/m:plan` (in `mode: cover`); tests are written by `/m:build`.
 
 While scanning the codebase, also collect any **existing test files** that live outside the canonical Test File Convention paths (e.g., tests co-located with source as `src/foo/bar.test.ts` when the module's `Tests` directory says `tests/` or similar). The subagent must produce a "Non-canonical Test Paths" list capturing every such file path it observed. `/m:cover` must **not** move or rewrite these files — they stay where they are.
 
@@ -124,4 +124,4 @@ Tell the user what was created or updated:
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the extracted UCs into coverage slices and write the plan that `/m:build` will execute (in `mode: cover` — tests only, no production code).
+> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the extracted UCs into coverage tasks and write the plan that `/m:build` will execute (in `mode: cover` — tests only, no production code).

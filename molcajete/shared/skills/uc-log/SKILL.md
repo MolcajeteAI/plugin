@@ -16,7 +16,7 @@ The changelog answers two questions: **what changed and why** (for plan) and **w
 
 ## The changelog is not the status source of truth
 
-Artifact status (slice, UC, feature) lives on each artifact's frontmatter `status:` field. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:build`.
+Artifact status (UC, feature) lives on each artifact's frontmatter `status:` field; task status is the plan's `## [ ]` / `## [x]` checkbox. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:build`.
 
 This skill defines only the changelog file mechanics. Commands write `status` directly to the relevant frontmatter; the changelog mechanics described below do not affect that.
 
@@ -128,7 +128,7 @@ No other transitions. A `pending` entry never becomes `implemented` without firs
 The word `dirty` appears at two levels with intentionally different meanings. Do not conflate them:
 
 - **Entry-level `dirty`** (managed here) — "in flight." The changelog entry has been planned but the build hasn't completed.
-- **Artifact-level `dirty`** (managed by `status-rollup`) — "was complete, now has new unfinished work." Lives on the slice / UC / feature frontmatter.
+- **Artifact-level `dirty`** (managed by `status-rollup`) — "was complete, now has new unfinished work." Lives on the UC / feature frontmatter.
 
 ## Idempotency
 

@@ -259,7 +259,7 @@ that includes:
 
 The parent command does NOT re-read the files the subagent created — it trusts the subagent's report and presents the results to the user.
 
-> **Note:** Reverse commands emit `coverage` slices alongside the extracted specs (see the slicing skill). The harness runs each coverage slice through the GREEN-first / mutation-RED protocol; CodeWriter only adds tests to existing files.
+> **Note:** Reverse commands hand off to `/m:plan`, which decomposes the extracted specs into `coverage` tasks (see the plan-authoring skill). `/m:build` runs each coverage task through the GREEN-first / mutation-RED protocol, adding tests to existing files without writing production code.
 
 ## Template Reference
 

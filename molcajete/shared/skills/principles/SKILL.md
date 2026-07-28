@@ -17,6 +17,8 @@ These are the rules every plan, every line of code, and every test must respect 
 
 In AI-assisted development, code churns. Functions move, names change, files split and merge. The only signal that survives that churn is **behavior verified by tests**. If the integration tests pass and they cover the right thing, the code does its job — regardless of how it looks. If the tests are shallow or absent, no amount of human review compensates.
 
+The load-bearing clause is "**and they cover the right thing**." A green test proves nothing on its own — a test that pins a *wrong* expected value passes just as green as a correct one, and the implementation that matches it looks done while being wrong. So "cover the right thing" is not an assumption Molcajete makes; it is a **gate Molcajete enforces**. Every task passes a correctness review (`/m:build` Step 8.10, the Reviewer role in the `testing` skill): a separate agent reads the UC scenarios independently of the test's assertions and confirms (a) the test pins a meaningful, user-observable exit for each covered scenario, (b) the asserted expected values match what the spec says must happen, and (c) the production code genuinely implements the behavior — no stubs that only satisfy the fixture. A task is not done until both the mechanical gate (green + coverage + non-vacuous mutation) and the correctness gate pass.
+
 Everything below follows from that.
 
 ## 1. Integration Tests Are the Trust Contract
@@ -60,17 +62,17 @@ it('reverts when oracle equals operator', () => { ... })
 
 Spec traceability lives in leading-line comments above tests, not in their names.
 
-- **File header** — `// UC-XXXX: {use case name}` at the top of every test file. One UC per file.
-- **`describe` / test group** — `// SLICE-NNN: {slice name}` at the top of each group. One slice per group.
+- **File header** — `// UC-XXXX: {use case name}` and `// T-NNN: {task outcome}` at the top of every test file. One UC and one task per file.
+- **`describe` / test group** — `// SC-XXXX: {short scenario description}` at the top of each group. One scenario per group.
 - **`it` / test method** — `// SC-XXXX: {short scenario description}` immediately above the test. When a single test covers multiple scenarios, list them comma-separated: `// SC-001, SC-002: Email validation rules`.
 
-The slice's `covers:` frontmatter array is the canonical machine-readable mapping. The comments are for humans.
+The task's `Covers` list in `plan.md` is the canonical machine-readable mapping. The comments are for humans.
 
 Example:
 
 ```ts
 // UC-0KTg: Register User
-// SLICE-001: validate email
+// T-001: Validate and register a new user's email
 
 describe('Email validation', () => {
   // SC-001: Reject empty email
@@ -81,7 +83,7 @@ describe('Email validation', () => {
 })
 ```
 
-The same shape works in any runner: file-header comment for the UC, group-header comment for the slice, method-header comment for the scenario. The exact comment syntax (`//`, `#`, `--`, `/* */`) follows the language.
+The same shape works in any runner: file-header comment for the UC and task, group-header comment for the scenario, method-header comment for the scenario. The exact comment syntax (`//`, `#`, `--`, `/* */`) follows the language.
 
 **Why:** names tell you what the test asserts. Comments tell you which spec line it ties back to. Don't conflate the two — names get read every time the file opens; IDs only matter when chasing traceability.
 
@@ -166,7 +168,7 @@ DI is the principle. The mechanism (a DI container library, constructor injectio
 
 ## 4. 80% Coverage Floor on Touched Files
 
-Every task's touched files (`files.create ∪ files.modify ∪ {test_file}`) must hit at least 80% line coverage.
+Every task's touched files (the files the task creates and modifies, plus its integration test file) must hit at least 80% line coverage.
 
 - The threshold is configurable via `.molcajete/settings.json testing.threshold`; 80% is the default and the floor.
 - Coverage is scoped to **touched files**, not the whole project. The goal is "we proved this change works," not "we hit a global percentage."
@@ -196,13 +198,12 @@ Examples below stay in TypeScript for consistency with the test rules. The patte
 
 Production code carries leading-line comments tying files and functions back to the spec.
 
-- **File header** — `// FEAT-XXXX: {feature name}` and `// UC-XXXX: {use case name}` at the top of every production file produced for a feature/UC. Add `// SLICE-NNN: {slice name}` when the file is the work of a specific slice.
-- **Function / method** — `// SC-XXXX, SC-YYYY: {short description}` immediately above the function declaration when it satisfies specific scenarios. List all SC IDs the function helps satisfy; the slice's `covers:` array remains the canonical machine-readable mapping.
+- **File header** — `// FEAT-XXXX: {feature name}` and `// UC-XXXX: {use case name}` at the top of every production file produced for a feature/UC.
+- **Function / method** — `// SC-XXXX, SC-YYYY: {short description}` immediately above the function declaration when it satisfies specific scenarios. List all SC IDs the function helps satisfy; the task's `Covers` list in `plan.md` remains the canonical machine-readable mapping.
 
 ```ts
 // FEAT-0Fy0: User Onboarding
 // UC-0KTg: Register User
-// SLICE-001: validate email
 
 // SC-001, SC-002: Email validation rules
 // Returns the normalized email on success or throws InvalidEmailError.
@@ -290,8 +291,8 @@ This document does not specify a language, framework, runner, DI container, ORM,
 
 | Command | Enforcement |
 |---------|-------------|
-| `/m:plan` | Designs architecture using hexagonal vocabulary. Each slice declares which driver port it drives and which driven ports its code reaches. Every slice's sub-task shape is: scaffold integration test → implement → mutation check → coverage gate. |
-| `/m:build` | Writes code that respects Principle 5 — small functions, clear boundaries, no god files, refactor-to-reuse. Coverage gate enforces Principle 4 against the host project's collector (or estimates when absent). |
+| `/m:plan` | Designs architecture using hexagonal vocabulary. Each task names the driver port it drives and the driven ports its code reaches, and delivers one vertical, working increment (never a layer). Decomposition covers every scenario exactly once. |
+| `/m:build` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**. Writes code that respects Principle 5 — small functions, clear boundaries, no god files, refactor-to-reuse. Coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle's "cover the right thing" gate before a task's checkbox flips. |
 | `uc-log` shared skill | Records every change. Principles don't decay over time because tests stay in place and the log makes new work explicit. |
 
 ## Override

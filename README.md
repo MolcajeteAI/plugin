@@ -28,12 +28,13 @@ The framework ships two components:
 ### The Pipeline
 
 ```
-Feature idea → EARS Requirements → Use Cases → Slices → Build
+Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → Build
 ```
 
-1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. The spec pass also emits the slice DAG, interface contracts, and test scaffolds for each use case — there is no separate planning step.
-2. **Build** — Execute the slice DAG with a TDD red/green protocol. Each slice runs against its own scaffold, its interfaces file, and the named exports of its dependency slices. The harness owns RED/GREEN validation and the mutation check.
-3. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
+1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec`, `/m:fix`, `/m:change`, and `/m:cover` write spec prose and log pending work.
+2. **Plan** — `/m:plan` reads the pending work and writes a single prose plan (`specs/plans/<timestamp>-<slug>/plan.md`) that decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers.
+3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
+4. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
 
 ### Why Specs?
 
@@ -121,7 +122,7 @@ Create and maintain structured specifications from freeform descriptions or exis
 
 | Command | Description |
 |---------|-------------|
-| `/m:build` | Build a single slice from a use case's slice DAG |
+| `/m:build` | Execute one or more tasks from a plan (TDD + mutation + coverage + correctness review) |
 | `/m:setup` | Initialize project with foundational docs and tooling detection |
 
 ### Research and Shared
@@ -141,7 +142,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each skil
 | spec | `usecase-authoring` | UC file structure, flat scenarios, side effects rules |
 | spec | `architecture` | ARCHITECTURE.md schema, C4 diagrams, code map, population rules, table filling |
 | spec | `reverse-engineering` | Code-to-spec extraction patterns, scope discovery, dispatcher integration |
-| spec | `slicing` | Slice DAG schema, interfaces file, test scaffold contract, implement vs coverage objectives |
+| plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention |
 | build | `setup` | Project initialization, domain structure, tooling detection |
 | research | `research-methods` | 3-tier research routing (quick, explain, deep) with source evaluation |
 | research | `headless-research` | Unattended research execution for CLI mode |
@@ -190,10 +191,13 @@ prd/
 molcajete/
 ├── .claude-plugin/
 │   └── plugin.json       # Plugin manifest (commands, skills, version)
-├── spec/                  # Spec module — feature, UC, architecture, slicing
+├── spec/                  # Spec module — feature, UC, architecture, reverse-engineering
 │   ├── commands/
 │   └── skills/
-├── build/                 # Build module — slice execution
+├── plan/                  # Plan module — prose plan authoring (plan-authoring skill)
+│   ├── commands/
+│   └── skills/
+├── build/                 # Build module — task execution (TDD + correctness review)
 │   ├── commands/
 │   └── skills/
 ├── research/              # Research module — multi-tier research

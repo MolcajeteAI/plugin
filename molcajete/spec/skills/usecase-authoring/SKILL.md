@@ -10,7 +10,7 @@ description: >-
 
 # Use Case Authoring
 
-Rules for creating and maintaining use case files: each UC is two artifacts at the feature level. The UC spec lives at `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md). A support folder `UC-XXXX-{slug}/` (sibling of the spec file) holds `CHANGELOG.md` and any slice files. The /m:spec command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
+Rules for creating and maintaining use case files: each UC is two artifacts at the feature level. The UC spec lives at `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md). A support folder `UC-XXXX-{slug}/` (sibling of the spec file) holds `CHANGELOG.md`. The /m:spec command references this skill to run the creation interview and generate the UC file. Scenarios live **inline** in the UC file using a flat `### SC-XXXX:` heading structure separated by `---` rules.
 
 
 ## Module-Scoped Use Cases
@@ -340,7 +340,7 @@ Resolved testing decisions are recorded in the feature's ARCHITECTURE.md under a
 | `id` | string | `UC-XXXX` -- 4-character timestamp ID |
 | `name` | string | Verb-noun goal phrase (e.g., "Create Feature") |
 | `feature` | string | Parent feature ID: `FEAT-XXXX` |
-| `status` | string | `pending` \| `dirty` \| `implemented` -- the UC's first-class state. `pending` on creation. Written directly by spec-phase commands (when a previously-`implemented` UC is modified, status flips to `dirty`) and by `/m:build` (rolled up over sibling slice statuses on successful build). See the `status-rollup` shared skill for semantics and roll-up rule. Authors do not edit this field manually. |
+| `status` | string | `pending` \| `dirty` \| `implemented` -- the UC's first-class state. `pending` on creation. Written directly by spec-phase commands (when a previously-`implemented` UC is modified, status flips to `dirty`) and by `/m:build` (written directly from the plan's covering-task checkboxes on successful build). See the `status-rollup` shared skill for semantics. Authors do not edit this field manually. |
 | `version` | integer | Starts at `1`. Incremented by /m:change on each edit |
 | `actor` | string | Primary actor role (must exist in specs/ACTORS.md) |
 
@@ -364,7 +364,7 @@ Use case slugs follow the same rules as feature slugs (defined in the feature-au
 - "Login Flow" → `login-flow`
 - "Create Feature" → `create-feature`
 
-**Layout:** UC spec file is `UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md). UC support folder is `UC-XXXX-{slug}/` containing `CHANGELOG.md` and slice files. Example: `UC-0S9A-login-flow.md` + `UC-0S9A-login-flow/CHANGELOG.md` + `UC-0S9A-login-flow/SLICE-001-validate-input.md`.
+**Layout:** UC spec file is `UC-XXXX-{slug}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md). UC support folder is `UC-XXXX-{slug}/` containing `CHANGELOG.md`. Example: `UC-0S9A-login-flow.md` + `UC-0S9A-login-flow/CHANGELOG.md`.
 
 ## USE-CASES.md Row Management
 
@@ -448,7 +448,7 @@ After all sections are confirmed:
 2. Determine the set of modules this UC applies to. For single-module features, that is the feature's one module. For multi-module features, the interview (see Step 4a below) collected a per-module name and content for the UC — use every module the user selected.
 3. **For each module in the set:**
    a. Compute the module-scoped slug from the module-scoped UC name (see the Slug Generation section).
-   b. Create the UC support folder `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/` (this holds CHANGELOG.md and slice files).
+   b. Create the UC support folder `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/` (this holds CHANGELOG.md).
    c. If any scenario has image files, create `.../UC-XXXX-{slug-for-module}/assets/` and copy images with `{UC-ID}-{descriptive-slug}.{ext}` naming.
    d. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}.md` using [UC-template.md](./templates/UC-template.md) — fill sections with the **module-scoped** content confirmed for this module, include inline `**UI:**` blocks within Steps for scenarios that have UI, set frontmatter `version: 1` and `status: pending`. Every module-instance carries the **same** UC-XXXX ID but its own module-scoped `name:`, actor, trigger, scenarios, and side effects.
    e. Initialize the change log `.../UC-XXXX-{slug-for-module}/CHANGELOG.md` via the `uc-log` shared skill (empty TODO/DONE sections; the calling command appends the first entry — for multi-module UCs the calling command fans out one entry per module-instance per the `uc-log` skill's Multi-Module UC Logging section).

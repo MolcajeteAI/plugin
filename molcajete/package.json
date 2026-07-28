@@ -1,6 +1,6 @@
 {
   "name": "@molcajete/plugin",
-  "version": "3.4.0",
+  "version": "3.7.0",
   "description": "Claude Code plugin for spec-driven development (the m plugin).",
   "author": {
     "name": "Ivan Torres",

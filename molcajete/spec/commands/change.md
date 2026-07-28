@@ -19,7 +19,7 @@ allowed-tools:
 
 Unlike `/m:fix` (where the spec might already be correct), `/m:change` **always** edits the spec — the change request *is* a spec edit. If the request only describes new behavior without a spec change, the user wanted `/m:fix` or `/m:spec` instead; suggest the right command and stop.
 
-`/m:change` never writes production code, tests, slices, or plans. Hand-off to `/m:plan` is mandatory.
+`/m:change` never writes production code, tests, or plans. Hand-off to `/m:plan` is mandatory.
 
 **Use AskUserQuestion for all user interaction.**
 
@@ -105,7 +105,7 @@ The spec edit **replaces** the old text — it describes only the new behavior. 
 
 Module-instances the user skipped are left untouched.
 
-`/m:change` does **not** produce slices, plans, code, or tests. It does not edit existing slice files (`/m:plan` will decide whether to add, modify, or supersede them in its next run).
+`/m:change` does **not** produce plans, code, or tests. It does not decompose work into tasks (`/m:plan` will produce the change plan in its next run).
 
 ## Step 8: Append Log Entries and Update UC Status
 
@@ -132,4 +132,4 @@ Tell the user:
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <UC-XXXX> [more IDs ...]` to decompose the change into slices and write the plan that `/m:build` will execute.
+> Next: run `/m:plan <UC-XXXX> [more IDs ...]` to decompose the change into tasks and write the plan that `/m:build` will execute.

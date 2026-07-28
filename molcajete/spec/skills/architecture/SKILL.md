@@ -150,19 +150,19 @@ The brief's "Current Best Practices" and "Key Libraries/APIs" sections directly 
 
 ## Table Filling
 
-ARCHITECTURE.md ships with empty tables in the scaffold so the file remains valid before the architecture pass runs. `/m:spec` (forward) and `/m:cover` (reverse) MUST populate the tables before declaring the architecture pass complete — `/m:plan` reads them downstream to scope slices, route mutations, and locate implementation files. An ARCHITECTURE.md with empty Component Inventory, API Surface, or Code Map blocks the plan pass.
+ARCHITECTURE.md ships with empty tables in the scaffold so the file remains valid before the architecture pass runs. `/m:spec` (forward) and `/m:cover` (reverse) MUST populate the tables before declaring the architecture pass complete — `/m:plan` reads them downstream to scope tasks, route mutations, and locate implementation files. An ARCHITECTURE.md with empty Component Inventory, API Surface, or Code Map blocks the plan pass.
 
 For every new use case or scenario added under this feature, populate at minimum:
 
 | Table | Forward (/m:spec) source | Reverse (/m:cover) source |
 |-------|---------------------|---------------------|
-| Component Inventory | Slice `files.create` + `files.modify` aggregated across the UC's slices | Files traced from entry-point grep through the call chain |
+| Component Inventory | The production files the UC's behavior will touch, per the design in REQUIREMENTS.md and the UC scenarios | Files traced from entry-point grep through the call chain |
 | API Surface | Endpoint references in REQUIREMENTS.md and UC scenario steps | Route registrations and handlers found in the codebase |
-| Code Map | `Spec ID → file:function()` derived from each slice's `provides` and target files | `Spec ID → file:function()` derived from the discovery scan |
+| Code Map | `Spec ID → file:function()` derived from the planned components | `Spec ID → file:function()` derived from the discovery scan |
 | Event Topology | Events named in scenarios' Side Effects | Producer/consumer pairs traced through the event-bus call sites |
 | Integration Points | External systems named in scenarios | External clients located in the codebase |
 
-The architecture tables are the bridge between the spec layer and the slice layer. A slice's `### Contracts` snippet declares the type surface it locks; a slice's target files must already appear in Component Inventory and Code Map. If a slice references a file or contract that is not in the architecture tables, the architecture pass is incomplete.
+The architecture tables are the bridge between the spec layer and the code layer. `/m:plan` reads them to write each task's prose — a task's target files must already appear in Component Inventory and Code Map. If a task would touch a file or contract not in the architecture tables, the architecture pass is incomplete.
 
 Leave a table empty only when the feature genuinely has no rows for it (e.g., Event Topology when the feature emits no events; State Transitions when no entity has a lifecycle). Do not leave a table empty out of laziness — the harness treats an unpopulated mandatory table as a spec defect.
 

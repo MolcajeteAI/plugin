@@ -1,6 +1,6 @@
 {
   "name": "m",
-  "version": "3.4.0",
+  "version": "3.7.0",
   "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec, /m:fix, /m:change, /m:cover feed /m:plan, which produces the plan /m:build executes.",
   "author": {
     "name": "Ivan Torres",
@@ -27,6 +27,7 @@
     "./spec/commands/spec.md"
   ],
   "skills": [
+    "./plan/skills/plan-authoring",
     "./research/skills/headless-research",
     "./research/skills/research-methods",
     "./setup/skills/setup",
@@ -41,7 +42,6 @@
     "./spec/skills/architecture",
     "./spec/skills/feature-authoring",
     "./spec/skills/reverse-engineering",
-    "./spec/skills/slicing",
     "./spec/skills/usecase-authoring"
   ]
 }

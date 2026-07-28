@@ -35,7 +35,7 @@ temp/
 .env.local
 
 # Molcajete
-./plans/
+# Plans now live under specs/plans/ and are tracked in git as change history.
 ./research/
 
 # npm/pnpm pack output
