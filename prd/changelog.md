@@ -2,6 +2,15 @@
 
 All notable changes to the `m` plugin are documented in this file.
 
+## 3.8.0 — 2026-07-27
+
+### Changed
+
+- **`/m:fix` and `/m:change` now produce their plan in the same invocation.** Instead of logging a pending entry and handing off to a separate `/m:plan` run, each command — after diagnosing the bug (fix) or editing the spec and marking the affected UCs `dirty` (change) — runs the planning procedure directly, writing `specs/plans/<timestamp>-<slug>/plan.md` and stamping its changelog entry `dirty` with the plan-id. Both then hand off straight to `/m:build`. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong diagnosis or interpretation is caught and editable before any code is built.
+- **`/m:change`'s plan doubles as the consolidated change record.** Its plan summary and context state what changed, in which UCs/features, and the approach — one narrative spanning every affected UC, so there is no need to read a dozen per-UC changelogs. The per-UC `CHANGELOG.md` stays as the terse marker log.
+- **`/m:spec` and `/m:cover` are unchanged** — a brand-new feature spec or a reverse extraction still flows through a separate, reviewable `/m:plan` step. `/m:plan` remains a command for those flows and for re-planning.
+- **The planning procedure now lives in the `plan-authoring` skill** (new "Producing a Plan" section: mode → architecture pass with an AskUserQuestion review gate → decompose → write plan.md → stamp the changelog). `/m:plan`, `/m:fix`, and `/m:change` all invoke the one procedure, so their plans are byte-for-byte consistent.
+
 ## 3.7.0 — 2026-07-27
 
 ### Changed

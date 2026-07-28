@@ -1,5 +1,5 @@
 ---
-description: Intentionally change the behavior of an existing FEAT/UC. Always updates specs first, then logs a pending entry so /m:plan can produce the change plan.
+description: Intentionally change the behavior of an existing FEAT/UC. Always updates specs first, marks the affected UCs dirty, then produces the change plan directly for /m:build.
 model: claude-opus-4-6
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
@@ -19,7 +19,7 @@ allowed-tools:
 
 Unlike `/m:fix` (where the spec might already be correct), `/m:change` **always** edits the spec — the change request *is* a spec edit. If the request only describes new behavior without a spec change, the user wanted `/m:fix` or `/m:spec` instead; suggest the right command and stop.
 
-`/m:change` never writes production code, tests, or plans. Hand-off to `/m:plan` is mandatory.
+`/m:change` then **produces the change plan itself** — after editing the specs and marking the affected UCs `dirty`, it runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong interpretation is caught and editable before any code is built.
 
 **Use AskUserQuestion for all user interaction.**
 
@@ -47,10 +47,12 @@ Read in one batch:
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
 5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
 6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+7. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used in Step 9.
+8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in Step 9 applies these.
 
 ## Step 3: Verify Prerequisites
 
-`specs/PROJECT.md` and `specs/MODULES.md` must exist. Each ID referenced in `$ARGUMENTS` must resolve to an existing spec file. If any does not, refuse with a clear list of unresolved IDs.
+`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each ID referenced in `$ARGUMENTS` must resolve to an existing spec file. If any does not, refuse with a clear list of unresolved IDs.
 
 ## Step 4: Load the Referenced Specs
 
@@ -105,7 +107,7 @@ The spec edit **replaces** the old text — it describes only the new behavior. 
 
 Module-instances the user skipped are left untouched.
 
-`/m:change` does **not** produce plans, code, or tests. It does not decompose work into tasks (`/m:plan` will produce the change plan in its next run).
+`/m:change` never writes production code or tests. It does, however, produce the change plan itself in Step 9.
 
 ## Step 8: Append Log Entries and Update UC Status
 
@@ -121,7 +123,15 @@ For every module-instance affected in Step 7, use the `uc-log` shared skill to:
 2. **Set that module-instance's frontmatter `status`** directly per the `status-rollup` skill: a previously-`implemented` UC becomes `dirty`; a `pending` or `dirty` UC stays as it is. Status is written per module-instance file — a peer instance not edited in this run keeps its prior status.
 3. **Recompute each affected parent feature's frontmatter `status`** by rolling up over its child UCs' frontmatter `status:` values (per module) — not the changelog. Apply the roll-up rule from the `status-rollup` skill and write the result to each affected `REQUIREMENTS.md`.
 
-## Step 9: Report
+## Step 9: Produce the Plan
+
+Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the entries just logged in Step 8. A change is always **`mode: default`** (implement tasks).
+
+Direct the plan's **summary and context paragraph to be the consolidated change record**: state plainly what changed, in which UCs/features (naming each), and the approach — this is the single narrative the change produces, spanning every affected UC in one document (the per-UC `CHANGELOG.md` stays as the terse marker log). Because the UC specs already describe the new behavior, the tasks reconcile the code to match: `/m:build` will delete tests/code for retired scenarios and add tests for the new behavior (Principle 1.5).
+
+The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong interpretation is caught here before any code is built), writes `specs/plans/<plan-id>/plan.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
+
+## Step 10: Report
 
 Tell the user:
 
@@ -129,7 +139,8 @@ Tell the user:
 - The log entry appended per module-instance (note the `modules:` token when multi-module).
 - The new status per module-instance and per affected feature.
 - Any module-instances that were resolved but skipped by the user.
+- The plan written: `specs/plans/<plan-id>/plan.md`, and its tasks.
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <UC-XXXX> [more IDs ...]` to decompose the change into tasks and write the plan that `/m:build` will execute.
+> Next: review `specs/plans/<plan-id>/plan.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the change.

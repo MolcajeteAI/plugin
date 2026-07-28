@@ -195,6 +195,81 @@ The plan checkboxes are the task-level ledger. There is no slice status. `/m:bui
 `## [ ] T-NNN` to `## [x] T-NNN` when a task passes verification, then writes UC status directly
 from task completion and rolls Feature status up from its UCs. See the `status-rollup` skill.
 
+## Producing a Plan
+
+This is the shared procedure for turning a set of in-scope `pending` changelog entries into a
+written plan. `/m:plan` runs it over the pending entries it reads; `/m:fix` and `/m:change` run it
+over the entries they just wrote (so they produce their plan in the same invocation, with no
+separate `/m:plan` step). The caller has already: resolved the UC module-instances in scope, read
+their `UC-XXXX-{slug}.md` specs, each feature's `REQUIREMENTS.md` and `ARCHITECTURE.md`, and written
+the `pending` entries. The caller must have loaded the `architecture`, `principles`, and `uc-log`
+skills (and, only when cover-mode entries are possible, `reverse-engineering`).
+
+**P1 — Determine the mode.** From the originating commands of the in-scope pending entries:
+
+- only `command:spec` / `command:fix` / `command:change` → **default** (all implement tasks).
+- only `command:cover` → **cover** (all coverage tasks).
+- both → **mixed**.
+
+`/m:fix` and `/m:change` always produce **default**. The mode is written on the plan's `**Specs:**`
+line; per-task truth is the implement/coverage prose (see Task Objectives).
+
+**P2 — Architecture pass.** Apply the engineering principles: Principle 2 (hexagonal default),
+Principle 3 (DI), Principle 1 (every task's tests are integration tests — never scaffold unit tests).
+
+- **default** — design or revise the architecture for the affected UCs: identify driving/driven
+  ports (driver ports come from `specs/MODULES.md`'s `Driving Ports`), adapters, domain boundaries,
+  and cross-cutting work (migrations, shared adapters, config); wire through DI. Reflect the design
+  into each feature's `ARCHITECTURE.md` per the architecture skill's Table Filling rules.
+- **cover** — skip design; reconstruct the shipped structure with the reverse-engineering skill and
+  ensure each `ARCHITECTURE.md` reflects what actually ships.
+- **mixed** — cover pass first (pin the current design as baseline), then the default pass for the
+  new/modified behavior; reflect both into `ARCHITECTURE.md`.
+
+Present the architecture and decomposition direction via a single AskUserQuestion **before writing
+the plan** — this is the review gate that catches a wrong interpretation before any code is built:
+
+> "Here is the plan for {scope}: {bulleted summary of architecture decisions, table changes, and the
+> task breakdown}. Proceed?"
+
+Options: "Proceed" / "Edit" (user corrects via Other) / "Cancel". On Cancel, write nothing.
+
+**P3 — Decompose into tasks.** Per the Vertical-Increment Rules above, produce the minimal ordered
+list of vertical, working-software tasks that closes every in-scope scenario exactly once, ordered
+by dependency (that order is the `T-NNN` sequence). Write each task per the Task Shape (heading +
+`Covers` + `Depends on` + prose). In **mixed** mode, order all coverage tasks (lower `T-NNN`) before
+the implement tasks that change the same behavior.
+
+**P4 — Consult non-canonical tests (cover / mixed only).** Skip in default mode. For each UC with a
+`command:cover` pending entry, read its `CHANGELOG.md`, find the most recent `command: cover` entry,
+and collect the **non-canonical test file paths** it recorded (existing tests touching the UC's
+production code that live outside the canonical tests tree). For each, prompt once via
+AskUserQuestion:
+
+> "Existing test `{path}` touches code covered by `{UC-XXXX-slug}`. What should `/m:build` do with
+> it when it scaffolds the canonical integration test?"
+
+Options: **"Reference-only"** (default — build reads it, lifts fixtures/setup/assertions, leaves it
+in place) / **"Migrate"** (same, plus build prompts to delete the original after the canonical test
+verifies) / **"Ignore"** (build never opens it). For each non-ignored decision, name the file in the
+prose of the task whose behavior overlaps it, with the mode inline — e.g. "consult
+`src/legacy/foo.test.ts` (reference)" or "(migrate — delete after the canonical test is green)".
+This step never moves or deletes files.
+
+**P5 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Create a
+**new** folder `specs/plans/<YYYYMMDDTHHMMSS>-<slug>/` (UTC timestamp to the second) and write
+`plan.md` per the Plan File Structure above — summary, `**Specs:**` line (with the mode), optional
+context paragraph, and one `## [ ] T-NNN` section per task.
+
+**P6 — Stamp the changelog.** For every consumed entry, use the `uc-log` skill to flip its status
+`pending → dirty` and set `plan:<plan-id>` (the folder name). The entry stays under `TODO:`; the
+`modules:` token, if present, is preserved. Multi-module UCs have one CHANGELOG per module-instance,
+each updated independently.
+
+The procedure does **not** touch UC or Feature frontmatter `status` — that is owned by the
+spec-phase command (which writes `dirty` when it edits a previously-`implemented` UC) and by
+`/m:build` (which writes it from task completion).
+
 ## Worked Example
 
 ```markdown

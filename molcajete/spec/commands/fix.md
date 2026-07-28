@@ -1,5 +1,5 @@
 ---
-description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Updates specs only when the spec was wrong; always logs a pending entry so /m:plan can produce a regression plan.
+description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Updates specs only when the spec was wrong, then produces the regression plan directly for /m:build.
 model: claude-opus-4-6
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
@@ -17,10 +17,10 @@ allowed-tools:
 
 `/m:fix` records a bug against an existing UC: **"the use case is supposed to do X, but the code does Y."** The bug may or may not require a spec edit.
 
-- If the spec already says the right thing and only the code is wrong, `/m:fix` writes nothing to the spec — it just appends a `pending` log entry so `/m:plan` can produce a one-task regression plan.
-- If the spec was wrong or silent on the case, `/m:fix` updates the spec (and may add a new scenario or UC) before logging the entry.
+- If the spec already says the right thing and only the code is wrong, `/m:fix` writes nothing to the spec — the diagnosis alone drives the plan.
+- If the spec was wrong or silent on the case, `/m:fix` updates the spec (and may add a new scenario or UC) before planning.
 
-`/m:fix` never writes production code, tests, or plans. Hand-off to `/m:plan` is mandatory.
+`/m:fix` then **produces the regression plan itself** — it logs the entry and runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong diagnosis is caught and editable before any code is built.
 
 **Use AskUserQuestion for all user interaction.**
 
@@ -50,10 +50,12 @@ Read in one batch:
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
 5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
 6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+7. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used in Step 9.
+8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in Step 9 applies these.
 
 ## Step 3: Verify Prerequisites
 
-`specs/PROJECT.md` and `specs/MODULES.md` must exist. Each ID referenced in `$ARGUMENTS` must resolve to an existing spec file. If any does not, refuse with a clear list of unresolved IDs.
+`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each ID referenced in `$ARGUMENTS` must resolve to an existing spec file. If any does not, refuse with a clear list of unresolved IDs.
 
 ## Step 4: Load the Referenced Specs
 
@@ -105,7 +107,7 @@ When editing a **Spec wrong** scenario or FR, **replace** the incorrect text wit
 
 For module-instances where the diagnosis was **Spec correct, code wrong**, write nothing to disk in this step.
 
-`/m:fix` does **not** produce plans, code, or tests. Task decomposition belongs to `/m:plan`.
+`/m:fix` never writes production code or tests. It does, however, produce the plan itself in Step 9.
 
 ## Step 8: Append Log Entries and Update UC Status
 
@@ -121,9 +123,17 @@ For every module-instance in each UC-XXXX target set (regardless of diagnosis �
 2. **Set that module-instance's frontmatter `status`** directly per the `status-rollup` skill: a previously-`implemented` UC becomes `dirty`; a `pending` or `dirty` UC stays as it is. Status is per-file.
 3. **Recompute each affected parent feature's frontmatter `status`** by rolling up over its child UCs' frontmatter `status:` values (per module) — not the changelog. Apply the roll-up rule from the `status-rollup` skill and write the result to each affected `REQUIREMENTS.md`.
 
-Append a log entry **even when the spec was untouched.** The point of the entry is to drive `/m:plan` to produce a regression test, regardless of whether the spec moved. If the user explicitly narrowed the target set in Step 5 to exclude a module-instance, that instance is not logged.
+Append a log entry **even when the spec was untouched.** The point of the entry is to drive the regression plan, regardless of whether the spec moved. If the user explicitly narrowed the target set in Step 5 to exclude a module-instance, that instance is not logged.
 
-## Step 9: Report
+## Step 9: Produce the Plan
+
+Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the entries just logged in Step 8. A fix is always **`mode: default`** (implement tasks — a regression test that starts RED, then the code change that turns it GREEN). The reason text written in Step 8 states the expected behavior positively, so the tasks pin the correct behavior (Principle 1.5), not merely the absence of the bug.
+
+The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong diagnosis is caught here before any code is built), writes `specs/plans/<plan-id>/plan.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
+
+For a purely local, single-scenario regression the plan is typically one task; do not manufacture extra tasks.
+
+## Step 10: Report
 
 Tell the user:
 
@@ -131,7 +141,8 @@ Tell the user:
 - The spec edits made (if any), per module-instance.
 - The log entry appended per module-instance (note the `modules:` token when multi-module).
 - The new status per module-instance and per affected feature.
+- The plan written: `specs/plans/<plan-id>/plan.md`, and its task(s).
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <UC-XXXX> [more IDs ...]` to produce the regression plan that `/m:build` will execute.
+> Next: review `specs/plans/<plan-id>/plan.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the regression fix.

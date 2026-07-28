@@ -1,7 +1,7 @@
 {
   "name": "m",
-  "version": "3.7.0",
-  "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec, /m:fix, /m:change, /m:cover feed /m:plan, which produces the plan /m:build executes.",
+  "version": "3.8.0",
+  "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec and /m:cover feed /m:plan, while /m:fix and /m:change produce their own plan; /m:build executes the plan.",
   "author": {
     "name": "Ivan Torres",
     "email": "ivantorresedge@gmail.com"
