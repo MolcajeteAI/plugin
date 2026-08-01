@@ -2,8 +2,8 @@
 name: git-conflict-resolution
 description: >-
   Reference material for resolving git merge and rebase conflicts.
-  Covers conflict marker anatomy, resolution strategies by file type,
-  context gathering, and rules for correct resolution.
+  Covers the ours/theirs inversion under rebase, resolution strategies
+  by file type, context gathering, and rules for correct resolution.
 ---
 
 # Git Conflict Resolution
@@ -11,25 +11,7 @@ description: >-
 Reference for the `resolve-conflicts` session command. Covers how to read, understand, and resolve git conflicts correctly.
 
 
-## Conflict Marker Anatomy
-
-A conflict block in a file looks like this:
-
-```
-<<<<<<< HEAD
-// Code from the current branch (ours)
-const timeout = 5000;
-=======
-// Code from the incoming branch (theirs)
-const timeout = 10000;
->>>>>>> feature-branch
-```
-
-| Marker | Meaning |
-|--------|---------|
-| `<<<<<<< HEAD` | Start of the current branch's version (ours) |
-| `=======` | Separator between the two versions |
-| `>>>>>>> {ref}` | End of the incoming branch's version (theirs) |
+## Ours and Theirs
 
 During a **merge**: "ours" is the branch you're on, "theirs" is the branch being merged in.
 
@@ -76,12 +58,7 @@ Configuration files (tsconfig.json, .eslintrc, docker-compose.yml, etc.):
 
 ## Context Gathering
 
-Before resolving, gather context to make informed decisions:
-
-1. **Git log**: `git log --oneline -10 {base_ref}` and `git log --oneline -10 {incoming_ref}` — understand what each branch was doing
-2. **Related files**: read files imported by or related to the conflicted file
-3. **Project conventions**: check CLAUDE.md and .claude/rules/ for project-specific patterns
-4. **Tests**: check if either side added tests that reveal the intended behavior
+Before resolving: `git log --oneline -10 {base_ref}` and `git log --oneline -10 {incoming_ref}` to understand what each branch was doing; read files imported by or related to the conflicted file; check CLAUDE.md and `.claude/rules/` for project conventions; check whether either side added tests that reveal the intended behavior.
 
 ## Rules
 

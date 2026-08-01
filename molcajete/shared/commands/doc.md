@@ -59,19 +59,11 @@ Follow the skill's rules for all subsequent steps.
 
 ### For a directory target:
 
-1. List all files and subdirectories
-2. Skip directories on the skip list
-3. Read each file to understand its purpose, exports, and relationships
-4. If child directories have README.md files, read their frontmatter for the subdirectories table
-5. Identify the main entry point, core modules, and utilities
-6. Map dependencies between files (imports/exports)
-7. Check for an existing README.md — if present, read it for context
+Read every file that isn't on the skip list, plus any existing README.md, plus the frontmatter of child directories' README.md files. You need enough to name each file's purpose and exports, the entry point / core modules / utilities split, and the import graph between files.
 
 ### For a file target:
 
-1. Read the file fully
-2. Identify exported functions, classes, types, and their purposes
-3. Note existing inline documentation
+Read the file fully and identify its exported functions, classes, and types, their purposes, and any inline documentation already present.
 
 ## Step 5: Generate Documentation
 

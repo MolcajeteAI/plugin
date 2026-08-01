@@ -57,15 +57,11 @@ status(Feature) =
   - "pending"      if every child is "pending" or "dirty" with no "implemented" children
 ```
 
-In prose: **all implemented → implemented; some implemented + some pending → dirty; nothing implemented → pending**. The `dirty` middle state captures "this thing was working and now part of it isn't."
-
 **Feature roll-up children** = `UC-XXXX-*.md` spec files in the feature folder. The roll-up reads each UC's frontmatter `status:`. It never reads the CHANGELOG.
-
-There is no UC-level roll-up — the UC is a leaf whose status is written directly (see below).
 
 ## UC status — written directly from task completion
 
-The UC is the leaf, so its status is not rolled up from a lower artifact; it is **written directly** by whichever command last touched it:
+The UC is a leaf, so there is no UC-level roll-up; its status is **written directly** by whichever command last touched it:
 
 - **`/m:build`** — after running tasks, computes UC status from the plan's checkboxes: every task covering the UC's scenarios `[x]` → `implemented`; some `[x]` and some `[ ]` → `dirty`; none `[x]` → `pending`. Overwrites the UC frontmatter regardless of prior value.
 - **spec-phase commands** (`/m:spec`, `/m:fix`, `/m:change`, `/m:cover`) — when editing a previously-`implemented` UC, write `status: dirty` directly, immediately reflecting that the UC now has unfinished work before any plan exists.
@@ -102,16 +98,6 @@ specs/plans/
 
 ## Relationship to the CHANGELOG
 
-The CHANGELOG is **not** the status source of truth. It is a context log and a marker file for "what needs to change and why". Its entry-status transitions (`pending` → `dirty` → `implemented`, TODO → DONE) remain useful for tracking which change requests have been planned and built. But the artifact's frontmatter `status:` (UC, Feature) and the plan checkboxes (task) are what every consumer reads to answer "is this implemented?"
+The CHANGELOG is a context log and a marker file for "what needs to change and why", **not** the status source of truth. Its entry-status transitions (`pending` → `dirty` → `implemented`, TODO → DONE) track which change requests have been planned and built; the artifact frontmatter `status:` (UC, Feature) and the plan checkboxes (task) are what every consumer reads to answer "is this implemented?"
 
 See the `uc-log` skill for the CHANGELOG file format and entry mechanics.
-
-## At-a-glance reads
-
-Any reader — human or AI agent — can answer status questions by reading exactly one file:
-
-- "Is this feature implemented?" → open `REQUIREMENTS.md`, read frontmatter `status:`.
-- "Is this UC implemented?" → open `UC-XXXX-{slug}.md`, read frontmatter `status:`.
-- "Is this task done?" → open the plan file (`specs/plans/<plan-id>.md`), read the `## [ ]` / `## [x]` checkbox on `T-NNN`.
-
-No need to walk the CHANGELOG.

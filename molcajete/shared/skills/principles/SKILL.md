@@ -17,7 +17,7 @@ These are the rules every plan, every line of code, and every test must respect 
 
 In AI-assisted development, code churns. Functions move, names change, files split and merge. The only signal that survives that churn is **behavior verified by tests**. If the integration tests pass and they cover the right thing, the code does its job — regardless of how it looks. If the tests are shallow or absent, no amount of human review compensates.
 
-The load-bearing clause is "**and they cover the right thing**." A green test proves nothing on its own — a test that pins a *wrong* expected value passes just as green as a correct one, and the implementation that matches it looks done while being wrong. So "cover the right thing" is not an assumption Molcajete makes; it is a **gate Molcajete enforces**. Every task passes a correctness review (`/m:build`'s correctness-review step, the Reviewer role in the `testing` skill): a separate agent reads the UC scenarios independently of the test's assertions and confirms (a) the test pins a meaningful, user-observable exit for each covered scenario, (b) the asserted expected values match what the spec says must happen, and (c) the production code genuinely implements the behavior — no stubs that only satisfy the fixture. A task is not done until both the mechanical gate (green + coverage + non-vacuous mutation) and the correctness gate pass.
+"Cover the right thing" is a **gate, not an assumption**: every task passes a correctness review (`/m:build`'s correctness-review step, the Reviewer role in the `testing` skill) in which a separate agent reads the UC scenarios independently of the test's assertions. A task is not done until both the mechanical gate (green + coverage + non-vacuous mutation) and the correctness gate pass.
 
 Everything below follows from that.
 
@@ -37,26 +37,13 @@ Examples below use TypeScript with a Jest/Vitest-style runner because that surfa
 
 **1.1 Descriptive test names.**
 
-Test method / `it` / function names read as sentences describing the behavior being verified. No spec IDs in the name. Avoid abbreviations beyond standard ones.
-
-Bad:
-
-```ts
-test_SC_REQ3()
-RegisterUser_SC_001_Test
-test1()
-it('SC-001 works')
-```
-
-Good:
+Test method / `it` / function names read as sentences describing the behavior being verified. No spec IDs in the name (`test_SC_REQ3`, `it('SC-001 works')`, `test1` are all wrong). Avoid abbreviations beyond standard ones.
 
 ```ts
 it('rejects an empty email with a validation error', () => { ... })
 it('returns the user profile for an authenticated request', () => { ... })
 it('reverts when oracle equals operator', () => { ... })
 ```
-
-**Why:** someone scanning the test file should know what each test asserts without reading the body.
 
 **1.2 IDs in comments, not in names.**
 
@@ -67,8 +54,6 @@ Spec traceability lives in leading-line comments above tests, not in their names
 - **`it` / test method** — `// SC-XXXX: {short scenario description}` immediately above the test. When a single test covers multiple scenarios, list them comma-separated: `// SC-001, SC-002: Email validation rules`.
 
 The task's `Covers` list in the plan file is the canonical machine-readable mapping. The comments are for humans.
-
-Example:
 
 ```ts
 // UC-0KTg: Register User
@@ -83,23 +68,11 @@ describe('Email validation', () => {
 })
 ```
 
-The same shape works in any runner: file-header comment for the UC and task, group-header comment for the scenario, method-header comment for the scenario. The exact comment syntax (`//`, `#`, `--`, `/* */`) follows the language.
-
-**Why:** names tell you what the test asserts. Comments tell you which spec line it ties back to. Don't conflate the two — names get read every time the file opens; IDs only matter when chasing traceability.
+The same shape works in any runner — file-header comment for the UC and task, group- and method-header comments for the scenario — with the comment syntax (`//`, `#`, `--`, `/* */`) the language uses.
 
 **1.3 Precise, realistic values.**
 
-Assertions pin exact values that match production reality. When the expected value is computed from inputs, the test computes it explicitly so the calculation reads as documentation.
-
-Bad:
-
-```ts
-expect(balance).toBeGreaterThan(0)
-expect(user.email).toBeTruthy()
-expect(result).not.toBeNull()
-```
-
-Good:
+Assertions pin exact values that match production reality:
 
 ```ts
 expect(balance).toBe(1_500_000n)
@@ -107,7 +80,7 @@ expect(user.email).toBe('ada@example.com')
 expect(result.status).toBe('approved')
 ```
 
-When the expected value depends on inputs, show the calculation:
+When the expected value depends on inputs, the test computes it explicitly so the calculation reads as documentation:
 
 ```ts
 const fee = (amount * FEE_BPS) / 10_000n  // 0.5% of 1_000_000 = 5_000
@@ -115,8 +88,6 @@ expect(result.fee).toBe(fee)
 ```
 
 Vague assertions (`gt(0)`, `not null`, `truthy`) are forbidden unless the spec genuinely says "any positive value" or "any defined value" — rare, and the test must include a comment explaining the looseness.
-
-**Why:** a vague assertion documents nothing and catches almost no regressions. A precise assertion is a specification of expected behavior; the test fails the moment behavior drifts.
 
 **1.4 Verbose explanatory comments.**
 
@@ -137,8 +108,6 @@ it('rejects an email without an @ symbol', () => { ... })
 
 Comments cover: what behavior is under test, why it exists (the business or safety reason), a concrete example that exercises the behavior, and any non-obvious edge cases.
 
-**Why:** tests are the only honest documentation an AI-assisted codebase has. The next agent — six months from now, possibly the same model, possibly a different one — reads tests to learn what the code is supposed to do. Skimping on comments is skimping on the only durable record.
-
 **1.5 Test only current behavior.**
 
 Tests, comments, and code describe only what the system does **now**. When behavior changes, assert the new behavior directly and delete every trace of the old.
@@ -147,7 +116,7 @@ Tests, comments, and code describe only what the system does **now**. When behav
 - **When a scenario / FR / NFR changes, rewrite its tests to the new expected values.** When one is removed, delete its test cases outright — and delete the explanatory comments (1.4) that traveled with them. Never leave a test asserting removed behavior; never add a "this used to…" comment to a test.
 - **Every new functional requirement gets a positive test.** Every new **behaviorally-observable** non-functional requirement — anything reachable through a driver port, e.g. authorization, input validation, error handling, idempotency, rate limiting — gets a positive test too. NFRs that cannot be exercised as driver-port behavior (raw latency, load, throughput) stay spec-only acceptance criteria; name them as out-of-scope for the automated loop rather than faking a test.
 
-**Why:** a test suite is a description of present behavior. A test that guards a scenario the spec no longer contains contradicts the spec, breaks on the next correct change, and teaches the next agent something false. The changelog — not the test file — is where "what changed" lives (see 5.5).
+The changelog — not the test file — is where "what changed" lives (see 5.5).
 
 ## 2. Hexagonal Architecture Is the Default Shape
 
@@ -186,13 +155,9 @@ These rules apply regardless of stack. They are **navigation rules for the next 
 - **Refactor to reuse, never duplicate.** When you see a function that already exists, call it. When you see two functions doing the same thing, extract the shared logic. AI is uniquely prone to silent duplication — treat every "let me write a small helper" as an opportunity to grep first.
 - **Patterns where they earn their keep.** Use well-known patterns (repository, command, observer, strategy) only where the situation calls for them. Don't impose patterns; recognize them.
 
-A 3000-line file or a duplicated function is fog of war that compounds with every iteration. Shape is what makes navigation possible.
-
 ### Code Comments
 
-The same documentation discipline that applies to tests applies to production code. Code expresses *mechanism*; comments express *intent*. Without comments, intent is hidden inside implementation, and the next agent must reverse-engineer it from what the code does.
-
-Examples below stay in TypeScript for consistency with the test rules. The patterns apply identically in any language — translate `//` to the idiomatic comment for the runtime.
+The same documentation discipline that applies to tests applies to production code. Code expresses *mechanism*; comments express *intent*. Examples stay in TypeScript; the patterns apply identically in any language.
 
 **5.1 Spec traceability in code comments.**
 
@@ -210,8 +175,6 @@ Production code carries leading-line comments tying files and functions back to 
 export function validateRegistrationEmail(raw: string): string { ... }
 ```
 
-**Why:** tests prove what the code does; the comment links it back to the spec line that said it should do that. Future refactors stay aligned because the link is visible at the call site, not buried in a separate doc.
-
 **5.2 Function / method header comments.**
 
 Every non-trivial function carries a header comment explaining what it does and why. Trivial accessors (one-line getters/setters that wrap a field) can skip. The header covers:
@@ -220,9 +183,7 @@ Every non-trivial function carries a header comment explaining what it does and 
 - **Why** — one sentence explaining why it exists in business or domain terms.
 - **Non-obvious** — constraints, invariants, side effects the next reader needs to know.
 
-Bad: no comment, or a comment that just repeats the signature in English (`// Validates the email`).
-
-Good:
+A comment that just repeats the signature in English (`// Validates the email`) does not count.
 
 ```ts
 // Validates a registration email before any downstream code processes it.
@@ -235,44 +196,18 @@ Good:
 export function validateRegistrationEmail(raw: string): string { ... }
 ```
 
-**Why:** the function signature tells you *what shape* of data goes in and out. Only the comment tells you *what the function is for* and *why it exists*.
-
 **5.3 Inline comments for non-obvious blocks.**
 
-Every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why. Don't comment obvious lines (`x = x + 1` doesn't need a comment); comment the *intent* of multi-line operations.
-
-```ts
-// Trim, lowercase, and strip surrounding angle brackets. The user-agent
-// header often wraps emails as "<ada@example.com>", which downstream
-// services reject.
-const normalized = raw.trim().toLowerCase().replace(/^<|>$/g, '');
-
-// Split on the (single) `@` and reject if either side is empty. RFC 5321
-// allows wider patterns, but our user model requires both parts.
-const [local, domain] = normalized.split('@');
-if (!local || !domain || !domain.includes('.')) {
-  throw new InvalidEmailError({ code: 'invalid_email', raw });
-}
-```
-
-A short rule: if a function has three blocks of work, it has at least three inline comments.
-
-**Why:** code expresses mechanism. Comments express intent. The next agent reading this code without comments has to reverse-engineer intent from mechanism — slow at best, wrong at worst.
+Every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why. Don't comment obvious lines (`x = x + 1` doesn't need a comment); comment the *intent* of multi-line operations — what the step is for and which constraint made it necessary. A short rule: if a function has three blocks of work, it has at least three inline comments.
 
 **5.4 Be generous, especially in complicated code.**
 
-When in doubt, comment. Trust comments more than terse code. The bar for adding a comment is low; the bar for skipping one is high. Almost every line of non-trivial code earns a comment, unless the line is literally trivial (`return x`, simple arithmetic on well-named variables, idiomatic one-liners).
-
-Especially in:
+When in doubt, comment. The bar for adding a comment is low; the bar for skipping one is high. Almost every line of non-trivial code earns a comment, unless the line is literally trivial (`return x`, simple arithmetic on well-named variables, idiomatic one-liners). Especially in:
 
 - **Complicated control flow** — multi-branch conditions, early returns with side effects, error-handling chains.
 - **External-system interactions** — network, file system, hardware, external APIs. Comment what could go wrong and why the code handles it that way.
 - **Domain-heavy logic** — math, business rules, or invariants that aren't self-evident.
 - **Performance-sensitive sections** — comment the trade-off being made.
-
-Comments are not noise — they are the difference between code that an AI agent can extend safely and code that the next agent has to rewrite from scratch.
-
-**Why:** AI agents read code more than humans do. The cost of writing the comment is seconds; the cost of the next agent (or you, six months from now) re-reverse-engineering the code is much higher. Treat comments as the durable record of intent.
 
 **5.5 Comments and code describe only current behavior.**
 
@@ -280,8 +215,6 @@ The comment discipline above documents *what the code does now* — never what i
 
 - **No comment narrates history.** `previously`, `used to`, `formerly`, `no longer`, `deprecated`, "changed from X to Y", "was Z before" have no place in code or test comments. A comment describing old behavior is a trap: the next reader believes it. The CHANGELOG is the only record of history.
 - **When behavior is removed, delete the code and comments that served it.** Do not annotate them as obsolete, comment them out, or wrap them in "kept for reference." Dead code and stale comments are fog of war; the git history and changelog preserve what was there.
-
-**Why:** the codebase must read as a truthful account of the system as it is today. Every stale comment or orphaned function is a contradiction the next agent has to detect and resolve before it can trust anything nearby.
 
 ## 6. Principles Are Technology-Agnostic
 
@@ -291,9 +224,9 @@ This document does not specify a language, framework, runner, DI container, ORM,
 
 | Command | Enforcement |
 |---------|-------------|
-| `/m:plan` | Designs architecture using hexagonal vocabulary. Each task names the driver port it drives and the driven ports its code reaches, and delivers one vertical, working increment (never a layer). Decomposition covers every scenario exactly once. |
-| `/m:build` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**. Writes code that respects Principle 5 — small functions, clear boundaries, no god files, refactor-to-reuse. Coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle's "cover the right thing" gate before a task's checkbox flips. |
-| `uc-log` shared skill | Records every change. Principles don't decay over time because tests stay in place and the log makes new work explicit. |
+| `/m:plan` | Designs architecture in hexagonal vocabulary. Each task names the driver port it drives and the driven ports its code reaches, and delivers one vertical, working increment (never a layer). Decomposition covers every scenario exactly once. |
+| `/m:build` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**, writing code that respects Principle 5. The coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle before a task's checkbox flips. |
+| `uc-log` shared skill | Records every change, so new work stays explicit over time. |
 
 ## Override
 

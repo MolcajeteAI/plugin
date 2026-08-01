@@ -16,9 +16,7 @@ The changelog answers two questions: **what changed and why** (for plan) and **w
 
 ## The changelog is not the status source of truth
 
-Artifact status (UC, feature) lives on each artifact's frontmatter `status:` field; task status is the plan's `## [ ]` / `## [x]` checkbox. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:build`.
-
-This skill defines only the changelog file mechanics. Commands write `status` directly to the relevant frontmatter; the changelog mechanics described below do not affect that.
+Artifact status (UC, feature) lives on each artifact's frontmatter `status:` field; task status is the plan's `## [ ]` / `## [x]` checkbox. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. This skill defines only the changelog file mechanics. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:build`.
 
 ## File Path
 
@@ -43,17 +41,7 @@ When a UC-XXXX ID resolves to multiple module-instances (the same UC exists in 2
 - Entries in different module-instances **share the same timestamp** and **the same reason text** when the event is one logical spec-phase change.
 - Each entry also carries a `modules:` metadata token naming every module-instance that received an entry for this event. This makes fan-outs traceable from any single CHANGELOG.md — a reader looking at one module can see the change was also applied to the other listed modules.
 - The `modules:` token is **omitted** when the UC only exists in one module (single-instance / single-module project).
-
-**Example — same event across two modules (`patient` and `console`):**
-
-```
-TODO:
-- 20260616T141530 [pending] command:change plan:— modules:patient,console — email-verification gate added per security review
-```
-
-(This exact line appears in both `specs/features/patient/FEAT-.../UC-XXXX-.../CHANGELOG.md` and `specs/features/console/FEAT-.../UC-XXXX-.../CHANGELOG.md`.)
-
-**When only one module is affected but the UC is multi-module** (e.g., the fix is patient-only): the `modules:` token names just that module. Absence of a peer module in `modules:` signals to any reader that the peer module was intentionally not part of this event.
+- **When only one module is affected but the UC is multi-module** (e.g., the fix is patient-only): the `modules:` token names just that module. Absence of a peer module in `modules:` signals to any reader that the peer module was intentionally not part of this event.
 
 `/m:plan` treats each module-instance's log independently for status transitions (each entry flips `pending` → `dirty` → `implemented` on its own module-instance's file). Roll-up across module-instances still happens through the parent feature's status per the `status-rollup` skill.
 
@@ -112,14 +100,16 @@ No other transitions. A `pending` entry never becomes `implemented` without firs
 
 ## How Each Command Touches the Log
 
+Every row below applies **per module-instance**, per the fan-out rules above.
+
 | Command | Action |
 |---------|--------|
-| `/m:spec` | Append `pending` entry to TODO. `command:spec`. `plan:—`. For multi-module UCs, fan out — append to every module-instance's CHANGELOG.md and include the `modules:` token. |
-| `/m:fix` | Append `pending` entry to TODO. `command:fix`. `plan:—`. Always — even when no spec edit was needed. For multi-module UCs, fan out to every affected module-instance and include `modules:`. |
-| `/m:change` | Append `pending` entry to TODO. `command:change`. `plan:—`. For multi-module UCs, fan out to every affected module-instance and include `modules:`. |
-| `/m:cover` | Append `pending` entry to TODO. `command:cover`. `plan:—`. Once per module-instance at extraction time. For multi-module UCs, fan out and include `modules:`. |
-| `/m:plan` | For each `pending` entry it consumes: flip status to `dirty`, set `plan:<plan-id>`. Entries stay in TODO. For multi-module UCs, `/m:plan` transitions the entries in every module-instance's CHANGELOG.md that the plan covers. |
-| `/m:build` | For each `dirty` entry whose tasks completed: flip status to `implemented`, move the line from TODO to DONE (prepended at top of DONE). Per module-instance. |
+| `/m:spec` | Append `pending` entry to TODO. `command:spec`. `plan:—`. |
+| `/m:fix` | Append `pending` entry to TODO. `command:fix`. `plan:—`. Always — even when no spec edit was needed. |
+| `/m:change` | Append `pending` entry to TODO. `command:change`. `plan:—`. |
+| `/m:cover` | Append `pending` entry to TODO. `command:cover`. `plan:—`. Once per module-instance at extraction time. |
+| `/m:plan` | For each `pending` entry it consumes: flip status to `dirty`, set `plan:<plan-id>`. Entries stay in TODO. |
+| `/m:build` | For each `dirty` entry whose tasks completed: flip status to `implemented`, move the line from TODO to DONE (prepended at top of DONE). |
 
 `/m:plan` refuses to operate if any of the referenced UCs' TODO sections mix `command:cover` entries with other commands. Mixed-mode pending entries must be split across separate plan runs.
 
@@ -129,11 +119,3 @@ The word `dirty` appears at two levels with intentionally different meanings. Do
 
 - **Entry-level `dirty`** (managed here) — "in flight." The changelog entry has been planned but the build hasn't completed.
 - **Artifact-level `dirty`** (managed by `status-rollup`) — "was complete, now has new unfinished work." Lives on the UC / feature frontmatter.
-
-## Idempotency
-
-Every operation on the log is idempotent at the entry level:
-
-- Re-running `/m:spec`, `/m:fix`, `/m:change`, or `/m:cover` with the same description appends a new entry; it does not edit prior entries. Duplicate descriptions are the author's responsibility to avoid.
-- Re-running `/m:plan` against the same pending entries always creates a new plan file (per the lifecycle rule) but updates each consumed entry in place (status and plan-id).
-- Re-running `/m:build` against an already-completed task is a no-op on the log.

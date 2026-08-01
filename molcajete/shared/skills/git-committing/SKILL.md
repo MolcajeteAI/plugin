@@ -56,13 +56,9 @@ The first line is the subject. The body (bullet points) is optional but recommen
 
 2. **Maximum 50 characters** — if it exceeds 50, move details to the body.
 
-3. **Describe what changed**, not what was wrong:
-   - Good: "Fixes login redirect after authentication"
-   - Bad: "Fixes bug where users were stuck on login page"
+3. **Describe what changed**, not what was wrong — "Fixes login redirect after authentication", not "Fixes bug where users were stuck on login page".
 
-4. **Use simple language** — avoid jargon when plain words work:
-   - Good: "Adds user search feature"
-   - Bad: "Implements user discovery mechanism"
+4. **Use simple language** — "Adds user search feature", not "Implements user discovery mechanism".
 
 ### Conventional Commit Prefixes
 
@@ -80,10 +76,12 @@ Use conventional prefixes by default (see Style Detection). Only drop them if th
 
 ### Body Rules
 
-Use bullet points (hyphens, not paragraphs) to explain **why** when:
+Use bullet points to explain **why** when:
 - The change affects multiple files or areas
 - The reasoning is not obvious from the diff
 - Multiple steps or trade-offs were involved
+
+Bullets (hyphens), never prose. A paragraph body — "Refactors authentication flow to separate login and registration logic, making the code easier to test…" — becomes one hyphen bullet per aspect.
 
 For simple, obvious changes, a single subject line is enough.
 
@@ -99,18 +97,7 @@ Do not use issue tracker language as the subject — "Resolves #123" says nothin
 
 ## Spec References
 
-When a commit is part of a task that has PRD context (feature, use cases, scenarios), include a spec references block at the end of the commit body.
-
-### Format
-
-```
-FEAT-XXXX
-- UC-XXXX: Use case name
-  - SC-XXXX: Scenario name
-  - SC-XXXX: Scenario name
-- UC-XXXX: Use case name
-  - SC-XXXX: Scenario name
-```
+When a commit is part of a task that has PRD context (feature, use cases, scenarios), include a spec references block at the end of the commit body, in the shape given under Structure above.
 
 ### Rules
 
@@ -121,6 +108,30 @@ FEAT-XXXX
 5. Only include use cases and scenarios relevant to this commit, not the entire feature
 6. **Mandatory** when the commit is part of a task with feature/UC/scenario context
 7. **Omit** for commits with no PRD context (dependency updates, config changes, tooling)
+
+IDs are the base-62 codes from the spec, not sequential numbers:
+
+```
+feat: Add user registration endpoint
+
+- Creates registration handler with input validation
+- Adds bcrypt password hashing
+- Stores new user in database
+
+FEAT-0R7e
+- UC-0R8h: Register new user
+  - SC-0R9n: Valid registration with all fields
+  - SC-0R9o: Duplicate email rejected
+```
+
+A commit with no PRD context ends at the body — no refs block, no empty placeholder:
+
+```
+chore: Update dependencies to latest versions
+
+- Bumps express from 4.18 to 4.19
+- Updates jest to v30
+```
 
 ## No AI Attribution
 
@@ -134,36 +145,11 @@ Commits must look like normal human development. Focus on what changed, not how 
 
 ## Atomic Commits
 
-Each commit represents one logical change:
-- One bug fix per commit
-- One feature per commit
-- One refactoring per commit
-
-Do not mix unrelated changes:
-- Bad: fixing a bug AND adding a feature in one commit
-- Bad: updating dependencies AND refactoring code in one commit
-
-Small, frequent commits are better than large, infrequent ones: easier to review, easier to revert, better git history.
+Each commit represents one logical change — one bug fix, one feature, or one refactoring. Never mix unrelated changes (a bug fix AND a new feature; a dependency update AND a refactor). Prefer small, frequent commits over large ones.
 
 ## Scope Assessment
 
-After completing work, assess whether the changes should be one commit or multiple.
-
-### Single Commit
-
-Changes are **one logical concern** when they all serve the same intent:
-- Multiple files touched by one feature = one commit
-- A version bump + changelog + the feature it describes = one commit
-- A new command + its skill + plugin registration = one commit
-
-Judge by intent, not by file count.
-
-### Multiple Commits Needed
-
-Changes contain **multiple independent concerns** when:
-- A new feature AND an unrelated bug fix
-- A refactor AND a dependency update
-- Changes to module A's API AND an unrelated config change to module B
+After completing work, assess whether the changes should be one commit or multiple. Judge by intent, not by file count — a version bump + changelog + the feature it describes, or a new command + its skill + plugin registration, is **one** logical concern regardless of how many files it touches.
 
 ### Splitting Strategy
 
@@ -176,17 +162,10 @@ When changes need splitting:
 
 ## Pre-Commit Checklist
 
-Before committing, verify the diff:
-- No debug code (`console.log`, print statements, debugger)
-- No commented-out code
-- No temporary test data or hardcoded values
-- No unintended file changes
-- No secrets (API keys, passwords, tokens, `.env` files)
-- Stage specific files, not `git add .`
+Read the diff before committing. It must contain no debug code (`console.log`, print statements, debugger), no commented-out code, no temporary test data or hardcoded values, no unintended file changes, and no secrets (API keys, passwords, tokens, `.env` files). Stage specific files, not `git add .`.
 
 ## References
 
 | Reference | Purpose |
 |-----------|---------|
-| [references/message-format.md](./references/message-format.md) | Detailed format rules, verb table, body guidelines |
-| [references/examples.md](./references/examples.md) | Good and bad commit message examples |
+| [references/examples.md](./references/examples.md) | Worked commit message examples, with and without PRD context |

@@ -14,60 +14,33 @@ Rules for generating and updating README.md files that serve as directory-level 
 
 ## README.md Structure
 
-Every README.md follows this structure in order:
+`references/readme-template.md` is the canonical skeleton — section order and table shapes come from it, in the standard (backend/generic) or component (frontend) variant. The rules below govern what fills it.
 
-### 1. YAML Frontmatter
+### Frontmatter
 
-Three required fields:
+Three required fields: `module` (kebab-case directory name), `purpose` (one sentence — what this directory does), `last-updated` (`YYYY-MM-DD`). The `purpose` field is the primary LLM scanning hook: write it so an agent can decide whether to read further.
 
-```yaml
----
-module: {kebab-case directory name}
-purpose: {one sentence — what this directory does}
-last-updated: {YYYY-MM-DD}
----
-```
+### Overview
 
-The `purpose` field is the primary LLM scanning hook. Write it as a single clear sentence that lets an agent decide whether to read further.
+2-4 sentences: what this directory contains, how it fits into the larger system, key patterns or conventions used here.
 
-### 2. Overview Paragraph
+### Files table
 
-2-4 sentences covering:
-- What this directory contains
-- How it fits into the larger system
-- Key patterns or conventions used here
+Every file in the directory with a one-sentence description, sorted:
 
-### 3. Files Table
-
-Every file in the directory with a one-sentence description. Sort order:
 1. Entry points (main, index, app)
 2. Core modules (business logic, models, services)
 3. Utilities and helpers
 4. Configuration files
 5. Tests (if colocated)
 
-| File | Description |
-|------|-------------|
-| `index.ts` | Entry point that re-exports the public API |
-| `service.ts` | Core service implementing the domain logic |
-| `types.ts` | Shared type definitions |
-| `utils.ts` | Helper functions for data transformation |
+### Subdirectories table
 
-### 4. Subdirectories Table
+Child directories with their `purpose` pulled from their own README frontmatter; where a child has no README, describe it briefly from its contents. Omit the section entirely when the directory has no subdirectories.
 
-List child directories with their `purpose` pulled from their own README frontmatter. If a child directory has no README, describe it briefly based on its contents. This creates a navigable hierarchy.
+### Diagrams
 
-| Directory | Purpose |
-|-----------|---------|
-| `handlers/` | HTTP request handlers for the REST API |
-| `models/` | Database models and schema definitions |
-| `utils/` | Shared utility functions |
-
-Omit this section if the directory has no subdirectories.
-
-### 5. Mermaid Diagrams
-
-Include as many diagrams as needed to convey the directory's structure and behavior. Choose from:
+Include as many Mermaid diagrams as needed to convey the directory's structure and behavior. Choose from:
 
 - **Flowchart** — request/data flow through the directory's modules
 - **Class diagram** — type relationships and interfaces
@@ -77,7 +50,7 @@ Include as many diagrams as needed to convey the directory's structure and behav
 
 At minimum, include one flowchart showing how the directory's files relate to each other. Add more diagram types when they clarify something the flowchart doesn't.
 
-### 6. Notes (Optional)
+### Notes (optional)
 
 Gotchas, conventions, or non-obvious decisions. Only include if there's something that would surprise a reader or trip up an LLM.
 
@@ -94,14 +67,7 @@ Emphasize:
 
 ### Frontend (React, Vue, Svelte, etc.)
 
-Replace the Files table with a Component table:
-
-| Component | Props | Description |
-|-----------|-------|-------------|
-| `UserCard` | `user: User, compact?: boolean` | Displays user profile summary |
-| `UserList` | `users: User[], onSelect: (id) => void` | Scrollable list with selection |
-
-Also document:
+Use the component variant: the Files table becomes a Component table carrying a **Props** column (`user: User, compact?: boolean`) alongside the description. Also document:
 - State management approach (context, stores, signals)
 - Routing integration if applicable
 - Shared hooks or composables

@@ -36,7 +36,7 @@ Does not see the Implementer's reasoning. Maker–checker boundary.
 
 ### Reviewer
 
-Judges **correctness** — whether the implementation actually does what the spec says, not merely whether its own tests pass. Green tests prove nothing if a test pins the wrong expected value and the code matches it. The Reviewer is a separate agent from the Implementer (maker–checker) and reads the UC spec independently of the test's assertions.
+Judges **correctness** — whether the implementation actually does what the spec says, not merely whether its own tests pass. A separate agent from the Implementer (maker–checker), reading the UC spec independently of the test's assertions.
 
 **Receives:** the owning UC spec body (the `SC-XXXX` scenarios in the task's `Covers`, verbatim); the task's `Covers` list and grading prose; the final integration test file; the final production files the task touched. It does **not** receive the Implementer's reasoning.
 
@@ -57,17 +57,13 @@ Write production code in its final form on the first pass. No throwaway-minimum-
 
 ## Integration Tests Only
 
-Molcajete generates **integration tests exclusively**. Every task, every UC, every feature is backed by integration tests that drive through a driver port with the real internal stack. No unit tests, no component tests, no smoke tests are produced by `/m:build` or `/m:plan`.
+Integration-tests-only is Principle 1 (`principles` skill) — that section is canonical for what Molcajete does and does not generate, and for how pre-existing host unit tests are treated.
 
-If the host team wants unit tests for algorithmic code (parsers, encoders, hash routines, math), they write and maintain those themselves — outside Molcajete's lifecycle. Pre-existing unit tests in the host repo are left where they are and do not count toward Molcajete's coverage floor; the floor is met by integration tests only.
-
-The integration test is the contract for the task's scenarios. Where the contract cannot be economically exercised through the driver port, the task's design is wrong — either the seam or the scenario. Escalate; do not fall back to a unit test.
+Operationally: the integration test is the contract for the task's scenarios. Where the contract cannot be economically exercised through the driver port, the task's design is wrong — either the seam or the scenario. Escalate; do not fall back to a unit test.
 
 ## Outer-Edge Mocking
 
-Run for real: handlers, services, domain layer, repositories, validation, serialization.
-
-Mock at the outer edge only: network transport you don't own, the database driver (or use testcontainers), third-party APIs, time, randomness.
+Principle 2 sets the boundary. Applied to a build round: run for real — handlers, services, domain layer, repositories, validation, serialization. Mock at the outer edge only — network transport you don't own, the database driver (or use testcontainers), third-party APIs, time, randomness.
 
 ## Assertions
 
@@ -194,7 +190,7 @@ Test files are placed at a canonical path derived from the task's owning UC and 
 
 The canonical layout is a **dedicated tests tree keyed by module**, mirroring the spec tree module → feature → UC test. The `Tests` column of each module's row in `specs/MODULES.md` names this tree (typical values: `server/tests/{module}`, `tests/{module}`, `packages/{module}/tests`). **Integration tests do not live inside module source directories** — that would mix behavior tests with implementation code and break the "grep the tests tree to find every test for a feature" property.
 
-Molcajete does not generate unit tests. Any unit tests already in the repo are left where they are — Molcajete does not migrate, delete, or reason about them, and they do not count toward the coverage floor.
+Pre-existing unit tests in the repo are left exactly where they are — Molcajete does not migrate, delete, or reason about them.
 
 ## Keeping the File Organized
 
