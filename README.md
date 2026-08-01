@@ -35,7 +35,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
 3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
 4. **Review** — A spec-traceable review surface: `/m:review` writes a severity-scored review, `/m:preflight` surfaces and fixes issues interactively before you open a PR, and `/m:walkthrough` gives a guided, hierarchical tour of a change set.
-5. **Research** — Deep research with tech stack context, parallel agents, and structured output at three depth tiers.
+5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
 
 ### Why Specs?
 
@@ -156,8 +156,8 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, review rubric and severity |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
-| research | `research-methods` | 3-tier research routing (quick, explain, deep) with source evaluation |
-| research | `headless-research` | Unattended research execution for CLI mode |
+| research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
+| research | `headless-research` | Silent, no-interaction research brief written before spec-writing |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
 | shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, scoped coverage |
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |

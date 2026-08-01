@@ -8,19 +8,18 @@ Molcajete.ai is a Claude Code plugin that provides opinionated, reusable workflo
 
 ### What It Ships
 
-- **`m` plugin** (v3.1.0) — 6 slash commands and 13 reusable skills
+- **`m` plugin** (v3.11.0) — 12 slash commands and 17 reusable skills
 
 ### Key Directories
 
-- `molcajete/commands/` — Slash commands (Markdown with YAML frontmatter)
-- `molcajete/skills/` — Reusable knowledge skills (SKILL.md files)
-- `molcajete/.claude-plugin/plugin.json` — Plugin manifest
-- `prd/` — Product docs (mission, roadmap, tech-stack, changelog, specs)
-- `prd/specs/` — Feature specs with requirements, tasks, and plans
+- `molcajete/` — Plugin root, one directory per module (`build/`, `plan/`, `research/`, `review/`, `setup/`, `shared/`, `spec/`), each holding its own `commands/` (Markdown with YAML frontmatter) and/or `skills/` (SKILL.md files)
+- `molcajete/.claude-plugin/plugin.json` — Plugin manifest and canonical version
+- `research/` — Lifecycle research documents
+- `scripts/bump.sh` — Version bump script
 
 ### Tech Stack
 
-Pure Markdown plugin system with zero runtime dependencies. Commands and skills are Markdown files with YAML frontmatter specifying model, allowed tools, and prompts. Preferred model: claude-opus-4-6.
+Pure Markdown plugin system with zero runtime dependencies. Commands and skills are Markdown files with YAML frontmatter specifying model, allowed tools, and prompts. Models are pinned per command: `claude-opus-5` for `/m:spec`, `/m:change`, `/m:fix`, `/m:cover`, `/m:plan`, `/m:review`, and `/m:preflight`; `claude-sonnet-5` for `/m:build`, `/m:setup`, `/m:walkthrough`, `/m:research`, and `/m:doc`.
 
 ### Conventions
 
