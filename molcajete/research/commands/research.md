@@ -16,8 +16,6 @@ allowed-tools:
 
 # Research
 
-You are performing deep research on a topic. This command launches parallel agents to gather information from official docs, community sources, package registries, and the local codebase, then synthesizes findings into a progressive research guide.
-
 **All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response.
 
 ## Step 1: Load Skill
@@ -40,7 +38,7 @@ If `$ARGUMENTS` is empty, use AskUserQuestion:
 
 ## Step 3: Execute Research
 
-Follow the skill's workflow: detect tech stack, parse input, launch parallel agents, synthesize, and save.
+Run the skill's workflow.
 
 ## Step 4: Save
 

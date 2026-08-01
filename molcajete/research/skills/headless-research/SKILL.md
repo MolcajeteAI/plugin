@@ -51,30 +51,27 @@ If no user reference was provided:
 6. Also scan `research/*.md` at project root (user's explicit research) the same way
 7. If relevant research is found and recent (< 30 days by `date` field), use it and skip to Step 4
 
+Other commands discover briefs with this same scan, and it works identically for headless briefs and pointer briefs.
+
 ### Step 3: Launch 2 Parallel Agents
 
-If no reusable research was found, launch both agents in a single message:
+If no reusable research was found, launch both agents in a single message. Both feed a 200-500 word brief — tell each to keep findings concise.
 
 #### Local Context Agent
 
 - **Type:** `subagent_type: Explore`
 - **Task:** Find existing codebase patterns relevant to the topic
 - **Instructions:**
-  - Use Glob to find files related to the topic
-  - Use Grep to search for relevant imports, function names, patterns
-  - Use Read to examine relevant code sections
   - Return: existing dependencies, patterns, conventions, architecture decisions
-  - Keep findings concise — this feeds a 200-500 word brief
 
 #### Web Context Agent
 
 - **Type:** `subagent_type: general-purpose`
 - **Task:** 1-2 targeted web searches for current best practices
 - **Instructions:**
-  - Use WebSearch for current best practices, API patterns, library docs for the topic + detected stack
-  - Use WebFetch to read the most relevant result (limit to 1-2 pages)
+  - Search for current best practices, API patterns, library docs for the topic + detected stack
+  - Read the most relevant result (limit to 1-2 pages)
   - Return: 3-5 bullet points of current best practices, key libraries/APIs, gotchas
-  - Keep findings concise — this feeds a 200-500 word brief
 
 ### Step 4: Save Context Brief
 
@@ -87,19 +84,6 @@ ${CLAUDE_PLUGIN_ROOT}/research/skills/headless-research/templates/context-brief.
 This step runs regardless of the path taken (user reference, cached research, or fresh agents). The brief always exists after headless research completes.
 
 Generate the slug from the research topic in kebab-case. Use the current timestamp.
-
-## Discovery Pattern
-
-Other commands find research briefs using this pattern:
-
-1. List `.molcajete/research/*.md` — filenames sort naturally by timestamp (newest first)
-2. Read only YAML frontmatter of each file (not the body)
-3. Compare `description` and `query` against the current task's topic
-4. If relevant, read the full document and include it as context
-5. Stop after the first relevant match to protect context window
-6. If nothing relevant, proceed without research context
-
-This same pattern works for both headless briefs and pointer briefs referencing user research in `research/`.
 
 ## Templates
 
