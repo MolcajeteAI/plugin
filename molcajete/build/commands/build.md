@@ -60,7 +60,7 @@ If the plan-id does not resolve to a file `specs/plans/<plan-id>.md`, refuse wit
 
 ## Step 2: Load Skills and Principles
 
-Read in one batch:
+Read:
 
 1. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — plan file format, task shape, and Test File Convention.
 2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer / Validator / Reviewer roles, runner inference, outer-edge mocking, coverage gate.
@@ -70,7 +70,7 @@ Read in one batch:
 
 ## Step 3: Verify Prerequisites
 
-1. `specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist AND be read in full now (one parallel batch). If any is missing: "Project foundation not found. Run `/m:setup` first." Stop. Hold their content in working memory through Step 8 — `PROJECT.md` shapes scope decisions, `MODULES.md` is the canonical module → directory map (also used in 8.2), and `TECH-STACK.md` is re-read for the runner section in Step 7.
+1. `specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist AND be read in full now. If any is missing: "Project foundation not found. Run `/m:setup` first." Stop.
 2. Ensure `.molcajete/settings.json` exists and resolves to four per-dimension coverage floors (`lines`, `statements`, `branches`, `funcs`):
    - If the file does not exist, create `.molcajete/` and write:
      ```json
@@ -80,8 +80,6 @@ Read in one batch:
    - If the file has `testing.thresholds` (plural, object), use those four values directly. Any missing dimension defaults to 80.
    - If the file has the legacy `testing.threshold` (singular, number) and no `testing.thresholds`, **upgrade in place**: expand the single number to all four dimensions, write back, and tell the user: "Upgraded `.molcajete/settings.json` `testing.threshold = N` to per-dimension `testing.thresholds` (lines/statements/branches/funcs all = N). Edit individual dimensions to tighten the gate."
    - If the file has neither, merge in the default object and write it back.
-
-The resolved object `{lines, statements, branches, funcs}` is the operative gate for every per-file coverage check in Step 8.
 
 ## Step 4: Load the Plan
 
@@ -96,7 +94,7 @@ The resolved object `{lines, statements, branches, funcs}` is the operative gate
 
 ## Step 5: Load Upstream Context
 
-For every task marked for execution, resolve the **owning UC** of its `Covers` scenarios: glob `specs/features/*/FEAT-*/UC-*.md` (the UC spec is a sibling of `REQUIREMENTS.md`, not inside the `UC-*/` support folder) and find the UC spec whose scenarios include the task's `SC-XXXX` IDs (cross-check against the `**Specs:**` line). The feature folder is the UC spec's parent feature dir. Read upstream context for ALL touched FEATs and UCs in one parallel batch BEFORE Step 8:
+For every task marked for execution, resolve the **owning UC** of its `Covers` scenarios: glob `specs/features/*/FEAT-*/UC-*.md` (the UC spec is a sibling of `REQUIREMENTS.md`, not inside the `UC-*/` support folder) and find the UC spec whose scenarios include the task's `SC-XXXX` IDs (cross-check against the `**Specs:**` line). The feature folder is the UC spec's parent feature dir. Read upstream context for ALL touched FEATs and UCs before Step 8:
 
 For every touched FEAT:
 
@@ -112,7 +110,7 @@ For every touched UC:
 
 > Upstream context missing for {FEAT-XXXX | UC-XXXX}: `<path>`. Run `/m:spec` (for spec files) or `/m:setup` (for project foundation) before re-running `/m:build`.
 
-This is a hard gate — these documents are the behavioral source of truth. Every test assertion in Step 8.4, every production-code decision in Step 8.6, and every correctness judgment in Step 8.10 must be consistent with the loaded UC scenarios (`SC-XXXX`) and the feature's `ARCHITECTURE.md` component boundaries.
+This is a hard gate — the loaded UC scenarios (`SC-XXXX`) and the feature's `ARCHITECTURE.md` component boundaries govern every test assertion, production-code decision, and correctness judgment in Step 8.
 
 ## Step 6: Present the Build Plan
 
@@ -164,7 +162,7 @@ From the task index (Step 4) and prose:
 
 ### 8.3 Load build payload
 
-Parallel batch:
+Read:
 
 - **Dependency outputs.** For each `Depends on` task, read the production files it created/modified (named in its prose) so this task can call their exports. Capture signature lines you need — you do not need full bodies.
 - **Existing modify files.** Read the current contents of every file this task modifies.
@@ -174,12 +172,7 @@ Parallel batch:
 
 Translate the task's "how we prove it" grading prose into runner-equivalent integration test code at the derived test path, driving the named entry point. Group tests by the scenarios in `Covers`.
 
-**Apply Principle 1's Test Writing Rules** (loaded in Step 2):
-
-- **1.1 Descriptive names** — every `describe` block and `it` test gets a behavior-describing name. **Never put a spec ID (SC-XXXX, FR-XXXX, UC-XXXX) in a block or test name.**
-- **1.2 IDs in leading-line comments** — at the top of the test file, write `// UC-XXXX: {name}` and `// T-NNN: {outcome}`. Immediately above each `describe` group, write `// SC-XXXX: {short description}` (or `// FR-XXXX: ...`). Above each `it` test, write the relevant `// SC-XXXX: ...` comment for the scenario it covers.
-- **1.3 Precise, realistic values** — assertions pin exact values. Compute expected values explicitly when they derive from inputs.
-- **1.4 Verbose explanatory comments** — every test (or every scenario block of tests) gets a multi-line comment with what's being tested, why it matters, and a concrete example.
+**Apply Principle 1's Test Writing Rules** (loaded in Step 2) — descriptive names with no spec ID in them (1.1), IDs in leading-line comments (1.2), precise realistic values (1.3), verbose explanatory comments (1.4).
 
 Lifecycle:
 
@@ -213,25 +206,13 @@ Run the scoped test command against the derived test file only.
 - implement task: write production code in its final form across the layers the task names, to satisfy the behavior and turn the scaffold GREEN. Fill empty `it` bodies with concrete assertions as you implement (per Principle 1.3 — precise values). Honour dependency signatures verbatim.
 - coverage task: add more assertions to the scaffold to close coverage on the files it pins. **Do not write production code.**
 
-**Apply Principle 5 (universal software craft) while writing code.** Before adding a new helper, grep for an existing one and call it. Keep functions small. Keep boundaries clear. If you find yourself extending a file past its responsibility, split the file. Never duplicate code that already exists.
+**Apply Principle 5** (loaded in Step 2) — universal software craft while writing code (reuse an existing helper before adding one, small functions, clear boundaries, no duplication) and the Code Comments rules 5.1–5.4 (spec traceability, function headers, inline comments, generous commenting).
 
-**Apply Principle 5's Code Comments rules** (loaded in Step 2):
-
-- **5.1 Spec traceability** — at the top of every production file the build creates, write `// FEAT-XXXX: {feature name}` and `// UC-XXXX: {use case name}`. Above every function that satisfies specific scenarios, write `// SC-XXXX, SC-YYYY: {short description}`.
-- **5.2 Function header comments** — every non-trivial function gets a What / Why / Non-obvious comment block above its declaration.
-- **5.3 Inline comments** — every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why.
-- **5.4 Be generous, especially in complicated code.**
-
-**Reconcile first when the UC is `dirty`.** If the owning UC changed via `/m:fix`, `/m:change`, or `/m:spec` (its `Covers` scenarios were touched), before writing any new code or assertion, reconcile the existing canonical test file and touched production files against the current UC spec (re-read in Step 5) per the testing skill's "Reconciling Changed Behavior":
-
-- Delete test cases, assertions, comments, and production code that serve an `SC-`/`FR-`/`NFR-` the UC no longer contains (Principle 1.5 and 5.5).
-- Rewrite changed scenarios' assertions to the new expected values — do not keep the old expectation alongside.
-- Add positive test cases for every new FR and every new behaviorally-observable NFR.
-- Never write a test that asserts a retired behavior now fails, and never leave a comment narrating what the code used to do.
+**Reconcile first when the UC is `dirty`.** If the owning UC changed via `/m:fix`, `/m:change`, or `/m:spec` (its `Covers` scenarios were touched), reconcile the existing canonical test file and touched production files against the current UC spec (re-read in Step 5) per the testing skill's "Reconciling Changed Behavior" before writing any new code or assertion.
 
 Run the scoped test + coverage commands.
 
-- RED → retry up to 3 more times. Each retry: the only context is the failing test output plus the task prose. Do NOT re-read unrelated files.
+- RED → retry up to 3 more times. Each retry: the only context is the failing test output plus the task prose.
 - **STOP:** On the 3rd RED, halt with an escalation under `.molcajete/escalations/{plan-id}-{T-NNN}.md` with the last test output.
 - GREEN → proceed to **8.7 Coverage gap resolution**.
 
@@ -274,35 +255,18 @@ Identify the exported functions/bindings the task's tests exercise — the entry
 
 ### 8.9 Mechanical verification block (blocking)
 
-Before the correctness review, emit this exact checklist with each box ticked. If any box cannot be honestly ticked, halt with an escalation under `.molcajete/escalations/{plan-id}-{T-NNN}.md`; do NOT proceed to 8.10 or 8.11.
+Before the correctness review, emit the evidence for this task. If any item cannot be stated honestly, halt with an escalation under `.molcajete/escalations/{plan-id}-{T-NNN}.md`; do NOT proceed to 8.10 or 8.11.
 
-- [ ] Test file written at: `<path>`
-- [ ] Initial run was: `<RED|GREEN>` (expected: `<RED|GREEN>`) — runner output captured below
-- [ ] Phase 2 final run: GREEN — runner output captured below
-- [ ] Per-file coverage on every touched file meets ALL FOUR floors. For each touched file, paste a row: `<file>: lines <a>%, statements <b>%, branches <c>%, funcs <d>% (floors: <L>/<S>/<B>/<F>)`.
-- [ ] 8.7 gap-resolution: every reported gap was resolved (added scenario test with SC-XXXX referenced, or deleted defensive/orphaned code with reason). List each gap and its disposition.
-- [ ] Mutation check: RED for every mutated export — **when mutation was run** (coverage tasks always; implement tasks only when the scaffold started GREEN at 8.5). A normal implement task that started RED and passed via RED→GREEN ticks this as `N/A — RED-first proved non-vacuity` instead.
-- [ ] Mutated files restored (verified by re-read diff against saved originals) — `N/A` when mutation was not run
+- Test file path, and the initial run color against the expected one, with runner output.
+- Phase 2 final run: GREEN, with runner output.
+- One row per touched file: `<file>: lines <a>%, statements <b>%, branches <c>%, funcs <d>% (floors: <L>/<S>/<B>/<F>)` — every dimension at or above its floor.
+- Each 8.7 gap and its disposition (scenario test added with its SC-XXXX, or defensive/orphaned code deleted with reason).
+- Mutation: RED for every mutated export, or `N/A — RED-first proved non-vacuity` for an implement task that started RED (mutation runs for coverage tasks always, implement tasks only when the scaffold started GREEN at 8.5).
+- Mutated files restored, verified by re-read against the saved originals — `N/A` when mutation was not run.
 
 ### 8.10 Correctness review (blocking, maker-checker)
 
-The 8.9 block proves the tests are green, covered, and non-vacuous. It does **not** prove the implementation is *correct* — a test that pins a wrong expected value passes 8.9 happily. This step closes that gap. It is a **maker-checker** boundary: dispatch a **Reviewer sub-agent** (via the Agent tool) that did **not** write this task's code, per the testing skill's **Reviewer** role contract.
-
-Give the Reviewer, and only this:
-
-- The owning UC spec body (the `SC-XXXX` scenarios in the task's `Covers`, verbatim — the behavioral source of truth).
-- The task's `Covers` list and grading prose from the plan file.
-- The scaffolded integration test file (final content).
-- The production files the task created or modified (final content).
-
-The Reviewer verifies, reading the spec independently of the test's own assertions:
-
-1. **Meaningful assertions.** Each `SC-XXXX` in `Covers` has at least one `it` whose assertions pin a *user-observable exit* — response body/status, persisted state, an external call/message, or an observable side effect — not vacuous coverage that merely executes lines.
-2. **Right expectation.** The asserted expected values match what the UC scenario says must happen. The Reviewer computes the expected behavior from the spec itself and flags any assertion that pins a value the spec does not call for (the "test encodes a wrong expectation, code matches it, all green" failure).
-3. **Real implementation.** For implement tasks, production code actually implements the behavior for every covered scenario — no stubs, `TODO`, `FIXME`, `not implemented`, or hard-coded returns that only satisfy the test fixture. Functions the prose promised exist with the described behavior.
-4. **No missing scenario.** Every scenario in `Covers` is genuinely addressed in both test and (for implement tasks) code.
-
-The Reviewer returns exactly one of: `correct`, or `defects{list}` where each defect names the `SC-XXXX`, the file, and what is wrong.
+8.9 proves the tests are green, covered, and non-vacuous — not that the implementation is *correct*. A test that pins a wrong expected value passes 8.9 happily. This step is a **maker-checker** boundary: dispatch a **Reviewer sub-agent** (via the Agent tool) that did **not** write this task's code, per the testing skill's **Reviewer** role contract — give it exactly what that contract's **Receives** list names and nothing else, and it applies that contract's four checks and returns `correct` or `defects{list}`.
 
 - `correct` → proceed to 8.11.
 - `defects{...}` → loop back to 8.6: fix the production code and/or the test to satisfy the spec (not to satisfy the Reviewer superficially), then re-run 8.5→8.10. Cap at 3 correctness iterations.
@@ -310,12 +274,12 @@ The Reviewer returns exactly one of: `correct`, or `defects{list}` where each de
 
 ### 8.11 Record task completion
 
-Only reached when 8.9 emitted a fully-ticked block AND 8.10 returned `correct`.
+Only reached when 8.9's evidence was emitted complete AND 8.10 returned `correct`.
 
 1. **Flip the checkbox in the plan file.** Change this task's heading from `## [ ] T-NNN — {outcome}` to `## [x] T-NNN — {outcome}`. Preserve the rest of the file verbatim. This is the task-level source of truth and is read for dependency gating (8.2) by later tasks in this same run.
 2. **Handle `migrate` references.** For every referenced test the task prose marked `migrate`, emit an AskUserQuestion: "The referenced test `{path}` was migrated into the canonical integration test at `{derived-test-path}`. Delete the original file now?" Options: **"Delete"** / **"Keep"** (note the deferral in the Step 11 report). Never delete a `reference`-marked file.
 
-There is no per-task JSON record and no slice file — the plan checkbox is the durable ledger. Diagnostics (mutation logs, retry counts) live only in the conversation and any escalation files.
+The plan checkbox is the durable ledger. Diagnostics (mutation logs, retry counts) live only in the conversation and any escalation files.
 
 ## Step 9: Update Changelogs and Statuses
 
@@ -364,8 +328,6 @@ Before Step 11, emit this exact table with **one row for every artifact in the p
 | `<UC path>`                | status               | `<prev>`| `<new>` / unchanged      | e.g. `1 of 3 covering tasks still pending`  |
 | `<FEAT REQUIREMENTS.md>`   | status               | `<prev>`| `<new>` / unchanged      | e.g. `all UCs already implemented`          |
 | `<UC CHANGELOG.md>`        | entry `{plan-id}`    | dirty   | implemented / unchanged  | e.g. `entry unchanged — task failed`        |
-
-If the table contains no `UC-` or `FEAT-` roll-up rows, Step 9.2 did not run — halt and re-execute Step 9.2 before continuing.
 
 ## Step 11: Report
 
