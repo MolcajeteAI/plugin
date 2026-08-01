@@ -190,8 +190,14 @@ When the task is a coverage-recovery task (description names uncovered paths in 
 
 ## Where Integration Tests Live
 
-Test files for tasks are placed at a canonical path derived from the task (its `T-NNN`, entry point, and owning UC) and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the plan-authoring skill's "Test File Convention" for the formula and the build command's Step 8.2 for validation.
+Test files are placed at a canonical path derived from the task's owning UC and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the plan-authoring skill's "Test File Convention" for the formula and the build command's Step 8.2 for validation.
 
-The canonical layout is a **dedicated tests tree keyed by module**, mirroring the spec tree module → feature → UC → task test. The `Tests` column of each module's row in `specs/MODULES.md` names this tree (typical values: `server/tests/{module}`, `tests/{module}`, `packages/{module}/tests`). **Integration tests do not live inside module source directories** — that would mix behavior tests with implementation code and break the "grep the tests tree to find every test for a feature" property.
+The canonical layout is a **dedicated tests tree keyed by module**, mirroring the spec tree module → feature → UC test. The `Tests` column of each module's row in `specs/MODULES.md` names this tree (typical values: `server/tests/{module}`, `tests/{module}`, `packages/{module}/tests`). **Integration tests do not live inside module source directories** — that would mix behavior tests with implementation code and break the "grep the tests tree to find every test for a feature" property.
 
 Molcajete does not generate unit tests. Any unit tests already in the repo are left where they are — Molcajete does not migrate, delete, or reason about them, and they do not count toward the coverage floor.
+
+## Keeping the File Organized
+
+A UC's canonical test file accumulates tests across every task and fix that ever touches it — it is never rewritten from scratch. When adding to an existing file, do not append new test blocks at the end by default. Find the `describe`/context block for the scenario or behavior area the new tests belong to and insert alongside it; open a new block only when the tests genuinely start a new behavior area the file doesn't yet cover. When a task or fix adds tests for a scenario that already has a block, extend that block in place rather than opening a second one elsewhere in the file.
+
+The goal: the file reads as one coherent map of the UC's behavior, grouped by what it tests, not as a chronological log of when each task ran. Keeping it that way is part of writing the test, not a follow-up cleanup pass.

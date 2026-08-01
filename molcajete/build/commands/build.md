@@ -164,11 +164,11 @@ From the task index (Step 4) and prose:
 2. **Check file invariants:**
    - implement task — every file the prose says it **creates** must NOT exist; every file it **modifies** must exist.
    - coverage task — it creates and modifies no production files; every file whose behavior it pins must exist.
-3. **Derive the test file path** per the plan-authoring skill's Test File Convention from the task + `specs/MODULES.md`:
+3. **Derive the test file path** per the plan-authoring skill's Test File Convention from the task's owning UC + `specs/MODULES.md`:
    ```
-   {module.Tests}/{feature-dir-name}/{uc-dir-name}/{NNN}-{entry-type}-{task-slug}.{test-ext}
+   {module.Tests}/{feature-dir-name}/{uc-dir-name}.{test-ext}
    ```
-   Refuse to dispatch if `{entry-type}` is not in the module's `Driving Ports`, the module row has no `Tests` value, or two tasks in the same UC resolve to the same path.
+   Refuse to dispatch if `{entry-type}` is not in the module's `Driving Ports`, or the module row has no `Tests` value. When another task in this plan (or a prior plan) already targets this UC's test file, append to it rather than creating a new one.
 
 ### 8.3 Load build payload
 
@@ -202,7 +202,7 @@ Add imports the assertions need.
 - The referenced tests are **not** substitutes for integration coverage. Every SC in the task's `Covers` needs an integration assertion at the driver port.
 - A reference marked `migrate` is held for deletion after 8.10 succeeds (see 8.11). Do not delete it here.
 
-Write the test file. Create parent directories as needed.
+Write the test file. Create parent directories as needed. If the canonical file already has tests from a prior task or fix, insert the new blocks next to the existing ones for the same scenario/behavior area rather than appending at the end — see the testing skill's "Keeping the File Organized" rule.
 
 ### 8.5 Phase 1 check — initial test run
 

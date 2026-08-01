@@ -115,8 +115,7 @@ following unambiguous — written as flowing explanation, not as labeled lists:
    these.
 3. **The entry point / driving port** the behavior is reached through (e.g. an HTTP route, a
    GraphQL field, an event handler, a service call). The driving-port kind must be one listed in
-   the module's `Driving Ports` column in `specs/MODULES.md`. Build derives the canonical test
-   path from it.
+   the module's `Driving Ports` column in `specs/MODULES.md`.
 4. **How we prove it** — what the integration test drives and what "green" means: the concrete,
    user-observable outcomes that must hold. This is the source the build scaffolds the test from.
 5. **Decisions and trade-offs** — key choices, what the task deliberately does *not* do, and the
@@ -160,35 +159,35 @@ it is modified.
 
 ## Test File Convention
 
-Integration test files are placed at a **canonical path derived from the task and
+Integration test files are placed at a **canonical path derived from the task's owning UC and
 `specs/MODULES.md`** — never declared in the plan, never chosen ad hoc. The layout mirrors the
-spec tree **module → feature → use case → task test** so any reader can grep the tree by feature
-or UC and find every integration test that pins its behavior:
+spec tree **module → feature → use case test** so any reader can grep the tree by feature or UC
+and find the integration test that pins its behavior:
 
 ```
-{module.Tests}/{feature-dir-name}/{uc-dir-name}/{NNN}-{entry-type}-{task-slug}.{test-ext}
+{module.Tests}/{feature-dir-name}/{uc-dir-name}.{test-ext}
 ```
 
 | Token | Resolution |
 |-------|-----------|
 | `{module.Tests}` | The `Tests` column of the module's row in `specs/MODULES.md` (set by `/m:setup`). Integration tests live in a dedicated tests tree, not inside module source dirs. |
 | `{feature-dir-name}` | The task's parent feature dir under `specs/features/{module}/`, e.g. `FEAT-0Fy0-onboarding` |
-| `{uc-dir-name}` | The parent UC support dir, e.g. `UC-0KTg-collect-identity` |
-| `{NNN}` | The task's zero-padded sequence number, from `T-NNN` (e.g. `001` for `T-001`) |
-| `{entry-type}` | The driving-port kind named in the task prose (`http`, `graphql`, `event`, `cron`, `queue`, `service`, …). Must appear in the module's `Driving Ports` list in `specs/MODULES.md`. |
-| `{task-slug}` | A short kebab-case name for the task's behavior, from the `T-NNN` heading |
+| `{uc-dir-name}` | The parent UC's ID and slug, e.g. `UC-0KTg-collect-identity` — this is the test file's own name, not a subdirectory |
 | `{test-ext}` | Per-runner extension from `specs/TECH-STACK.md` Testing row or runner inference: `test.ts` (Vitest/Jest), `_test.py` (pytest), `_integration_test.go` (Go, with `//go:build integration`), `_spec.rb` (RSpec), etc. |
 
-The UC ID is deliberately omitted from the filename — the parent directory already encodes it.
-The `{entry-type}` segment makes the driving-port kind grep-discoverable across the test tree.
+One test file per UC: every task that closes scenarios in that UC — whether from the UC's
+original plan or a later `/m:fix`/`/m:change` plan — targets this same file. There is no per-task
+number and no entry-type segment in the filename; a task's driving-port kind still must appear in
+the module's `Driving Ports` list (see Task Prose above), it just no longer shapes the path.
 
 Molcajete generates **integration tests only** — tests driven through an entry point, covering a
 task's behavior end to end. Host-project unit tests already in the repo are left where they are
 and are not subject to this layout.
 
 Build-time validation (owned by `/m:build`): refuse to dispatch a task if its `{entry-type}` is
-missing from the module's `Driving Ports` list, if the module row in MODULES.md has no `Tests`
-value, or if two tasks in the same UC resolve to the same canonical path.
+missing from the module's `Driving Ports` list, or if the module row in MODULES.md has no `Tests`
+value. When multiple tasks in a plan target the same UC, they append to its existing canonical
+test file rather than each producing a new one.
 
 ## Status
 

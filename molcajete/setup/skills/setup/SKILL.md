@@ -37,7 +37,7 @@ Per-module testing tool detection follows `${CLAUDE_PLUGIN_ROOT}/shared/skills/t
 
 ## Tests Column (MODULES.md)
 
-Every module gets a `Tests` value at setup time. It is the per-module root directory under which integration/component test files live (task test files are derived from this root plus the task's feature/UC dirs — see the plan-authoring skill's "Test File Convention").
+Every module gets a `Tests` value at setup time. It is the per-module root directory under which integration/component test files live (UC test files are derived from this root plus the UC's feature dir — see the plan-authoring skill's "Test File Convention").
 
 Always per-module, derived from `{module.Directory}` using a language-aware default. Pick the row that matches the module's primary language:
 
@@ -56,7 +56,7 @@ The default is a starting point. The user may override per module after setup �
 
 ## Driving Ports Column (MODULES.md)
 
-Every module gets a `Driving Ports` value at setup time — a comma-separated list of kebab-case identifiers naming the kinds of entry points the module exposes. These identifiers become the per-task entry-point taxonomy: the entry point a task drives (named in its plan prose) must be one of the values in its module's `Driving Ports` list, and that value becomes part of the task's canonical test filename (see the plan-authoring skill's Test File Convention).
+Every module gets a `Driving Ports` value at setup time — a comma-separated list of kebab-case identifiers naming the kinds of entry points the module exposes. These identifiers become the per-task entry-point taxonomy: the entry point a task drives (named in its plan prose) must be one of the values in its module's `Driving Ports` list.
 
 Driving port — in the hexagonal sense — is the inbound side of the module: whoever or whatever calls in. Six recognized values plus any project-specific ones:
 

@@ -80,7 +80,7 @@ For each changed path:
    file. Read the touched UC's scenarios — they are the behavioral source of truth. The owning task's `Covers`
    list in `specs/plans/*.md` is the canonical machine-readable FEAT→UC→SC→file map when the change came
    through a plan.
-4. **Integration test** — the canonical path is `{module.Tests}/{feature-dir}/{uc-dir}/{NNN}-{entry}-{task}.{ext}`
+4. **Integration test** — the canonical path is `{module.Tests}/{feature-dir}/{uc-dir}.{ext}`
    (`module.Tests` from `specs/MODULES.md`). Grep the changed symbols against the module's tests tree to see
    what actually asserts them.
 
