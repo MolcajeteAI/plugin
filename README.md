@@ -153,6 +153,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | spec | `usecase-authoring` | UC file structure, flat inline scenarios, mandatory side effects |
 | spec | `architecture` | ARCHITECTURE.md schema, spec-ID → code map, table-filling rules |
 | spec | `reverse-engineering` | Code-to-spec extraction patterns and scope discovery |
+| spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — module-instance fan-out, spec-edit rules, log/status, plan hand-off |
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, review rubric and severity |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |

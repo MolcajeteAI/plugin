@@ -46,6 +46,7 @@
     "./spec/skills/architecture",
     "./spec/skills/feature-authoring",
     "./spec/skills/reverse-engineering",
+    "./spec/skills/spec-revision",
     "./spec/skills/usecase-authoring"
   ]
 }

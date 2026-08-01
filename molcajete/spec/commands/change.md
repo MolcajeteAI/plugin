@@ -38,42 +38,24 @@ Stop without writing anything.
 
 ## Step 2: Load Skills
 
-1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
-3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
-7. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used in Step 9.
-8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in Step 9 applies these.
+1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the machinery `/m:change` shares with `/m:fix`: the prerequisite gate, spec loading, module-instance resolution, spec-edit rules, logging and status, plan production, and the report shape.
+2. The skills listed in that skill's **Skills to Load** — including the host engineering principles.
 
 ## Step 3: Verify Prerequisites
 
-`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each ID referenced in `$ARGUMENTS` must resolve to an existing spec file. If any does not, refuse with a clear list of unresolved IDs.
+Apply the `spec-revision` skill's **Prerequisites** gate. Refuse and stop if it fails.
 
 ## Step 4: Load the Referenced Specs
 
-For each FEAT/UC ID:
-
-- Resolve the spec path. Read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` for UC IDs.
-- Read the feature's `ARCHITECTURE.md`.
-- Read the UC's `CHANGELOG.md` (for context on prior changes).
+Follow the `spec-revision` skill's **Loading the Referenced Specs**.
 
 ## Step 5: Resolve UC Module-Instances
 
-Before proposing edits, resolve each given `UC-XXXX` ID to the full set of module-instances that exist for it (see `spec/skills/usecase-authoring/SKILL.md` → Module-Scoped Use Cases).
+Before proposing edits, follow the `spec-revision` skill's **Resolving UC Module-Instances**. The fan-out question is:
 
-For each `UC-XXXX` ID:
+> "`{UC-XXXX}` exists in {N} modules: {list}. Apply this change to which modules?"
 
-1. Glob `specs/features/*/FEAT-*/UC-XXXX-*.md`. Every match is a module-instance of that UC. The module is the segment immediately under `specs/features/`.
-2. Read every module-instance's spec file, the parent feature's `REQUIREMENTS.md`/`ARCHITECTURE.md` in that module folder, and each module-instance's `CHANGELOG.md`.
-3. If exactly one module-instance exists, proceed with no fan-out.
-4. If 2+ module-instances exist, present the fan-out via AskUserQuestion:
-   > "`{UC-XXXX}` exists in {N} modules: {list}. Apply this change to which modules?"
-   > Options: "All ({N})" (default) / one option per module ("Only {module}") / "Custom — I'll list them" (via Other, user provides a subset).
-5. Record the confirmed target set per UC-XXXX. All subsequent steps iterate over that set.
-
-For FEAT IDs, the same fan-out applies transitively: expand the FEAT to its UCs (per Step 4), then resolve each UC's module-instances.
+"All ({N})" is the pre-selected option.
 
 ## Step 6: Draft the Spec Edit
 
@@ -98,39 +80,27 @@ If after review the user determines no spec edit is needed **anywhere**, refuse:
 
 ## Step 7: Apply Spec Edits
 
-For each module-instance the user confirmed, edit its `UC-XXXX-{slug}.md` (the UC spec file, a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE for that module's feature folder). Increment frontmatter `version` on each edited file — versions are per-file. Update that module's `REQUIREMENTS.md` and `ARCHITECTURE.md` per the architecture skill's additive rules — Component Inventory / API Surface / Code Map rows for any newly-implied files or endpoints in that module.
-
-The spec edit **replaces** the old text — it describes only the new behavior. Do not retain the previous wording or annotate the spec with "previously X" / "changed from Y". The changelog entry's `reason` (Step 8) is the only record of what changed and why.
+For each module-instance the user confirmed, follow the `spec-revision` skill's **Applying Spec Edits** (including its replace-never-annotate rule). ARCHITECTURE.md reach for a change: update that module's `REQUIREMENTS.md` **and** `ARCHITECTURE.md` — Component Inventory / API Surface / Code Map rows for any newly-implied files or endpoints in that module.
 
 ## Step 8: Append Log Entries and Update UC Status
 
-For every module-instance affected in Step 7, append the changelog entry per the `uc-log` shared skill, then write that instance's and its parent feature's status per the `status-rollup` shared skill. A peer instance not edited in this run keeps its prior status.
+Follow the `spec-revision` skill's **Logging and Status**, over **every module-instance affected in Step 7**.
 
 Per-command entry values:
 
 - command: `change`
-- plan: `—`
-- timestamp: the **same** UTC timestamp for every module-instance in this fan-out
 - modules: every module in the fan-out target set, **even if only one was actually edited** — the token records the scope of the event.
 - reason: one paragraph capturing what changed in the spec and why. **Same reason text** for every module-instance in this fan-out (e.g., "added email-verification gate before login per security review 2026-06-15").
 
 ## Step 9: Produce the Plan
 
-Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the entries just logged in Step 8. A change is always **`mode: default`** (implement tasks).
+Follow the `spec-revision` skill's **Producing the Plan** over the entries logged in Step 8.
 
 Direct the plan's **summary and context paragraph to be the consolidated change record**: state plainly what changed, in which UCs/features (naming each), and the approach — this is the single narrative the change produces, spanning every affected UC in one document (the per-UC `CHANGELOG.md` stays as the terse marker log). Because the UC specs already describe the new behavior, the tasks reconcile the code to match: `/m:build` will delete tests/code for retired scenarios and add tests for the new behavior (Principle 1.5).
 
-The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong interpretation is caught here before any code is built), writes `specs/plans/<plan-id>.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped.
-
 ## Step 10: Report
 
-Tell the user:
-
-- The spec edits made per module-instance (one or two lines each), grouped by UC-XXXX.
-- The log entry appended per module-instance (note the `modules:` token when multi-module).
-- The new status per module-instance and per affected feature.
-- Any module-instances that were resolved but skipped by the user.
-- The plan written: `specs/plans/<plan-id>.md`, and its tasks.
+Report per the `spec-revision` skill's **Reporting**.
 
 End the report with the explicit hand-off:
 

@@ -38,42 +38,24 @@ Every affected module-instance must end up with a log entry in Step 8: features 
 
 ## Step 2: Load Skills
 
-1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
-3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
-7. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used in Step 9.
-8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in Step 9 applies these.
+1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the machinery `/m:fix` shares with `/m:change`: the prerequisite gate, spec loading, module-instance resolution, spec-edit rules, logging and status, plan production, and the report shape.
+2. The skills listed in that skill's **Skills to Load** — including the host engineering principles.
 
 ## Step 3: Verify Prerequisites
 
-`specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist. Each ID referenced in `$ARGUMENTS` must resolve to an existing spec file. If any does not, refuse with a clear list of unresolved IDs.
+Apply the `spec-revision` skill's **Prerequisites** gate. Refuse and stop if it fails.
 
 ## Step 4: Load the Referenced Specs
 
-For each FEAT/UC ID:
-
-- Resolve the spec path. Read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` for UC IDs.
-- Read the feature's `ARCHITECTURE.md`.
-- Read the UC's `CHANGELOG.md` (for context on prior changes).
+Follow the `spec-revision` skill's **Loading the Referenced Specs**.
 
 ## Step 5: Resolve UC Module-Instances
 
-Before diagnosing, resolve each given `UC-XXXX` ID to the full set of module-instances that exist for it (see `spec/skills/usecase-authoring/SKILL.md` → Module-Scoped Use Cases).
+Before diagnosing, follow the `spec-revision` skill's **Resolving UC Module-Instances**. The fan-out question is:
 
-For each `UC-XXXX` ID:
+> "`{UC-XXXX}` exists in {N} modules: {list}. Which modules does this bug affect?"
 
-1. Glob `specs/features/*/FEAT-*/UC-XXXX-*.md`. Every match is a module-instance of that UC. The module is the segment immediately under `specs/features/`.
-2. Read every module-instance's spec file, its parent feature's `REQUIREMENTS.md`/`ARCHITECTURE.md`, and its `CHANGELOG.md`.
-3. If exactly one module-instance exists, proceed with no fan-out.
-4. If 2+ module-instances exist, present the fan-out via AskUserQuestion:
-   > "`{UC-XXXX}` exists in {N} modules: {list}. Which modules does this bug affect?"
-   > Options: "All ({N})" / one option per module ("Only {module}") / "Custom — I'll list them" (via Other, user provides a subset).
-5. Record the confirmed target set per UC-XXXX. Diagnosis, spec edits, and log entries in the next steps iterate over that set.
-
-For FEAT IDs, expand the FEAT to its UCs (per Step 4), then resolve each UC's module-instances here.
+Diagnosis, spec edits, and log entries in the next steps iterate over the confirmed target set.
 
 ## Step 6: Diagnose
 
@@ -95,40 +77,28 @@ Options: "Proceed" / "Edit" (user provides corrections via Other) / "Cancel".
 
 ## Step 7: Apply Spec Edits (if any)
 
-For each module-instance where the diagnosis was **Spec silent** or **Spec wrong**, edit that module-instance's `UC-XXXX-{slug}.md` (the UC spec file, a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE for that module's feature folder). Increment frontmatter `version` on each edited file — versions are per-file. Update that module's ARCHITECTURE.md tables only if the edit changed the Component Inventory / API Surface / Code Map surface (per the architecture skill's additive rules).
-
-When editing a **Spec wrong** scenario or FR, **replace** the incorrect text with the correct behavior — do not keep the wrong wording or annotate it with "was X, now Y". The changelog `reason` records the correction.
+Only module-instances diagnosed **Spec silent** or **Spec wrong** are edited; a **Spec correct, code wrong** instance gets no spec edit at all. For the ones that are edited, follow the `spec-revision` skill's **Applying Spec Edits** (including its replace-never-annotate rule). ARCHITECTURE.md reach for a fix: update that module's tables **only if** the edit changed the Component Inventory / API Surface / Code Map surface.
 
 ## Step 8: Append Log Entries and Update UC Status
 
-For every module-instance in each UC-XXXX target set, append the changelog entry per the `uc-log` shared skill, then write that instance's and its parent feature's status per the `status-rollup` shared skill.
+Follow the `spec-revision` skill's **Logging and Status**, over **every module-instance in each UC-XXXX target set** — not just the edited ones.
 
 Per-command entry values:
 
 - command: `fix`
-- plan: `—`
-- timestamp: the **same** UTC timestamp for every module-instance in this fan-out
 - reason: one paragraph capturing the bug **as it manifests in this module**. When the diagnosis was Spec correct/Code wrong, the reason names the misbehavior and states the expected behavior **positively** — describe what the code should do, so the plan writes a regression test that asserts the correct behavior (Principle 1.5), not a test that merely proves the bug is absent. When the diagnosis required a spec edit, the reason summarizes the spec edit too. Reasons may differ per module-instance when the diagnosis differs.
 
 Append a log entry **even when the spec was untouched** — the entry drives the regression plan regardless of whether the spec moved. Module-instances the user excluded in Step 5 are not logged.
 
 ## Step 9: Produce the Plan
 
-Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded in Step 2) over the entries just logged in Step 8. A fix is always **`mode: default`** (implement tasks — a regression test that starts RED, then the code change that turns it GREEN).
-
-The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong diagnosis is caught here before any code is built), writes `specs/plans/<plan-id>.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped.
+Follow the `spec-revision` skill's **Producing the Plan** over the entries logged in Step 8. A fix's tasks are a regression test that starts RED, then the code change that turns it GREEN.
 
 For a purely local, single-scenario regression the plan is typically one task; do not manufacture extra tasks.
 
 ## Step 10: Report
 
-Tell the user:
-
-- The diagnosis per module-instance, grouped by UC-XXXX.
-- The spec edits made (if any), per module-instance.
-- The log entry appended per module-instance (note the `modules:` token when multi-module).
-- The new status per module-instance and per affected feature.
-- The plan written: `specs/plans/<plan-id>.md`, and its task(s).
+Report per the `spec-revision` skill's **Reporting**, with one addition: lead with **the diagnosis per module-instance, grouped by UC-XXXX**.
 
 End the report with the explicit hand-off:
 
