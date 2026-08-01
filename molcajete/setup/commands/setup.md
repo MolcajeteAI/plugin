@@ -8,15 +8,12 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
-  - Agent
   - AskUserQuestion
 ---
 
 # Set Up Project Foundation
 
-One AskUserQuestion: the user describes the project. From that single answer, write `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, and `.molcajete/settings.json`. Detect everything else from the codebase or the description.
-
-**Use AskUserQuestion only for the description and the final confirmation.** No multi-stage interview.
+One AskUserQuestion: the user describes the project. From that single answer, write `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, and `.molcajete/settings.json`. Detect everything else from the codebase or the description. **Use AskUserQuestion only for the description and the final confirmation** — no multi-stage interview.
 
 ## Step 1: Load Skill
 
@@ -36,7 +33,7 @@ On **Cancel**, stop. On **Regenerate all**, continue to Step 7 (the existing flo
 
 ## Step 3: Detect Drift
 
-Update mode walks the **Drift Catalog** in `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` (loaded in Step 1). The catalog enumerates every drift check the plugin knows about; for each entry, run the **Detection** rule against the host and collect findings.
+Walk the **Drift Catalog** in the skill loaded in Step 1: for each entry, run its **Detection** rule against the host and collect findings.
 
 For each finding, record:
 
@@ -51,7 +48,7 @@ If the collected findings list is empty, tell the user:
 
 > No updates needed. Setup is current with the plugin defaults.
 
-Stop. Do not proceed to Step 4.
+Then stop.
 
 ## Step 4: Report and Confirm
 
@@ -79,7 +76,7 @@ Omit any category that has zero findings. Then ask via AskUserQuestion:
   - "Apply selected" — pick which fixes to apply per category (Step 5).
   - "Skip" — exit update mode without changes.
 
-On **Skip**, stop. On **Apply all**, mark every finding as `selected` and go to Step 6. On **Apply selected**, go to Step 5.
+On **Skip**, stop. On **Apply all**, mark every finding as `selected` and skip Step 5.
 
 ## Step 5: Apply Selected
 
@@ -90,17 +87,11 @@ For each category that has findings, issue a multi-select AskUserQuestion:
 - Options: one per finding in that category, labelled with the `summary` from Step 3
 - `multiSelect: true`
 
-When a category has more than 4 findings, chain AskUserQuestion calls (4 options each) until the user has reviewed every finding in that category. Mark only the chosen findings as `selected`. Then proceed to Step 6.
+When a category has more than 4 findings, chain AskUserQuestion calls (4 options each) until the user has reviewed every finding in that category. Mark only the chosen findings as `selected`.
 
 ## Step 6: Apply Updates and Report
 
-For each finding marked `selected`, execute the catalog entry's **Fix** action:
-
-- **`principles-host-file`** → Step 12 logic. When the file exists but is stale, follow Step 12's existing per-file AskUserQuestion ("Keep existing / Regenerate from plugin skill"); update mode does not force overwrite of host content.
-- **`principles-claude-md-block`** → Step 13 logic. Always idempotent-replaced; content outside markers untouched.
-- **`tech-stack-running-tests` / `tech-stack-coverage`** → For each affected module, re-run the manifest-scan portion of Step 7 to derive the command. When detection finds nothing for a coverage field, write `not available`. Insert the line at the canonical position per the catalog. Preserve every other line in the file.
-- **`settings-testing-threshold`** → Read `.molcajete/settings.json` as JSON, merge in `testing.threshold = 80` (preserve every other key and nested value), write back.
-- **`dot-claude-rules-dir`** → `mkdir -p .claude/rules`.
+For each finding marked `selected`, execute its catalog entry's **Fix** action verbatim, preserving every other line in the touched file. The steps those actions name are this file's Step 7 (stack detection), Step 11 (foundation write), Step 12 (principles file), and Step 13 (CLAUDE.md block).
 
 For each finding, record one of: `Applied`, `Skipped (user declined per-file prompt)`, `Failed: {reason}`.
 
@@ -120,14 +111,7 @@ End with the standard hand-off:
 
 ## Step 7: Detect Existing Stack (parallel)
 
-In a single parallel batch:
-
-- Glob common module roots (`apps/*/`, `packages/*/`, `services/*/`, `cmd/*/`) and read manifests (`package.json`, `pyproject.toml`/`requirements*.txt`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, `build.gradle{,.kts}`) when found.
-- Read `docker-compose.yml`, `.github/workflows/*.yml`, `vercel.json`, `netlify.toml`, `biome.json`, `.eslintrc*`, `tailwind.config.*`, `prisma/schema.prisma`, `drizzle.config.ts` if present.
-- Grep for SDK imports indicating external services (Stripe, OpenRouter, Twilio, AWS SDK, etc.).
-- For each module, attempt to detect the **test command** and **coverage command** from the manifest's scripts (e.g., `package.json scripts.test` / `scripts.coverage`, `pyproject.toml [tool.pytest.ini_options]`, `Makefile` targets, `go test ./...` conventional for Go).
-
-From these, infer: modules (with directory + language + framework + key libraries + test runner via the testing skill's Runner Inference + lint/format tools + running-tests command + coverage command), services (databases, caches, queues, hosting, CI/CD), external services, runtime (Docker Compose vs host-native), repository structure (mono vs multi), env file location, and starter actors (from auth middleware, admin routes, webhook handlers, etc.).
+Run the skill's **Codebase Detection** scan in a single parallel batch. On top of what that section covers, detect for each module the **test command** and **coverage command** from the manifest's scripts (e.g., `package.json scripts.test` / `scripts.coverage`, `pyproject.toml [tool.pytest.ini_options]`, `Makefile` targets, `go test ./...` conventional for Go).
 
 If no codebase exists, skip this step — the project description from Step 8 is the only source.
 
@@ -141,18 +125,10 @@ Optionally include scoped follow-ups in the same AskUserQuestion call (up to 4) 
 
 ## Step 9: Compose
 
-Combine the description (Step 8) and the codebase findings (Step 7) into a single mental model. Resolve:
+Combine the description (Step 8) and the codebase findings (Step 7) into a single mental model, and resolve every document per the skill's **Composition** section. Two TECH-STACK fields come only from Step 7's detection:
 
-- **Project description** — 1–2 paragraphs (PROJECT.md).
-- **Modules** — from directory structure, or single-module if root-level project. Each gets ID, name, description, directory.
-- **Tech stack per module** — from manifests; populate `Modules.{name}` rows including:
-  - `Testing` (framework — when detection found a clear runner; otherwise leave blank for Runner Inference at build time).
-  - **`Running tests`** — the exact command to run the tests for the module. Required when the module ships testable code.
-  - **`Coverage`** — the exact coverage command + where to read stats. If the module does not expose coverage stats, write `not available` — `/m:build` will estimate against the 80% floor.
-  - Plus Services, Applications, External Services, Repository Structure, Tooling, Environment, Conventions sections from findings.
-- **Actors** — from auth middleware, admin routes, API key handlers, webhook receivers in the code, plus any mentioned in the description. Each row: Actor / Role / Description / Constraints.
-- **Domains** — logical business concerns (identity, billing, notifications, etc.) inferred from route prefixes, directory names, model names, or the description.
-- **Glossary** — 5 standard terms (Module, Domain Tag, Feature, Use Case, Actor) + 3–5 project-specific terms (the database name, the primary framework, domain language from the description).
+- **`Running tests`** — the exact command to run the tests for the module. Required when the module ships testable code.
+- **`Coverage`** — the exact coverage command + where to read stats. If the module does not expose coverage stats, write `not available` — `/m:build` will estimate against the 80% floor.
 
 ## Step 10: Present Composite for Confirmation
 
@@ -174,7 +150,7 @@ mkdir -p specs .molcajete .claude/rules
 
 Per module: `mkdir -p specs/features/{module}`. Every project — single- or multi-module — gets a per-module folder under `specs/features/`.
 
-Read templates from `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/` (PROJECT, TECH-STACK, ACTORS, GLOSSARY, MODULES, DOMAINS, FEATURES) and write each file under `specs/`. For TECH-STACK.md specifically: populate **Running tests** and **Coverage** for every module that ships testable code, using the commands detected in Step 7 (or marked `not available` when the project does not provide a coverage collector).
+Write each foundation file from its template per the skill's **Document Generation** table. For TECH-STACK.md specifically: populate **Running tests** and **Coverage** for every module that ships testable code, using the commands detected in Step 7 (or marked `not available` when the project does not provide a coverage collector).
 
 Write `.molcajete/settings.json` as `{"testing": {"threshold": 80}}` if it doesn't exist; preserve existing keys when it does.
 
@@ -182,21 +158,18 @@ Write `.molcajete/settings.json` as `{"testing": {"threshold": 80}}` if it doesn
 
 The host project receives a local copy of the engineering principles at `.claude/rules/principles.md`. This is the operative version that `/m:plan` and `/m:build` read; the team can edit it to adapt principles to their context.
 
-1. Read the plugin skill: `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md`.
-2. Strip the YAML frontmatter (everything between the leading `---` and the closing `---`, plus the closing line itself). Keep the body verbatim, starting at the `# Engineering Principles` heading.
-3. **If `.claude/rules/principles.md` does not exist**, write the stripped body there.
-4. **If `.claude/rules/principles.md` already exists**, ask via AskUserQuestion:
-   - Question: "Engineering principles already exist at `.claude/rules/principles.md`. Keep existing (preserves team edits) or regenerate from the plugin skill?"
-   - Header: "Principles"
-   - Options: "Keep existing" (default) / "Regenerate from plugin skill"
-   - On "Keep existing", do nothing.
-   - On "Regenerate from plugin skill", overwrite with the stripped body.
+Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` and strip its YAML frontmatter (everything between the leading `---` and the closing `---`, plus the closing line itself), keeping the body verbatim from the `# Engineering Principles` heading on.
+
+**If `.claude/rules/principles.md` does not exist**, write the stripped body there. **If it already exists**, ask via AskUserQuestion:
+
+- Question: "Engineering principles already exist at `.claude/rules/principles.md`. Keep existing (preserves team edits) or regenerate from the plugin skill?"
+- Header: "Principles"
+- Options: "Keep existing" (default) / "Regenerate from plugin skill"
+- On "Keep existing", do nothing. On "Regenerate from plugin skill", overwrite with the stripped body.
 
 ## Step 13: Inject CLAUDE.md Fenced Block
 
-The host project's `CLAUDE.md` carries a short, always-loaded summary of the engineering principles plus a pointer to the full file. The block uses sentinel markers so re-runs are idempotent.
-
-Compute the block:
+The host project's `CLAUDE.md` carries a short, always-loaded summary of the engineering principles plus a pointer to the full file, fenced by sentinel markers so re-runs are idempotent. The block:
 
 ```
 <!-- molcajete:principles:start -->
@@ -221,7 +194,7 @@ Inject:
 2. **If `CLAUDE.md` exists and contains both sentinel markers**, replace everything between them (inclusive of the markers themselves) with the new block. Do not touch any content outside the markers.
 3. **If `CLAUDE.md` exists and does not contain the markers**, append the block to the end of the file, preceded by a blank line.
 
-The injection is silent — no user prompt. The block is metadata that should always reflect the current plugin defaults.
+The injection is silent — no user prompt; the block is plugin-owned metadata that always reflects current defaults.
 
 ## Step 14: Report
 

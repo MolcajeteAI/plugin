@@ -41,16 +41,16 @@ Every module gets a `Tests` value at setup time. It is the per-module root direc
 
 Always per-module, derived from `{module.Directory}` using a language-aware default. Pick the row that matches the module's primary language:
 
-| Language / framework | `Tests` default | Notes |
-|----------------------|-----------------|-------|
-| TypeScript / JavaScript | `{module.Directory}/tests` | Works with Vitest, Jest, Mocha; runners discover the directory |
-| Python | `{module.Directory}/tests` | pytest convention |
-| Java / Maven | `{module.Directory}/src/test/java` | Maven Surefire convention |
-| Java / Gradle | `{module.Directory}/src/test/java` | Same — Gradle follows Maven layout by default |
-| Ruby / RSpec | `{module.Directory}/spec` | RSpec discovers `spec/**` automatically |
-| Rust | `{module.Directory}/tests` | Cargo integration test convention |
-| Go | `{module.Directory}` | Co-located convention; `_test.go` suffix discriminates test files |
-| Other | `{module.Directory}/tests` | Sensible fallback unless the runner requires otherwise |
+| Language / framework | `Tests` default |
+|----------------------|-----------------|
+| TypeScript / JavaScript | `{module.Directory}/tests` |
+| Python | `{module.Directory}/tests` |
+| Java / Maven | `{module.Directory}/src/test/java` |
+| Java / Gradle | `{module.Directory}/src/test/java` |
+| Ruby / RSpec | `{module.Directory}/spec` |
+| Rust | `{module.Directory}/tests` |
+| Go | `{module.Directory}` |
+| Other | `{module.Directory}/tests` |
 
 The default is a starting point. The user may override per module after setup — for example, monorepos may prefer `packages/{module}/tests`, and projects that vendor a `test/` directory at the repo root may centralize. The test-path derivation always reads `MODULES.md` at build time, so changing a `Tests` value flows through every subsequent build.
 
@@ -58,31 +58,13 @@ The default is a starting point. The user may override per module after setup �
 
 Every module gets a `Driving Ports` value at setup time — a comma-separated list of kebab-case identifiers naming the kinds of entry points the module exposes. These identifiers become the per-task entry-point taxonomy: the entry point a task drives (named in its plan prose) must be one of the values in its module's `Driving Ports` list.
 
-Driving port — in the hexagonal sense — is the inbound side of the module: whoever or whatever calls in. Six recognized values plus any project-specific ones:
-
-| Value | What it covers |
-|-------|----------------|
-| `http` | REST routes, public HTTP endpoints |
-| `graphql` | GraphQL schemas and resolvers |
-| `event` | Async event/message consumers (Kafka, RabbitMQ, NATS, SNS, etc.) |
-| `cron` | Scheduled jobs, time-triggered tasks |
-| `queue` | Queue/job consumers (BullMQ, SQS workers, Sidekiq) |
-| `service` | Public service methods called from other modules in the same process |
+Driving port — in the hexagonal sense — is the inbound side of the module: whoever or whatever calls in. Six recognized values: `http`, `graphql`, `event`, `cron`, `queue`, `service` (public methods called from other modules in the same process, with no transport boundary).
 
 Projects can extend with their own values (`grpc`, `websocket`, `tcp`, `signal`) — they are kebab-case identifiers, no other constraint.
 
 ### Detection (codebase scan)
 
-In the codebase scan, detect driving ports per module by these signals. Populate the `Driving Ports` value with every detected kind for the module; if the scan finds nothing for a module, ask the user.
-
-| Driving port | Detection signals |
-|--------------|-------------------|
-| `http` | Express/Fastify/Koa route registrations; FastAPI/Flask `@app.route`; NestJS `@Controller`; Rails `config/routes.rb` entries; Go `http.HandleFunc` / Gin/Echo/Fiber handlers; ASP.NET `[Route]`; Spring `@RequestMapping`/`@RestController` |
-| `graphql` | `type Query` / `type Mutation` in `*.graphql` / `*.gql`; `@Resolver`/`@Query`/`@Mutation` decorators; `gql\`…\`` tagged templates; `buildSchema` / `makeExecutableSchema` |
-| `event` | Kafka consumer SDK (`KafkaJS.consumer`, `confluent-kafka-go`); NATS subscribers; RabbitMQ `channel.consume`; SNS/SQS topic subscriptions; Pub/Sub subscribers |
-| `cron` | `node-cron`, `node-schedule`, `apscheduler`, `robfig/cron`; cron-format strings in config; `Scheduled` decorators (Spring); `crontab` files |
-| `queue` | BullMQ `Worker`/`Queue.process`; SQS `pollFor*`; Sidekiq workers; Resque jobs; Bull `processJob` |
-| `service` | Public class methods exposed via a DI container, RPC registry, or explicit public-API export when there is no transport boundary |
+In the codebase scan, detect driving ports per module from its route registrations, resolvers, consumers, schedulers, workers, and exported service APIs. Populate the `Driving Ports` value with every detected kind for the module; if the scan finds nothing for a module, ask the user.
 
 If detection finds multiple signals (e.g., a module has both HTTP routes and event consumers), list all of them: `http, event`. Order is alphabetical; comma-and-space separated.
 
@@ -94,10 +76,6 @@ When `specs/PROJECT.md` already exists and the user opts to regenerate (or runs 
 2. Add the `Driving Ports` column if it is missing.
 3. Populate missing values for each module from detection; preserve any human-edited values already present.
 4. Surface a "Driving ports added" diff in the confirmation step so the user sees what changed.
-
-## Confirmation Rule
-
-Present the composite foundation in **one** AskUserQuestion. Options: write all files / edit one section / cancel. Do not interview section-by-section.
 
 ## Document Generation
 
@@ -114,23 +92,6 @@ Read templates from `./templates/` and write each file in a single parallel batc
 | FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `specs/FEATURES.md` |
 | principles.md | `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` (body only, frontmatter stripped) | `.claude/rules/principles.md` |
 | CLAUDE.md block | inlined in `setup.md`'s CLAUDE.md-block step | `<host-root>/CLAUDE.md` (fenced section between sentinel markers) |
-
-## Engineering Principles
-
-`/m:setup` writes a host-project copy of the engineering principles at `.claude/rules/principles.md` and injects a short summary into the host `CLAUDE.md` so any AI agent working in the project sees them.
-
-- **Source of truth (default):** `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md`. The plugin ships these.
-- **Host-project copy:** `.claude/rules/principles.md`. Team-editable. Operative version that `/m:plan` and `/m:build` read at run time.
-- **Always-on summary:** `CLAUDE.md` fenced section delimited by `<!-- molcajete:principles:start -->` and `<!-- molcajete:principles:end -->`.
-
-**Re-run behavior:**
-
-- `.claude/rules/principles.md` — written when absent. When present, `/m:setup` asks whether to keep (default, preserves team edits) or regenerate from the plugin skill.
-- `CLAUDE.md` fenced section — replaced in place when the markers are present; appended when the file exists but the markers are absent; the file is created with only the block when it doesn't exist. Content outside the markers is never touched. The block always reflects current plugin defaults.
-
-## Regeneration
-
-When `specs/PROJECT.md` already exists, `/m:setup` offers three paths: **Cancel**, **Regenerate all** (full one-shot composition; loses local edits), or **Update** (drift detection + selective patch). The principles file follows its own regeneration prompt in the principles-file step — not part of the foundation regeneration.
 
 ## Drift Catalog
 
