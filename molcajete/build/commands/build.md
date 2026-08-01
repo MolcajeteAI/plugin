@@ -1,6 +1,6 @@
 ---
 description: Execute a plan — run the TDD red/green/mutation lifecycle plus a correctness review for one or more tasks in a prose plan.
-model: claude-opus-4-6
+model: claude-sonnet-5
 argument-hint: "<plan-id> <T-NNN> [more ...]"
 allowed-tools:
   - Read

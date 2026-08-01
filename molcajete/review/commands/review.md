@@ -1,6 +1,6 @@
 ---
 description: Produce a guided, spec-traceable code review of a PR, branch, or ref range and write it to a reviews/ file. Read-only; never posts to GitHub.
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: "[PR # | branch | ref-A ref-B — omit for current branch vs base]"
 allowed-tools:
   - Read

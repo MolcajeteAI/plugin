@@ -1,6 +1,6 @@
 ---
 description: Read pending log entries on referenced UCs, design architecture (or accept the existing one in cover mode), decompose into vertical tasks, and write the prose plan that /m:build will execute.
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...]
 allowed-tools:
   - Read

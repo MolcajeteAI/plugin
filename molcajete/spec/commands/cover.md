@@ -1,6 +1,6 @@
 ---
 description: Extract specs from existing code (scope inferred from freeform input). Tests come later via /m:plan + /m:build.
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: <freeform description — capability, feature, UC, or single code path>
 allowed-tools:
   - Read

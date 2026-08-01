@@ -1,6 +1,6 @@
 ---
 description: Interactively review your own change set before opening a PR — get familiar with the solution, surface the known problems and rule violations, and fix them one by one until it's clear to ship.
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: "[base branch — omit to auto-detect and confirm]"
 allowed-tools:
   - Read

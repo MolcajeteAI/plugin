@@ -1,6 +1,6 @@
 ---
 description: Walk through a change set interactively, hierarchically (feature to use case to scenario), explaining what each change is and why it was made, with clickable file:line links. Read-only.
-model: claude-opus-4-6
+model: claude-sonnet-5
 argument-hint: "[PR # | branch | ref-A ref-B — omit for current branch vs base]"
 allowed-tools:
   - Read

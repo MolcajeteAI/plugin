@@ -1,6 +1,6 @@
 ---
 description: Initialize project foundation in one shot — describe the project once, all 7 spec files written from that
-model: claude-opus-4-6
+model: claude-sonnet-5
 allowed-tools:
   - Read
   - Write

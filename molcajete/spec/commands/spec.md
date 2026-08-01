@@ -1,6 +1,6 @@
 ---
 description: Create or update features and use cases (with inline scenarios) from free-form natural language
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: <freeform spec description>
 allowed-tools:
   - Read

@@ -1,6 +1,6 @@
 ---
 description: Generate or update directory documentation (README.md)
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 argument-hint: "<file path, directory, or module name>"
 allowed-tools:
   - Read

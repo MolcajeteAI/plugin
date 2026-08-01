@@ -1,6 +1,6 @@
 ---
 description: Deep research with tech stack context, parallel agents, and long-form output
-model: claude-sonnet-4-6
+model: claude-sonnet-5
 argument-hint: <topic, URL, or local path to research>
 allowed-tools:
   - Read

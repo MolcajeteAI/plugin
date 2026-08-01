@@ -1,6 +1,6 @@
 ---
 description: Intentionally change the behavior of an existing FEAT/UC. Always updates specs first, marks the affected UCs dirty, then produces the change plan directly for /m:build.
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
   - Read

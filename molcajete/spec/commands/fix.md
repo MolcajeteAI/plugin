@@ -1,6 +1,6 @@
 ---
 description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Updates specs only when the spec was wrong, then produces the regression plan directly for /m:build.
-model: claude-opus-4-6
+model: claude-opus-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
   - Read
