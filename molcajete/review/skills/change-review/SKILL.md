@@ -29,9 +29,6 @@ If any is missing, refuse and stop:
 > This is not a Molcajete project (no `specs/PROJECT.md` / `specs/MODULES.md`). The review commands are
 > spec-anchored — run `/m:setup` to initialize the project foundation first.
 
-The whole value of these commands is traceability: a change with no `FEAT/UC/SC` and no integration test
-is not "unreviewable" — that absence is one of the most important things to report.
-
 ## Resolving the Change Set
 
 Parse the command's target argument into one of four shapes, then gather the diff.
@@ -98,9 +95,7 @@ Used by `/m:review` and `/m:preflight` (the walkthrough narrates changes, it doe
 - **Principles** — read `.claude/rules/principles.md` from the host project first (the operative copy). If
   missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` and warn: "No host principles file
   at `.claude/rules/principles.md` — using plugin defaults. Run `/m:setup` to generate the host file." Score
-  against principles 1–5: integration-tests-as-contract and the 1.1–1.5 test-writing rules, hexagonal shape,
-  DI, the 80% touched-file coverage floor, and universal software craft (small functions, clear boundaries,
-  no god files, refactor-don't-duplicate, the 5.1–5.5 comment rules).
+  against principles 1–5, including the 1.1–1.5 test-writing rules and the 5.1–5.5 comment rules.
 - **Host rules** — any `.claude/rules/*.md` that applies to the touched paths, plus the root `CLAUDE.md`.
 
 **Severity** and **verdict**:

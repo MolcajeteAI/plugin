@@ -24,32 +24,28 @@ The whole point is traceability: **every issue cites the spec and the integratio
 
 ## Step 1: Load Skills and Rubric
 
-Read in one batch:
-
 1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, and the review rubric + severity.
-2. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — the operative rubric. If missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and warn: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file."
+2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
 
 Apply the `change-review` skill's **Prerequisites** gate now. If it is not a Molcajete project, refuse per that skill and stop.
 
 ## Step 2: Resolve the Target and Gather the Diff
 
-Follow the `change-review` skill's **Resolving the Change Set**: parse `$ARGUMENTS` (empty → current branch vs detected base; a branch name; a PR number via `gh`; or two refs), detect and confirm the base branch via AskUserQuestion, and gather the diff, `--stat`, and the commit log (plus the PR body/commits for a PR).
-
-Read the PR body / commit subjects — they are the author's own claim of what the change does and which spec it serves. Note whether they reference any `FEAT/UC`.
+Follow the `change-review` skill's **Resolving the Change Set** for `$ARGUMENTS`. Read the PR body / commit subjects — they are the author's own claim of what the change does and which spec it serves. Note whether they reference any `FEAT/UC`.
 
 ## Step 3: Map Changed Files to Modules and Specs
 
-Follow the `change-review` skill's **Mapping the Diff to Specs**. For each changed path, resolve its module from `specs/MODULES.md`, read its `// FEAT/UC/SC` traceability comments, cross-reference the UC spec files (scenarios inline) and the owning task's `Covers` in `specs/plans/*.md`, and locate the canonical integration test. Load the host rules that apply to the touched paths (`.claude/rules/*.md`) and the root `CLAUDE.md`. Record any changed file that maps to no spec as **unmapped** — a `missing-spec` candidate.
+Follow the `change-review` skill's **Mapping the Diff to Specs**, and load the host rules that apply to the touched paths (`.claude/rules/*.md`) plus the root `CLAUDE.md`.
 
-## Step 4: Fan Out Review Lenses (one output stream)
+## Step 4: Review Lenses (one output stream)
 
-Dispatch parallel **Agent** sub-agents. The lenses only exist to get broad coverage — **their findings all merge into one severity-sorted list.** There are no per-lens sections. Give each agent the diff, the touched-file list, the loaded specs/tests, and the applicable rules, and require every issue it returns to fill in the **Spec says** and **Test says** lines (with an explicit `[missing]` when absent).
+Run these lenses over the change set. They only exist to get broad coverage — there are no per-lens sections; everything merges in Step 5. **If the change set is large, dispatch them as parallel Agent sub-agents**, giving each the diff, the touched-file list, the loaded specs/tests, and the applicable rules; otherwise run them inline.
 
-- **Rules / principles** — violations of `.claude/rules/*` and `CLAUDE.md`, and of principles 1–5 (integration-tests-as-contract, the 1.1–1.5 test-writing rules, hexagonal shape, DI, coverage floor, craft/comment rules 5.1–5.5).
+- **Rules / principles** — violations of `.claude/rules/*`, `CLAUDE.md`, and principles 1–5.
 - **Architecture** — boundary violations, god files, duplication that should be reuse, hexagonal drift, business logic in the wrong layer.
-- **Shortcut** — can-kicking, TODOs that hide scope, legacy paths left behind, silent truncation/caps, disabled or renamed tests, `nil`/error guards masking real gaps.
+- **Shortcut** — can-kicking, TODOs that hide scope, legacy paths left behind, silent truncation/caps, disabled or renamed tests.
 - **Bug** — correctness, edge cases, concurrency, nil, overflow, unit mismatches.
-- **Spec / test** — for each touched behavior resolve `FEAT/UC/SC`; confirm a spec defines it and an integration test asserts it; reason statically about the 80% coverage floor on touched files. Emit `missing-spec`, `missing-test`, and `low-coverage` issues like any other.
+- **Spec / test** — resolve `FEAT/UC/SC` for each touched behavior, confirm a spec defines it and an integration test asserts it, and reason statically about the 80% coverage floor on touched files.
 
 ## Step 5: Synthesize and Write the File
 
@@ -129,7 +125,4 @@ Tell the user the review file path and the verdict, and the count of issues by s
 
 ## Rules for this command
 
-- Never post to GitHub, never edit source — this command only reads and writes the review file.
-- Cite real `file:line`, real `FEAT/UC/SC`, and real test paths. If a spec or test is absent, write `[missing]` explicitly — do not guess an ID and do not leave the line blank.
-- Keep suggested comments short and paste-ready.
-- Coverage is assessed statically (reason from the tests tree); never run CI.
+- Cite real `file:line`, real `FEAT/UC/SC`, and real test paths — never guess an ID, and never leave a **Spec says** / **Test says** line blank.

@@ -15,7 +15,7 @@ allowed-tools:
 
 # Preflight Command
 
-`/m:preflight` is the pre-PR pass on **your own** work — the checklist you clear before takeoff. When code is written with agents you are often not fully familiar with it, so this command first walks you through the solution, then surfaces the design problems and rule violations the same way `/m:review` does — and then helps you **fix them interactively before you open the pull request.** It edits source (that is the point), but it never commits — you commit.
+`/m:preflight` is the pre-PR pass on **your own** work: it first walks you through the solution, then surfaces the design problems and rule violations the same way `/m:review` does — and then helps you **fix them interactively before you open the pull request.** It edits source (that is the point), but it never commits — you commit.
 
 **Base argument:** $ARGUMENTS
 
@@ -23,10 +23,8 @@ allowed-tools:
 
 ## Step 1: Load Skills and Rubric
 
-Read in one batch:
-
 1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, and the review rubric + severity.
-2. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — the operative rubric. If missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` and warn: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file."
+2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
 3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — so a fix that adds or repairs a test follows the integration-test rules (the Implementer/Reviewer contracts, precise values, current-behavior-only).
 
 Apply the `change-review` skill's **Prerequisites** gate. If it is not a Molcajete project, refuse and stop.
@@ -49,13 +47,13 @@ Options include each touched feature ("Deeper on {FEAT}"), and "Move on to the r
 
 ## Step 5: Surface the Known Issues
 
-Run the `change-review` skill's **Review Rubric & Severity** against the change set — the same judgment `/m:review` makes, but in-session. Dispatch parallel **Agent** lenses if the change set is large (rules/principles, architecture, shortcut, bug, spec/test), and merge into **one severity-sorted list**. Each issue is spec/test-anchored (`Spec says` / `Test says`, `[missing]` when absent); missing-spec, missing-test, and sub-floor coverage on touched files are first-class issues.
+Run the `change-review` skill's **Review Rubric & Severity** against the change set — the same judgment `/m:review` makes, but in-session. Dispatch parallel **Agent** lenses if the change set is large (rules/principles, architecture, shortcut, bug, spec/test), and merge into **one severity-sorted list**.
 
-Present the list compactly (title, severity, location, one-line what) and the current verdict (`BLOCK` / `CHANGES REQUESTED` / `APPROVE`). If there are no issues, say so plainly — the work is clean against the rubric — and skip to Step 7.
+Present the list compactly (title, severity, location, one-line what) and the current verdict. If there are no issues, say so plainly — the work is clean against the rubric — and skip to Step 7.
 
 ## Step 6: Interactive Fix Loop
 
-Walk the issues in severity order (`HIGH` → `MEDIUM` → `LOW`). For each, present it fully (what, Spec says, Test says, risk, possible fixes) and ask via AskUserQuestion:
+Walk the issues in severity order. For each, present it fully (what, Spec says, Test says, risk, possible fixes) and ask via AskUserQuestion:
 
 > "Issue #{n} ({severity}, {type}): {title}. What do you want to do?"
 

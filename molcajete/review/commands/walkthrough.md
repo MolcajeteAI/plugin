@@ -7,7 +7,6 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
-  - Agent
   - AskUserQuestion
 ---
 
@@ -58,9 +57,3 @@ Keep each step short and concrete — one node's worth of change, not a wall of 
 When the user has covered the tree (or chooses "Done"), give a one-paragraph recap: every feature/UC touched, and the single most important change to keep in mind. Remind them this was a read-only tour, and suggest the next step:
 
 > Next: run `/m:review` for a written, severity-scored review, or `/m:preflight` to fix issues interactively before opening the PR.
-
-## Rules for this command
-
-- Read-only: never edit source, never write a file, never post to GitHub.
-- Anchor every change to its `FEAT/UC/SC` where one exists; be explicit when a change is unmapped.
-- Prefer clickable `file:line` references over pasting large diffs; expand only on request.
