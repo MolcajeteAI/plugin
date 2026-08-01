@@ -9,7 +9,6 @@ allowed-tools:
   - Glob
   - Grep
   - Bash
-  - Agent
   - AskUserQuestion
 ---
 
@@ -39,8 +38,6 @@ Stop without writing anything.
 
 ## Step 2: Load Skills
 
-Read in one batch:
-
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
@@ -64,12 +61,12 @@ For each FEAT/UC ID:
 
 ## Step 5: Resolve UC Module-Instances
 
-Multi-module UCs share one `UC-XXXX` ID across every module the capability appears in (see `spec/skills/usecase-authoring/SKILL.md` → Module-Scoped Use Cases). Before proposing edits, resolve each given `UC-XXXX` ID to the full set of module-instances that exist for it.
+Before proposing edits, resolve each given `UC-XXXX` ID to the full set of module-instances that exist for it (see `spec/skills/usecase-authoring/SKILL.md` → Module-Scoped Use Cases).
 
 For each `UC-XXXX` ID:
 
 1. Glob `specs/features/*/FEAT-*/UC-XXXX-*.md`. Every match is a module-instance of that UC. The module is the segment immediately under `specs/features/`.
-2. Read every module-instance's spec file, the parent feature's `REQUIREMENTS.md`/`ARCHITECTURE.md` in that module folder, and each module-instance's `CHANGELOG.md`. (Step 4 already loaded the first module-instance encountered; extend the load set to include the peers.)
+2. Read every module-instance's spec file, the parent feature's `REQUIREMENTS.md`/`ARCHITECTURE.md` in that module folder, and each module-instance's `CHANGELOG.md`.
 3. If exactly one module-instance exists, proceed with no fan-out.
 4. If 2+ module-instances exist, present the fan-out via AskUserQuestion:
    > "`{UC-XXXX}` exists in {N} modules: {list}. Apply this change to which modules?"
@@ -105,23 +102,17 @@ For each module-instance the user confirmed, edit its `UC-XXXX-{slug}.md` (the U
 
 The spec edit **replaces** the old text — it describes only the new behavior. Do not retain the previous wording or annotate the spec with "previously X" / "changed from Y". The changelog entry's `reason` (Step 8) is the only record of what changed and why.
 
-Module-instances the user skipped are left untouched.
-
-`/m:change` never writes production code or tests. It does, however, produce the change plan itself in Step 9.
-
 ## Step 8: Append Log Entries and Update UC Status
 
-For every module-instance affected in Step 7, use the `uc-log` shared skill to:
+For every module-instance affected in Step 7, append the changelog entry per the `uc-log` shared skill, then write that instance's and its parent feature's status per the `status-rollup` shared skill. A peer instance not edited in this run keeps its prior status.
 
-1. Append a new entry to that module-instance's `CHANGELOG.md` (under `TODO:`, prepended) with:
-   - timestamp (UTC, `YYYYMMDDTHHMMSS`) — **same timestamp** for every module-instance in this fan-out
-   - status: `pending`
-   - command: `change`
-   - plan: `—`
-   - modules: comma-separated list of module IDs the fan-out targeted (include this token whenever the UC has 2+ module-instances, even if only one was actually edited — the token records the scope of the event). Omit for single-module UCs.
-   - reason: one paragraph capturing what changed in the spec and why. **Same reason text** for every module-instance in this fan-out. (e.g., "added email-verification gate before login per security review 2026-06-15")
-2. **Set that module-instance's frontmatter `status`** directly per the `status-rollup` skill: a previously-`implemented` UC becomes `dirty`; a `pending` or `dirty` UC stays as it is. Status is written per module-instance file — a peer instance not edited in this run keeps its prior status.
-3. **Recompute each affected parent feature's frontmatter `status`** by rolling up over its child UCs' frontmatter `status:` values (per module) — not the changelog. Apply the roll-up rule from the `status-rollup` skill and write the result to each affected `REQUIREMENTS.md`.
+Per-command entry values:
+
+- command: `change`
+- plan: `—`
+- timestamp: the **same** UTC timestamp for every module-instance in this fan-out
+- modules: every module in the fan-out target set, **even if only one was actually edited** — the token records the scope of the event.
+- reason: one paragraph capturing what changed in the spec and why. **Same reason text** for every module-instance in this fan-out (e.g., "added email-verification gate before login per security review 2026-06-15").
 
 ## Step 9: Produce the Plan
 
@@ -129,7 +120,7 @@ Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded i
 
 Direct the plan's **summary and context paragraph to be the consolidated change record**: state plainly what changed, in which UCs/features (naming each), and the approach — this is the single narrative the change produces, spanning every affected UC in one document (the per-UC `CHANGELOG.md` stays as the terse marker log). Because the UC specs already describe the new behavior, the tasks reconcile the code to match: `/m:build` will delete tests/code for retired scenarios and add tests for the new behavior (Principle 1.5).
 
-The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong interpretation is caught here before any code is built), writes `specs/plans/<plan-id>.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped. The context it needs is already in memory (loaded skills, the referenced specs and `ARCHITECTURE.md`, the pending entries).
+The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate — a wrong interpretation is caught here before any code is built), writes `specs/plans/<plan-id>.md`, and flips the Step 8 entries from `pending` to `dirty` with the plan-id stamped.
 
 ## Step 10: Report
 
