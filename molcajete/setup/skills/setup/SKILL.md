@@ -113,7 +113,7 @@ Read templates from `./templates/` and write each file in a single parallel batc
 | DOMAINS.md | [DOMAINS-template.md](./templates/DOMAINS-template.md) | `specs/DOMAINS.md` |
 | FEATURES.md | [FEATURES-template.md](./templates/FEATURES-template.md) | `specs/FEATURES.md` |
 | principles.md | `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` (body only, frontmatter stripped) | `.claude/rules/principles.md` |
-| CLAUDE.md block | inlined in `setup.md` Step 7b | `<host-root>/CLAUDE.md` (fenced section between sentinel markers) |
+| CLAUDE.md block | inlined in `setup.md`'s CLAUDE.md-block step | `<host-root>/CLAUDE.md` (fenced section between sentinel markers) |
 
 ## Engineering Principles
 
@@ -130,7 +130,7 @@ Read templates from `./templates/` and write each file in a single parallel batc
 
 ## Regeneration
 
-When `specs/PROJECT.md` already exists, `/m:setup` offers three paths: **Cancel**, **Regenerate all** (full one-shot composition; loses local edits), or **Update** (drift detection + selective patch). The principles file follows its own regeneration prompt in Step 7a — not part of the foundation regeneration.
+When `specs/PROJECT.md` already exists, `/m:setup` offers three paths: **Cancel**, **Regenerate all** (full one-shot composition; loses local edits), or **Update** (drift detection + selective patch). The principles file follows its own regeneration prompt in the principles-file step — not part of the foundation regeneration.
 
 ## Drift Catalog
 
@@ -147,23 +147,23 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Artifact:** `.claude/rules/principles.md`
 - **Category:** NEW ARTIFACT (when missing) or CONTENT DRIFT (when stale)
 - **Detection:** File does not exist, **OR** file exists but its content does not start with `# Engineering Principles` and contain headings matching the current plugin skill (`# Engineering Principles`, `## The Meta-Principle...`, `## 1. Integration Tests...`, `## 2. Hexagonal Architecture...`, `## 3. Dependency Injection...`, `## 4. 80% Coverage Floor...`, `## 5. Universal Software Craft`, `## 6. Principles Are Technology-Agnostic`, `## How Molcajete Enforces These`, `## Override`).
-- **Fix:** Run Step 7a logic. When the file exists but is stale, the existing per-file AskUserQuestion in Step 7a ("Keep existing / Regenerate from plugin skill") applies — update mode does not force overwrite.
+- **Fix:** Run the principles-file step's logic. When the file exists but is stale, the existing per-file AskUserQuestion in that step ("Keep existing / Regenerate from plugin skill") applies — update mode does not force overwrite.
 - **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` (body only, frontmatter stripped).
 
 ### `principles-claude-md-block`
 
 - **Artifact:** Host `CLAUDE.md` fenced block between `<!-- molcajete:principles:start -->` and `<!-- molcajete:principles:end -->`.
 - **Category:** NEW ARTIFACT (when missing) or CONTENT DRIFT (when stale)
-- **Detection:** Host `CLAUDE.md` does not exist, **OR** sentinel markers are absent, **OR** content between markers does not byte-match the current default block (inlined in `setup.md` Step 7b).
-- **Fix:** Run Step 7b logic. The fenced block is always idempotent-replaced — never asks before overwriting, because the block is metadata the plugin fully owns. Content outside the markers is never touched.
-- **Source of truth:** `setup.md` Step 7b (inlined block).
+- **Detection:** Host `CLAUDE.md` does not exist, **OR** sentinel markers are absent, **OR** content between markers does not byte-match the current default block (inlined in `setup.md`'s CLAUDE.md-block step).
+- **Fix:** Run the CLAUDE.md-block step's logic. The fenced block is always idempotent-replaced — never asks before overwriting, because the block is metadata the plugin fully owns. Content outside the markers is never touched.
+- **Source of truth:** `setup.md`'s CLAUDE.md-block step (inlined block).
 
 ### `tech-stack-running-tests`
 
 - **Artifact:** `specs/TECH-STACK.md` per-module `Running tests:` field.
 - **Category:** SCHEMA GAP
 - **Detection:** For each `### {module-name}` section under `## Modules`, check whether a `- **Running tests:**` line is present. List every module missing the field.
-- **Fix:** For each affected module, re-run the Step 3 detection logic to derive the command (scan the module's manifest for `scripts.test` / `pyproject.toml` `[tool.pytest.ini_options]` / `Makefile` / Go conventional `go test ./...`). If detection finds nothing, prompt the user via AskUserQuestion per module with the discovered candidates or "skip module". Insert the line at the canonical position (after `Testing:` if present, otherwise before `Coverage:`).
+- **Fix:** For each affected module, re-run the stack-detection step's logic to derive the command (scan the module's manifest for `scripts.test` / `pyproject.toml` `[tool.pytest.ini_options]` / `Makefile` / Go conventional `go test ./...`). If detection finds nothing, prompt the user via AskUserQuestion per module with the discovered candidates or "skip module". Insert the line at the canonical position (after `Testing:` if present, otherwise before `Coverage:`).
 - **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/TECH-STACK-template.md` field order.
 
 ### `tech-stack-coverage`
@@ -171,7 +171,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Artifact:** `specs/TECH-STACK.md` per-module `Coverage:` field.
 - **Category:** SCHEMA GAP
 - **Detection:** Same shape as `tech-stack-running-tests`; check for `- **Coverage:**` line in each module section.
-- **Fix:** For each affected module, re-run the Step 3 detection logic to derive the coverage command. If the project does not expose a coverage collector, write `not available` (`/m:build` estimates against the 80% floor in that case).
+- **Fix:** For each affected module, re-run the stack-detection step's logic to derive the coverage command. If the project does not expose a coverage collector, write `not available` (`/m:build` estimates against the 80% floor in that case).
 - **Source of truth:** Same as `tech-stack-running-tests`.
 
 ### `settings-testing-threshold`
@@ -180,7 +180,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Category:** CONTENT DRIFT
 - **Detection:** Read the file as JSON. Verify `testing.threshold` is present and is a number. List as drift when missing or non-numeric.
 - **Fix:** Read existing file (preserving all other keys and nested structure), merge in `testing.threshold = 80`, write back.
-- **Source of truth:** `setup.md` Step 7 (inlined default `{"testing": {"threshold": 80}}`).
+- **Source of truth:** `setup.md`'s foundation-write step (inlined default `{"testing": {"threshold": 80}}`).
 
 ### `dot-claude-rules-dir`
 
@@ -188,7 +188,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Category:** NEW ARTIFACT (when missing)
 - **Detection:** Directory does not exist.
 - **Fix:** `mkdir -p .claude/rules`. Usually paired with `principles-host-file` — the principles fix creates the directory if absent, so this entry only fires when the user has `.claude/rules/principles.md` in mind but the directory was deleted separately (rare).
-- **Source of truth:** `setup.md` Step 7 (foundation mkdir).
+- **Source of truth:** `setup.md`'s foundation-write step (foundation mkdir).
 
 ### `legacy-spec-layout-migration`
 

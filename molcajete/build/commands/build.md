@@ -141,14 +141,6 @@ Resolve the test runner per the testing skill's **Runner Inference**. Cache test
 
 For each task marked in Step 4, run it through the lifecycle. Process tasks in plan order (`T-NNN` ascending). For each task:
 
-### 8.0 Phase gate (mandatory)
-
-Before doing any work on this task, emit this exact block in the conversation:
-
-> TASK {T-NNN} GATE: I will run Phase 1 (scaffold test at `<derived test path>`), Phase 1-check (initial run — expect {RED|GREEN}), Phase 2 ({implement|assert}), Phase 2-check (green + per-file coverage ≥ floors), Mutation (expect RED), Correctness review (expect PASS). I will not flip the checkbox in 8.11 until 8.9 and 8.10 both pass.
-
-Substitute the expected initial color from the task kind (implement → RED, coverage → GREEN). If you cannot honestly emit this block — e.g. you do not have the test path resolved or you do not intend to run the tests — stop and ask the user.
-
 ### 8.1 Resolve the task
 
 From the task index (Step 4) and prose:
@@ -329,11 +321,11 @@ There is no per-task JSON record and no slice file — the plan checkbox is the 
 
 Step 9 runs at the end of every `/m:build` invocation regardless of individual task outcomes. Task checkboxes were already flipped per-task in 8.11 (success-gated). This step handles the changelog entries, the UC/Feature status roll-up, and the end-of-plan completeness sweep.
 
-### 9.A Changelog entries (success-gated)
+### 9.1 Changelog entries (success-gated)
 
 For each touched UC, if **every** task in the plan that covers that UC's scenarios now reads `## [x]` in the plan file, use the `uc-log` shared skill to flip that UC's changelog entry for this `plan:<plan-id>` from `dirty` to `implemented` and move the line from `TODO:` to the top of `DONE:`. A UC with any still-`[ ]` covering task keeps its entry `dirty` in `TODO:`.
 
-### 9.B Status roll-up (unconditional)
+### 9.2 Status roll-up (unconditional)
 
 Per the `status-rollup` skill, with slices gone the **UC is the leaf** — its status is written directly from task completion, and the Feature rolls up from its UCs. Walk the entire plan's scope (every UC and FEAT on the `**Specs:**` line) and rewrite frontmatter from current on-disk state:
 
@@ -349,7 +341,7 @@ Write the value to the UC's `UC-XXXX-{slug}.md` frontmatter `status:` — overwr
 
 The CHANGELOG is for context only; status decisions read from artifact frontmatter and the plan checkboxes.
 
-### 9.C End-of-plan completeness sweep
+### 9.3 End-of-plan completeness sweep
 
 After the tasks named in `$ARGUMENTS` are done, run one final review across every UC the plan touches (not only the tasks in this run). Confirm:
 
@@ -364,7 +356,7 @@ This sweep **reports**; it does not silently pass. List any uncovered scenario, 
 Before Step 11, emit this exact table with **one row for every artifact in the plan's scope** — every task checkbox that could have flipped, every UC in the plan, every Feature in the plan, every CHANGELOG entry that could have flipped. Every row records what happened this run, including rows intentionally left unchanged.
 
 - **If a task failed (escalation written), its checkbox stays `[ ]` and its UC/changelog stay in their prior state.** List those as `unchanged` rows with the reason `task failed — see escalation`.
-- **UC and Feature roll-up rows always appear** (per 9.B). If the value did not move, `After` reads `unchanged` and the reason column names why.
+- **UC and Feature roll-up rows always appear** (per 9.2). If the value did not move, `After` reads `unchanged` and the reason column names why.
 
 | Artifact path              | Field                | Before  | After                    | Reason (if unchanged)                       |
 |----------------------------|----------------------|---------|--------------------------|---------------------------------------------|
@@ -373,7 +365,7 @@ Before Step 11, emit this exact table with **one row for every artifact in the p
 | `<FEAT REQUIREMENTS.md>`   | status               | `<prev>`| `<new>` / unchanged      | e.g. `all UCs already implemented`          |
 | `<UC CHANGELOG.md>`        | entry `{plan-id}`    | dirty   | implemented / unchanged  | e.g. `entry unchanged — task failed`        |
 
-If the table contains no `UC-` or `FEAT-` roll-up rows, Step 9.B did not run — halt and re-execute Step 9.B before continuing.
+If the table contains no `UC-` or `FEAT-` roll-up rows, Step 9.2 did not run — halt and re-execute Step 9.2 before continuing.
 
 ## Step 11: Report
 
@@ -382,10 +374,10 @@ Tell the user:
 - The plan ID and mode.
 - For each completed task: `T-NNN`, outcome, kind (implement/coverage), files touched, materialized test file path, per-touched-file final coverage on all four dimensions, and the correctness review result (`correct`). In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
 - Any gaps the 8.7 loop resolved — one line per resolution naming the location and disposition.
-- The **Completeness gaps** section from 9.C — uncovered scenarios / missing assertions / stray markers, or "none".
+- The **Completeness gaps** section from 9.3 — uncovered scenarios / missing assertions / stray markers, or "none".
 - For each escalation (if any): `T-NNN` and escalation file path.
 - Any migration deletions or deferrals from 8.11's `migrate` handling — one line per referenced file.
-- **Final status for every UC and Feature in the plan's scope.** One line per artifact regardless of change: `FEAT-XXXX-{slug}: <status>` and `UC-XXXX-{slug}: <status>` — a snapshot of on-disk truth after 9.B.
+- **Final status for every UC and Feature in the plan's scope.** One line per artifact regardless of change: `FEAT-XXXX-{slug}: <status>` and `UC-XXXX-{slug}: <status>` — a snapshot of on-disk truth after 9.2.
 - Plan checklist progress (e.g., "3 of 5 tasks complete in plan `{plan-id}`").
 
 If the host project's coverage collector wasn't available (per Step 7) and you estimated against the floor, note that explicitly.

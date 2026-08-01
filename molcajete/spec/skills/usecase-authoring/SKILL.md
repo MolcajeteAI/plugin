@@ -400,7 +400,16 @@ From the user's freeform input, attempt to extract:
 
 Cross-reference `specs/ACTORS.md` to validate the actor exists.
 
-### Step 2: Review Shared Context
+### Step 2: Multi-Module Interview Extension
+
+When the parent feature exists in 2+ modules, extend the review loop so that for each shared section (Name, Actor, Trigger, Preconditions, Scenarios) the user confirms **per module** or explicitly declares "identical across modules — use one canonical content." Ask via AskUserQuestion:
+
+> "This UC applies to {N} modules. For {section name}, do you want module-scoped content or the same content in every module?"
+> Options: "Module-scoped (I'll provide per module)" / "Same content everywhere" / "Skip this UC in {module X}"
+
+Any section the user marks "Skip this UC in {module X}" means the UC is not written to that module — the UC's module set narrows accordingly.
+
+### Step 3: Review Shared Context
 
 For each shared section, use AskUserQuestion to present what was extracted and ask for confirmation.
 
@@ -418,7 +427,7 @@ Present shared context in this order:
 "I didn't find any {section name} in your description. Can you provide them?"
 - Options: "Yes, I'll add them" (user provides via Other) / "Skip for now"
 
-### Step 3: Review Scenarios
+### Step 4: Review Scenarios
 
 For each scenario extracted from the input, present the full scenario block (Given, Steps, Outcomes, Side Effects) and ask for confirmation.
 
@@ -440,12 +449,12 @@ After reviewing all extracted scenarios, ask:
 
 Repeat the scenario review loop until the user confirms they have no more scenarios.
 
-### Step 4: Write Files
+### Step 5: Write Files
 
 After all sections are confirmed:
 
 1. Generate UC-XXXX ID (4-character timestamp code) — **exactly once** for this use case, even when it will exist in multiple modules.
-2. Determine the set of modules this UC applies to. For single-module features, that is the feature's one module. For multi-module features, the interview (see Step 4a below) collected a per-module name and content for the UC — use every module the user selected.
+2. Determine the set of modules this UC applies to. For single-module features, that is the feature's one module. For multi-module features, the interview (see Step 2 above) collected a per-module name and content for the UC — use every module the user selected.
 3. **For each module in the set:**
    a. Compute the module-scoped slug from the module-scoped UC name (see the Slug Generation section).
    b. Create the UC support folder `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/` (this holds CHANGELOG.md).
@@ -455,15 +464,6 @@ After all sections are confirmed:
    f. Add a row to that feature-folder's `USE-CASES.md`.
 
 **Anti-pattern:** Do not generate one UC-XXXX ID per module. Do not copy identical scenarios across modules. Do not skip one module because "it's the same use case" — every module the UC applies to gets its own module-scoped file.
-
-### Step 4a: Multi-Module Interview Extension
-
-When the parent feature exists in 2+ modules, extend the review loop so that for each shared section (Name, Actor, Trigger, Preconditions, Scenarios) the user confirms **per module** or explicitly declares "identical across modules — use one canonical content." Ask via AskUserQuestion:
-
-> "This UC applies to {N} modules. For {section name}, do you want module-scoped content or the same content in every module?"
-> Options: "Module-scoped (I'll provide per module)" / "Same content everywhere" / "Skip this UC in {module X}"
-
-Any section the user marks "Skip this UC in {module X}" means the UC is not written to that module — the UC's module set narrows accordingly.
 
 ## Update Mode
 

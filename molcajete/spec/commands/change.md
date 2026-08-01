@@ -85,7 +85,7 @@ From the description in `$ARGUMENTS`, draft the spec edit **per module-instance*
 - Change an existing scenario's Steps / Outcomes / Side Effects.
 - Add or remove scenarios.
 - Add, modify, or retire FRs/NFRs at the feature level (when the change scope justifies it).
-- Add a new UC under the feature (when the request implies a workflow that doesn't fit any existing UC). Use the usecase-authoring skill's Step 4 (Write Files) to create the new UC spec file (`UC-XXXX-{slug}.md`), support folder, and `CHANGELOG.md`. When the new UC applies to multiple modules, follow the shared-ID rule.
+- Add a new UC under the feature (when the request implies a workflow that doesn't fit any existing UC). Use the usecase-authoring skill's **Write Files** procedure to create the new UC spec file (`UC-XXXX-{slug}.md`), support folder, and `CHANGELOG.md`. When the new UC applies to multiple modules, follow the shared-ID rule.
 
 For each affected module-instance, present a diff-style review via AskUserQuestion:
 

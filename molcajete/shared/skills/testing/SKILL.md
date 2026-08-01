@@ -190,7 +190,7 @@ When the task is a coverage-recovery task (description names uncovered paths in 
 
 ## Where Integration Tests Live
 
-Test files are placed at a canonical path derived from the task's owning UC and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the plan-authoring skill's "Test File Convention" for the formula and the build command's Step 8.2 for validation.
+Test files are placed at a canonical path derived from the task's owning UC and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the plan-authoring skill's "Test File Convention" for the formula and the build command's task-validation step for validation.
 
 The canonical layout is a **dedicated tests tree keyed by module**, mirroring the spec tree module → feature → UC test. The `Tests` column of each module's row in `specs/MODULES.md` names this tree (typical values: `server/tests/{module}`, `tests/{module}`, `packages/{module}/tests`). **Integration tests do not live inside module source directories** — that would mix behavior tests with implementation code and break the "grep the tests tree to find every test for a feature" property.
 
