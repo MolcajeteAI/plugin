@@ -20,9 +20,6 @@ and testable end to end. A task is **never a layer** ("the backend", "the databa
 task must leave the software working. Tasks are ordered by dependency, and that order is the
 order the build runs them and the order the human commits them.
 
-Plans replace the old per-slice files. There is no `SLICE-NNN-*.md`, no per-task frontmatter,
-and no slice DAG index — the plan document is the whole artifact.
-
 ## Filing and Plan IDs
 
 `/m:plan` writes exactly one file per invocation — a single Markdown file, not a folder:
@@ -96,8 +93,7 @@ Every task is a level-2 heading carrying a checkbox, then two fields, then prose
 - **T-NNN** — plan-local task ID, `T-001`, `T-002`, … assigned in dependency order. Numbering
   crosses FEAT/UC boundaries — there is one `T-NNN` sequence per plan.
 - **Covers** — a **comma-separated list** of the `SC-XXXX` scenario IDs (and `FR-XXXX`
-  requirement IDs) this task closes. Every scenario in every UC in scope must appear in exactly
-  one task's `Covers`.
+  requirement IDs) this task closes.
 - **Depends on** — a **comma-separated list** of the prior `T-NNN` tasks this task builds on,
   or `—` when it has no prerequisite. Dependencies must point backward (lower NNN). A downstream
   task reads the code an upstream task already wrote to disk; the dependency is satisfied when
@@ -133,8 +129,7 @@ plan-mode plan, not a filled-in form.
    not by *layer* (all the UI, then all the API). Every task leaves working software.
 3. **Every scenario is covered exactly once.** Every `SC-` (and every requirement `FR-` a task
    claims) appears in exactly one task's `Covers`.
-4. **Order is dependency order.** A task's NNN is greater than every task it depends on. That
-   order is the execution order and the commit order.
+4. **Order is dependency order.** A task's NNN is greater than every task it depends on.
 5. **Files are owned, not shared.** A production file should be created/modified by at most one
    task in the plan. If two tasks both need to change the same file, either merge them or make one
    depend on the other so the edits are sequenced.
@@ -176,9 +171,8 @@ and find the integration test that pins its behavior:
 | `{test-ext}` | Per-runner extension from `specs/TECH-STACK.md` Testing row or runner inference: `test.ts` (Vitest/Jest), `_test.py` (pytest), `_integration_test.go` (Go, with `//go:build integration`), `_spec.rb` (RSpec), etc. |
 
 One test file per UC: every task that closes scenarios in that UC — whether from the UC's
-original plan or a later `/m:fix`/`/m:change` plan — targets this same file. There is no per-task
-number and no entry-type segment in the filename; a task's driving-port kind still must appear in
-the module's `Driving Ports` list (see Task Prose above), it just no longer shapes the path.
+original plan or a later `/m:fix`/`/m:change` plan — targets this same file, appending to it
+rather than producing a new one.
 
 Molcajete generates **integration tests only** — tests driven through an entry point, covering a
 task's behavior end to end. Host-project unit tests already in the repo are left where they are
@@ -186,23 +180,21 @@ and are not subject to this layout.
 
 Build-time validation (owned by `/m:build`): refuse to dispatch a task if its `{entry-type}` is
 missing from the module's `Driving Ports` list, or if the module row in MODULES.md has no `Tests`
-value. When multiple tasks in a plan target the same UC, they append to its existing canonical
-test file rather than each producing a new one.
+value.
 
 ## Status
 
-The plan checkboxes are the task-level ledger. There is no slice status. `/m:build` flips
-`## [ ] T-NNN` to `## [x] T-NNN` when a task passes verification, then writes UC status directly
-from task completion and rolls Feature status up from its UCs. See the `status-rollup` skill.
+`/m:build` flips `## [ ] T-NNN` to `## [x] T-NNN` when a task passes verification, then writes UC
+status directly from task completion and rolls Feature status up from its UCs. See the
+`status-rollup` skill.
 
 ## Producing a Plan
 
 This is the shared procedure for turning a set of in-scope `pending` changelog entries into a
 written plan. `/m:plan` runs it over the pending entries it reads; `/m:fix` and `/m:change` run it
-over the entries they just wrote (so they produce their plan in the same invocation, with no
-separate `/m:plan` step). The caller has already: resolved the UC module-instances in scope, read
-their `UC-XXXX-{slug}.md` specs, each feature's `REQUIREMENTS.md` and `ARCHITECTURE.md`, and written
-the `pending` entries. The caller must have loaded the `architecture`, `principles`, and `uc-log`
+over the entries they just wrote. The caller has already: resolved the UC module-instances in
+scope, read their `UC-XXXX-{slug}.md` specs, each feature's `REQUIREMENTS.md` and
+`ARCHITECTURE.md`, and written the `pending` entries. The caller must have loaded the `architecture`, `principles`, and `uc-log`
 skills (and, only when cover-mode entries are possible, `reverse-engineering`).
 
 **P1 — Determine the mode.** From the originating commands of the in-scope pending entries:
@@ -212,7 +204,7 @@ skills (and, only when cover-mode entries are possible, `reverse-engineering`).
 - both → **mixed**.
 
 `/m:fix` and `/m:change` always produce **default**. The mode is written on the plan's `**Specs:**`
-line; per-task truth is the implement/coverage prose (see Task Objectives).
+line.
 
 **P2 — Architecture pass.** Apply the engineering principles: Principle 2 (hexagonal default),
 Principle 3 (DI), Principle 1 (every task's tests are integration tests — never scaffold unit tests).
@@ -237,8 +229,7 @@ Options: "Proceed" / "Edit" (user corrects via Other) / "Cancel". On Cancel, wri
 **P3 — Decompose into tasks.** Per the Vertical-Increment Rules above, produce the minimal ordered
 list of vertical, working-software tasks that closes every in-scope scenario exactly once, ordered
 by dependency (that order is the `T-NNN` sequence). Write each task per the Task Shape (heading +
-`Covers` + `Depends on` + prose). In **mixed** mode, order all coverage tasks (lower `T-NNN`) before
-the implement tasks that change the same behavior.
+`Covers` + `Depends on` + prose) and, in **mixed** mode, the Task Objectives ordering rule.
 
 **P4 — Consult non-canonical tests (cover / mixed only).** Skip in default mode. For each UC with a
 `command:cover` pending entry, read its `CHANGELOG.md`, find the most recent `command: cover` entry,
