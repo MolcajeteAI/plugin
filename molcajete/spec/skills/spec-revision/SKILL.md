@@ -75,11 +75,19 @@ architecture skill's additive rules; the calling command states how far that upd
 hold now — do not keep the old wording or annotate it with "was X, now Y" / "previously X". The changelog
 entry's `reason` is the only record of what changed and why.
 
+This replace-never-annotate rule governs the **spec files only**. It never reaches the CHANGELOG, which is
+append-only — see below.
+
 ## Logging and Status
 
 For each module-instance in the set the calling command names, append the changelog entry per the `uc-log`
 skill, then write that instance's and its parent feature's status per the `status-rollup` skill. A peer
 instance not touched in this run keeps its prior status.
+
+"Append" here means the `uc-log` skill's mutation 1: **insert a new line at the top of `TODO:`**. The
+CHANGELOG is append-only. Never edit, replace, re-timestamp, or delete an existing entry — not even when
+this run's `reason` reads much like an entry already in the file. A repeated run is two entries, and that
+repetition is history the log is meant to keep.
 
 Entry values shared by both commands:
 

@@ -2,7 +2,9 @@
 name: uc-log
 description: >-
   Per-UC change log mechanics. Defines the CHANGELOG.md sidecar file path,
-  TODO/DONE section layout, entry line format, and entry-status transitions
+  TODO/DONE section layout, entry line format, the append-only invariant that
+  forbids any command from removing or rewriting an existing entry, and
+  entry-status transitions
   (pending → dirty → implemented). Referenced by /m:spec, /m:fix, /m:change,
   /m:cover, /m:plan, and /m:build. The changelog is a context log + marker
   file; it is NOT the source of truth for artifact status (see status-rollup).
@@ -13,6 +15,56 @@ description: >-
 Every use case carries a sidecar changelog file that records each spec-phase change requested for that UC and tracks it through plan and build. The changelog is the contract between the spec-phase commands (`/m:spec`, `/m:fix`, `/m:change`, `/m:cover`), the architect (`/m:plan`), and the executor (`/m:build`).
 
 The changelog answers two questions: **what changed and why** (for plan) and **what's still outstanding** (for plan and build).
+
+## Append-Only — The Log Never Loses History
+
+The changelog exists to preserve history. **An entry line, once written, is permanent.** No command and no skill may ever remove or rewrite one.
+
+Exactly three mutations are permitted. There are no others:
+
+| # | Mutation | Who |
+|---|----------|-----|
+| 1 | Insert a **new** entry line at the top of `TODO:`. | `/m:spec`, `/m:fix`, `/m:change`, `/m:cover` |
+| 2 | On one existing TODO line, flip `[pending]` → `[dirty]` and replace the `plan:—` field with `plan:<plan-id>`. Nothing else on the line changes. | `/m:plan` |
+| 3 | On one existing TODO line, flip `[dirty]` → `[implemented]` and move the line **verbatim** to the top of `DONE:`. Nothing else on the line changes. | `/m:build` |
+
+Everything else is forbidden. Specifically, never:
+
+- Delete an entry line.
+- Rewrite an existing entry's `timestamp`, `command`, `modules`, or `reason`.
+- Replace an existing entry with a new one, for any reason.
+- Merge two entries into one.
+- Reorder entries.
+- Overwrite the file wholesale. `Write` on a CHANGELOG.md is permitted **only** to create it with empty `TODO:` / `DONE:` sections. An existing CHANGELOG.md is modified with `Edit`, never `Write`.
+
+### Write Mechanic
+
+**Adding an entry (mutation 1).** The edit's anchor is the literal section header line `TODO:`, and the replacement is that header plus the new line beneath it:
+
+```
+old_string:  TODO:
+new_string:  TODO:
+             - <new entry line>
+```
+
+Never anchor the edit on an existing entry line. The file's line count must increase by exactly one.
+
+**Status flips (mutations 2 and 3).** The anchor is the single line being flipped. The replacement differs from it only in the bracketed status token — plus, for `/m:plan`, the `plan:` field. Every other character of the line is copied through unchanged.
+
+### Near-Duplicate Entries Are Still New Entries
+
+A new entry whose `reason` reads the same as an existing entry's is **still a new entry**. Re-running a command over the same bug or the same request correctly produces two entries with different timestamps: the log is recording that the command ran twice, which is itself history worth keeping.
+
+Textual similarity to an existing line is never evidence that the line should be replaced, refreshed, or re-timestamped. Do not "update" an entry. Do not treat writing the log as an idempotent operation.
+
+### Self-Check After Every Write
+
+Before moving on, confirm both:
+
+1. The number of entry lines in the file did not decrease.
+2. Every timestamp that was in the file before the edit is still in the file.
+
+If either fails, the edit destroyed history: restore the removed lines immediately and re-apply the change as an insertion.
 
 ## The changelog is not the status source of truth
 
@@ -86,6 +138,8 @@ The em dash (`—`) separates the metadata from the reason. Do not use the em da
 
 Within each section, **newest entries go at the top** (prepended, not appended). Each section reads top-to-bottom = newest-to-oldest. Never reorder existing entries.
 
+The commands say "append the changelog entry." That always means **insert a new line at the top of `TODO:`**, per mutation 1 above — never overwrite whatever is currently at the top.
+
 ## Status Transitions
 
 ```
@@ -96,20 +150,20 @@ pending ──/m:plan──► dirty ──/m:build──► implemented
 - `dirty` — `/m:plan` has consumed the entry, stamped its plan-id, and produced a plan that addresses it. Build has not finished yet. Lives under `TODO:`.
 - `implemented` — `/m:build` finished the corresponding tasks; tests pass. Lives under `DONE:`.
 
-No other transitions. A `pending` entry never becomes `implemented` without first becoming `dirty` — plan is mandatory. Statuses never roll back; superseded changes get a new entry, not edits to old ones.
+No other transitions. A `pending` entry never becomes `implemented` without first becoming `dirty` — plan is mandatory. Statuses never roll back. A superseded change gets a **new** entry; the entry it supersedes stays in the file untouched, per **Append-Only**.
 
 ## How Each Command Touches the Log
 
-Every row below applies **per module-instance**, per the fan-out rules above.
+Every row below applies **per module-instance**, per the fan-out rules above. Every action is one of the three permitted mutations from **Append-Only**; no command has any other write access to the file.
 
-| Command | Action |
-|---------|--------|
-| `/m:spec` | Append `pending` entry to TODO. `command:spec`. `plan:—`. |
-| `/m:fix` | Append `pending` entry to TODO. `command:fix`. `plan:—`. Always — even when no spec edit was needed. |
-| `/m:change` | Append `pending` entry to TODO. `command:change`. `plan:—`. |
-| `/m:cover` | Append `pending` entry to TODO. `command:cover`. `plan:—`. Once per module-instance at extraction time. |
-| `/m:plan` | For each `pending` entry it consumes: flip status to `dirty`, set `plan:<plan-id>`. Entries stay in TODO. |
-| `/m:build` | For each `dirty` entry whose tasks completed: flip status to `implemented`, move the line from TODO to DONE (prepended at top of DONE). |
+| Command | Action | Mutation |
+|---------|--------|----------|
+| `/m:spec` | Insert a new `pending` entry at the top of TODO. `command:spec`. `plan:—`. | 1 |
+| `/m:fix` | Insert a new `pending` entry at the top of TODO. `command:fix`. `plan:—`. Always — even when no spec edit was needed, and even when an existing entry says something similar. | 1 |
+| `/m:change` | Insert a new `pending` entry at the top of TODO. `command:change`. `plan:—`. | 1 |
+| `/m:cover` | Insert a new `pending` entry at the top of TODO. `command:cover`. `plan:—`. Once per module-instance at extraction time. | 1 |
+| `/m:plan` | For each `pending` entry it consumes: flip status to `dirty`, set `plan:<plan-id>`. Entries stay in TODO. | 2 |
+| `/m:build` | For each `dirty` entry whose tasks completed: flip status to `implemented`, move the line from TODO to DONE (prepended at top of DONE). | 3 |
 
 `/m:plan` refuses to operate if any of the referenced UCs' TODO sections mix `command:cover` entries with other commands. Mixed-mode pending entries must be split across separate plan runs.
 
