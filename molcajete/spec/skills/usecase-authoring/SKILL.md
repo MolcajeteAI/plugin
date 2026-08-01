@@ -15,37 +15,15 @@ Rules for creating and maintaining use case files: each UC is two artifacts at t
 
 ## Module-Scoped Use Cases
 
-When a feature exists in 2+ modules, the same use case can appear in every module the capability touches. **All module-instances of the same use case share one UC-XXXX ID.** Contents are module-scoped: each module gets its own `UC-XXXX-{slug}.md` file written from that module's actors, triggers, scenarios, and side effects.
-
-This mirrors how multi-module features work (one `FEAT-XXXX` shared across module folders, with module-scoped `REQUIREMENTS.md` in each). The rule extends downward: one `UC-XXXX`, one file per module, module-scoped content.
-
-**Core rule:** The UC-XXXX ID is generated **once** and reused in every module the UC applies to. Actor, trigger, preconditions, scenarios, and side effects narrate from each hosting module's perspective.
-
-**What is shared across module-instances:**
-- The UC-XXXX ID
-- The parent `FEAT-XXXX` (multi-module features already share one ID)
-
-**What may differ per module-instance:**
-- **UC name** (frontmatter `name:` and the `# UC-XXXX: {name}` heading) — use module-specific verb-noun goals so the file reads correctly from that module's perspective. "Submit Registration" (patient) vs. "Review Registration" (console).
-- **Slug** (`UC-XXXX-{slug}.md` filename) — derives from the module-scoped name, so it can differ.
-- **Actor, Trigger, Preconditions, Scenarios, Side Effects** — always module-scoped. Never copy identical content across module-instances.
+When a feature exists in 2+ modules, the same use case can appear in every module the capability touches. **All module-instances of the same use case share one UC-XXXX ID**, generated once and reused. Contents are module-scoped: each module gets its own `UC-XXXX-{slug}.md` whose name, slug, actor, trigger, preconditions, scenarios, and side effects narrate from that module's perspective. This mirrors multi-module features (one `FEAT-XXXX` across module folders, module-scoped `REQUIREMENTS.md` in each).
 
 **Rules:**
 - **ID reuse:** Generate the UC-XXXX code once via `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js` and reuse it for every module-instance. Do **not** generate a fresh ID per module.
+- **Naming:** Use module-specific verb-noun goals for the frontmatter `name:` and the `# UC-XXXX: {name}` heading. "Submit Registration" (patient) vs. "Review Registration" (console), not "Handle Registration" in both. The slug derives from the module-scoped name, so it differs too.
 - **Actor selection:** Use each module's primary actor, not a generic "User". A `patient` module UC uses "Patient"; a `console` module UC uses "Administrator".
 - **Trigger and preconditions:** Describe the trigger as each module's actor experiences it. The same business event has different triggers per module (patient submits form vs. administrator reviews submission).
 - **Scenarios:** Scope Steps, Outcomes, and Side Effects to the module boundary. A patient module scenario ends when the patient sees confirmation. A console module scenario begins when the admin sees the pending item.
-- **Naming:** Use module-specific verb-noun goals. "Submit Registration" (patient) vs. "Review Registration" (console), not "Handle Registration" in both.
-
-**Anti-pattern table:**
-
-| Element | Module-blind (bad) | Split-ID (bad) | Shared-ID module-scoped (good) |
-|---------|--------------------|----------------|--------------------------------|
-| ID | Same UC-XXXX with identical content copied verbatim into both modules | `UC-0KTg` in patient, `UC-0KTh` in console (two IDs for the same capability) | `UC-0KTg` in both modules |
-| Name | "Handle Registration" (in both modules) | Same UC named differently but with independent IDs | "Submit Registration" (patient), "Review Registration" (console) |
-| Actor | "User" (in both modules) | Ambiguous — no single owner in cross-module reports | "Patient" (patient module), "Administrator" (console module) |
-| Trigger | "User initiates registration" (in both) | Correct per module but hard to trace back to one UC | "Patient completes the registration form" (patient), "Administrator opens the pending registrations queue" (console) |
-| Outcome | "Registration is processed" (in both) | — | "Patient sees confirmation and welcome screen" (patient), "Administrator sees updated registration status" (console) |
+- **Never copy identical content across module-instances.**
 
 **Cross-module interaction pattern:** Steps stay within the originating module's boundary — the actor acts in their module. Cross-module consequences belong in **Side Effects**, where they name the event or artifact delivered to the other module. The consuming module's UC-instance (same UC-XXXX ID) is triggered by that event.
 
@@ -173,9 +151,7 @@ Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Sc
 
 #### Scenario Naming
 
-- The first scenario is typically the success case, but structurally it is identical to every other scenario.
 - Scenario names should be descriptive and unique within the UC (e.g., "Valid credentials", "Expired token", "Missing required field").
-- Each scenario gets a unique `SC-XXXX` ID via `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js`.
 - Names should describe the actor's situation or outcome, not internal system behavior. Use "Valid credentials" or "Expired link shown", not "JWT validated" or "Session row created".
 
 #### Scenario Separators
@@ -188,8 +164,6 @@ Every scenario block is preceded and followed by a `---` horizontal rule. This i
 - **System verbs:** validates, processes, stores, returns, displays, creates, publishes, sends
 
 Each step is one action. Do not combine multiple actions in one step.
-
-Actor verbs describe user-performed actions. When tempted to use system verbs like `stores` or `publishes` in Steps, prefer the user-observable effect and move the technical action to Side Effects. Steps narrate what the actor experiences; Side Effects record what happens behind the scenes.
 
 #### Inline UI
 
@@ -232,19 +206,7 @@ Scenarios that involve screens or visual interactions can include optional `**UI
 - Supported formats: PNG, JPG
 - Create the UC's `assets/` directory only when images are needed
 
-**When to include:**
-
-- The scenario involves screens, forms, or visual interactions
-- The user provides mockups, screenshots, or descriptions of screen state
-- The step produces a visible change the actor responds to
-
-**When to omit:**
-
-- The scenario is backend-only, error-only, or has no visual component
-- The user explicitly says no UI for this scenario
-- The scenario's steps do not produce screen changes
-
-A UC file can have UI blocks in some scenarios and none in others. Do not add empty UI placeholders.
+Include a UI block when the step produces a visible change the actor responds to, or when the user supplies mockups, screenshots, or screen-state descriptions. Omit it for backend-only or error-only scenarios and whenever the user says there is no UI. A UC file can have UI blocks in some scenarios and none in others. Do not add empty UI placeholders.
 
 ## Side Effects Rules
 
@@ -270,20 +232,13 @@ Side Effects is the most critical field for the build loop. The Implementer suba
 ### Rules
 
 - Every scenario must have at least one side effect or at least one non-side-effect. A scenario that changes nothing is not a scenario.
-- Non-side-effects start with "No" and name the thing that does NOT happen.
-- Non-side-effects are just as important as side effects -- they tell the Implementer what to assert does NOT occur.
+- Non-side-effects start with "No" and name the thing that does NOT happen — they tell the Implementer what to assert does NOT occur.
 - Event names follow `{domain}.{entity}.{verb}` convention (e.g., `auth.session.created`, `billing.invoice.sent`).
 - Payload fields are listed in backtick-wrapped comma-separated format.
 
 ## User-Perspective First
 
-### Core Principle
-
-Scenarios describe what actors do and observe, not internal system behavior. Internal mechanics belong exclusively in Side Effects. The narrative arc of Given/Steps/Outcomes tells the actor's story; Side Effects is the technical appendix.
-
-### Authoring Rule
-
-Write Steps and Outcomes as if narrating the actor's experience. If a step describes something invisible to the actor (database insert, internal event, cache invalidation), move it to Side Effects. The actor never "stores a row" or "publishes an event" -- the actor submits a form, clicks a button, or receives a response.
+Scenarios describe what actors do and observe, not internal system behavior. Internal mechanics belong exclusively in Side Effects: the narrative arc of Given/Steps/Outcomes tells the actor's story, and Side Effects is the technical appendix. Write Steps and Outcomes as if narrating the actor's experience — if a step describes something invisible to the actor (database insert, internal event, cache invalidation), move it to Side Effects. The actor never "stores a row" or "publishes an event"; the actor submits a form, clicks a button, or receives a response.
 
 ### Perspective by App Type
 
@@ -293,26 +248,9 @@ Write Steps and Outcomes as if narrating the actor's experience. If a step descr
 | API | Consumer sends request | Response payload, status code, headers | DB writes, events published, cache updates |
 | Backend | System event triggers processing | Observable state change (job completes, status updates) | Tables modified, events published, logs written |
 
-### Anti-Patterns
-
-| Field | Bad (implementation-leaked) | Good (user-perspective) | Why |
-|-------|---------------------------|------------------------|-----|
-| Steps | System creates a `users` row with `privy_id` | User completes the registration form | The actor is the user, not the ORM |
-| Steps | System validates the JWT and refreshes the session | User accesses the dashboard | The user navigates; token mechanics are invisible |
-| Steps | System publishes `auth.session.created` event | User sees the welcome screen | Event publishing is a side effect, not a step |
-| Outcomes | `users` table has a row with `profile_complete=true` | User's account is created and profile is marked complete | Outcomes describe the actor's result, not table state |
-| Outcomes | Response body contains `{ "token": "..." }` | User receives an authentication token | Name the business object, not the JSON shape |
-| Side Effects | _(correct)_ `users` table: row created with `privy_id={DID}, profile_complete=true` | _(correct)_ `auth.session.created` event published with payload `user_id, timestamp` | Side Effects IS where implementation detail belongs |
-
 ## E2E Testing Philosophy
 
-### Core Principle
-
-All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write specs as if everything is testable with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`.
-
-### Authoring Rule
-
-Write Given/Steps/Outcomes/Side Effects as if everything is testable end-to-end through the public entry point of the relevant `Application`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
+All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write Given/Steps/Outcomes/Side Effects as if everything is testable through the public entry point of the relevant `Application`, with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
 
 ### Potential Concerns
 
@@ -352,7 +290,7 @@ When creating a new use case, generate a unique ID using a 4-character timestamp
 Run: `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js`
 Prepend `UC-` to the output (e.g., `UC-0S9A`).
 
-**Multi-module UCs share one ID.** When the parent feature exists in 2+ modules and this UC applies to more than one of them, generate the UC-XXXX code **once** and reuse it for every module-instance. Do not generate a fresh ID per module. See **Module-Scoped Use Cases** above for the full rule.
+**Multi-module UCs share one ID** — generate the code once and reuse it for every module-instance, per **Module-Scoped Use Cases** above.
 
 **IDs are permanent.** Once assigned, a UC-XXXX ID is never reused for a different use case, even if the original use case is deprecated.
 
@@ -411,43 +349,21 @@ Any section the user marks "Skip this UC in {module X}" means the UC is not writ
 
 ### Step 3: Review Shared Context
 
-For each shared section, use AskUserQuestion to present what was extracted and ask for confirmation.
+Confirm each shared section in order — use case name, primary actor, preconditions, trigger — one AskUserQuestion per section.
 
-Present shared context in this order:
-1. Use case name
-2. Primary actor
-3. Preconditions
-4. Trigger
-
-**If the input covered the section:**
-"For {section name}, this is what I extracted:\n\n{content}\n\nDoes this look correct?"
-- Options: "Yes, looks good" / "Edit" (user provides corrections via Other)
-
-**If the input did NOT cover the section:**
-"I didn't find any {section name} in your description. Can you provide them?"
-- Options: "Yes, I'll add them" (user provides via Other) / "Skip for now"
+- **Section covered by the input:** present what was extracted and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
+- **Section missing from the input:** say you didn't find it and ask the user to provide it. Options: "Yes, I'll add them" (user provides via Other) / "Skip for now".
 
 ### Step 4: Review Scenarios
 
-For each scenario extracted from the input, present the full scenario block (Given, Steps, Outcomes, Side Effects) and ask for confirmation.
+For each scenario extracted from the input, present the full scenario block (Given, Steps, Outcomes, Side Effects) and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
 
-"Here is Scenario {N}: {Name}\n\n**Given:**\n{given}\n\n**Steps:**\n{steps}\n\n**Outcomes:**\n{outcomes}\n\n**Side Effects:**\n{side_effects}\n\nDoes this look correct?"
-- Options: "Yes, looks good" / "Edit" (user provides corrections via Other)
-
-After the scenario is confirmed, ask about UI for this scenario:
-"Does this scenario have a user interface? If so, describe the screen state at the key step and I'll generate an ASCII art mockup."
-- Options: "I'll describe the UI" (user provides via Other) / "No UI for this scenario"
-
-If the user describes UI, generate an ASCII art mockup, present it for confirmation via AskUserQuestion, and note which step it belongs to. If the user provides image file paths, note them for the Write Files step.
+Once the scenario is confirmed, ask whether it has a user interface, offering to generate an ASCII art mockup from the user's description of the screen state at the key step. Options: "I'll describe the UI" (user provides via Other) / "No UI for this scenario". If the user describes UI, generate the mockup, present it for confirmation via AskUserQuestion, and note which step it belongs to. If the user provides image file paths, note them for the Write Files step.
 
 For the **Side Effects** field specifically, always remind the user:
 "Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become 'And no ...' assertions in tests."
 
-After reviewing all extracted scenarios, ask:
-"Would you like to add another scenario?"
-- Options: "Yes" (user describes the scenario via Other) / "No, that's all"
-
-Repeat the scenario review loop until the user confirms they have no more scenarios.
+After reviewing all extracted scenarios, ask whether to add another. Options: "Yes" (user describes the scenario via Other) / "No, that's all". Repeat the scenario review loop until the user confirms they have no more scenarios.
 
 ### Step 5: Write Files
 

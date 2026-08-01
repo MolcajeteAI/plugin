@@ -23,7 +23,7 @@ Before creating or locating a feature, resolve the target module and domain:
 
 All feature paths use the pattern `specs/features/{module}/FEAT-XXXX-{slug}/`.
 
-The domain is a spec-organization concept used to group related features (e.g., `identity`, `billing`, `notifications`) and to filter features in registries. Every feature belongs to exactly one domain. Outcomes that touch other systems (emails, notifications, downstream events) are recorded as **side effects** of the UC under test — they are validations of the same UC, not evidence that another domain is being tested.
+The domain is a spec-organization concept used to group related features (e.g., `identity`, `billing`, `notifications`) and to filter features in registries. Outcomes that touch other systems (emails, notifications, downstream events) are recorded as **side effects** of the UC under test — they are validations of the same UC, not evidence that another domain is being tested.
 
 ### Module-Scoped Content (Multi-Module Features)
 
@@ -36,13 +36,13 @@ When a feature spans 2+ modules, each module's REQUIREMENTS.md must focus on tha
 - Scope **Non-Functional Requirements** to the module's performance and security profile
 - Scope **Acceptance Criteria** to what can be verified from the module's perspective
 
-**Anti-pattern table:**
+**Example — one feature, two modules:**
 
-| Section | patient module (bad: generic) | patient module (good: scoped) | console module (good: scoped) |
-|---------|-------------------------------|-------------------------------|-------------------------------|
-| Actors | User, Administrator | Patient, Caregiver | Administrator, Support Agent |
-| FR example | When a user registers, the system shall create an account. | When a patient completes the registration form, the system shall create their patient profile. | When an administrator searches for a patient, the system shall return matching patient records. |
-| Non-Goals | Does not handle billing. | Does not handle admin review of registrations -- see console module. | Does not handle patient-facing registration -- see patient module. |
+| Section | patient module | console module |
+|---------|----------------|----------------|
+| Actors | Patient, Caregiver | Administrator, Support Agent |
+| FR example | When a patient completes the registration form, the system shall create their patient profile. | When an administrator searches for a patient, the system shall return matching patient records. |
+| Non-Goals | Does not handle admin review of registrations -- see console module. | Does not handle patient-facing registration -- see patient module. |
 
 **Use cases inside a multi-module feature follow the same shared-ID, module-scoped-content pattern.** One `UC-XXXX` ID is reused across every module the use case applies to; each module gets its own module-scoped `UC-XXXX-{slug}.md`. See `spec/skills/usecase-authoring/SKILL.md` → **Module-Scoped Use Cases** for the full rule.
 
@@ -97,8 +97,6 @@ Linked to: UC-XXXX
 
 ## User-Perspective First
 
-### Core Principle
-
 EARS triggers must describe user-observable actions, not internal mechanics. Requirements tell the story of what users do and see. Implementation details belong exclusively in Fit Criteria -- the verification layer.
 
 ### Perspective Selection
@@ -111,31 +109,21 @@ EARS triggers must describe user-observable actions, not internal mechanics. Req
 
 ### Anti-Patterns
 
-| Bad trigger (implementation-leaked) | Corrected trigger (user-perspective) | Why it matters |
-|--------------------------------------|--------------------------------------|----------------|
-| When the system creates a new `users` row with `privy_id` set to the Privy DID | When a new user completes registration | The actor is the user, not the database |
-| When the JWT is validated and the session table is updated | When the user logs in with valid credentials | The user performs login, not JWT validation |
-| When the webhook handler parses the Stripe payload | When a payment is received from the payment provider | The trigger is the business event, not the handler |
+| Bad trigger (implementation-leaked) | Corrected trigger (user-perspective) |
+|--------------------------------------|--------------------------------------|
+| When the system creates a new `users` row with `privy_id` set to the Privy DID | When a new user completes registration |
+| When the JWT is validated and the session table is updated | When the user logs in with valid credentials |
+| When the webhook handler parses the Stripe payload | When a payment is received from the payment provider |
 
 ### Where Implementation Details Belong
 
-Implementation details surface in Fit Criteria, where they serve as measurable proof that a requirement is satisfied.
-
-**Requirement (user-perspective):**
-
-> **FR-XXXX** `When a new user completes registration, the system shall create their account and mark their profile as complete.`
-
-**Fit Criterion (implementation-specific):**
-
-> Fit Criterion: Given a user completes the registration form, a `users` row exists with `profile_complete=true` and the user sees the welcome screen.
-
-The requirement describes what the user does and what happens from their perspective. The Fit Criterion names the database column, the exact field value, and the observable confirmation -- the verifiable proof.
+Implementation details surface in Fit Criteria, where they serve as measurable proof that a requirement is satisfied. The requirement stays user-perspective — `When a new user completes registration, the system shall create their account and mark their profile as complete.` — while its Fit Criterion names the database column, the exact field value, and the observable confirmation: `Given a user completes the registration form, a users row exists with profile_complete=true and the user sees the welcome screen.`
 
 ## Non-Goals Positioning
 
 The Non-Goals section MUST appear second in REQUIREMENTS.md -- immediately after the one-sentence objective, before Actors, before Functional Requirements.
 
-**Why:** LLMs process documents top-to-bottom. Scope boundaries read late are scope boundaries partially ignored. An agent that sees Non-Goals at position 2 will respect them throughout. An agent that sees them at position 8 may already have invented out-of-scope implementations.
+**Why:** agents read top-to-bottom — scope boundaries read late are scope boundaries partially ignored.
 
 **Required order:**
 1. Feature name + one-sentence objective (blockquote)
@@ -174,7 +162,7 @@ UI sections support two content types, which can be mixed:
 +-------------------+
 ```
 
-ASCII art conveys layout and element hierarchy. It is always the default -- generate it from the user's description of the feature.
+ASCII art conveys layout and element hierarchy — generate it from the user's description of the feature.
 
 **Image references** -- standard Markdown images pointing to files in `assets/`:
 
@@ -182,7 +170,7 @@ ASCII art conveys layout and element hierarchy. It is always the default -- gene
 ![Dashboard overview](assets/overview-dashboard.png)
 ```
 
-Images are a post-creation enhancement. The `assets/` directory is created inside the feature directory after the feature directory exists. When the user provides image files (file paths), copy them to `specs/features/{module}/FEAT-XXXX-{slug}/assets/` with descriptive names and reference them in the `## UI` section.
+Images are a post-creation enhancement: the `assets/` directory is created inside the feature directory after that directory exists. When the user provides image files (file paths), copy them to `specs/features/{module}/FEAT-XXXX-{slug}/assets/` with descriptive names and reference them in the `## UI` section.
 
 ### Asset Management
 
@@ -193,28 +181,15 @@ Images are a post-creation enhancement. The `assets/` directory is created insid
 
 ### When to Include
 
-Include the `## UI` section when:
-- The feature has screens, forms, or visual interactions
-- The user provides mockups, screenshots, or wireframes
-- The user describes UI layout in their feature description
-
-Omit the `## UI` section when:
-- The feature is pure backend, API-only, or infrastructure
-- The user explicitly says no UI
+Include the `## UI` section when the feature has screens, forms, or visual interactions, or when the user supplies mockups, screenshots, wireframes, or a layout description. Omit it for pure backend, API-only, or infrastructure features, and whenever the user says there is no UI.
 
 ### UI Informs Requirements
 
-When a feature has a UI section, its elements should inform functional requirement language. UI is specification, not decoration. Screen names, button labels, and form fields that appear in mockups are the vocabulary for EARS triggers and responses. A requirement that says "the user submits the form" is stronger when the UI section shows exactly which form, with which fields, and what the confirmation screen looks like.
+UI is specification, not decoration. Screen names, button labels, and form fields that appear in mockups are the vocabulary for EARS triggers and responses — "the user submits the form" is stronger when the UI section shows exactly which form, with which fields, and what the confirmation screen looks like.
 
 ## Feature Status
 
-Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | dirty | implemented` (legacy `deprecated` preserved when present). The field is the feature's first-class state, written directly by spec-phase commands and `/m:build` per the `status-rollup` shared skill.
-
-- New feature → `status: pending`.
-- Modified feature (via a UC change) → recomputed by rolling up over child UC statuses per the `status-rollup` skill.
-- Built feature (every UC `implemented`) → `status: implemented`.
-
-Authors do not edit this field manually. Anyone wanting to know "is this feature implemented?" reads the `status:` field at the top of `REQUIREMENTS.md`. See the `status-rollup` skill for the roll-up rule.
+Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | dirty | implemented` (legacy `deprecated` preserved when present). The field is the feature's first-class state: `pending` on creation, recomputed by rolling up over child UC statuses thereafter. It is written directly by spec-phase commands and `/m:build` per the `status-rollup` shared skill, which owns the roll-up rule. Authors do not edit this field manually.
 
 ## FEAT-XXXX ID Assignment
 
@@ -295,15 +270,10 @@ Convert all extracted FRs to EARS syntax and add Fit Criteria before presenting.
 
 ### Step 2: Review Section by Section
 
-For each section, use AskUserQuestion to present what was extracted and ask for confirmation:
+Confirm each section with one AskUserQuestion:
 
-**If the input covered the section:**
-"For {section name}, this is what I extracted:\n\n{content}\n\nDoes this look correct?"
-- Options: "Yes, looks good" / "Edit" (user provides corrections via Other)
-
-**If the input did NOT cover the section:**
-"I didn't find any {section name} in your description. Do you have any?"
-- Options: "Yes, I'll add them" (user provides via Other) / "No, skip this section"
+- **Section covered by the input:** present what was extracted and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
+- **Section missing from the input:** say you didn't find it and ask whether the user has any. Options: "Yes, I'll add them" (user provides via Other) / "No, skip this section".
 
 Present sections in this order:
 1. Feature name
@@ -314,19 +284,12 @@ Present sections in this order:
 6. Non-functional requirements
 7. Acceptance criteria
 
-For the UI step specifically:
+The UI step differs from the others:
 
-**If UI content was extracted from input** (layout descriptions, mockups, image references):
-"UI for this feature:\n\n{extracted content}\n\nDoes this look correct?"
-- Options: "Yes, looks good" / "Edit" (user provides corrections via Other)
+- **UI content extracted from input** (layout descriptions, mockups, image references): present it and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
+- **No UI content in the input:** ask whether the feature has a user interface, offering to generate ASCII art mockups from a description or to take image file paths. Options: "I'll describe the UI" (user provides via Other) / "No UI -- skip".
 
-**If UI content was NOT found in input:**
-"Does this feature have a user interface? You can describe it and I'll generate ASCII art mockups, or you can provide image file paths."
-- Options: "I'll describe the UI" (user provides via Other) / "No UI -- skip"
-
-If the user says "No UI -- skip", do not include the `## UI` section in REQUIREMENTS.md.
-
-If the user describes the UI, generate ASCII art mockups from their description showing layout, key elements, and hierarchy. Use fenced code blocks.
+If the user says "No UI -- skip", do not include the `## UI` section in REQUIREMENTS.md. If the user describes the UI, generate ASCII art mockups in fenced code blocks showing layout, key elements, and hierarchy.
 
 ### Step 3: Write Files
 

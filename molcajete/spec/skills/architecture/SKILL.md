@@ -123,30 +123,13 @@ Non-obvious choices that future agents should not reverse. Uses the format:
 In the context of {situation}, facing {concern}, we decided {choice} to achieve {quality}, accepting {tradeoff}.
 ```
 
-Generate ADR IDs the same way as all other entity IDs:
-
-Run: `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js`
-Prepend `ADR-` to the output (e.g., `ADR-0L2x`).
+Generate ADR IDs via the `id-generation` shared skill and prepend `ADR-` to the output (e.g., `ADR-0L2x`).
 
 ## Research Discovery
 
-When generating or updating an ARCHITECTURE.md, scan for relevant research briefs:
-
-1. List `.molcajete/research/*.md` — filenames sort naturally by timestamp (newest first)
-2. Read only the YAML frontmatter of each file (not the body)
-3. Compare `description` and `query` against the feature's topic
-4. If relevant, read the full document and use it as context
-5. Stop after the first relevant match to protect context window
-6. Also scan `research/*.md` at project root the same way
+When generating or updating an ARCHITECTURE.md, scan `.molcajete/research/*.md` and `research/*.md` at project root for relevant briefs — filenames sort naturally by timestamp (newest first). Read only each file's YAML frontmatter and compare `description` and `query` against the feature's topic; read the first relevant match in full and stop there.
 
 The brief's "Current Best Practices" and "Key Libraries/APIs" sections directly inform architecture decisions. Cite relevant findings in the Architecture Decisions section when they influenced a choice.
-
-## Population Rules
-
-- Sections are **additive** — append rows, don't replace existing ones
-- When adding new UCs or scenarios, add rows to Component Inventory, API Surface, and Code Map without disturbing existing entries
-- Update the `use_cases` and `scenarios` frontmatter arrays when adding new IDs
-- Always update `last_update` to the current date when modifying sections
 
 ## Table Filling
 
@@ -162,9 +145,16 @@ For every new use case or scenario added under this feature, populate at minimum
 | Event Topology | Events named in scenarios' Side Effects | Producer/consumer pairs traced through the event-bus call sites |
 | Integration Points | External systems named in scenarios | External clients located in the codebase |
 
-The architecture tables are the bridge between the spec layer and the code layer. `/m:plan` reads them to write each task's prose — a task's target files must already appear in Component Inventory and Code Map. If a task would touch a file or contract not in the architecture tables, the architecture pass is incomplete.
+`/m:plan` reads these tables to write each task's prose — a task's target files must already appear in Component Inventory and Code Map. If a task would touch a file or contract not in the architecture tables, the architecture pass is incomplete.
 
-Leave a table empty only when the feature genuinely has no rows for it (e.g., Event Topology when the feature emits no events; State Transitions when no entity has a lifecycle). Do not leave a table empty out of laziness — the harness treats an unpopulated mandatory table as a spec defect.
+Leave a table empty only when the feature genuinely has no rows for it (e.g., Event Topology when the feature emits no events; State Transitions when no entity has a lifecycle).
+
+### Population Rules
+
+- Sections are **additive** — append rows, don't replace existing ones
+- When adding new UCs or scenarios, add rows to Component Inventory, API Surface, and Code Map without disturbing existing entries
+- Update the `use_cases` and `scenarios` frontmatter arrays when adding new IDs
+- Always update `last_update` to the current date when modifying sections
 
 ## Template Reference
 
