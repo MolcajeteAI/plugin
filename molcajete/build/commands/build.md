@@ -30,7 +30,7 @@ Molcajete generates **integration tests exclusively** per Principle 1 of the eng
 
 **Arguments:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never plain-text questions.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Parse Arguments
 
@@ -114,11 +114,14 @@ This is a hard gate — the loaded UC scenarios (`SC-XXXX`) and the feature's `A
 
 ## Step 6: Present the Build Plan
 
-Show the user via AskUserQuestion: "Executing plan `{plan-id}` (`{mode}`). {N} task(s): {list of `T-NNN — outcome`}. Proceed?"
+The task list is the brief, never the question text:
 
-In `mode: mixed`, split the count line: "{C} coverage task(s), {I} implement task(s) — coverage runs first. Proceed?" Follow with the task list grouped by kind.
-
-Options: "Proceed" / "Cancel".
+- Brief: name the plan and mode, then print the tasks as a Markdown table — `T-NNN`, outcome, and
+  the scenarios each covers. In `mode: mixed`, group the table by kind and note that coverage tasks
+  run first, with the per-kind counts. Recommend "Proceed".
+- Question: "Execute plan `{plan-id}`?"
+- Header: "Build plan"
+- Options: "Proceed" / "Cancel"
 
 If "Cancel", stop without writing.
 
@@ -277,7 +280,7 @@ Before the correctness review, emit the evidence for this task. If any item cann
 Only reached when 8.9's evidence was emitted complete AND 8.10 returned `correct`.
 
 1. **Flip the checkbox in the plan file.** Change this task's heading from `## [ ] T-NNN — {outcome}` to `## [x] T-NNN — {outcome}`. Preserve the rest of the file verbatim. This is the task-level source of truth and is read for dependency gating (8.2) by later tasks in this same run.
-2. **Handle `migrate` references.** For every referenced test the task prose marked `migrate`, emit an AskUserQuestion: "The referenced test `{path}` was migrated into the canonical integration test at `{derived-test-path}`. Delete the original file now?" Options: **"Delete"** / **"Keep"** (note the deferral in the Step 11 report). Never delete a `reference`-marked file.
+2. **Handle `migrate` references.** For every referenced test the task prose marked `migrate`, ask whether to delete the original. This is a trivial confirmation with a one-sentence consequence, so no brief is needed — name both paths in the question: "Delete `{path}` now that it is migrated into `{derived-test-path}`?" Header: "Migrated". Options: **"Delete"** / **"Keep"** (note the deferral in the Step 11 report). Never delete a `reference`-marked file.
 
 The plan checkbox is the durable ledger. Diagnostics (mutation logs, retry counts) live only in the conversation and any escalation files.
 

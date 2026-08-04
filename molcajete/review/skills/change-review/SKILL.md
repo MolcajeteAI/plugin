@@ -45,10 +45,13 @@ Parse the command's target argument into one of four shapes, then gather the dif
 1. `git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null | sed 's@^refs/remotes/origin/@@'` — the remote's
    default branch, when set.
 2. Otherwise the first of `main`, `master`, `develop` that resolves (`git rev-parse --verify <name>`).
-3. Confirm via **AskUserQuestion** with the detected branch pre-selected as the first option, plus the other
-   candidates and an "Other — I'll name it" path:
+3. Confirm the base. This is a short question, so the brief is one line:
+   - Brief: name the detected branch and how it was detected, and list the other candidates found.
+   - Question: "Review against which base branch?"
+   - Header: "Base branch"
+   - Options: the detected branch first, then the other candidates
 
-   > "Review against which base branch? Detected: `{base}`."
+   Do not add an "Other — I'll name it" option; the built-in `Other` already collects a branch name.
 
 For a PR target, the base is `baseRefName` from `gh pr view` — no prompt needed.
 

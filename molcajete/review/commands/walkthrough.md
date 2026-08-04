@@ -16,7 +16,7 @@ allowed-tools:
 
 **Target argument:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never plain-text questions.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Load Skill
 
@@ -30,11 +30,13 @@ Any changed file that maps to no `FEAT/UC/SC` is grouped under an **"Unmapped ch
 
 ## Step 3: Present the Map
 
-Show the top-level shape first: the features touched, and under each the UCs and scenario count, plus the change size. This is the table of contents for the tour. Then ask via AskUserQuestion where to start:
+Show the top-level shape first: the features touched, and under each the UCs and scenario count, plus the change size. This is the table of contents for the tour, and it is the brief — this step already follows the two-move rule. Then ask where to start:
 
-> "This change set touches {N} features. Where do you want to start the walkthrough?"
+- Question: "Where do you want to start the walkthrough?"
+- Header: "Start at"
+- Options: one per feature ("Start at {FEAT}"), plus "Walk everything"
 
-Options: one per feature ("Start at {FEAT} — {name}"), plus "Walk everything top to bottom".
+When more than three features are touched, list them all in the brief and offer the three largest plus "Walk everything"; the user can name any other via the built-in `Other`.
 
 ## Step 4: Walk the Changes (interactive, step by step)
 
@@ -44,11 +46,15 @@ Descend the hierarchy one node at a time — feature → UC → scenario → the
 2. **Why** — tie it to the driving reason: the UC scenario it satisfies (quote the `SC-XXXX`), the task prose in the plan file, and the commit subject. If the change has no spec behind it, say so.
 3. **What it means** — the consequence: the behavior a user or caller now gets, and anything downstream that depends on it.
 
-After each node, navigate via AskUserQuestion:
+After each node, navigate. The node's explanation above is the brief, so this loop prompt needs no fresh one:
 
-> "That's {node}. Where next?"
+- Question: "That's {node}. Where next?"
+- Header: "Navigate"
+- Options: **"Next"** / **"Deeper"** / **"Show code"** / **"Done"**
 
-Options: **"Next"** (the following node in order) / **"Deeper"** (show the actual diff / more `file:line` detail for this node) / **"Show code"** (surface the touched code with `file:line` links; when the IDE MCP is connected, optionally include `mcp__ide__getDiagnostics` for the touched files so the user sees any warnings) / **"Jump to feature"** (pick another feature) / **"Done"**.
+**"Next"** (the following node in order) / **"Deeper"** (show the actual diff / more `file:line` detail for this node) / **"Show code"** (surface the touched code with `file:line` links; when the IDE MCP is connected, optionally include `mcp__ide__getDiagnostics` for the touched files so the user sees any warnings) / **"Done"**.
+
+Four options is the hard cap, so jumping to another feature is not its own option — the user names the feature via the built-in `Other`. Mention that in the first node's explanation.
 
 Keep each step short and concrete — one node's worth of change, not a wall of text. The clickable `file:line` references are the "give me a link I can click to open the code" path; prefer them over pasting large diffs unless the user asks to go **Deeper**.
 

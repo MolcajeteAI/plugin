@@ -20,7 +20,7 @@ The whole point is traceability: **every issue cites the spec and the integratio
 
 **Target argument:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never plain-text questions.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Load Skills and Rubric
 

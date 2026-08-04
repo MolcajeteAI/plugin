@@ -323,7 +323,7 @@ When creating a use case, add a new row to the feature's `USE-CASES.md`:
 
 ## Creation Interview
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text. This keeps the agent in control of the flow throughout the interview.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question. Routing the interview through `AskUserQuestion` is what keeps the agent in control of the flow.
 
 The creation interview extracts structured content from the user's freeform input and presents it section-by-section for review. Files are only written after all sections are confirmed.
 
@@ -340,30 +340,51 @@ Cross-reference `specs/ACTORS.md` to validate the actor exists.
 
 ### Step 2: Multi-Module Interview Extension
 
-When the parent feature exists in 2+ modules, extend the review loop so that for each shared section (Name, Actor, Trigger, Preconditions, Scenarios) the user confirms **per module** or explicitly declares "identical across modules — use one canonical content." Ask via AskUserQuestion:
+When the parent feature exists in 2+ modules, extend the review loop so that for each shared section (Name, Actor, Trigger, Preconditions, Scenarios) the user confirms **per module** or explicitly declares "identical across modules — use one canonical content." Ask:
 
-> "This UC applies to {N} modules. For {section name}, do you want module-scoped content or the same content in every module?"
-> Options: "Module-scoped (I'll provide per module)" / "Same content everywhere" / "Skip this UC in {module X}"
+- Brief: name the modules the UC applies to and show the extracted content for this section, so the
+  user can see whether it would actually differ per module. Recommend "Same content everywhere"
+  unless the extraction already shows divergence.
+- Question: "For {section name}, should the content be module-scoped or the same everywhere?"
+- Header: "Scoping"
+- Options: "Module-scoped" / "Same everywhere" / "Skip this UC in {module}"
 
 Any section the user marks "Skip this UC in {module X}" means the UC is not written to that module — the UC's module set narrows accordingly.
 
 ### Step 3: Review Shared Context
 
-Confirm each shared section in order — use case name, primary actor, preconditions, trigger — one AskUserQuestion per section.
+Confirm each shared section in order — use case name, primary actor, preconditions, trigger — one question per section. The extracted content is always the brief:
 
-- **Section covered by the input:** present what was extracted and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
-- **Section missing from the input:** say you didn't find it and ask the user to provide it. Options: "Yes, I'll add them" (user provides via Other) / "Skip for now".
+- **Section covered by the input:**
+  - Brief: print what was extracted for this section as Markdown.
+  - Question: "Is the {section} correct?"
+  - Header: the section name (12 characters maximum)
+  - Options: "Yes, looks good" / "Edit"
+- **Section missing from the input:**
+  - Brief: say which section is missing and what belongs in it.
+  - Question: "I didn't find a {section}. Can you provide one?"
+  - Header: the section name (12 characters maximum)
+  - Options: "Yes, I'll add it" / "Skip for now"
+
+The user's correction or content arrives through the built-in `Other`.
 
 ### Step 4: Review Scenarios
 
-For each scenario extracted from the input, present the full scenario block (Given, Steps, Outcomes, Side Effects) and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
+For each scenario extracted from the input:
 
-Once the scenario is confirmed, ask whether it has a user interface, offering to generate an ASCII art mockup from the user's description of the screen state at the key step. Options: "I'll describe the UI" (user provides via Other) / "No UI for this scenario". If the user describes UI, generate the mockup, present it for confirmation via AskUserQuestion, and note which step it belongs to. If the user provides image file paths, note them for the Write Files step.
+- Brief: print the full scenario block — Given, Steps, Outcomes, Side Effects — as Markdown.
+- Question: "Is this scenario correct?"
+- Header: "Scenario"
+- Options: "Yes, looks good" / "Edit"
+
+Once the scenario is confirmed, ask whether it has a user interface, offering in the brief to generate an ASCII art mockup from the user's description of the screen state at the key step. Question: "Does this scenario have a user interface?" Options: "I'll describe the UI" / "No UI for this scenario".
+
+If the user describes UI, generate the mockup and confirm it — **render the mockup in a fenced code block in the brief**, then ask "Is this mockup right?" with options "Yes" / "Edit". A mockup in the `question` field or an option `preview` loses its alignment and gets truncated. Note which step it belongs to. If the user provides image file paths, note them for the Write Files step.
 
 For the **Side Effects** field specifically, always remind the user:
 "Include both side effects (events published, DB writes) AND explicit non-side-effects (things that do NOT happen). Non-side-effects become 'And no ...' assertions in tests."
 
-After reviewing all extracted scenarios, ask whether to add another. Options: "Yes" (user describes the scenario via Other) / "No, that's all". Repeat the scenario review loop until the user confirms they have no more scenarios.
+After reviewing all extracted scenarios, ask whether to add another. This is a loop prompt inside an interview whose brief was already given, so no fresh brief is needed. Question: "Add another scenario?" Header: "Scenarios" Options: "Yes" / "No, that's all". Repeat the scenario review loop until the user confirms they have no more scenarios.
 
 ### Step 5: Write Files
 
@@ -388,9 +409,12 @@ After all sections are confirmed:
 - **Resolve every module-instance of the UC.** Glob `specs/features/*/FEAT-*/UC-XXXX-*.md` for the given UC-XXXX ID. The result is a set of one or more files. All of them share the same UC-XXXX ID; each is module-scoped.
 - Read every module-instance file (and the parent feature's `REQUIREMENTS.md` / `ARCHITECTURE.md`) so the proposed edit is informed by full cross-module context.
 - Compare the user's change description with the current content per module-instance.
-- Propose specific changes **per module-instance** via AskUserQuestion. When the edit only makes sense in one module, offer the user the option to narrow the fan-out. When the edit is the same everywhere, offer "apply to all instances." Example:
-  > "Here's what I'd change for {UC-XXXX} in {module}: {diff}. Apply here?"
-  > Options: "Apply here" / "Apply to all module-instances" / "Edit" / "Skip this module"
+- Propose specific changes **per module-instance**. When the edit only makes sense in one module, offer the user the option to narrow the fan-out. When the edit is the same everywhere, offer "apply to all instances." The diff is the brief:
+  - Brief: name the UC and module, then show the proposed edit as a fenced diff or before/after
+    block. Say whether the same edit would apply cleanly to the peer module-instances.
+  - Question: "Apply this change to {UC-XXXX} in {module}?"
+  - Header: "Apply edit"
+  - Options: "Apply here" / "Apply to all" / "Edit" / "Skip this module"
 - Apply after confirmation. Every touched module-instance file gets its frontmatter `version` incremented independently — versions are per-file, not per-UC-ID.
 - Do NOT run the creation interview.
 - Do NOT change the UC-XXXX ID.

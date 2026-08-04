@@ -11,6 +11,8 @@ description: >-
 
 `/m:setup` is one-shot: one user description + (when present) a codebase scan, and the model writes the full foundation. No section-by-section interview.
 
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
+
 ## Composition
 
 From the user's description and the codebase scan, compose:
@@ -124,7 +126,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Artifact:** `specs/TECH-STACK.md` per-module `Running tests:` field.
 - **Category:** SCHEMA GAP
 - **Detection:** For each `### {module-name}` section under `## Modules`, check whether a `- **Running tests:**` line is present. List every module missing the field.
-- **Fix:** For each affected module, re-run the stack-detection step's logic to derive the command (scan the module's manifest for `scripts.test` / `pyproject.toml` `[tool.pytest.ini_options]` / `Makefile` / Go conventional `go test ./...`). If detection finds nothing, prompt the user via AskUserQuestion per module with the discovered candidates or "skip module". Insert the line at the canonical position (after `Testing:` if present, otherwise before `Coverage:`).
+- **Fix:** For each affected module, re-run the stack-detection step's logic to derive the command (scan the module's manifest for `scripts.test` / `pyproject.toml` `[tool.pytest.ini_options]` / `Makefile` / Go conventional `go test ./...`). If detection finds nothing, prompt per module — list the discovered candidates and where each was found in the brief, then ask "Which test command should `{module}` use?" with one option per candidate plus "Skip module". Insert the line at the canonical position (after `Testing:` if present, otherwise before `Coverage:`).
 - **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/TECH-STACK-template.md` field order.
 
 ### `tech-stack-coverage`
@@ -159,7 +161,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
   - `specs/modules/` directory exists.
   - Any `specs/features/**/UC-*/usecase.md` file exists (old UC-as-folder-with-usecase.md layout).
   - Any `specs/features/**/UC-*/UC-*.log` files exist (old log naming).
-- **Fix:** Walk every legacy feature folder under `specs/modules/{module}/features/` and migrate per these rules. The target path always includes `{module}/`. Use **AskUserQuestion** with the full list of planned moves (grouped by feature) before applying — the user confirms once for the whole migration.
+- **Fix:** Walk every legacy feature folder under `specs/modules/{module}/features/` and migrate per these rules. The target path always includes `{module}/`. Confirm once for the whole migration before applying: the full list of planned moves (grouped by feature, as a Markdown table of from-path and to-path) is the brief; the question is "Apply these {N} file moves?" with options "Apply all" / "Cancel".
   1. Move `specs/modules/{module}/features/FEAT-*` → `specs/features/{module}/FEAT-*` (preserve REQUIREMENTS.md, USE-CASES.md, ARCHITECTURE.md, assets/, all child UC files and folders).
   2. For each UC folder `FEAT-*/UC-AAAA-{slug}/` that contains a legacy `usecase.md`:
      - Move `UC-AAAA-{slug}/usecase.md` up one level to `FEAT-*/UC-AAAA-{slug}.md` (the UC spec becomes a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE).

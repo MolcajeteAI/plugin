@@ -18,7 +18,7 @@ allowed-tools:
 
 `/m:fix` then **produces the regression plan itself** — it logs the entry and runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong diagnosis is caught and editable before any code is built.
 
-**Use AskUserQuestion for all user interaction.**
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Parse Arguments
 
@@ -69,11 +69,13 @@ For each module-instance in each target set, compare the description in `$ARGUME
 
 **Diagnosis can differ per module-instance.** A bug may live entirely in one module's code while the peer module is correct. Do not force a single diagnosis across module-instances.
 
-Surface the diagnosis(es) via AskUserQuestion, one prompt per affected module-instance:
+Surface the diagnosis(es) one prompt per affected module-instance. The diagnosis is the brief:
 
-> "Here is my diagnosis for `{UC-XXXX}` in `{module}`: {diagnosis} — {one-sentence justification}. {Proposed spec edit, or 'no spec edit'.} Proceed?"
-
-Options: "Proceed" / "Edit" (user provides corrections via Other) / "Cancel".
+- Brief: name the UC and module, state the diagnosis with a one-sentence justification, and show
+  the proposed spec edit as a fenced diff — or say plainly that no spec edit is needed and why.
+- Question: "Is this diagnosis for `{UC-XXXX}` in `{module}` right?"
+- Header: "Diagnosis"
+- Options: "Proceed" / "Edit" / "Cancel"
 
 ## Step 7: Apply Spec Edits (if any)
 

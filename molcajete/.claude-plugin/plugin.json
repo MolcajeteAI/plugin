@@ -35,6 +35,7 @@
     "./research/skills/research-methods",
     "./review/skills/change-review",
     "./setup/skills/setup",
+    "./shared/skills/asking-questions",
     "./shared/skills/code-documentation",
     "./shared/skills/git-committing",
     "./shared/skills/git-conflict-resolution",

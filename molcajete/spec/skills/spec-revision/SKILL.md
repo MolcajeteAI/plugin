@@ -11,6 +11,8 @@ description: >-
 
 # Spec Revision
 
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
+
 The revising family — `/m:fix` and `/m:change` — both start from one or more existing `FEAT-XXXX` /
 `UC-XXXX` IDs, resolve each UC to the module-instances that actually exist for it, edit the specs (always
 for `/m:change`, conditionally for `/m:fix`), log the event, and **produce the plan themselves** in the
@@ -57,8 +59,13 @@ For each `UC-XXXX` ID:
 1. Glob `specs/features/*/FEAT-*/UC-XXXX-*.md`. Every match is a module-instance of that UC. The module is the segment immediately under `specs/features/`.
 2. Read every module-instance's spec file, its parent feature's `REQUIREMENTS.md` / `ARCHITECTURE.md` in that module folder, and that instance's `CHANGELOG.md`.
 3. If exactly one module-instance exists, proceed with no fan-out.
-4. If 2+ module-instances exist, present the fan-out via AskUserQuestion. The calling command supplies the question sentence and says which option is pre-selected; the options are always:
-   > Options: "All ({N})" / one option per module ("Only {module}") / "Custom — I'll list them" (via Other, user provides a subset).
+4. If 2+ module-instances exist, present the fan-out. The calling command supplies the question sentence and says which option is pre-selected.
+   - Brief: list the module-instances as a Markdown table (module, file path, current status) so the
+     user can see what each one holds before choosing a fan-out.
+   - Header: "Modules"
+   - Options: "All ({N})" / one option per module ("Only {module}")
+
+   Do not add a "Custom — I'll list them" option; the built-in `Other` already collects a subset.
 5. Record the confirmed target set per UC-XXXX. All subsequent steps iterate over that set.
 
 For FEAT IDs the same fan-out applies transitively: expand the FEAT to its UCs (per **Loading the

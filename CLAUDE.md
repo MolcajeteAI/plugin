@@ -33,3 +33,5 @@ Pure Markdown plugin system with zero runtime dependencies. Commands and skills 
 ## Clarifying Questions
 
 When the user gives an instruction that is ambiguous, open-ended, or could be interpreted in multiple ways, always use the AskUserQuestion tool to clarify intent before proceeding. Only skip this when the request is straightforward and unambiguous.
+
+**How to ask is governed by `molcajete/shared/skills/asking-questions/SKILL.md`.** Every substantive question is two moves — write a Markdown brief explaining the decision and its options, then call `AskUserQuestion` carrying only the short question and 2-4 short labels. Never put the explanation, or the thing being decided, inside the `question` or `preview` fields.

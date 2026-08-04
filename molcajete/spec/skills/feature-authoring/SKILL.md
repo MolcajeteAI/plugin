@@ -17,8 +17,19 @@ Rules for creating and maintaining feature documents: REQUIREMENTS.md, USE-CASES
 Before creating or locating a feature, resolve the target module and domain:
 
 1. Read `specs/MODULES.md` for the list of registered modules. Read `specs/DOMAINS.md` for the list of registered domains.
-2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask via AskUserQuestion: "Which modules does this feature apply to?\n\n{module table from MODULES.md}" — multi-select. Keep auto-select when only one module exists.
-3. Ask which domain this feature belongs to via AskUserQuestion: "Which domain does this feature belong to?\n\n{domain table from DOMAINS.md}" — **single-select**. Every feature belongs to exactly one domain. If the feature seems to span multiple domains, that is a signal it should be split into multiple features (one per domain), not assigned multiple domains.
+2. If only one module exists, use it automatically (no user prompt needed). If multiple modules exist, ask — the module table is the brief, never the question text:
+   - Brief: print the module table from `MODULES.md` as Markdown (name, directory, what it holds).
+   - Question: "Which modules does this feature apply to?"
+   - Header: "Modules"
+   - Options: one per module
+   - multiSelect: true
+3. Ask which domain this feature belongs to — again, table in the brief:
+   - Brief: print the domain table from `DOMAINS.md` as Markdown.
+   - Question: "Which domain does this feature belong to?"
+   - Header: "Domain"
+   - Options: one per domain (**single-select**)
+
+   Every feature belongs to exactly one domain. If the feature seems to span multiple domains, that is a signal it should be split into multiple features (one per domain), not assigned multiple domains.
 4. Use the selected module and domain for all path operations.
 
 All feature paths use the pattern `specs/features/{module}/FEAT-XXXX-{slug}/`.
@@ -53,9 +64,13 @@ When a feature spans 2+ modules, each module's REQUIREMENTS.md must focus on tha
 When creating a feature, after the module and domain are resolved and before the creation interview:
 
 1. Read `specs/FEATURES.md` and check if there are existing features this new feature depends on.
-2. If dependency candidates exist, ask via AskUserQuestion:
-   "Does this feature depend on any existing features?\n\n{features table}\n\nSelect any that apply, or skip."
-   Options: list each candidate feature + "None -- no dependencies"
+2. If dependency candidates exist, ask:
+   - Brief: print the candidate features as a Markdown table (ID, name, one-line purpose) and say
+     why each looked like a dependency. Note that selecting none is a valid answer.
+   - Question: "Does this feature depend on any existing features?"
+   - Header: "Depends on"
+   - Options: one per candidate feature, plus "None"
+   - multiSelect: true
 3. Record selected refs for inclusion in REQUIREMENTS.md frontmatter.
 
 ## EARS Syntax
@@ -251,7 +266,7 @@ When creating a feature, add a new row to `specs/FEATURES.md` under the `## {dom
 
 ## Creation Interview
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text. This keeps the agent in control of the flow throughout the interview.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question. Routing the interview through `AskUserQuestion` is what keeps the agent in control of the flow.
 
 The creation interview extracts structured content from the user's freeform input and presents it section-by-section for review. Files are only written after all sections are confirmed.
 
@@ -270,10 +285,22 @@ Convert all extracted FRs to EARS syntax and add Fit Criteria before presenting.
 
 ### Step 2: Review Section by Section
 
-Confirm each section with one AskUserQuestion:
+Confirm each section with one question. The extracted content is always the brief — never the
+question text:
 
-- **Section covered by the input:** present what was extracted and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
-- **Section missing from the input:** say you didn't find it and ask whether the user has any. Options: "Yes, I'll add them" (user provides via Other) / "No, skip this section".
+- **Section covered by the input:**
+  - Brief: print what was extracted for this section, as Markdown. Use a list for actors and
+    non-goals, a numbered list for EARS requirements with their Fit Criteria, a fenced block for UI.
+  - Question: "Is the {section} correct?"
+  - Header: the section name (12 characters maximum)
+  - Options: "Yes, looks good" / "Edit"
+- **Section missing from the input:**
+  - Brief: say which section is missing, what belongs in it, and what happens if it stays empty.
+  - Question: "I didn't find any {section}. Do you have any?"
+  - Header: the section name (12 characters maximum)
+  - Options: "Yes, I'll add them" / "No, skip this section"
+
+In both cases the user's correction or content arrives through the built-in `Other`.
 
 Present sections in this order:
 1. Feature name
@@ -286,8 +313,8 @@ Present sections in this order:
 
 The UI step differs from the others:
 
-- **UI content extracted from input** (layout descriptions, mockups, image references): present it and ask whether it is correct. Options: "Yes, looks good" / "Edit" (user provides corrections via Other).
-- **No UI content in the input:** ask whether the feature has a user interface, offering to generate ASCII art mockups from a description or to take image file paths. Options: "I'll describe the UI" (user provides via Other) / "No UI -- skip".
+- **UI content extracted from input** (layout descriptions, mockups, image references): render the mockup in a fenced block in the brief, then ask "Is the UI correct?" with options "Yes, looks good" / "Edit". A mockup must never go in the `question` field or an option `preview` — it needs a fenced block to hold its alignment.
+- **No UI content in the input:** ask whether the feature has a user interface, offering in the brief to generate ASCII art mockups from a description or to take image file paths. Question: "Does this feature have a user interface?" Options: "I'll describe the UI" / "No UI -- skip".
 
 If the user says "No UI -- skip", do not include the `## UI` section in REQUIREMENTS.md. If the user describes the UI, generate ASCII art mockups in fenced code blocks showing layout, key elements, and hierarchy.
 
@@ -307,7 +334,7 @@ After all sections are confirmed:
 /m:spec uses this skill in update mode:
 - Read the current `REQUIREMENTS.md` and `ARCHITECTURE.md`
 - Compare with the user's change description
-- Propose specific changes via AskUserQuestion ("Here's what I'd change: ... Does this look correct?")
+- Propose specific changes: the diff goes in the brief as a fenced block, then ask "Apply this change?" with options "Apply" / "Edit" / "Skip"
 - Apply after confirmation
 - Do NOT run the creation interview
 - Do NOT change the feature's lifecycle status

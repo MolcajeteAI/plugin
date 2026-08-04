@@ -103,7 +103,16 @@ When `Modules.{name}.Testing` is blank, read the module's manifest once and pick
 | TS/JS + React / Next / Express / NestJS, no test runner present | Jest |
 | None of the above | Halt and ask the user |
 
-Two or more direct signals (e.g., Jest AND Vitest in devDeps) → ambiguous; ask the user. Cache the resolution on the in-memory loop state for this invocation; do not write back to `specs/TECH-STACK.md` unless asked.
+Two or more direct signals (e.g., Jest AND Vitest in devDeps) → ambiguous; ask the user.
+
+When halting to ask, follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` — the evidence goes in the brief, not the question:
+
+- Brief: list the runner signals found and where each came from (manifest field, config file, lockfile), so the user can see why it is ambiguous.
+- Question: "Which test runner should I use?"
+- Header: "Runner"
+- Options: one per detected candidate
+
+Cache the resolution on the in-memory loop state for this invocation; do not write back to `specs/TECH-STACK.md` unless asked.
 
 ### Scoped command shapes
 

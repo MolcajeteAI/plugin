@@ -27,7 +27,7 @@ Scope is inferred from the freeform argument:
 
 The model decides scope from the description. No separate command per scope.
 
-**Use AskUserQuestion for all user interaction.**
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Load Skills
 
@@ -49,7 +49,7 @@ Read `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/MODULE
 
 ## Step 4: Collect Description
 
-If `$ARGUMENTS` is empty, ask: "Describe the existing code capability you want extracted. Mention paths, function names, or modules if it helps narrow scope."
+If `$ARGUMENTS` is empty, ask via AskUserQuestion: "Describe the existing code capability you want extracted." Put the guidance — mention paths, function names, or modules to narrow scope — in the brief, not in the question text.
 
 ## Step 5: Infer Scope
 
@@ -57,7 +57,13 @@ Decide the scope from the description, per the ladder above. If the description 
 
 ## Step 6: Discovery Scan
 
-Use Glob, Grep, and Read to find the implementation files in scope. Group by likely feature/UC boundary when extracting multiple. Present discovered files via AskUserQuestion: "Analyze all of these?" with options "Analyze all" / "Narrow" / "Add more files".
+Use Glob, Grep, and Read to find the implementation files in scope. Group by likely feature/UC boundary when extracting multiple. Then confirm the file set — the list is the brief:
+
+- Brief: print the discovered files as a Markdown table, grouped by the feature/UC boundary they
+  fall under, with a one-line note on what each contributes. State the total count.
+- Question: "Analyze all of these files?"
+- Header: "File scope"
+- Options: "Analyze all" / "Narrow" / "Add more files"
 
 ## Step 7: Extract the Specs
 

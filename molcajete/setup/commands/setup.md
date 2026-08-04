@@ -15,19 +15,26 @@ allowed-tools:
 
 One AskUserQuestion: the user describes the project. From that single answer, write `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, and `.molcajete/settings.json`. Detect everything else from the codebase or the description. **Use AskUserQuestion only for the description and the final confirmation** — no multi-stage interview.
 
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
+
 ## Step 1: Load Skill
 
 Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` for templates and rules.
 
 ## Step 2: Regeneration Check
 
-If `specs/PROJECT.md` already exists, ask via AskUserQuestion:
-- Question: "Foundation already exists. What would you like to do?"
-- Header: "Setup Mode"
-- Options:
-  - "Cancel" — stop, no changes.
+If `specs/PROJECT.md` already exists, ask:
+
+- Brief: list the foundation files that already exist and when they were last modified, so the user
+  knows what is at stake. State plainly that "Regenerate all" overwrites local edits. Recommend
+  "Update".
+- Question: "A foundation already exists here. How should I proceed?"
+- Header: "Setup mode"
+- Options: "Update" / "Regenerate all" / "Cancel"
+
+  - "Update" — keep foundation content; detect what the plugin now produces that the host lacks; report and apply only what you approve.
   - "Regenerate all" — full overwrite. Loses any local edits to foundation files.
-  - "Update (detect drift and patch)" — keep foundation content; detect what the plugin now produces that the host lacks; report and apply only what you approve.
+  - "Cancel" — stop, no changes.
 
 On **Cancel**, stop. On **Regenerate all**, continue to Step 7 (the existing flow). On **Update (detect drift and patch)**, branch to Steps 3–6. Do not run Steps 7–14 — update mode is its own complete flow.
 
@@ -67,11 +74,13 @@ CONTENT DRIFT
 - {summary for each CONTENT DRIFT finding}
 ```
 
-Omit any category that has zero findings. Then ask via AskUserQuestion:
+Omit any category that has zero findings. That report is the brief for the next question — it
+already follows the two-move rule. Add a recommendation and the escape-hatch line, then ask:
 
-- Question: "Apply updates? You may want to commit local changes before proceeding."
+- Question: "Apply these updates? Commit local changes first if you want a clean revert."
 - Header: "Update"
-- Options:
+- Options: "Apply all" / "Apply selected" / "Skip"
+
   - "Apply all" — apply every finding's fix action.
   - "Apply selected" — pick which fixes to apply per category (Step 5).
   - "Skip" — exit update mode without changes.
@@ -80,14 +89,17 @@ On **Skip**, stop. On **Apply all**, mark every finding as `selected` and skip S
 
 ## Step 5: Apply Selected
 
-For each category that has findings, issue a multi-select AskUserQuestion:
+For each category that has findings, issue a multi-select question:
 
-- Question: "Pick which {category} fixes to apply:"
-- Header: short category name (e.g., "New Artifacts", "Schema Gaps", "Content Drift")
-- Options: one per finding in that category, labelled with the `summary` from Step 3
-- `multiSelect: true`
+- Brief: for that category, print a Markdown table of its findings — the `summary`, the file it
+  touches, and what the fix action will do. This is what the user selects from; the option labels
+  are only handles.
+- Question: "Which {category} fixes should I apply?"
+- Header: "Artifacts" / "Schema gaps" / "Drift" (12 characters maximum)
+- Options: one per finding in that category, labelled with a short handle from its `summary`
+- multiSelect: true
 
-When a category has more than 4 findings, chain AskUserQuestion calls (4 options each) until the user has reviewed every finding in that category. Mark only the chosen findings as `selected`.
+When a category has more than 4 findings, list every one in the brief, then chain AskUserQuestion calls (4 options each) until the user has reviewed all of them. Mark only the chosen findings as `selected`.
 
 ## Step 6: Apply Updates and Report
 
@@ -117,9 +129,14 @@ If no codebase exists, skip this step — the project description from Step 8 is
 
 ## Step 8: One Description
 
-Use AskUserQuestion:
-- Question: "Describe the project in 2–4 sentences: what it does, who uses it, what problem it solves, and any tech-stack details the codebase scan wouldn't reveal (e.g., 'we'll use AWS SES for email', 'patient data is PHI'). I'll write the foundation documents from this."
-- Header: "Project Description"
+This one collects free-form input, so the brief is short — it exists to tell the user what a good
+answer contains:
+
+- Brief: say what you already detected from the codebase scan, so the user does not repeat it. Then
+  ask for what the scan cannot know, with examples: "we'll use AWS SES for email", "patient data is
+  PHI". Note that the answer is typed into `Other`.
+- Question: "Describe the project in 2-4 sentences: what it does, who uses it, and what problem it solves."
+- Header: "Project"
 
 Optionally include scoped follow-ups in the same AskUserQuestion call (up to 4) only if the project type genuinely needs disambiguation — for example, in a multi-app monorepo: "Which module is the primary user-facing one?" Do NOT ask about actors, domains, modules, or test runners — infer those.
 
@@ -132,11 +149,15 @@ Combine the description (Step 8) and the codebase findings (Step 7) into a singl
 
 ## Step 10: Present Composite for Confirmation
 
-Use one AskUserQuestion with the full composed foundation as the question text:
+Present the composed foundation as a brief, then ask:
 
-- Question: "Here's the composed foundation I'll write:\n\n**Project:** {1-sentence summary}\n**Modules:** {list with directories}\n**Tech stack:** {one line per module: language + framework + runner + running-tests + coverage}\n**Services:** {names + types}\n**External Services:** {names}\n**Actors:** {list with roles}\n**Domains:** {list}\n\nWrite all 7 spec files + `.molcajete/settings.json` now?"
-- Header: "Foundation Ready"
-- Options: "Write all files" / "Edit one section" (user specifies via Other) / "Cancel"
+- Brief: print the full composed foundation as Markdown — a one-sentence project summary, a table
+  of modules (directory, language, framework, runner, running-tests, coverage), then lists of
+  services with types, external services, actors with roles, and domains. Name the 8 files that
+  will be written. Recommend "Write all files". Close with the escape-hatch line.
+- Question: "Write the foundation files now?"
+- Header: "Foundation"
+- Options: "Write all files" / "Edit one section" / "Cancel"
 
 If "Edit one section", apply the user's edit and re-present.
 
@@ -162,10 +183,13 @@ Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` and strip its YAM
 
 **If `.claude/rules/principles.md` does not exist**, write the stripped body there. **If it already exists**, ask via AskUserQuestion:
 
-- Question: "Engineering principles already exist at `.claude/rules/principles.md`. Keep existing (preserves team edits) or regenerate from the plugin skill?"
+- Brief: name the existing file and say it may carry team edits. State that regenerating replaces it
+  wholesale with the plugin's current version. Recommend "Keep existing".
+- Question: "Engineering principles already exist. Keep them or regenerate?"
 - Header: "Principles"
-- Options: "Keep existing" (default) / "Regenerate from plugin skill"
-- On "Keep existing", do nothing. On "Regenerate from plugin skill", overwrite with the stripped body.
+- Options: "Keep existing" / "Regenerate"
+
+On "Keep existing", do nothing. On "Regenerate", overwrite with the stripped body.
 
 ## Step 13: Inject CLAUDE.md Fenced Block
 

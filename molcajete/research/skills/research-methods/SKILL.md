@@ -89,7 +89,7 @@ Read the template first, then populate every section it defines from the agents'
 
 ## Step 5: Save
 
-Present the completed guide and offer save options via AskUserQuestion (handled by the calling command).
+Present the completed guide as the brief, then offer save options as a short question — see `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` (the question itself is handled by the calling command).
 
 ## References
 

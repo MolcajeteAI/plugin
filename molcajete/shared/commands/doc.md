@@ -19,7 +19,7 @@ You generate and update README.md files as LLM-optimized navigation documents. F
 
 **Target argument:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Identify Target
 

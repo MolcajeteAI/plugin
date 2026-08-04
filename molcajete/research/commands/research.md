@@ -16,7 +16,7 @@ allowed-tools:
 
 # Research
 
-**All user interaction MUST use the AskUserQuestion tool.** Never ask questions as plain text in your response.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Load Skill
 
@@ -32,9 +32,14 @@ Follow the skill's rules for all subsequent steps.
 
 If `$ARGUMENTS` is not empty, use it as the research input.
 
-If `$ARGUMENTS` is empty, use AskUserQuestion:
-- Question: "What would you like to research? You can provide a topic, a URL, or a local file path.\n\n**Examples:**\n- \"WebSocket authentication patterns\"\n- \"https://docs.stripe.com/api/charges\"\n- \"src/auth/middleware.ts\""
-- Header: "Research Topic"
+If `$ARGUMENTS` is empty, ask. The examples go in the brief — inside the question string they render as literal escapes:
+
+- Brief: say that the input can be a topic, a URL, or a local file path, and give one example of
+  each as a Markdown list — "WebSocket authentication patterns",
+  `https://docs.stripe.com/api/charges`, `src/auth/middleware.ts`. Note the answer is typed into
+  `Other`.
+- Question: "What would you like to research?"
+- Header: "Topic"
 
 ## Step 3: Execute Research
 
@@ -42,8 +47,8 @@ Run the skill's workflow.
 
 ## Step 4: Save
 
-Use AskUserQuestion to offer save options:
-- Question: "Research complete. Where would you like to save it?"
+The completed guide is the brief — present it in full first, then offer save options:
+- Question: "Where should I save this research?"
 - Header: "Save"
 - Options: "Save to research/{suggested-slug}.md" / "Copy to clipboard" / "Custom path"
 

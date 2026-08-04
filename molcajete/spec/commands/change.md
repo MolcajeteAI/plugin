@@ -20,7 +20,7 @@ Unlike `/m:fix` (where the spec might already be correct), `/m:change` **always*
 
 `/m:change` then **produces the change plan itself** — after editing the specs and marking the affected UCs `dirty`, it runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong interpretation is caught and editable before any code is built.
 
-**Use AskUserQuestion for all user interaction.**
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Parse Arguments
 
@@ -66,13 +66,18 @@ From the description in `$ARGUMENTS`, draft the spec edit **per module-instance*
 - Add, modify, or retire FRs/NFRs at the feature level (when the change scope justifies it).
 - Add a new UC under the feature (when the request implies a workflow that doesn't fit any existing UC). Use the usecase-authoring skill's **Write Files** procedure to create the new UC spec file (`UC-XXXX-{slug}.md`), support folder, and `CHANGELOG.md`. When the new UC applies to multiple modules, follow the shared-ID rule.
 
-For each affected module-instance, present a diff-style review via AskUserQuestion:
+For each affected module-instance, present a diff-style review. The diff is the brief, never the question text:
 
-> "Here is the proposed spec change for `{UC-XXXX}` in `{module}`: {diff or before/after snippets}. Proceed?"
+- Brief: name the UC and module, then show the proposed spec change as a fenced diff or before/after
+  block. Say what behavior changes as a result, and whether the same edit applies cleanly to the
+  peer module-instances.
+- Question: "Apply this spec change to `{UC-XXXX}` in `{module}`?"
+- Header: "Spec change"
+- Options: "Proceed" / "Apply to all" / "Edit" / "Skip this module"
 
-Options: "Proceed" / "Apply this same edit to every module-instance" / "Edit" (user provides corrections via Other) / "Skip this module" / "Cancel".
+Corrections arrive via the built-in `Other`; `Chat about this` covers the "cancel and talk it through" path.
 
-When the user chooses "Apply this same edit to every module-instance", propagate the same content edit to every peer instance, but keep module-scoped elements (actor names, module-specific side effects) intact — do not blindly overwrite peer-specific content.
+When the user chooses "Apply to all", propagate the same content edit to every peer instance, but keep module-scoped elements (actor names, module-specific side effects) intact — do not blindly overwrite peer-specific content.
 
 If after review the user determines no spec edit is needed **anywhere**, refuse:
 

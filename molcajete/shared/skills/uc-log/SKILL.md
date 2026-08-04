@@ -89,7 +89,7 @@ When a UC-XXXX ID resolves to multiple module-instances (the same UC exists in 2
 **Fan-out rules:**
 
 - The calling command (`/m:spec`, `/m:change`, `/m:fix`, `/m:cover`) resolves the UC-XXXX ID to its set of module-instances (glob `specs/features/*/FEAT-*/UC-XXXX-*.md`).
-- The user may narrow the fan-out (e.g., "only apply this change in the console module"). Only the module-instances the user confirmed receive an entry.
+- The user may narrow the fan-out (e.g., "only apply this change in the console module"). Only the module-instances the user confirmed receive an entry. When asking for that confirmation, follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` — list the module-instances in the brief, keep the question to one sentence.
 - Entries in different module-instances **share the same timestamp** and **the same reason text** when the event is one logical spec-phase change.
 - Each entry also carries a `modules:` metadata token naming every module-instance that received an entry for this event. This makes fan-outs traceable from any single CHANGELOG.md — a reader looking at one module can see the change was also applied to the other listed modules.
 - The `modules:` token is **omitted** when the UC only exists in one module (single-instance / single-module project).

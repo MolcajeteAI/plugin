@@ -21,7 +21,7 @@ The single spec-authoring entry point. Takes free-form natural language and crea
 
 **`/m:spec` writes spec prose only** — no plans, no code, no tests, no task IDs. After spec completes, the lifecycle continues with `/m:plan` → `/m:build`.
 
-**Use AskUserQuestion for all user interaction.** Never plain-text questions.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Load Skills
 
@@ -55,11 +55,25 @@ If `$ARGUMENTS` is empty, ask via AskUserQuestion: "Describe what to spec out �
 
 Parse the free-form text against the loaded context and classify each entity as a **new feature** (a capability not in any existing feature — resolve module + domain per the feature-authoring skill's Module and Domain Resolution), a **new use case** (a workflow belonging to an existing feature), a **modified feature** (adds or changes requirements), or a **modified use case** (adds or changes scenarios). Step 9 has the write mechanics for each.
 
-Present the full plan via a single AskUserQuestion (New Features, New UCs, Modified Features, Modified UCs — only sections that have entries). Options: "Proceed" / "Edit" (Other) / "Cancel".
+Present the full plan as a brief, then gate on it:
+
+- Brief: print the plan as Markdown under whichever of these headings have entries — New Features,
+  New UCs, Modified Features, Modified UCs. Under each, list the entity with a one-line description
+  of what will be written or changed. Recommend "Proceed".
+- Question: "Proceed with this spec plan?"
+- Header: "Spec plan"
+- Options: "Proceed" / "Edit" / "Cancel"
 
 ## Step 7: Streamlined Reviews
 
-For each entity, present a consolidated review via AskUserQuestion. Show all sections at once (not one at a time — the user already gave substantial context). For new entities, present full content for confirmation; for modifications, present a diff-style view with version-bump notice.
+For each entity, present a consolidated review. The content is the brief — show all sections at once (not one at a time — the user already gave substantial context):
+
+- Brief: for a new entity, print its full content as Markdown, section by section. For a
+  modification, print a fenced diff plus the version-bump notice. Either way this is the whole
+  payload, so it never belongs in `question` or an option `preview`.
+- Question: "Is `{entity}` correct?"
+- Header: the entity ID (12 characters maximum)
+- Options: "Yes, looks good" / "Edit"
 
 Follow the multi-module rules from the authoring skills when a feature spans 2+ modules.
 

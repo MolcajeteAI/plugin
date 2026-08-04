@@ -19,7 +19,7 @@ allowed-tools:
 
 **Base argument:** $ARGUMENTS
 
-**All user interaction MUST use the AskUserQuestion tool.** Never plain-text questions.
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Load Skills and Rubric
 
@@ -39,11 +39,13 @@ Follow the `change-review` skill's **Mapping the Diff to Specs** to build the `F
 
 ## Step 4: Familiarize — walk the solution
 
-Before judging anything, make yourself familiar with what you are about to submit. Present a short hierarchical summary — feature → UC → scenario → the change under it — in plain language: what the change accomplishes end to end, the shape of the approach, and the 2–4 most important changes to understand. Offer, via AskUserQuestion, to go deeper on any feature/UC or to move on:
+Before judging anything, make yourself familiar with what you are about to submit. Present a short hierarchical summary — feature → UC → scenario → the change under it — in plain language: what the change accomplishes end to end, the shape of the approach, and the 2–4 most important changes to understand. That summary is the brief — this step already follows the two-move rule. Then ask:
 
-> "Here is what your change set does, grouped by feature. Where do you want to look closer — or move on to the review?"
+- Question: "Where do you want to look closer?"
+- Header: "Familiarize"
+- Options: one per touched feature ("Deeper on {FEAT}"), plus "Move on to the review"
 
-Options include each touched feature ("Deeper on {FEAT}"), and "Move on to the review". Show clickable `file:line` references for the key changes so you can open them.
+Show clickable `file:line` references for the key changes in the brief so the user can open them.
 
 ## Step 5: Surface the Known Issues
 
@@ -53,11 +55,15 @@ Present the list compactly (title, severity, location, one-line what) and the cu
 
 ## Step 6: Interactive Fix Loop
 
-Walk the issues in severity order. For each, present it fully (what, Spec says, Test says, risk, possible fixes) and ask via AskUserQuestion:
+Walk the issues in severity order. For each, the full issue is the brief:
 
-> "Issue #{n} ({severity}, {type}): {title}. What do you want to do?"
+- Brief: print the issue in full — what it is, what the Spec says, what the Test says, the risk, and
+  the possible fixes with `file:line` references. Recommend a disposition.
+- Question: "Issue #{n} — what do you want to do?"
+- Header: the severity (12 characters maximum)
+- Options: **"Fix now"** / **"Skip (waive)"**
 
-Options: **"Fix now"** / **"Skip (waive)"** / **"Discuss"** (respond via Other; then re-offer).
+Do not add a "Discuss" option — the built-in `Chat about this` footer already lets the user talk it through before deciding, and re-offers the question afterwards.
 
 On **Fix now**:
 

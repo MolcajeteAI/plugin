@@ -218,13 +218,22 @@ Principle 3 (DI), Principle 1 (every task's tests are integration tests — neve
 - **mixed** — cover pass first (pin the current design as baseline), then the default pass for the
   new/modified behavior; reflect both into `ARCHITECTURE.md`.
 
-Present the architecture and decomposition direction via a single AskUserQuestion **before writing
-the plan** — this is the review gate that catches a wrong interpretation before any code is built:
+Present the architecture and decomposition direction **before writing the plan** — this is the
+review gate that catches a wrong interpretation before any code is built. Per the asking-questions
+skill, the direction is the brief and the gate is a one-sentence ask:
 
-> "Here is the plan for {scope}: {bulleted summary of architecture decisions, table changes, and the
-> task breakdown}. Proceed?"
+- Brief: write the full direction as Markdown, in sections — existing tests found and their
+  disposition; the numbered architecture decisions, one line of rationale each; the
+  `ARCHITECTURE.md` table changes; the canonical test path; and a table of tasks with the
+  scenarios and requirements each covers plus the files it touches. Recommend "Proceed". Close
+  with the escape-hatch line.
+- Question: "Proceed to write the plan?"
+- Header: "Plan gate"
+- Options: "Proceed" / "Edit" / "Cancel"
 
-Options: "Proceed" / "Edit" (user corrects via Other) / "Cancel". On Cancel, write nothing.
+The direction goes in the brief, never in `question` and never in an option `preview` — a preview
+pane truncates, and the direction is identical under every option, so it is shared context. On
+"Edit", the user's correction arrives via the built-in `Other`. On "Cancel", write nothing.
 
 **P3 — Decompose into tasks.** Per the Vertical-Increment Rules above, produce the minimal ordered
 list of vertical, working-software tasks that closes every in-scope scenario exactly once, ordered
@@ -234,14 +243,16 @@ by dependency (that order is the `T-NNN` sequence). Write each task per the Task
 **P4 — Consult non-canonical tests (cover / mixed only).** Skip in default mode. For each UC with a
 `command:cover` pending entry, read its `CHANGELOG.md`, find the most recent `command: cover` entry,
 and collect the **non-canonical test file paths** it recorded (existing tests touching the UC's
-production code that live outside the canonical tests tree). For each, prompt once via
-AskUserQuestion:
+production code that live outside the canonical tests tree). For each, prompt once:
 
-> "Existing test `{path}` touches code covered by `{UC-XXXX-slug}`. What should `/m:build` do with
-> it when it scaffolds the canonical integration test?"
+- Brief: name the test file and the UC it overlaps, say what it currently covers, and spell out
+  what each of the three dispositions means for `/m:build`. Recommend "Reference-only".
+- Question: "What should /m:build do with `{path}`?"
+- Header: "Test file"
+- Options: "Reference-only" / "Migrate" / "Ignore"
 
-Options: **"Reference-only"** (default — build reads it, lifts fixtures/setup/assertions, leaves it
-in place) / **"Migrate"** (same, plus build prompts to delete the original after the canonical test
+**"Reference-only"** (default — build reads it, lifts fixtures/setup/assertions, leaves it in
+place) / **"Migrate"** (same, plus build prompts to delete the original after the canonical test
 verifies) / **"Ignore"** (build never opens it). For each non-ignored decision, name the file in the
 prose of the task whose behavior overlaps it, with the mode inline — e.g. "consult
 `src/legacy/foo.test.ts` (reference)" or "(migrate — delete after the canonical test is green)".

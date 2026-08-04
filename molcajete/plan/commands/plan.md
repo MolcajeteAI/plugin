@@ -23,7 +23,7 @@ allowed-tools:
 
 `/m:plan` does **not** write production code or tests. Hand-off to `/m:build` is mandatory.
 
-**Use AskUserQuestion for all user interaction.**
+**Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 ## Step 1: Parse Arguments
 
@@ -59,11 +59,14 @@ For each module-instance of each referenced UC, read:
 - That module's feature `REQUIREMENTS.md`, `ARCHITECTURE.md`
 - That module-instance's `CHANGELOG.md` (inside its support folder): collect every `TODO:` entry whose status is `pending`. Skip `dirty` entries — a prior plan owns them. Each module-instance's entry is an independent pending item to consume, including entries carrying a `modules:` token.
 
-If a referenced UC has **zero `pending` log entries across all its module-instances**, ask via AskUserQuestion: "{UC} has no pending changes. Plan anyway? (Re-planning may overwrite a plan that already matches the current spec.)"
+If a referenced UC has **zero `pending` log entries across all its module-instances**, ask. The consequence goes in the brief:
+
+- Brief: name the UC, its current status, and the plan file that already exists for it. State that re-planning may overwrite a plan matching the current spec. Recommend "Skip this UC".
+- Question: "{UC} has no pending changes. Plan it anyway?"
+- Header: "No changes"
+- Options: "Skip this UC" / "Re-plan anyway" / "Cancel"
 
 If a referenced UC has pending entries in some module-instances but not others, plan only the module-instances with pending entries — untouched instances stay `implemented`.
-
-Options: "Skip this UC" / "Re-plan anyway" / "Cancel".
 
 ## Step 5: Produce the Plan
 
