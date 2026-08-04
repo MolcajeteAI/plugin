@@ -159,6 +159,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
 | research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
 | research | `headless-research` | Silent, no-interaction research brief written before spec-writing |
+| shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion carrying only the decision |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
 | shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, scoped coverage |
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
@@ -231,7 +232,7 @@ molcajete/
 ├── research/              # Research module — /m:research + research skills
 │   ├── commands/
 │   └── skills/
-└── shared/                # Shared command (/m:doc) + cross-module skills (principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation)
+└── shared/                # Shared command (/m:doc) + cross-module skills (asking-questions, principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation)
     ├── commands/
     └── skills/
 ```
