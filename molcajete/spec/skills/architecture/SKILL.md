@@ -125,6 +125,8 @@ In the context of {situation}, facing {concern}, we decided {choice} to achieve 
 
 Generate ADR IDs via the `id-generation` shared skill and prepend `ADR-` to the output (e.g., `ADR-0L2x`).
 
+**ADR IDs are permanent.** Generate one only for a new decision. A superseded ADR keeps its ID and is never renumbered, and its ID is never reused for the decision that replaced it. See the `id-generation` skill's **Immutability** section.
+
 ## Research Discovery
 
 When generating or updating an ARCHITECTURE.md, scan `.molcajete/research/*.md` and `research/*.md` at project root for relevant briefs — filenames sort naturally by timestamp (newest first). Read only each file's YAML frontmatter and compare `description` and `query` against the feature's topic; read the first relevant match in full and stop there.

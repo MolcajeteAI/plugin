@@ -18,6 +18,8 @@ allowed-tools:
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
+**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+
 ## Step 1: Load Skill
 
 Read `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, and diff→spec mapping. Apply its **Prerequisites** gate; if it is not a Molcajete project, refuse and stop. (The walkthrough narrates changes; it does not score them, so it does not load the review rubric.)

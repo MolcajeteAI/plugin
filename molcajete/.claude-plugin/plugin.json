@@ -44,6 +44,7 @@
     "./shared/skills/status-rollup",
     "./shared/skills/testing",
     "./shared/skills/uc-log",
+    "./shared/skills/writing-style",
     "./spec/skills/architecture",
     "./spec/skills/feature-authoring",
     "./spec/skills/reverse-engineering",

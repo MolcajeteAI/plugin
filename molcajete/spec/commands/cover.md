@@ -29,6 +29,8 @@ The model decides scope from the description. No separate command per scope.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
+**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+
 ## Step 1: Load Skills
 
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/reverse-engineering/SKILL.md`

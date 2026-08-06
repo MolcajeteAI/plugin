@@ -37,7 +37,7 @@ Examples below use TypeScript with a Jest/Vitest-style runner because that surfa
 
 **1.1 Descriptive test names.**
 
-Test method / `it` / function names read as sentences describing the behavior being verified. No spec IDs in the name (`test_SC_REQ3`, `it('SC-001 works')`, `test1` are all wrong). Avoid abbreviations beyond standard ones.
+Test method / `it` / function names read as sentences describing the behavior being verified. No spec IDs in the name (`test_SC_REQ3`, `it('SC-0KTh works')`, `test1` are all wrong). Avoid abbreviations beyond standard ones.
 
 ```ts
 it('rejects an empty email with a validation error', () => { ... })
@@ -51,7 +51,7 @@ Spec traceability lives in leading-line comments above tests, not in their names
 
 - **File header** — `// UC-XXXX: {use case name}` and `// T-NNN: {task outcome}` at the top of every test file. One UC and one task per file.
 - **`describe` / test group** — `// SC-XXXX: {short scenario description}` at the top of each group. One scenario per group.
-- **`it` / test method** — `// SC-XXXX: {short scenario description}` immediately above the test. When a single test covers multiple scenarios, list them comma-separated: `// SC-001, SC-002: Email validation rules`.
+- **`it` / test method** — `// SC-XXXX: {short scenario description}` immediately above the test. When a single test covers multiple scenarios, list them comma-separated: `// SC-0KTh, SC-0KTi: Email validation rules`.
 
 The task's `Covers` list in the plan file is the canonical machine-readable mapping. The comments are for humans.
 
@@ -60,10 +60,10 @@ The task's `Covers` list in the plan file is the canonical machine-readable mapp
 // T-001: Validate and register a new user's email
 
 describe('Email validation', () => {
-  // SC-001: Reject empty email
+  // SC-0KTh: Reject empty email
   it('rejects an empty email with a validation error', () => { ... })
 
-  // SC-002: Reject malformed email
+  // SC-0KTi: Reject malformed email
   it('rejects an email without an @ symbol', () => { ... })
 })
 ```
@@ -94,7 +94,7 @@ Vague assertions (`gt(0)`, `not null`, `truthy`) are forbidden unless the spec g
 Every test (or every scenario block of tests) gets a multi-line comment explaining what's being tested, why it matters, and a concrete example. Treat the comment as the file's documentation.
 
 ```ts
-// SC-002: Reject malformed email
+// SC-0KTi: Reject malformed email
 //
 // Email addresses must conform to RFC 5321: a local part, an `@`,
 // and a domain. The validator rejects strings missing the `@` or
@@ -170,7 +170,7 @@ Production code carries leading-line comments tying files and functions back to 
 // FEAT-0Fy0: User Onboarding
 // UC-0KTg: Register User
 
-// SC-001, SC-002: Email validation rules
+// SC-0KTh, SC-0KTi: Email validation rules
 // Returns the normalized email on success or throws InvalidEmailError.
 export function validateRegistrationEmail(raw: string): string { ... }
 ```
@@ -220,6 +220,16 @@ The comment discipline above documents *what the code does now* — never what i
 
 This document does not specify a language, framework, runner, DI container, ORM, queue library, or coverage tool. Those are the host project's choices, recorded in `specs/TECH-STACK.md`. Principles bind regardless.
 
+## 7. Every Word Is Simplified Technical English
+
+Specs, plans, comments, and reports are read by the next AI agent with no back-channel. It cannot ask what an ambiguous sentence meant, so it guesses. Ambiguous prose is therefore a defect, in exactly the way a vague assertion (1.3) is a defect.
+
+Everything written — spec files, plans, review documents, changelog entries, commit messages, code comments, test comments, and on-screen reports — uses **Simplified Technical English** as defined by ASD-STE100: one meaning per word, active voice, simple tenses, one instruction per sentence, and no idioms.
+
+The full rules, the arbitration against the rules above, and the self-check live in the `writing-style` shared skill, which every command loads before it writes.
+
+**This does not reduce how much you write.** Rules 1.4 and 5.4 still stand in full — comments stay verbose and generous. Simplified Technical English governs how each sentence reads, never how many sentences a test or a function earns. A long comment built from short, active, single-meaning sentences satisfies both rules.
+
 ## How Molcajete Enforces These
 
 | Command | Enforcement |
@@ -227,6 +237,7 @@ This document does not specify a language, framework, runner, DI container, ORM,
 | `/m:plan` | Designs architecture in hexagonal vocabulary. Each task names the driver port it drives and the driven ports its code reaches, and delivers one vertical, working increment (never a layer). Decomposition covers every scenario exactly once. |
 | `/m:build` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**, writing code that respects Principle 5. The coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle before a task's checkbox flips. |
 | `uc-log` shared skill | Records every change, so new work stays explicit over time. |
+| `writing-style` shared skill | Every command loads it before it writes. Enforces Principle 7 across every generated document and every printed message. |
 
 ## Override
 

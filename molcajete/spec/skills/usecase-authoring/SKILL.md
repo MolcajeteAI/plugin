@@ -101,6 +101,8 @@ Scenarios are the core of the UC file. Every scenario -- success, error, edge ca
 
 Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Scenarios are separated by `---` horizontal rules to give agents an unambiguous boundary signal. Each scenario gets a unique `SC-XXXX` ID. Generate codes by running `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js [count]` (use the count arg for multiple scenarios) and prepend `SC-` to each output line.
 
+**SC IDs are permanent.** Generate an ID only for a scenario that has none. An existing scenario keeps its `SC-XXXX` through every later edit — rewriting its Steps, reordering the scenario blocks, or retiring a neighbouring scenario never changes it, and the survivors are never renumbered to close a gap. Scenario order and scenario IDs are independent. A retired scenario's ID is spent forever. See the `id-generation` skill's **Immutability** section.
+
 ```
 ---
 

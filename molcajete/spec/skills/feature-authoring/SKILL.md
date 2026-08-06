@@ -338,6 +338,7 @@ After all sections are confirmed:
 - Apply after confirmation
 - Do NOT run the creation interview
 - Do NOT change the feature's lifecycle status
+- Do NOT change any existing `FEAT-`, `FR-`, `NFR-`, `US-`, or `ADR-` ID. Retiring a requirement never renumbers the others, and a new requirement gets a freshly generated ID rather than a retired one. See the `id-generation` skill's **Immutability** section.
 
 ## ARCHITECTURE.md
 

@@ -21,6 +21,8 @@ You generate and update README.md files as LLM-optimized navigation documents. F
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
+**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+
 ## Step 1: Identify Target
 
 Resolve `$ARGUMENTS` to a target:

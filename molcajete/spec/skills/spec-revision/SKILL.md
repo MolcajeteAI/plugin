@@ -85,6 +85,12 @@ entry's `reason` is the only record of what changed and why.
 This replace-never-annotate rule governs the **spec files only**. It never reaches the CHANGELOG, which is
 append-only — see below.
 
+**Replace the text, never the ID.** Every `FEAT-`, `UC-`, `SC-`, `FR-`, `NFR-`, `US-`, and `ADR-` ID already in
+the file survives the edit character-for-character. Rewriting a scenario's Steps does not change its `SC-XXXX`;
+retiring one scenario does not renumber the others; propagating an edit to a peer module-instance never carries
+a peer's IDs across. Only a genuinely new entity gets a generated ID. See the `id-generation` skill's
+**Immutability** section, including its post-edit self-check.
+
 ## Logging and Status
 
 For each module-instance in the set the calling command names, append the changelog entry per the `uc-log`

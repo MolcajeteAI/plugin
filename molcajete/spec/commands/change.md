@@ -22,6 +22,8 @@ Unlike `/m:fix` (where the spec might already be correct), `/m:change` **always*
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
+**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+
 ## Step 1: Parse Arguments
 
 `$ARGUMENTS` must begin with one or more `FEAT-XXXX` or `UC-XXXX` IDs followed by the free-form description. Examples:
@@ -65,6 +67,8 @@ From the description in `$ARGUMENTS`, draft the spec edit **per module-instance*
 - Add or remove scenarios.
 - Add, modify, or retire FRs/NFRs at the feature level (when the change scope justifies it).
 - Add a new UC under the feature (when the request implies a workflow that doesn't fit any existing UC). Use the usecase-authoring skill's **Write Files** procedure to create the new UC spec file (`UC-XXXX-{slug}.md`), support folder, and `CHANGELOG.md`. When the new UC applies to multiple modules, follow the shared-ID rule.
+
+Removing a scenario or retiring an FR/NFR **never renumbers what remains**. The surviving IDs stay exactly as they were, gaps and all, and a new scenario always gets a freshly generated ID rather than a retired one. The same holds when "Apply to all" propagates an edit: the peer instance keeps its own IDs. See the `id-generation` skill's **Immutability** section.
 
 For each affected module-instance, present a diff-style review. The diff is the brief, never the question text:
 

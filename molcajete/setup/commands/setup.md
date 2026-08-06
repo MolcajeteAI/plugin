@@ -17,6 +17,8 @@ One AskUserQuestion: the user describes the project. From that single answer, wr
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
+**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+
 ## Step 1: Load Skill
 
 Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` for templates and rules.
@@ -207,6 +209,7 @@ Trust comes from tests, not code shape. Code can change; behavior is the contrac
 - 80% coverage floor on touched files (configurable via `.molcajete/settings.json testing.threshold`).
 - Small functions, clear module boundaries, no god files. Refactor to reuse; never duplicate.
 - Principles are technology-agnostic. The stack is recorded in `specs/TECH-STACK.md`.
+- Write every spec, plan, comment, and report in Simplified Technical English (ASD-STE100): one meaning per word, active voice, simple tenses, one instruction per sentence. This shortens sentences; it never reduces how much you write.
 
 See `.claude/rules/principles.md` for full text and rationale. Re-read it before any architecture decision, test-scope decision, or refactor.
 <!-- molcajete:principles:end -->
