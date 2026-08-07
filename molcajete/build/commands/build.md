@@ -1,7 +1,7 @@
 ---
 description: Execute a plan — run the TDD red/green/mutation lifecycle plus a correctness review for one or more tasks in a prose plan.
 model: claude-sonnet-5
-argument-hint: "<plan-id> [T-NNN ...]"
+argument-hint: "<plan-id> [T-NNN ...] [--commit]"
 allowed-tools:
   - Read
   - Write
@@ -26,7 +26,7 @@ A `mode: mixed` plan contains both kinds; coverage tasks carry lower `T-NNN` and
 
 Molcajete generates **integration tests exclusively** per Principle 1 of the engineering principles. `/m:build` never scaffolds unit tests.
 
-**Do NOT commit code.** Each task is a logical commit boundary, but the user reviews your output and commits themselves. `/m:build` never touches git.
+**Committing is opt-in.** Each task is a logical commit boundary. Without `--commit`, `/m:build` writes no git state at all — the user reviews the output and commits it. With `--commit`, each task that passes every gate is committed on the current branch as it passes. A task that fails commits nothing.
 
 **Arguments:** $ARGUMENTS
 
@@ -40,12 +40,14 @@ Molcajete generates **integration tests exclusively** per Principle 1 of the eng
 
 1. A plan ID as the first token. Required. Format: `YYYYMMDDTHHMMSS-<slug>` (the plan file's name under `specs/plans/`, without the `.md` extension — the plan is `specs/plans/<plan-id>.md`).
 2. Zero or more task IDs, each `T-NNN`. When no task ID is given, the run covers **every unfinished task in the plan**.
+3. An optional `--commit` modifier, in any position among the tokens. Strip it before you read the plan ID and the task IDs. It makes each task that passes every gate its own commit (8.11).
 
 Examples:
 
 - `/m:build 20260616T141530-add-checkout` — every unfinished task, in `T-NNN` order
 - `/m:build 20260616T141530-add-checkout T-001` — one task
 - `/m:build 20260616T141530-add-checkout T-001 T-002 T-003` — a named subset
+- `/m:build 20260616T141530-add-checkout --commit` — every unfinished task, each one committed
 
 If `$ARGUMENTS` is empty or missing a plan-id, list available plans:
 
@@ -61,6 +63,15 @@ Stop.
 
 If the plan-id does not resolve to a file `specs/plans/<plan-id>.md`, refuse with the available list and stop.
 
+When `--commit` is set, check the repository before anything else runs — a commit that cannot happen must fail here, not halfway through the plan:
+
+```
+git rev-parse --git-dir
+git rev-parse --abbrev-ref HEAD
+```
+
+If the first command fails, stop with: "`--commit` needs a git repository. This directory is not one." Carry the branch name to the Step 6 gate. Do not act on it here — this command never creates a branch and never pushes.
+
 ## Step 2: Load Skills and Principles
 
 Read:
@@ -70,7 +81,8 @@ Read:
 3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC status and roll up Feature.
 5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — **Immutability** section. This command writes `SC-XXXX` IDs into task `Covers` lists and into test-file comments. It copies existing IDs verbatim and never generates, renumbers, or alters one.
-6. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, correctness review, and refactor in this command must respect these principles.
+6. **Only when `--commit` is set** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/git-committing/SKILL.md` — message format, style detection, the spec-references block, and the no-attribution rule. A run without the modifier does not read it.
+7. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, correctness review, and refactor in this command must respect these principles.
 
 ## Step 3: Verify Prerequisites
 
@@ -121,8 +133,8 @@ This is a hard gate — the loaded UC scenarios (`SC-XXXX`) and the feature's `A
 
 ## Step 6: Present the Build Plan
 
-This is the single start-or-stop gate. It carries the prerequisite too — never add a second
-question for it.
+This is the single start-or-stop gate. It carries the prerequisite and the `--commit` disclosure
+too — never add a second question for either.
 
 The task list is the brief, never the question text:
 
@@ -134,6 +146,10 @@ The task list is the brief, never the question text:
 - Options: "Proceed" / "Cancel"
 
 If "Cancel", stop without writing.
+
+**When `--commit` is set**, the brief closes with one line, above the question: each task that
+passes every gate is committed on branch `{branch}` as it passes, a failed task commits nothing, and
+nothing is pushed. Do not add a second question — proceeding at this gate is the consent to commit.
 
 **When the `**Prerequisites:**` line parsed in Step 4 is not `—`**, the same gate carries the
 prerequisite and the proceed label changes, so the user affirms it instead of clicking past it:
@@ -312,12 +328,29 @@ Only reached when 8.9's evidence was emitted complete AND 8.10 returned `correct
 
 1. **Flip the checkbox in the plan file.** Change this task's heading from `## [ ] T-NNN — {outcome}` to `## [x] T-NNN — {outcome}`. Preserve the rest of the file verbatim. This is the task-level source of truth and is read for dependency gating (8.2) by later tasks in this same run.
 2. **Handle `migrate` references.** For every referenced test the task prose marked `migrate`, ask whether to delete the original. This is a trivial confirmation with a one-sentence consequence, so no brief is needed — name both paths in the question: "Delete `{path}` now that it is migrated into `{derived-test-path}`?" Header: "Migrated". Options: **"Delete"** / **"Keep"** (note the deferral in the Step 11 report). Never delete a `reference`-marked file.
+3. **Roll up this task's spec artifacts.** Only when `--commit` is set. Apply the rules Step 9 already owns, scoped to the UCs this task covers instead of the whole plan, so the commit in item 4 carries them:
+   - Per the 9.2 rule — recompute this UC's `status:` from the checkboxes of every task in the plan that covers its scenarios (all `[x]` → `implemented`; some `[x]` and some `[ ]` → `dirty`) and write it. Roll the owning Feature up from its UCs and write `REQUIREMENTS.md`.
+   - Per the 9.1 rule — when every task in the plan covering this UC now reads `[x]`, use the `uc-log` skill to flip that UC's changelog entry for this `plan:<plan-id>` from `dirty` to `implemented` and move the line to the top of `DONE:`.
+4. **Commit the task.** Only when `--commit` is set. Stage an explicit list of paths — never `git add .` and never `git add -A`, so unrelated work already in the tree stays out. Stage exactly:
+   - the production files this task created or modified,
+   - its test file,
+   - any file deleted by a `migrate` disposition in item 2,
+   - `specs/plans/<plan-id>.md`, carrying this task's `[x]`,
+   - the spec files written in item 3.
+
+   Then commit per the `git-committing` skill read in Step 2: the subject states the task outcome, the body bullets state what the task did, and the spec-references block carries the task's owning `FEAT-XXXX`, its `UC-XXXX`, and every `SC-XXXX` in the task's `Covers`. Record the short hash for the Step 11 report.
+
+   If the commit fails — a pre-commit hook rejects it, nothing was staged, any other error — do not retry it and do not undo item 1, 2, or 3. The work stands on disk. Report the failure and halt the run per the Step 8 failure policy.
+
+The order within this sub-step is fixed: checkbox, then migrate disposition, then spec roll-up, then stage, then commit. Everything the task changed lands in one commit.
 
 The plan checkbox is the durable ledger. Diagnostics (mutation logs, retry counts) live only in the conversation and any escalation files.
 
 ## Step 9: Update Changelogs and Statuses
 
 Step 9 runs at the end of every `/m:build` invocation regardless of individual task outcomes. Task checkboxes were already flipped per-task in 8.11 (success-gated). This step handles the changelog entries, the UC/Feature status roll-up, and the end-of-plan completeness sweep.
+
+**Under `--commit`**, 8.11 already applied 9.1 and 9.2 to each completed task's own UCs and committed them. Run 9.1 and 9.2 anyway — they read current on-disk state, so they recompute the same values and normally write nothing. Anything they do write stays uncommitted: report it in Step 10 and leave it for the user. Never create a commit that carries only spec files.
 
 ### 9.1 Changelog entries (success-gated)
 
@@ -372,7 +405,8 @@ Lead with the outcome in one sentence: the plan ID, the mode, and how many tasks
 Then report what the user must act on:
 
 - **Unverified prerequisites** — when the plan carried a `**Prerequisites:**` line other than `—`, list every prerequisite verbatim and state in one line: "`/m:build` did not verify these. You confirmed them at the Step 6 gate." Never write that a prerequisite was checked, met, or satisfied — this command has no way to establish any of those. Omit this section when the line was `—` or absent.
-- **Per completed task** — one line: `T-NNN`, outcome, and its materialized test file path. In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
+- **Per completed task** — one line: `T-NNN`, outcome, and its materialized test file path. Under `--commit`, add the short commit hash. In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
+- **Commits** — only under `--commit`: one line naming the branch and how many commits this run created. When a commit failed in 8.11, name the task and state that its work is on disk but uncommitted.
 - **Per escalation** — `T-NNN` and the escalation file path.
 - **Completeness gaps** from 9.3 — every uncovered scenario, missing assertion, and stray marker. **This section is exempt from the budget.** List all of them, or state that there are none.
 - **Status** for each UC and Feature whose status changed this run.

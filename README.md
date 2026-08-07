@@ -123,7 +123,7 @@ Create and maintain structured specifications from freeform descriptions or exis
 
 | Command | Description |
 |---------|-------------|
-| `/m:build` | Execute a plan — every unfinished task by default, or a named `T-NNN` subset (TDD red/green → mutation check → coverage gate → correctness review) |
+| `/m:build` | Execute a plan — every unfinished task by default, or a named `T-NNN` subset (TDD red/green → mutation check → coverage gate → correctness review). Add `--commit` to commit each task as it passes |
 
 ### Review Module
 
@@ -166,7 +166,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
 | shared | `uc-log` | Per-UC CHANGELOG.md mechanics — entry format and status transitions |
 | shared | `code-documentation` | README structure and documentation conventions |
-| shared | `git-committing` | Commit message standards and orchestration workflow |
+| shared | `git-committing` | Commit message standards for automated task execution — read by `/m:build --commit` |
 | shared | `git-conflict-resolution` | Merge/rebase conflict anatomy and resolution strategies |
 | shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
 
