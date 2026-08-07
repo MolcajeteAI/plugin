@@ -18,7 +18,7 @@ allowed-tools:
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
-**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+**Writing style:** every document you write and every message you print uses Simplified Technical English. Every one carries only what its reader needs. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/output-economy/SKILL.md` before writing.
 
 ## Step 1: Load Skill
 
@@ -49,7 +49,8 @@ Run the skill's workflow.
 
 ## Step 4: Save
 
-The completed guide is the brief — present it in full first, then offer save options:
+Present the guide, then ask where to save it. The guide is the deliverable, not a brief for this question — a choice of location needs no brief.
+
 - Question: "Where should I save this research?"
 - Header: "Save"
 - Options: "Save to research/{suggested-slug}.md" / "Copy to clipboard" / "Custom path"

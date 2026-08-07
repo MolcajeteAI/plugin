@@ -29,7 +29,7 @@ last-updated: {YYYY-MM-DD}
 
 ## Diagrams
 
-{One or more Mermaid diagrams. At minimum a flowchart showing file relationships.}
+{Mermaid diagrams, when the file table does not already make the relationships clear.}
 
 ## Notes
 

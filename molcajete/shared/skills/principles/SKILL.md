@@ -89,9 +89,9 @@ expect(result.fee).toBe(fee)
 
 Vague assertions (`gt(0)`, `not null`, `truthy`) are forbidden unless the spec genuinely says "any positive value" or "any defined value" — rare, and the test must include a comment explaining the looseness.
 
-**1.4 Verbose explanatory comments.**
+**1.4 Comments that document intent.**
 
-Every test (or every scenario block of tests) gets a multi-line comment explaining what's being tested, why it matters, and a concrete example. Treat the comment as the file's documentation.
+Every test (or every scenario block of tests) carries a comment explaining what the test pins and why that behavior exists. Treat the comment as the file's documentation — it is what the next agent reads to learn what the code is supposed to do.
 
 ```ts
 // SC-0KTi: Reject malformed email
@@ -106,7 +106,7 @@ Every test (or every scenario block of tests) gets a multi-line comment explaini
 it('rejects an email without an @ symbol', () => { ... })
 ```
 
-Comments cover: what behavior is under test, why it exists (the business or safety reason), a concrete example that exercises the behavior, and any non-obvious edge cases.
+A comment covers what behavior is under test, why it exists in business or safety terms, and any edge case the assertion alone does not reveal. Add a concrete example when the assertion does not make the behavior obvious. Write what those need, and stop there.
 
 **1.5 Test only current behavior.**
 
@@ -198,16 +198,18 @@ export function validateRegistrationEmail(raw: string): string { ... }
 
 **5.3 Inline comments for non-obvious blocks.**
 
-Every group of lines that accomplishes a discrete step gets a comment explaining what the step does and why. Don't comment obvious lines (`x = x + 1` doesn't need a comment); comment the *intent* of multi-line operations — what the step is for and which constraint made it necessary. A short rule: if a function has three blocks of work, it has at least three inline comments.
+A group of lines that accomplishes a discrete step gets a comment when the reason for the step is not visible in the code. Don't comment obvious lines (`x = x + 1` doesn't need a comment); comment the *intent* of multi-line operations — what the step is for and which constraint made it necessary.
 
-**5.4 Be generous, especially in complicated code.**
+**5.4 Comment where the code cannot explain itself.**
 
-When in doubt, comment. The bar for adding a comment is low; the bar for skipping one is high. Almost every line of non-trivial code earns a comment, unless the line is literally trivial (`return x`, simple arithmetic on well-named variables, idiomatic one-liners). Especially in:
+Match comment density to how much intent the code hides. Self-evident code earns no comment. Code whose reason is invisible earns one. Concentrate them in:
 
 - **Complicated control flow** — multi-branch conditions, early returns with side effects, error-handling chains.
 - **External-system interactions** — network, file system, hardware, external APIs. Comment what could go wrong and why the code handles it that way.
 - **Domain-heavy logic** — math, business rules, or invariants that aren't self-evident.
 - **Performance-sensitive sections** — comment the trade-off being made.
+
+A comment that restates the line below it is noise. Delete it.
 
 **5.5 Comments and code describe only current behavior.**
 
@@ -220,15 +222,16 @@ The comment discipline above documents *what the code does now* — never what i
 
 This document does not specify a language, framework, runner, DI container, ORM, queue library, or coverage tool. Those are the host project's choices, recorded in `specs/TECH-STACK.md`. Principles bind regardless.
 
-## 7. Every Word Is Simplified Technical English
+## 7. Every Word Earns Its Place
 
-Specs, plans, comments, and reports are read by the next AI agent with no back-channel. It cannot ask what an ambiguous sentence meant, so it guesses. Ambiguous prose is therefore a defect, in exactly the way a vague assertion (1.3) is a defect.
+Specs, plans, comments, and reports are read by the next AI agent with no back-channel. It cannot ask what an ambiguous sentence meant, so it guesses. Ambiguous prose is therefore a defect, in exactly the way a vague assertion (1.3) is a defect. Prose the reader did not need is a defect too, because it dilutes the prose they did.
 
-Everything written — spec files, plans, review documents, changelog entries, commit messages, code comments, test comments, and on-screen reports — uses **Simplified Technical English** as defined by ASD-STE100: one meaning per word, active voice, simple tenses, one instruction per sentence, and no idioms.
+Everything written — spec files, plans, review documents, changelog entries, commit messages, code comments, test comments, and on-screen reports — obeys two rules at once.
 
-The full rules, the arbitration against the rules above, and the self-check live in the `writing-style` shared skill, which every command loads before it writes.
+- **Simplified Technical English**, as defined by ASD-STE100: one meaning per word, active voice, simple tenses, one instruction per sentence, no idioms. The `writing-style` shared skill holds the full rules and the self-check.
+- **Output economy**: carry what the reader needs for their next action, then stop. The `output-economy` shared skill holds the content test, the per-surface budgets, and the cases where completeness outranks a budget.
 
-**This does not reduce how much you write.** Rules 1.4 and 5.4 still stand in full — comments stay verbose and generous. Simplified Technical English governs how each sentence reads, never how many sentences a test or a function earns. A long comment built from short, active, single-meaning sentences satisfies both rules.
+Every command loads both before it writes.
 
 ## How Molcajete Enforces These
 
@@ -237,7 +240,8 @@ The full rules, the arbitration against the rules above, and the self-check live
 | `/m:plan` | Designs architecture in hexagonal vocabulary. Each task names the driver port it drives and the driven ports its code reaches, and delivers one vertical, working increment (never a layer). Decomposition covers every scenario exactly once. |
 | `/m:build` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**, writing code that respects Principle 5. The coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle before a task's checkbox flips. |
 | `uc-log` shared skill | Records every change, so new work stays explicit over time. |
-| `writing-style` shared skill | Every command loads it before it writes. Enforces Principle 7 across every generated document and every printed message. |
+| `writing-style` shared skill | Every command loads it before it writes. Enforces the sentence half of Principle 7 across every generated document and every printed message. |
+| `output-economy` shared skill | Every command loads it before it writes. Enforces the volume half of Principle 7 across files, screen output, question briefs, and command output. |
 
 ## Override
 

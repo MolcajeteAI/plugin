@@ -32,7 +32,7 @@ Molcajete generates **integration tests exclusively** per Principle 1 of the eng
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
-**Writing style:** every document you write and every message you print is Simplified Technical English. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` before writing.
+**Writing style:** every document you write and every message you print uses Simplified Technical English. Every one carries only what its reader needs. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/output-economy/SKILL.md` before writing.
 
 ## Step 1: Parse Arguments
 
@@ -178,7 +178,7 @@ Read:
 
 Translate the task's "how we prove it" grading prose into runner-equivalent integration test code at the derived test path, driving the named entry point. Group tests by the scenarios in `Covers`.
 
-**Apply Principle 1's Test Writing Rules** (loaded in Step 2) — descriptive names with no spec ID in them (1.1), IDs in leading-line comments (1.2), precise realistic values (1.3), verbose explanatory comments (1.4).
+**Apply Principle 1's Test Writing Rules** (loaded in Step 2) — descriptive names with no spec ID in them (1.1), IDs in leading-line comments (1.2), precise realistic values (1.3), comments that document intent (1.4).
 
 Lifecycle:
 
@@ -212,7 +212,7 @@ Run the scoped test command against the derived test file only.
 - implement task: write production code in its final form across the layers the task names, to satisfy the behavior and turn the scaffold GREEN. Fill empty `it` bodies with concrete assertions as you implement (per Principle 1.3 — precise values). Honour dependency signatures verbatim.
 - coverage task: add more assertions to the scaffold to close coverage on the files it pins. **Do not write production code.**
 
-**Apply Principle 5** (loaded in Step 2) — universal software craft while writing code (reuse an existing helper before adding one, small functions, clear boundaries, no duplication) and the Code Comments rules 5.1–5.4 (spec traceability, function headers, inline comments, generous commenting).
+**Apply Principle 5** (loaded in Step 2) — universal software craft while writing code (reuse an existing helper before adding one, small functions, clear boundaries, no duplication) and the Code Comments rules 5.1–5.4 (spec traceability, function headers, inline comments, comment density matched to hidden intent).
 
 **Reconcile first when the UC is `dirty`.** If the owning UC changed via `/m:fix`, `/m:change`, or `/m:spec` (its `Covers` scenarios were touched), reconcile the existing canonical test file and touched production files against the current UC spec (re-read in Step 5) per the testing skill's "Reconciling Changed Behavior" before writing any new code or assertion.
 
@@ -323,10 +323,12 @@ This sweep **reports**; it does not silently pass. List any uncovered scenario, 
 
 ## Step 10: Status Mutation Report (blocking)
 
-Before Step 11, emit this exact table with **one row for every artifact in the plan's scope** — every task checkbox that could have flipped, every UC in the plan, every Feature in the plan, every CHANGELOG entry that could have flipped. Every row records what happened this run, including rows intentionally left unchanged.
+Before Step 11, account for every artifact in the plan's scope — every task checkbox that could have flipped, every UC in the plan, every Feature in the plan, every CHANGELOG entry that could have flipped. The accounting is exhaustive; the table is not.
 
-- **If a task failed (escalation written), its checkbox stays `[ ]` and its UC/changelog stay in their prior state.** List those as `unchanged` rows with the reason `task failed — see escalation`.
-- **UC and Feature roll-up rows always appear** (per 9.2). If the value did not move, `After` reads `unchanged` and the reason column names why.
+Emit a row for every artifact whose state **changed**, and for every artifact that **should have changed and did not**.
+
+- **If a task failed (escalation written), its checkbox stays `[ ]` and its UC/changelog stay in their prior state.** Emit those rows with the reason `task failed — see escalation`.
+- **A UC or Feature roll-up that did not move** (per 9.2) earns a row only when a task in its scope completed this run. Close the table with one line naming how many artifacts were unchanged as expected.
 
 | Artifact path              | Field                | Before  | After                    | Reason (if unchanged)                       |
 |----------------------------|----------------------|---------|--------------------------|---------------------------------------------|
@@ -337,18 +339,19 @@ Before Step 11, emit this exact table with **one row for every artifact in the p
 
 ## Step 11: Report
 
-Tell the user:
+Lead with the outcome in one sentence: the plan ID, the mode, and how many tasks completed against how many failed.
 
-- The plan ID and mode.
-- For each completed task: `T-NNN`, outcome, kind (implement/coverage), files touched, materialized test file path, per-touched-file final coverage on all four dimensions, and the correctness review result (`correct`). In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
-- Any gaps the 8.7 loop resolved — one line per resolution naming the location and disposition.
-- The **Completeness gaps** section from 9.3 — uncovered scenarios / missing assertions / stray markers, or "none".
-- For each escalation (if any): `T-NNN` and escalation file path.
-- Any migration deletions or deferrals from 8.11's `migrate` handling — one line per referenced file.
-- **Final status for every UC and Feature in the plan's scope.** One line per artifact regardless of change: `FEAT-XXXX-{slug}: <status>` and `UC-XXXX-{slug}: <status>` — a snapshot of on-disk truth after 9.2.
-- Plan checklist progress (e.g., "3 of 5 tasks complete in plan `{plan-id}`").
+Then report what the user must act on:
 
-If the host project's coverage collector wasn't available (per Step 7) and you estimated against the floor, note that explicitly.
+- **Per completed task** — one line: `T-NNN`, outcome, and its materialized test file path. In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
+- **Per escalation** — `T-NNN` and the escalation file path.
+- **Completeness gaps** from 9.3 — every uncovered scenario, missing assertion, and stray marker. **This section is exempt from the budget.** List all of them, or state that there are none.
+- **Status** for each UC and Feature whose status changed this run.
+- Plan checklist progress, one line (e.g., "3 of 5 tasks complete in plan `{plan-id}`").
+
+Report per-touched-file coverage numbers, the 8.7 loop's resolutions, and 8.11's migration dispositions **only when one of them fell below the floor, stayed unresolved, or was deferred**. A number that passed its gate is not news; the gate already enforced it.
+
+If the host project's coverage collector wasn't available (per Step 7) and you estimated against the floor, say so in one line.
 
 If every task in the plan is now complete, suggest: "Plan `{plan-id}` is fully executed."
 

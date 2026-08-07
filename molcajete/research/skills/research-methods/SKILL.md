@@ -80,7 +80,7 @@ Assemble the agent findings into the research guide using the template at:
 ${CLAUDE_PLUGIN_ROOT}/research/skills/research-methods/templates/research-guide.md
 ```
 
-Read the template first, then populate every section it defines from the agents' findings.
+Read the template first, then populate the sections the agents' findings support. Omit a section when the research produced nothing for it — an empty heading is not completeness.
 
 ### Writing Principles
 

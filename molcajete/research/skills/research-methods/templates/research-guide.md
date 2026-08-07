@@ -10,13 +10,13 @@ description: <1-2 sentence summary of what this research covers>
 ## Introduction
 
 What this is, why it matters, and what you'll understand by the end.
-1-2 paragraphs. Plain language. No jargon yet.
+At most 2 paragraphs. Plain language. No jargon yet.
 
 ## The Big Picture
 
 Where this fits in the broader system or ecosystem.
 A single Mermaid diagram showing how the pieces connect.
-2-3 paragraphs of context.
+At most 3 paragraphs of context.
 
 ## Glossary
 
@@ -60,7 +60,7 @@ Things that will bite you. Common mistakes. Production considerations.
 
 ## Key Takeaways
 
-5-7 numbered items. The essentials if you read nothing else.
+At most 7 numbered items. The essentials if you read nothing else. Write the ones the reader needs; do not pad to reach seven.
 
 1. {takeaway}
 2. {takeaway}

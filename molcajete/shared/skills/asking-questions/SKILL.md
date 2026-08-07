@@ -36,10 +36,10 @@ Your own response message *is* rendered as rich Markdown — headings, tables, f
 Fixed shape, in this order:
 
 1. **What I need to decide** — one sentence naming the decision.
-2. **Where we are** — one or two sentences of recap. **Never assume the user is holding prior context.** Agent work moves faster than a person tracks it; a user returning after a long tool run has no idea what `{UC-0KTg}` was about. Name the file, the entity, the step.
+2. **Where we are** — one or two sentences of recap, **when the context has gone stale**. Agent work moves faster than a person tracks it; a user returning after a long tool run has no idea what `{UC-0KTg}` was about. Name the file, the entity, the step. Skip this when the user's last message named the thing being decided.
 3. **The options** — one short block per option, headed by the exact option label. Each block states: what it does, its consequence, and what happens next.
 4. **Recommendation** — one label plus one clause of why. Always give one.
-5. **Escape-hatch line** — remind the user that `Other` takes free text and `Chat about this` opens a discussion.
+5. **Escape-hatch line** — when the listed options may not cover what the user wants, remind them that `Other` takes free text and `Chat about this` opens a discussion. Skip it when the options are exhaustive.
 
 ### Budget
 

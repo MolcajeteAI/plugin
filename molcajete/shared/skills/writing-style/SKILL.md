@@ -56,7 +56,7 @@ The standard is free. Download it at https://www.asd-ste100.org/ when exact appr
 
 Simplified Technical English governs the shape of a sentence. It never overrides a rule that governs content. When the two appear to conflict, the rules below win.
 
-- **Comment volume does not change.** The `principles` skill requires verbose comments (1.4) and generous comments (5.4). Both still apply in full. Simplified Technical English changes how each sentence reads, never how many sentences a comment earns. A long comment made of short, active, single-meaning sentences satisfies both rules.
+- **Volume belongs to another skill.** How much gets written is governed by `output-economy`, never here. Simplified Technical English changes how each sentence reads. Apply it to whatever survives that skill.
 - **EARS syntax wins inside requirements.** `When {trigger}, the system shall {response}` is already correct. Never reword an EARS clause to meet a sentence-length limit. Split the requirement instead, because a requirement that needs 30 words is usually two requirements.
 - **Plan prose stays narrative.** The `plan-authoring` skill requires flowing explanation, not labeled lists. Shorten the sentences. Do not convert the prose into bullets.
 - **Closed vocabularies win.** The step verbs in `usecase-authoring` and the commit verbs in `git-committing` are already one word for one meaning. Use them exactly as written.

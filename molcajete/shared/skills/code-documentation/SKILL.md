@@ -22,7 +22,7 @@ Three required fields: `module` (kebab-case directory name), `purpose` (one sent
 
 ### Overview
 
-2-4 sentences: what this directory contains, how it fits into the larger system, key patterns or conventions used here.
+At most 4 sentences: what this directory contains, how it fits into the larger system, key patterns or conventions used here.
 
 ### Files table
 
@@ -48,7 +48,7 @@ Include as many Mermaid diagrams as needed to convey the directory's structure a
 - **State diagram** — lifecycle states (good for state machines, status fields)
 - **ER diagram** — data model relationships
 
-At minimum, include one flowchart showing how the directory's files relate to each other. Add more diagram types when they clarify something the flowchart doesn't.
+Include a flowchart when the relationships between files are not already clear from the file table. Add another diagram type only when it shows something the flowchart cannot.
 
 ### Notes (optional)
 
