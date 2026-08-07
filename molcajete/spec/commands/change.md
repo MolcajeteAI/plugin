@@ -113,4 +113,4 @@ Report per the `spec-revision` skill's **Reporting**.
 
 End the report with the explicit hand-off:
 
-> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute the change.
+> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id>` to execute the change. That runs every unfinished task in the plan. Add task IDs — `/m:build <plan-id> T-001 [more ...]` — to run a subset.

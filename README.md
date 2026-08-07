@@ -123,7 +123,7 @@ Create and maintain structured specifications from freeform descriptions or exis
 
 | Command | Description |
 |---------|-------------|
-| `/m:build` | Execute one or more tasks from a plan (TDD red/green → mutation check → coverage gate → correctness review) |
+| `/m:build` | Execute a plan — every unfinished task by default, or a named `T-NNN` subset (TDD red/green → mutation check → coverage gate → correctness review) |
 
 ### Review Module
 

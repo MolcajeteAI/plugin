@@ -86,4 +86,4 @@ Tell the user:
 
 End the report with the explicit hand-off:
 
-> Next: review `plan.md`. When ready, run `/m:build <plan-id> T-001 [more task IDs ...]` to execute. Pass a single `T-NNN` or several.
+> Next: review `plan.md`. When ready, run `/m:build <plan-id>` to execute. That runs every unfinished task in the plan. Add task IDs — `/m:build <plan-id> T-001 [more ...]` — to run a subset.

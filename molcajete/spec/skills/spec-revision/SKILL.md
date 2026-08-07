@@ -132,4 +132,5 @@ Tell the user:
 - The plan written: `specs/plans/<plan-id>.md`, and its task(s).
 
 End the report with the command's explicit hand-off line, which always names the plan file and the
-`/m:build <plan-id> T-001 [more task IDs ...]` invocation.
+`/m:build <plan-id>` invocation — which runs every unfinished task in the plan — plus the
+`/m:build <plan-id> T-001 [more ...]` form for a subset.

@@ -1,7 +1,7 @@
 ---
 description: Execute a plan — run the TDD red/green/mutation lifecycle plus a correctness review for one or more tasks in a prose plan.
 model: claude-sonnet-5
-argument-hint: "<plan-id> <T-NNN> [more ...]"
+argument-hint: "<plan-id> [T-NNN ...]"
 allowed-tools:
   - Read
   - Write
@@ -36,15 +36,16 @@ Molcajete generates **integration tests exclusively** per Principle 1 of the eng
 
 ## Step 1: Parse Arguments
 
-`$ARGUMENTS` must contain:
+`$ARGUMENTS` carries:
 
-1. A plan ID as the first token. Format: `YYYYMMDDTHHMMSS-<slug>` (the plan file's name under `specs/plans/`, without the `.md` extension — the plan is `specs/plans/<plan-id>.md`).
-2. One or more task IDs, each `T-NNN`.
+1. A plan ID as the first token. Required. Format: `YYYYMMDDTHHMMSS-<slug>` (the plan file's name under `specs/plans/`, without the `.md` extension — the plan is `specs/plans/<plan-id>.md`).
+2. Zero or more task IDs, each `T-NNN`. When no task ID is given, the run covers **every unfinished task in the plan**.
 
 Examples:
 
-- `/m:build 20260616T141530-add-checkout T-001`
-- `/m:build 20260616T141530-add-checkout T-001 T-002 T-003`
+- `/m:build 20260616T141530-add-checkout` — every unfinished task, in `T-NNN` order
+- `/m:build 20260616T141530-add-checkout T-001` — one task
+- `/m:build 20260616T141530-add-checkout T-001 T-002 T-003` — a named subset
 
 If `$ARGUMENTS` is empty or missing a plan-id, list available plans:
 
@@ -54,7 +55,7 @@ ls specs/plans/
 
 Then tell the user:
 
-> "Usage: `/m:build <plan-id> <T-NNN> [...]`. Available plans: {list of plan file names, without `.md`}."
+> "Usage: `/m:build <plan-id> [T-NNN ...]`. Available plans: {list of plan file names, without `.md`}."
 
 Stop.
 
@@ -92,9 +93,11 @@ Read:
    - **The `**Prerequisites:**` line** — work that must be done outside this plan before any task runs. `—` means none. A plan written before this field existed carries no such line; treat a missing line as `—`. Carry the parsed value to Step 6. Do not act on it here.
    - **Each task** — every `## [ ] T-NNN — {outcome}` (or `## [x] T-NNN`) heading, its `**Covers:**` list, its `**Depends on:**` list, and the task prose beneath it up to the next `## ` heading.
 3. Build an in-memory task index: `T-NNN → { outcome, covers, depends_on, done (checkbox state), prose }`.
-4. For each task ID in `$ARGUMENTS`:
-   - `T-NNN` → mark it for execution.
-   - Unknown task ID → refuse with: "Task `{id}` is not in plan `{plan-id}`. Available tasks: {list}." Stop.
+4. Select the tasks to execute:
+   - **`$ARGUMENTS` carries no task ID** → mark every task whose checkbox is `[ ]`, in `T-NNN` ascending order. A task already `[x]` is skipped, so a re-run resumes the plan where the last run stopped. If no task is `[ ]`, tell the user "Plan `{plan-id}` has no unfinished tasks — nothing to do." and stop.
+   - **`$ARGUMENTS` carries one or more task IDs** → for each one:
+     - `T-NNN` → mark it for execution.
+     - Unknown task ID → refuse with: "Task `{id}` is not in plan `{plan-id}`. Available tasks: {list}." Stop.
 
 ## Step 5: Load Upstream Context
 
@@ -167,6 +170,8 @@ Resolve the test runner per the testing skill's **Runner Inference**. Cache test
 ## Step 8: Execute Each Task
 
 For each task marked in Step 4, run it through the lifecycle. Process tasks in plan order (`T-NNN` ascending). For each task:
+
+**Failure halts the rest of the run.** When a task halts — on an unmet dependency (8.2) or on any of the escalations the sub-steps below define — stop dispatching the remaining tasks and go to Step 9. Never skip past a failed task to the next one. The completed tasks keep their `[x]`, the rest stay `[ ]`, and Step 9 still runs — so the user fixes the escalation and re-runs `/m:build {plan-id}` to resume.
 
 ### 8.1 Resolve the task
 
@@ -336,7 +341,7 @@ The CHANGELOG is for context only; status decisions read from artifact frontmatt
 
 ### 9.3 End-of-plan completeness sweep
 
-After the tasks named in `$ARGUMENTS` are done, run one final review across every UC the plan touches (not only the tasks in this run). Confirm:
+After the tasks selected in Step 4 are done, run one final review across every UC the plan touches (not only the tasks in this run). Confirm:
 
 - Every `SC-XXXX` in each touched UC appears in some task's `Covers` in the plan file, and — for tasks already `[x]` — is addressed by an assertion in that task's canonical test file.
 - No `TODO`/`FIXME`/stub markers remain in the production files this plan touched.
@@ -379,4 +384,4 @@ If the host project's coverage collector wasn't available (per Step 7) and you e
 
 If every task in the plan is now complete, suggest: "Plan `{plan-id}` is fully executed."
 
-If unfinished tasks remain, suggest: "Next: `/m:build {plan-id} {next-T-NNN}` to continue."
+If unfinished tasks remain, suggest: "Next: `/m:build {plan-id}` to run the remaining {N} tasks."

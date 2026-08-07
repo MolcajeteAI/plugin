@@ -230,4 +230,4 @@ Tell the user what was written and what to do next:
 
 > Created `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, `.molcajete/settings.json`, `.claude/rules/principles.md`, and updated `CLAUDE.md` with the Molcajete principles block. The **Running tests** and **Coverage** rows in TECH-STACK.md were filled where I could detect them; verify them before running `/m:build`. The Testing framework field was filled where detectable; the build loop infers the rest from manifests at run time. Engineering principles are operative immediately — `/m:plan` and `/m:build` will read `.claude/rules/principles.md`; edit it to adapt principles to your project.
 >
-> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:build <plan-id> T-001` to execute.
+> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:build <plan-id>` to execute.
