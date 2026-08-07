@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write",
+        "if": "Write(specs/**)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/spec-resolution-guard.mjs"],
+            "timeout": 5
+          }
+        ]
+      },
+      {
+        "matcher": "Edit",
+        "if": "Edit(specs/**)",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PLUGIN_ROOT}/hooks/spec-resolution-guard.mjs"],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

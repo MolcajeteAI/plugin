@@ -30,9 +30,10 @@ The single spec-authoring entry point. Takes free-form natural language and crea
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before Step 9 writes anything.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
 
 ## Step 2: Verify Prerequisites
 
@@ -99,6 +100,8 @@ Assign prefixes in order.
 
 ## Step 9: Write Spec Documents
 
+Before you write the first file, run the `resolution-gate` skill's **The Procedure** once over every entity in scope. Testability concerns noticed while drafting enter that gate. No file is written while an item is open.
+
 Write in dependency order: parents before children.
 
 **New Features** (per selected module):
@@ -139,7 +142,7 @@ Tell the user what was created and updated, grouped by UC. For each:
 - The new UC status (`pending` or `dirty`) and the new Feature status if it changed.
 - The changelog entry that was appended.
 
-If testability signals were detected in any new scenario (external APIs without sandbox, time/randomness, env-flag branches), surface them inline in the report as a brief **Testability Notes** list with category. They are advisory output, not a recorded table.
+If testability signals were detected in any new scenario (external APIs without sandbox, time/randomness, env-flag branches), the Step 9 gate already resolved them. List each one here as one line — the service or pattern, the decision, and the `ARCHITECTURE.md` that now carries the `## Testing Decisions` row. Omit the list when the run raised no concern.
 
 End the report with the explicit hand-off:
 

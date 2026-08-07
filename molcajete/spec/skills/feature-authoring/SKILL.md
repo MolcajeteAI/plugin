@@ -346,7 +346,7 @@ For ARCHITECTURE.md schema, sections, and population rules, see the architecture
 
 During feature creation, scaffold ARCHITECTURE.md using the template at `spec/skills/architecture/templates/ARCHITECTURE-template.md`.
 
-ARCHITECTURE.md may include a `## Testing Decisions` section that records resolved E2E testing decisions for the feature. This section is checked by reverse commands before flagging testability concerns -- if a decision already exists for a service or pattern, the concern is not re-flagged.
+ARCHITECTURE.md carries a `## Testing Decisions` section that records resolved E2E testing decisions for the feature. The architecture skill owns its schema and its closed decision set, and the `resolution-gate` shared skill is its only writer. Commands read it before they collect a testability concern -- if a row already names the service or pattern, the concern is resolved and is never raised again.
 
 **Format:** table with columns `| Service/Pattern | Decision | Reason |`
 

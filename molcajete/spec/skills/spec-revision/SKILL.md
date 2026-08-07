@@ -29,11 +29,12 @@ Load these after this skill:
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
-7. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used by **Producing the Plan** below.
-8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in **Producing the Plan** applies these.
+4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before any spec edit is applied.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+8. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used by **Producing the Plan** below.
+9. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in **Producing the Plan** applies these.
 
 ## Prerequisites
 

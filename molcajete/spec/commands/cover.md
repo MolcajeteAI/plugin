@@ -37,9 +37,10 @@ The model decides scope from the description. No separate command per scope.
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the single gate that runs when the discovery scan finishes and before Step 7 writes anything.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+8. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
 
 ## Step 2: Verify Prerequisites
 
@@ -69,7 +70,9 @@ Use Glob, Grep, and Read to find the implementation files in scope. Group by lik
 
 ## Step 7: Extract the Specs
 
-Read the confirmed files and write the spec content for the resolved scope: REQUIREMENTS.md, UC spec files (`UC-XXXX-{slug}.md` as siblings of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md), UC support folders (each containing an initialized `CHANGELOG.md` with empty TODO/DONE sections), and appended scenarios as appropriate. Populate ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map, Event Topology) per the architecture skill's **Table Filling** rules — every applicable table must be populated. Generate all IDs in one batch call. Add newly discovered actors to ACTORS.md and newly discovered tech-stack entries to TECH-STACK.md per the reverse-engineering skill's project-level discovery rules.
+Read the confirmed files first and write nothing yet. Collect testability concerns per the reverse-engineering skill's **Collect, Then Resolve Once**, then run the `resolution-gate` skill's **The Procedure** once over the whole scan. Write the spec content only after that gate closes.
+
+Write the spec content for the resolved scope: REQUIREMENTS.md, UC spec files (`UC-XXXX-{slug}.md` as siblings of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md), UC support folders (each containing an initialized `CHANGELOG.md` with empty TODO/DONE sections), and appended scenarios as appropriate. Populate ARCHITECTURE.md (Component Inventory, Data Model, API Surface, Integration Points, Code Map, Event Topology) per the architecture skill's **Table Filling** rules — every applicable table must be populated. Generate all IDs in one batch call. Add newly discovered actors to ACTORS.md and newly discovered tech-stack entries to TECH-STACK.md per the reverse-engineering skill's project-level discovery rules.
 
 **Multi-module capability handling.** When the discovered code spans multiple modules for what is logically the same capability (same business event, same domain object, same lifecycle):
 
@@ -104,7 +107,7 @@ Tell the user what was created or updated:
 - For each extracted or extended UC: the new UC status (`pending`) and the log entry that was appended.
 - ARCHITECTURE.md tables populated per feature.
 - New actors / tech-stack entries added.
-- Testability Notes per UC if any signals were detected (silent — surface here as a brief list, do not interrupt the flow). Advisory output, not a recorded table.
+- **Testing Decisions** — one line per testability concern the gate resolved: the service or pattern, the chosen decision, and the feature `ARCHITECTURE.md` that now carries the row. Omit this section when the scan raised no concern.
 - **Non-canonical Test Paths** — if the discovery scan found existing test files outside the canonical Test File Convention layout, list every such path under a clearly-labeled section. Include a one-line note: "`/m:plan` will consult this list when it decomposes these UCs and ask you per file whether to reference (default — read as input for the canonical integration test, leave original in place), migrate (same, plus delete original after 8.9 succeeds), or ignore." Omit this section if all test files are already canonical.
 
 End the report with the explicit hand-off:

@@ -256,7 +256,7 @@ All scenarios assume the build loop will exercise the code end-to-end with the p
 
 ### Potential Concerns
 
-During authoring, the agent may notice areas that could challenge end-to-end execution (e.g., a third-party API with no sandbox, time-dependent logic requiring clock manipulation). These are flagged silently in the final report -- they do NOT interrupt the workflow and do NOT change the spec.
+During authoring, the agent may notice areas that could challenge end-to-end execution (e.g., a third-party API with no sandbox, time-dependent logic requiring clock manipulation). Each one is an unresolved item. Collect them while you draft the UC, then resolve them all in one gate before any file is written, per the `resolution-gate` shared skill. A concern never reaches a written spec unresolved.
 
 **Concern categories** (closed set):
 
@@ -271,7 +271,7 @@ During authoring, the agent may notice areas that could challenge end-to-end exe
 
 ### Testing Decisions in ARCHITECTURE.md
 
-Resolved testing decisions are recorded in the feature's ARCHITECTURE.md under a `## Testing Decisions` section. Commands check this section before flagging concerns -- if a decision already exists for a service or pattern, the concern is not re-flagged.
+Every resolved testing decision is recorded in the feature's ARCHITECTURE.md under its `## Testing Decisions` section, in the `| Service/Pattern | Decision | Reason |` schema the architecture skill defines. Read that section before you collect a concern. If a row already names the service or the pattern, the concern is resolved and you never raise it again.
 
 ## YAML Frontmatter Schema
 

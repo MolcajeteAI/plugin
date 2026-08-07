@@ -118,3 +118,12 @@ stateDiagram-v2
 
 **ADR-XXXX:** {Decision title}
 In the context of {situation}, facing {concern}, we decided {choice} to achieve {quality}, accepting {tradeoff}.
+
+## Testing Decisions
+
+> Resolved end-to-end testing decisions. The resolution gate writes a row when a testability
+> concern is resolved. The table stays empty until then.
+> Decision is one of: `e2e`, `mock`, `injection`, `fixture`, `isolate`, `pin`, `manual`.
+
+| Service/Pattern | Decision | Reason |
+|-----------------|----------|--------|

@@ -89,6 +89,7 @@ Read:
 1. Read `specs/plans/<plan-id>.md`.
 2. Parse:
    - **The `**Specs:**` line** — the FEAT and UC IDs the plan touches, the scenarios in scope, and the `**Mode:**` label.
+   - **The `**Prerequisites:**` line** — work that must be done outside this plan before any task runs. `—` means none. A plan written before this field existed carries no such line; treat a missing line as `—`. Carry the parsed value to Step 6. Do not act on it here.
    - **Each task** — every `## [ ] T-NNN — {outcome}` (or `## [x] T-NNN`) heading, its `**Covers:**` list, its `**Depends on:**` list, and the task prose beneath it up to the next `## ` heading.
 3. Build an in-memory task index: `T-NNN → { outcome, covers, depends_on, done (checkbox state), prose }`.
 4. For each task ID in `$ARGUMENTS`:
@@ -117,6 +118,9 @@ This is a hard gate — the loaded UC scenarios (`SC-XXXX`) and the feature's `A
 
 ## Step 6: Present the Build Plan
 
+This is the single start-or-stop gate. It carries the prerequisite too — never add a second
+question for it.
+
 The task list is the brief, never the question text:
 
 - Brief: name the plan and mode, then print the tasks as a Markdown table — `T-NNN`, outcome, and
@@ -127,6 +131,25 @@ The task list is the brief, never the question text:
 - Options: "Proceed" / "Cancel"
 
 If "Cancel", stop without writing.
+
+**When the `**Prerequisites:**` line parsed in Step 4 is not `—`**, the same gate carries the
+prerequisite and the proceed label changes, so the user affirms it instead of clicking past it:
+
+- Brief: open with a **Prerequisites** section, before the task table. List each prerequisite on
+  its own line, verbatim from the plan. State plainly that `/m:build` cannot check any of them —
+  it has no way to know the work was done — and that the proceed option is the user's own
+  assertion that it is. State that `/m:plan` wrote this line because the user chose "Handle
+  separately" at the test-coverage gate, so the files these tasks change may still have no
+  integration coverage and no safety net. Then the task table as above. Recommend "Cancel",
+  because a build over unverified prerequisites is the one failure this command cannot detect.
+  Close with the escape-hatch line.
+- Question: "Execute plan `{plan-id}`?"
+- Header: "Build plan"
+- Options: "Prerequisites done, proceed" / "Cancel"
+
+On "Cancel", stop without writing. On "Prerequisites done, proceed", hold the affirmation and
+every prerequisite line for the Step 11 report — the build must never later imply it verified
+them.
 
 ## Step 7: Tech Stack and Runner Resolution
 
@@ -343,6 +366,7 @@ Lead with the outcome in one sentence: the plan ID, the mode, and how many tasks
 
 Then report what the user must act on:
 
+- **Unverified prerequisites** — when the plan carried a `**Prerequisites:**` line other than `—`, list every prerequisite verbatim and state in one line: "`/m:build` did not verify these. You confirmed them at the Step 6 gate." Never write that a prerequisite was checked, met, or satisfied — this command has no way to establish any of those. Omit this section when the line was `—` or absent.
 - **Per completed task** — one line: `T-NNN`, outcome, and its materialized test file path. In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
 - **Per escalation** — `T-NNN` and the escalation file path.
 - **Completeness gaps** from 9.3 — every uncovered scenario, missing assertion, and stray marker. **This section is exempt from the budget.** List all of them, or state that there are none.

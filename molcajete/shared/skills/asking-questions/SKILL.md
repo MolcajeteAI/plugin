@@ -116,8 +116,8 @@ When in doubt, write the brief. The cost of an unnecessary brief is a few second
 
 ## When Not to Ask at All
 
-- **Headless and non-interactive sessions.** No user is present. Decide autonomously from the payload and project context.
-- **Prohibitions declared by a skill.** For example, `reverse-engineering` forbids asking about testability concerns; those go in the final report instead.
+- **Headless and non-interactive sessions.** No user is present. Decide autonomously from the payload and project context. One exception: the `resolution-gate` skill forbids a guess on an item it marked Partial or Missing. There the command halts and writes an escalation instead.
+- **Prohibitions declared by a skill.** A skill may forbid one specific question — `/m:setup`, for example, infers modules, domains, actors, and test runners rather than asking. A prohibition never covers an item the `resolution-gate` skill marked Partial or Missing. A skill may still say *when* to ask: `reverse-engineering` requires `/m:cover` to collect concerns silently through the scan, then resolve them in one gate at the end.
 - **When the answer is inferable.** If only one module exists, use it. Detect rather than ask.
 
 Reports, usage messages, progress summaries, and briefs are **not** questions. Emitting them as plain text is correct and required — the two-move rule governs questions only.

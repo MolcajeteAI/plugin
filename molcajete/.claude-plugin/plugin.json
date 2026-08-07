@@ -42,6 +42,7 @@
     "./shared/skills/id-generation",
     "./shared/skills/output-economy",
     "./shared/skills/principles",
+    "./shared/skills/resolution-gate",
     "./shared/skills/status-rollup",
     "./shared/skills/testing",
     "./shared/skills/uc-log",

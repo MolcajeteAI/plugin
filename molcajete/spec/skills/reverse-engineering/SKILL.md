@@ -59,9 +59,9 @@ Look for what the code explicitly does NOT do in certain paths:
 - Early returns before DB writes → "No database record is created"
 - Guards that prevent notifications → "No notification is sent"
 
-## Testability Analysis (Reporting Only)
+## Testability Analysis
 
-During reverse engineering, identify areas that might challenge end-to-end testing with real internal stack + outer-edge mocking (see `shared/skills/testing/SKILL.md`). These are surfaced in the command's final report. Do not generate a sidecar file; do not interrupt the workflow.
+During reverse engineering, identify areas that might challenge end-to-end testing with real internal stack + outer-edge mocking (see `shared/skills/testing/SKILL.md`). Each one is an unresolved item. Resolve it with the user before any spec file is written, per the `resolution-gate` shared skill. Do not generate a sidecar file.
 
 ### What to Look For
 
@@ -78,11 +78,17 @@ During reverse engineering, identify areas that might challenge end-to-end testi
 
 ### Check ARCHITECTURE.md First
 
-Before flagging a concern, read the feature's ARCHITECTURE.md and look for a `## Testing Decisions` section. If a decision already exists for the service or pattern in question, skip it — the developer has already resolved this concern.
+Before you collect a concern, read the feature's ARCHITECTURE.md and find its `## Testing Decisions` section. The architecture skill defines that section and `ARCHITECTURE-template.md` ships it, so every feature has one. If a row already names the service or pattern in question, drop the concern — the user resolved it in an earlier run. A table with no data rows has resolved nothing, so every concern for that feature survives to the gate.
 
-### No Interruptions, No Sidecar Files
+### Collect, Then Resolve Once
 
-Do not use AskUserQuestion for testability concerns. Do not write a sidecar file. Surface remaining concerns in the command's final report as a "Testability Notes" block, with the count and category per UC.
+Never stop the scan on a finding. `/m:cover` reads hundreds of files, and one question per file is an interrogation.
+
+1. **During the scan** — append every surviving concern to an in-memory list. Record the UC, the file, the category, and the code pattern that raised it. Print nothing and ask nothing.
+2. **When the scan finishes, and before the first spec file is written** — run the `resolution-gate` shared skill over the whole list as one gate run. Its relevance filter, its grouping rule, and its cap of five questions per round apply to the list, never to a single item. Concerns that name the same service or the same pattern are one question.
+3. **After the answers arrive** — write one row per resolved concern to the feature's `ARCHITECTURE.md` under `## Testing Decisions`, in the `| Service/Pattern | Decision | Reason |` schema the architecture skill defines. One row per service or pattern, never one row per file.
+
+A concern the filter dropped is dropped. It is not asked, it is not written, and it is not reported. Do not write a sidecar file.
 
 ## Populating ARCHITECTURE.md
 

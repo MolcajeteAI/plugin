@@ -40,8 +40,8 @@ specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md
 
 ## Plan File Structure
 
-A plan has a title, a one- or two-line summary, a single `**Specs:**` line, an optional
-short context paragraph, and then one `## [ ] T-NNN` section per task.
+A plan has a title, a one- or two-line summary, a `**Specs:**` line, a `**Prerequisites:**`
+line, an optional short context paragraph, and then one `## [ ] T-NNN` section per task.
 
 ```markdown
 # Plan: {Descriptive Name}
@@ -49,6 +49,7 @@ short context paragraph, and then one `## [ ] T-NNN` section per task.
 {One or two sentences: the working capability this plan delivers, and why.}
 
 **Specs:** FEAT-XXXX-{slug} · UC-XXXX-{slug} · SC-XXXX, SC-YYYY  ·  **Mode:** default | cover | mixed
+**Prerequisites:** —
 
 {Optional short paragraph of shared context — what we're building and the slice of the
 architecture it touches. Reference the spec files once here (`specs/features/{module}/
@@ -74,6 +75,24 @@ and a `**Mode:**` label (`default`, `cover`, or `mixed`) summarizing the plan: `
 every task builds new/changed behavior, `cover` when every task pins existing behavior, `mixed`
 when both. The label is a human summary; per-task truth is carried by each task's own prose
 (implement vs coverage — see Task Objectives).
+
+The `**Prerequisites:**` line is **mandatory and always present**. It names work that must be
+done **outside this plan** before `/m:build` may start, or `—` when there is none. It uses the
+same empty value as `Depends on` at the task level, and it has a different scope.
+
+| Field | Points at | How `/m:build` checks it |
+|-------|-----------|--------------------------|
+| `Depends on` | a task inside this plan | reads the upstream task's checkbox |
+| `Prerequisites` | work no task in this plan does | it cannot check. It asks the user, then records that it did not verify. |
+
+Only the coverage step in **Producing a Plan** writes a value other than `—`, and only when the
+user answers "Handle separately" to the test-coverage question. Write one clause per item. Name
+the file and the canonical test path it needs:
+
+```markdown
+**Prerequisites:** Canonical integration coverage for `src/auth/session.ts` and
+`src/auth/token.ts` (`tests/FEAT-0A1b-auth/UC-0KTg-sign-in.test.ts`)
+```
 
 ## Task Shape
 
@@ -115,7 +134,12 @@ following unambiguous — written as flowing explanation, not as labeled lists:
 4. **How we prove it** — what the integration test drives and what "green" means: the concrete,
    user-observable outcomes that must hold. This is the source the build scaffolds the test from.
 5. **Decisions and trade-offs** — key choices, what the task deliberately does *not* do, and the
-   limitation each choice carries.
+   limitation each choice carries. Everything in this field is already settled: scope the spec
+   does not ask for, and trade-offs the user accepted. The field never holds a decision still to
+   be made. An unsettled trade-off is an unresolved item, so put it to the user before you write
+   the plan (see the `resolution-gate` skill) and record the answer here. A decided default
+   belongs here — write the value, the reason for it, and the fact that the user chose it. An
+   open question never enters a plan.
 
 Use a fenced code snippet only where an exact shape matters (a function signature, a payload
 schema) — not to enumerate steps. Keep it readable: a plan should read like a well-written
@@ -197,14 +221,20 @@ scope, read their `UC-XXXX-{slug}.md` specs, each feature's `REQUIREMENTS.md` an
 `ARCHITECTURE.md`, and written the `pending` entries. The caller must have loaded the `architecture`, `principles`, and `uc-log`
 skills (and, only when cover-mode entries are possible, `reverse-engineering`).
 
-**P1 — Determine the mode.** From the originating commands of the in-scope pending entries:
+**P1 — Determine the provisional mode.** From the originating commands of the in-scope pending
+entries:
 
 - only `command:spec` / `command:fix` / `command:change` → **default** (all implement tasks).
 - only `command:cover` → **cover** (all coverage tasks).
 - both → **mixed**.
 
-`/m:fix` and `/m:change` always produce **default**. The mode is written on the plan's `**Specs:**`
-line.
+The mode has a **second source**: the test-coverage decision in P4. When the user answers "Add
+coverage to this plan", coverage tasks join the plan, so a **default** plan becomes **mixed** and
+a **cover** plan stays **cover**. Re-derive the mode at the end of P4 and write that final value.
+P1's value is provisional until P4 closes.
+
+`/m:fix` and `/m:change` derive **default** from their entries, and become **mixed** when P4 adds
+coverage tasks. The mode is written on the plan's `**Specs:**` line.
 
 **P2 — Architecture pass.** Apply the engineering principles: Principle 2 (hexagonal default),
 Principle 3 (DI), Principle 1 (every task's tests are integration tests — never scaffold unit tests).
@@ -218,15 +248,86 @@ Principle 3 (DI), Principle 1 (every task's tests are integration tests — neve
 - **mixed** — cover pass first (pin the current design as baseline), then the default pass for the
   new/modified behavior; reflect both into `ARCHITECTURE.md`.
 
-Present the architecture and decomposition direction **before writing the plan** — this is the
-review gate that catches a wrong interpretation before any code is built. Per the asking-questions
-skill, the direction is the brief and the gate is a one-sentence ask:
+This step designs; it does not ask. The review gate that presents the architecture, the
+decomposition, and the test-coverage disposition together runs in **P4**, after the tasks exist
+and after the coverage decision is made. Hold the architecture direction until then.
 
-- Brief: write the full direction as Markdown, in sections — existing tests found and their
-  disposition; the numbered architecture decisions, one line of rationale each; the
-  `ARCHITECTURE.md` table changes; the canonical test path; and a table of tasks with the
-  scenarios and requirements each covers plus the files it touches. Recommend "Proceed". Close
+**P3 — Decompose into tasks.** Per the Vertical-Increment Rules above, produce the minimal ordered
+list of vertical, working-software tasks that closes every in-scope scenario exactly once, ordered
+by dependency (that order is the `T-NNN` sequence). Write each task per the Task Shape (heading +
+`Covers` + `Depends on` + prose) and, in **mixed** mode, the Task Objectives ordering rule.
+
+**P4 — Probe test coverage, then run the plan gate.** The P3 task list names the files, so the
+probe runs here and never earlier. The probe is **static**: `/m:plan` runs no commands and never
+runs a test suite. Read and grep only.
+
+1. **Collect the file set.** Every production file the P3 tasks name as created or modified.
+2. **Drop every file the plan creates.** A file that does not exist yet cannot have coverage.
+3. **Resolve the module.** For each remaining file, find the module in `specs/MODULES.md` whose
+   `Directory` prefixes the path, then read that module's `Tests` column. A file under no module
+   row is **unmapped** — report it in the gate brief, do not ask about it, and do not count it as
+   uncovered.
+4. **Derive the canonical test path** per the Test File Convention above, using the owning UC of
+   the task that touches the file.
+5. **Grep the tests tree.** Read the file, list its exported symbols, and grep those symbols
+   against the module's `Tests` tree. This is the pattern the `change-review` skill uses to map a
+   changed file to what asserts it.
+6. **Classify each file.** A file is **covered** when a file under the module's `Tests` tree
+   asserts at least one of its exported symbols, and you can name that test file and that symbol.
+   Otherwise it is **uncovered**.
+
+**Judge against `{module.Tests}` only, and be strict.** Principle 1 is explicit: pre-existing
+host-project unit tests are ignored, and the floor is met by integration tests only. A
+`src/foo.test.ts` beside `src/foo.ts` is not coverage. A test outside `{module.Tests}` is not
+coverage. When you cannot name the asserting file and the asserted symbol, the file is uncovered.
+
+**When the uncovered set is empty**, write `**Prerequisites:** —` and go to the plan gate below.
+
+**When the uncovered set is not empty, ask once — once per plan, never once per file.** A
+per-file loop turns a five-file plan into five interrogations.
+
+- Brief: name the plan and recap what P3 decomposed, because the user has not been holding this
+  context. Table the uncovered files: file, module, owning UC, and the canonical test path each
+  one would get. Under "Add coverage to this plan": one coverage task per uncovered file, or per
+  cohesive group of files under one UC, placed at the lowest `T-NNN`; those tasks write tests
+  only and no production code; the mode becomes `mixed`; the plan gets longer. Under "Handle
+  separately": the plan is written as decomposed, and a `**Prerequisites:**` line names the
+  coverage work; `/m:build` cannot verify that work, so it asks the user to confirm it before any
+  task runs and records that it could not check. Recommend "Add coverage to this plan". Close
   with the escape-hatch line.
+- Question: "Some files this plan changes have no integration test coverage. How should I handle it?"
+- Header: "Coverage"
+- Options: "Add coverage to this plan" / "Handle separately"
+
+Two options. Never add a third. A third option is how a build stops halfway.
+
+**On "Add coverage to this plan".** Emit one coverage task per uncovered file, or per cohesive
+group of files under one UC. Give them the lowest `T-NNN` values and renumber the P3 tasks
+upward; the Task Objectives ordering rule already requires coverage tasks before the implement
+tasks that change the same behavior. Write each task's prose per Task Objectives, so `/m:build`
+reads it as a coverage task and expects GREEN first. Word them as **characterization tests**: the
+task records what the code does now, not what it should do, so a surprising current behavior is
+pinned and never fixed. When the code has no seam the integration test can drive, say so in the
+prose and include the mechanical seam work in that task — a coverage task may move a dependency
+behind a port, and it still adds no new behavior. Write `**Prerequisites:** —`. Re-derive the
+mode per P1.
+
+**On "Handle separately".** Write no coverage tasks and keep the P3 numbering. Write the
+`**Prerequisites:**` line naming the canonical coverage each uncovered file needs, with its
+canonical test path. The mode does not change.
+
+**Then run the plan gate.** Present the architecture and the decomposition **before writing the
+plan** — this is the review gate that catches a wrong interpretation before any code is built. It
+runs here, after the tasks exist and after the coverage decision, so the user reviews the final
+task list instead of one this step is about to change. Per the asking-questions skill, the
+direction is the brief and the gate is a one-sentence ask:
+
+- Brief: write the full direction as Markdown, in sections — the test-coverage classification
+  from the probe (covered, uncovered, unmapped) and the disposition the user chose; the numbered
+  architecture decisions, one line of rationale each; the `ARCHITECTURE.md` table changes; the
+  canonical test path; the plan's `**Prerequisites:**` line; and a table of tasks with the
+  scenarios and requirements each covers plus the files it touches, coverage tasks included.
+  Recommend "Proceed". Close with the escape-hatch line.
 - Question: "Proceed to write the plan?"
 - Header: "Plan gate"
 - Options: "Proceed" / "Edit" / "Cancel"
@@ -235,12 +336,7 @@ The direction goes in the brief, never in `question` and never in an option `pre
 pane truncates, and the direction is identical under every option, so it is shared context. On
 "Edit", the user's correction arrives via the built-in `Other`. On "Cancel", write nothing.
 
-**P3 — Decompose into tasks.** Per the Vertical-Increment Rules above, produce the minimal ordered
-list of vertical, working-software tasks that closes every in-scope scenario exactly once, ordered
-by dependency (that order is the `T-NNN` sequence). Write each task per the Task Shape (heading +
-`Covers` + `Depends on` + prose) and, in **mixed** mode, the Task Objectives ordering rule.
-
-**P4 — Consult non-canonical tests (cover / mixed only).** Skip in default mode. For each UC with a
+**P5 — Consult non-canonical tests (cover / mixed only).** Skip in default mode. For each UC with a
 `command:cover` pending entry, read its `CHANGELOG.md`, find the most recent `command: cover` entry,
 and collect the **non-canonical test file paths** it recorded (existing tests touching the UC's
 production code that live outside the canonical tests tree). For each, prompt once:
@@ -258,12 +354,12 @@ prose of the task whose behavior overlaps it, with the mode inline — e.g. "con
 `src/legacy/foo.test.ts` (reference)" or "(migrate — delete after the canonical test is green)".
 This step never moves or deletes files.
 
-**P5 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Write a
+**P6 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Write a
 **new** single file `specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md` (UTC timestamp to the second) per the
 Plan File Structure above — summary, `**Specs:**` line (with the mode), optional context paragraph,
 and one `## [ ] T-NNN` section per task.
 
-**P6 — Stamp the changelog.** For every consumed entry, use the `uc-log` skill to flip its status
+**P7 — Stamp the changelog.** For every consumed entry, use the `uc-log` skill to flip its status
 `pending → dirty` and set `plan:<plan-id>` (the folder name). The entry stays under `TODO:`; the
 `modules:` token, if present, is preserved. Multi-module UCs have one CHANGELOG per module-instance,
 each updated independently.
@@ -282,6 +378,7 @@ phone number, so a new patient can complete step 1 and move on. Each task is a f
 of one behavior, not a layer.
 
 **Specs:** FEAT-0Fy0-onboarding · UC-0KTg-collect-identity · SC-0KTg-01, SC-0KTg-02, SC-0KTg-03  ·  **Mode:** default
+**Prerequisites:** —
 
 We're building against the `patient` module (`specs/features/patient/FEAT-0Fy0-onboarding/`).
 The onboarding flow is a client wizard backed by an HTTP profile service; persistence is the
@@ -304,8 +401,8 @@ We expose it as `POST /onboarding/name`, wired into `server/profile/router.ts`, 
 `NameStep` form in `web/onboarding/NameStep.tsx` posts there and advances the wizard in
 `web/onboarding/flow.ts` on a 200. The integration test drives `POST /onboarding/name` and goes
 green when a valid name persists and the response advances the flow, and when an empty last name
-comes back `422`. We are deliberately not deduping names or handling mid-name edits yet — nothing
-in the UC asks for it.
+comes back `422`. This task does not dedupe names and does not handle mid-name edits. UC-0KTg
+specifies neither behavior, so both stay out of scope for this plan.
 
 ## [ ] T-002 — A patient adds a phone number and receives a verification code
 
@@ -322,7 +419,8 @@ patient through entry → code → confirmation.
 
 The integration test drives both endpoints against a stubbed `SmsPort`: green when a submitted
 number triggers exactly one send and stores the pending number, a correct code marks it verified
-and finishes the flow, and a wrong code returns `401`. Trade-off: we cap verification at a fixed
-attempt count rather than building rate-limiting infrastructure — the UC only calls for "reject a
-wrong code."
+and finishes the flow, and a wrong code returns `401`. Trade-off, accepted by the user:
+verification stops after 5 attempts on one number, instead of full rate-limiting infrastructure,
+because UC-0KTg asks only for "reject a wrong code". The limit is a constant in
+`server/profile/phone.ts`.
 ```

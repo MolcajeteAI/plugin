@@ -127,6 +127,32 @@ Generate ADR IDs via the `id-generation` shared skill and prepend `ADR-` to the 
 
 **ADR IDs are permanent.** Generate one only for a new decision. A superseded ADR keeps its ID and is never renumbered, and its ID is never reused for the decision that replaced it. See the `id-generation` skill's **Immutability** section.
 
+### Testing Decisions
+
+Resolved end-to-end testing decisions for this feature. One row per external service or code pattern that a scenario cannot drive with the real internal stack.
+
+| Column | Content |
+|--------|---------|
+| Service/Pattern | The external service or code pattern the concern names (e.g., `Stripe API`, `Clock-dependent expiration`) |
+| Decision | One value from the closed set below |
+| Reason | Why the user chose it, in one sentence |
+
+**Decision values (closed set):**
+
+| Value | Meaning |
+|-------|---------|
+| `e2e` | Drive the real service. A sandbox or test mode exists. |
+| `mock` | Mock at the outer edge. No sandbox exists. |
+| `injection` | Inject the non-deterministic dependency — clock, random source, ID generator. |
+| `fixture` | Build a shared fixture or seed script for the data the test needs. |
+| `isolate` | Scope the shared selector or identifier per test run. |
+| `pin` | Pin the environment value — force the feature flag on or off for the test. |
+| `manual` | A person verifies this scenario. The automated loop does not. |
+
+Only the `resolution-gate` shared skill writes this table, and only after the user resolves a concern. `/m:spec`, `/m:cover`, `/m:fix`, and `/m:change` read it first, and never raise a concern a row already answers. See the `usecase-authoring` skill's "Potential Concerns" for the concern categories, and the `reverse-engineering` skill's "Collect, Then Resolve Once" for the batching rule.
+
+The table is **additive**. It stays empty until the first concern is resolved.
+
 ## Research Discovery
 
 When generating or updating an ARCHITECTURE.md, scan `.molcajete/research/*.md` and `research/*.md` at project root for relevant briefs — filenames sort naturally by timestamp (newest first). Read only each file's YAML frontmatter and compare `description` and `query` against the feature's topic; read the first relevant match in full and stop there.
@@ -150,6 +176,8 @@ For every new use case or scenario added under this feature, populate at minimum
 `/m:plan` reads these tables to write each task's prose — a task's target files must already appear in Component Inventory and Code Map. If a task would touch a file or contract not in the architecture tables, the architecture pass is incomplete.
 
 Leave a table empty only when the feature genuinely has no rows for it (e.g., Event Topology when the feature emits no events; State Transitions when no entity has a lifecycle).
+
+**Testing Decisions is exempt from this rule.** The resolution gate writes it later, when a testability concern is resolved. An empty Testing Decisions table is the normal state, and it never blocks the plan pass.
 
 ### Population Rules
 

@@ -160,6 +160,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
 | research | `headless-research` | Silent, no-interaction research brief written before spec-writing |
 | shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion carrying only the decision |
+| shared | `resolution-gate` | Analyze, then ask, then write — no unresolved item ever reaches a generated spec or plan |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
 | shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, scoped coverage |
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
