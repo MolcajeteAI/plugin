@@ -100,6 +100,7 @@ These strings are sometimes real spec prose and sometimes a hole. A person decid
 | `TODO` | word-bounded. Exempt in any `CHANGELOG.md`, and exempt on a line that is exactly `TODO:` |
 | `to be determined` / `decided` / `defined` / `specified` / `resolved` | case-insensitive |
 | `???` | three or more question marks in a row |
+| a deferred command — `needs a /m:change`, `run /m:cover afterwards` | an obligation verb next to a Molcajete command name, case-insensitive. Exempt in any `CHANGELOG.md`, and exempt everywhere outside a host project's `specs/` tree. See the third structural shape below |
 
 The `TODO` exemption is mandatory. The `uc-log` skill makes `TODO:` the literal section header
 of every use case changelog, and every lifecycle command writes those files.
@@ -115,10 +116,20 @@ produces more noise than signal. Read each one in place during `G5`.
 If the word hides a decision, it is a hole, and you resolve it. If it states a fact — "the API
 returns 404 for an unknown user" — you keep it.
 
-Two structural shapes carry no marker word and are still holes:
+Three structural shapes carry no marker word and are still holes:
 
 - **An empty required section** — a heading with no content before the next heading.
 - **An empty required table** — a header row and a separator row with no data rows.
+- **A sentence that assigns work to a later command.** Prose that names a Molcajete command as
+  work that must be run — "needs a `/m:change`", "a later `/m:fix` will handle this", "run
+  `/m:cover` afterwards" — is a hole whenever the artifact's own correctness or buildability
+  depends on that work. A decided default records a DECISION. This records UNDONE WORK. The
+  command that finds it does the work now, or puts it to the user at the gate in the same run.
+
+  **A `## Non-Goals` entry that points at another feature is not this shape.** "Does not support
+  Z — see `FEAT-XXXX`" bounds the scope of the artifact. It does not defer a precondition the
+  artifact depends on, so the artifact is complete and buildable with the sentence in it. Keep it.
+  Blocking a Non-Goal would be a worse defect than the one this rule stops.
 
 Record a section that does not apply. Never leave it blank:
 
@@ -156,6 +167,7 @@ Missing.
 | C10 | Test feasibility | whether a scenario can be driven end to end | `## Testing Decisions` |
 | C11 | Terminology | every domain noun defined once, and used one way | `specs/GLOSSARY.md` |
 | C12 | Acceptance signal | how the team knows the work is done | Fit Criteria, `## Acceptance Criteria` |
+| C13 | Sibling spec impact | which already-written FEAT/UC this entity contradicts, renames, or retires | the sibling's own spec, edited in this run |
 
 The three marks:
 
@@ -174,11 +186,18 @@ Each command sweeps the categories it owns:
 
 | Command | Categories |
 |---------|-----------|
-| `/m:spec` | C1 to C12 |
-| `/m:cover` | C1 to C12, collected across the whole scan |
-| `/m:fix` | C1, C3, C6, C7, C10, C12 |
-| `/m:change` | C1 to C9, and C12 |
-| `/m:plan` | C4, C6, C7, C9, C10 — the spec settled the rest |
+| `/m:spec` | C1 to C13 |
+| `/m:cover` | C1 to C13, collected across the whole scan |
+| `/m:fix` | C1, C3, C6, C7, C10, C12, and C13 — a fix can retire a scenario a sibling depends on |
+| `/m:change` | C1 to C9, C12, and C13 |
+| `/m:plan` | C4, C6, C7, C9, C10, and C13 — the spec settled the rest, and this is the last gate before code is written |
+
+**C13 resolves differently from the other twelve.** The other categories find a missing answer, so
+they produce a question. A C13 finding is usually not a question. It is work in this run: the
+command edits the sibling spec, bumps its `version`, writes its changelog entry, and sets its
+status per the `status-rollup` skill. It becomes a question only when the user must choose between
+competing repairs, or when the repair is large enough to be its own command invocation. Even then,
+the question is asked in this run. It is never recorded as a note for a later command.
 
 ## The Relevance Filter and the Cap
 

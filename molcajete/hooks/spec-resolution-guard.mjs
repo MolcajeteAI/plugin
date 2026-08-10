@@ -35,13 +35,24 @@ const DENY = [
 // TODO sits here and not in DENY for one reason: `TODO:` is the literal section
 // header of every specs/**/CHANGELOG.md (see the uc-log skill). Denying it would
 // hard-block /m:spec, /m:plan and /m:build on their first changelog write.
+//
+// "deferred command" is the third structural shape in the resolution-gate skill:
+// a sentence that assigns work to a later Molcajete command. It asks rather than
+// denies because spec prose can legitimately name a command — a `## Non-Goals`
+// entry pointing at another feature is not a deferred precondition.
 const ASK = [
   ['TODO', /\bTODO\b/],
   ['to be <verb>', /\bto be (determined|decided|defined|specified|resolved)\b/i],
   ['???', /\?{3}/],
+  [
+    'deferred command',
+    /\b(needs?|requires?|will need|must run|should run|handled by)\s+(a\s+)?`?\/m:(spec|plan|build|fix|change|cover)`?/i,
+  ],
 ];
 
-// The two TODO exemptions.
+// What a CHANGELOG.md carries by design: `TODO:` is its section header, and an
+// entry records the command that produced it and the command that comes next.
+const CHANGELOG_EXEMPT = new Set(['TODO', 'deferred command']);
 const TODO_HEADER = /^\s*TODO:\s*$/; // the changelog section header
 const IS_CHANGELOG = /(^|\/)CHANGELOG\.md$/i; // and the whole changelog file
 
@@ -104,7 +115,8 @@ function scan(text, filePath) {
       if (re.test(line)) deny.push({ name, n: i + 1, line });
     }
     for (const [name, re] of ASK) {
-      if (name === 'TODO' && (isChangelog || TODO_HEADER.test(line))) continue;
+      if (isChangelog && CHANGELOG_EXEMPT.has(name)) continue;
+      if (name === 'TODO' && TODO_HEADER.test(line)) continue;
       if (re.test(line)) ask.push({ name, n: i + 1, line });
     }
   });
@@ -146,6 +158,11 @@ async function main() {
   // Defence in depth. The `if` field in hooks.json is an optimization; this is
   // the guarantee. A misplaced or unsupported `if` cannot make this hook misfire
   // outside specs/**/*.md.
+  //
+  // This gate is also the plugin's own exemption. Every file in this plugin's
+  // tree sits under molcajete/{spec,plan,build,...}/ — singular, never `specs/` —
+  // so the skills and command docs that name /m:change on every other line are
+  // never scanned. The hook reads a host project's specs/ artifacts only.
   if (!/(^|\/)specs\//.test(filePath)) allow();
   if (!/\.md$/i.test(filePath)) allow();
 

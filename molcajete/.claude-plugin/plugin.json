@@ -1,6 +1,6 @@
 {
   "name": "m",
-  "version": "3.16.0",
+  "version": "3.17.0",
   "description": "Spec-driven development plugin with a spec → plan → build lifecycle: /m:spec and /m:cover feed /m:plan, while /m:fix and /m:change produce their own plan; /m:build executes the plan. Plus a spec-traceable code-review surface: /m:review, /m:preflight, /m:walkthrough.",
   "author": {
     "name": "Ivan Torres",

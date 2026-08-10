@@ -58,6 +58,8 @@ If `$ARGUMENTS` is empty, ask via AskUserQuestion: "Describe what to spec out �
 
 Parse the free-form text against the loaded context and classify each entity as a **new feature** (a capability not in any existing feature — resolve module + domain per the feature-authoring skill's Module and Domain Resolution), a **new use case** (a workflow belonging to an existing feature), a **modified feature** (adds or changes requirements), or a **modified use case** (adds or changes scenarios). Step 9 has the write mechanics for each.
 
+Then look sideways. Run the `resolution-gate` skill's `C13` category across every sibling spec loaded in Step 3: find each already-written FEAT or UC that the entities above contradict, rename, or retire. A UC whose scenario asserts a behavior this run redefines is contradicted, even when the user asked for no change to it. Add every contradicted UC to the **Modified UCs** list, with one line that names what contradicts it. Those UCs then flow through Step 9's **Modified Use Cases** mechanics and Step 10's changelog and status writes, unchanged. Never carry the contradiction forward as a note for a later command.
+
 Present the full plan as a brief, then gate on it:
 
 - Brief: print the plan as Markdown under whichever of these headings have entries — New Features,

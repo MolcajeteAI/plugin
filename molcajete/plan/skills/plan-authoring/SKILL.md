@@ -85,9 +85,16 @@ same empty value as `Depends on` at the task level, and it has a different scope
 | `Depends on` | a task inside this plan | reads the upstream task's checkbox |
 | `Prerequisites` | work no task in this plan does | it cannot check. It asks the user, then records that it did not verify. |
 
-Only the coverage step in **Producing a Plan** writes a value other than `—`, and only when the
-user answers "Handle separately" to the test-coverage question. Write one clause per item. Name
-the file and the canonical test path it needs:
+**The line has exactly one writer.** The coverage step in **Producing a Plan** writes a value other
+than `—`, and only when the user answers "Handle separately" to the test-coverage question. Nothing
+else may write it — no other step, no other command, and no finding made while the plan is drafted.
+
+**A cross-spec consequence is not a prerequisite.** Work that another spec needs because of this
+plan is either a task in this plan, or a sign that the spec is not finished. If a plan cannot run
+without work that is not a task in it, the plan is not ready to be written: resolve the work first
+under the `resolution-gate` skill — category `C13` — then write the plan.
+
+Write one clause per item. Name the file and the canonical test path it needs:
 
 ```markdown
 **Prerequisites:** Canonical integration coverage for `src/auth/session.ts` and
