@@ -52,6 +52,28 @@ Three units almost always fail the test:
 - **Recap.** Text that restates what the user just said or what you just did. Say the outcome once.
 - **Echo.** An artifact printed to screen and then written to a file. Print the outcome and the path.
 
+## The Four Containers
+
+The content test decides what survives. This decides how it is arranged.
+
+**Sort every surviving unit into one of four containers. Never mix two in one line.**
+
+| Container | Carries | Example |
+|---|---|---|
+| Table | A short fact with a label. Two columns when the facts are unlike, more when they are alike | status, module, file path, a per-task row |
+| Prose | A description that needs room to run several lines | what a scenario does, why an issue matters |
+| List | A genuine list of peer items | possible fixes, scenario names, files touched |
+| Fenced block | Anything the reader copies | a paste-ready comment, a command, a path set |
+
+**A bold label never shares a line with a long description.** The shape `**Label** — <a sentence or more>`, repeated down a list, is the defect these containers replace. It packs a heading and its content onto one line, so the labels stop being findable and the descriptions run together.
+
+A label may share a line only when what follows is a few words — a table cell, or a list entry such as
+`` `SC-3Z2P` — Send OTP to a registered address ``.
+
+**Give the reader the shape, not a description of it.** When a command or a skill specifies a report, write the literal template the model fills in. A report specified as prose bullets gets rendered as prose bullets.
+
+This rule binds the Screen and Files surfaces. Text that only an agent parses — a skill-load list, a lens definition, a rule the model reads once — may stay compact.
+
 ## The Three Moves
 
 When a unit runs past its budget, apply these in order. Never skip ahead.
@@ -68,8 +90,9 @@ Count sentences, bullets, and sections. **Never count words.** Models track sent
 
 | Unit | Ceiling |
 |---|---|
-| Command report | one lead sentence stating the outcome, then at most 7 bullets |
-| One bullet in a report | one sentence |
+| Command report | a heading naming the outcome, one metadata line, then at most 5 sections |
+| One section of a report | one table, or one list, or at most 3 sentences |
+| One table cell or list entry | one clause |
 | Section of a written document | 6 sentences (`writing-style` rule 6.6) |
 | Question brief | 250 words, at most 4 options (`asking-questions`) |
 | Runtime event | one line |
@@ -88,9 +111,10 @@ Make a ceiling conditional on the task when one number does not fit. A single-sc
 
 ### Screen
 
-- Lead with the outcome. The first sentence answers what happened.
+- Lead with the outcome, as a heading. The reader knows what happened before they read a sentence.
 - Report state that **changed**. Do not enumerate artifacts that stayed the same.
 - Name the file path. Do not reprint the file.
+- Omit a section that has no content. Never print an empty heading to prove you considered it.
 
 ### Questions
 
