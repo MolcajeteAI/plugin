@@ -228,7 +228,7 @@ Specs, plans, comments, and reports are read by the next AI agent with no back-c
 
 Everything written — spec files, plans, review documents, changelog entries, commit messages, code comments, test comments, and on-screen reports — obeys two rules at once.
 
-- **Simplified Technical English**, as defined by ASD-STE100: one meaning per word, active voice, simple tenses, one instruction per sentence, no idioms. The `writing-style` shared skill holds the full rules and the self-check.
+- **Simplified Technical English**, as defined by ASD-STE100: one meaning per word, active voice, simple tenses, one instruction per sentence, no idioms. An opaque identifier never appears without the concept it names — write "register user (UC-0KTg)", never `UC-0KTg` alone. The `writing-style` shared skill holds the full rules and the self-check.
 - **Output economy**: carry what the reader needs for their next action, then stop. The `output-economy` shared skill holds the content test, the per-surface budgets, and the cases where completeness outranks a budget.
 
 Every command loads both before it writes.

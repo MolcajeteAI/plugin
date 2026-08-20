@@ -179,6 +179,8 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | shared | `git-committing` | Commit message standards for automated task execution — read by `/m:build --commit` |
 | shared | `git-conflict-resolution` | Merge/rebase conflict anatomy and resolution strategies |
 | shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
+| shared | `writing-style` | How a sentence reads — Simplified Technical English, the accuracy rules that outrank length, and naming a concept before its ID |
+| shared | `output-economy` | How much gets written — the content test, the four output containers, per-surface budgets |
 
 ---
 
@@ -243,7 +245,7 @@ molcajete/
 ├── research/              # Research module — /m:research + research skills
 │   ├── commands/
 │   └── skills/
-└── shared/                # Shared command (/m:doc) + cross-module skills (asking-questions, principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation)
+└── shared/                # Shared command (/m:doc) + cross-module skills (asking-questions, principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation, writing-style, output-economy)
     ├── commands/
     └── skills/
 ```

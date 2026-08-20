@@ -210,6 +210,7 @@ Trust comes from tests, not code shape. Code can change; behavior is the contrac
 - Small functions, clear module boundaries, no god files. Refactor to reuse; never duplicate.
 - Principles are technology-agnostic. The stack is recorded in `specs/TECH-STACK.md`.
 - Write every spec, plan, comment, and report in Simplified Technical English (ASD-STE100): one meaning per word, active voice, simple tenses, one instruction per sentence.
+- Name the concept before its identifier. Write "register user (UC-0KTg)", never `UC-0KTg` alone. Machine-readable fields, file paths, and defined comment formats keep the bare ID.
 - Carry what the reader needs for their next action, then stop. Never drop a fact to meet a budget — move it or split it instead.
 
 See `.claude/rules/principles.md` for full text and rationale. Re-read it before any architecture decision, test-scope decision, or refactor.
