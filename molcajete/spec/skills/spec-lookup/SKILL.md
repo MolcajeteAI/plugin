@@ -151,14 +151,22 @@ Depth 1, plus:
 - **Integration test** — the canonical path is `{module.Tests}/{feature-dir}/{uc-dir}.{ext}`, where `Tests` comes from the module's row in `specs/MODULES.md`. Report the path and whether the file exists.
 - **Latest change** — the newest entry in `specs/features/{module}/FEAT-*/UC-XXXX-*/CHANGELOG.md`. Its `reason` states why the UC last moved.
 
-## ID Summary Line
+## Naming an Entity
 
-The one output unit every command shares. One entity, one line, fields separated by a middle dot:
+Two forms. Use the one the surrounding container calls for.
+
+**In a heading**, write the ID and the name separated by a middle dot:
 
 ```
-UC-3Z2L · Send Email OTP · implemented · auth · specs/features/auth/FEAT-3Z2K-email-otp/UC-3Z2L-send-email-otp.md
+## UC-3Z2L · Send Email OTP
 ```
 
-Order is ID, name, status, module, path. A prefix with no status — `SC`, `FR`, `NFR`, `US`, `ADR` — reports its parent ID in that field instead.
+**In a table cell or a list entry**, write the ID in backticks followed by the name:
 
-Nothing larger than this line is shared. Each command owns its own layout, because `/m:desc` goes deep on a few IDs and `/m:ids` goes shallow on many grouped by module.
+```
+| `UC-3Z2L` Send Email OTP | Receives a passcode at their registered address | implemented |
+```
+
+Every other field — status, module, parent, spec path, test path — is a short fact, so it belongs in a table column rather than strung onto the same line. See the `output-economy` skill's **The Four Containers**.
+
+Each command owns its own layout beyond this. `/m:desc` goes deep on a few IDs, `/m:ids` goes shallow on many grouped by module, and `/m:prompt` reports the set as one table under the command it emits.

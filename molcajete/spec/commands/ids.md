@@ -50,22 +50,50 @@ Skip the mention tier. Those entries report as IDs only.
 
 ## Step 5: Report
 
-Group the output by module, because one `UC-XXXX` can exist in several modules with different content. Under each module heading, one block per feature:
+Group the output by module, because one `UC-XXXX` can exist in several modules with different content. This is the shape:
 
-- The feature's **ID Summary Line** and its one-line description.
-- Its matching use cases, each as an ID Summary Line plus one line of what the actor achieves.
-- Under each use case, the matching scenario IDs and names.
-- The implementation files for each use case, as clickable `path/to/file.ext:line` references.
+````markdown
+## `auth`
 
-Every block ends with its spec file path, so the user can open the source.
+### FEAT-3Z2K · Email OTP Authentication
 
-When a `UC-XXXX` appears under more than one module, state that the instances share the ID by design and their content differs per module.
+Sign a user in with a one-time passcode sent to their registered email.
 
-Close the main output with the mention tier as one line, when it has entries:
+| Use case | What the actor achieves | Status | Scenarios |
+|---|---|---|---|
+| `UC-3Z2L` Send Email OTP | Receives a passcode at their registered address | implemented | `SC-3Z2P`, `SC-3Z2Q` |
+| `UC-3Z2M` Verify Email OTP | Exchanges a valid passcode for a session | implemented | `SC-3Z2R` |
 
-```
-Also mentions "calibration": UC-4A2P, UC-51KX, FR-3Z2Z.
-```
+**Code**
+
+- `UC-3Z2L` — `src/auth/otp.ts:44`, `src/auth/mailer.ts:12`
+- `UC-3Z2M` — `src/auth/verify.ts:20`
+
+**Specs**
+
+- `specs/features/auth/FEAT-3Z2K-email-otp/UC-3Z2L-send-email-otp.md`
+- `specs/features/auth/FEAT-3Z2K-email-otp/UC-3Z2M-verify-email-otp.md`
+
+## `console`
+
+### FEAT-3Z2K · Email OTP Authentication
+
+> Same `FEAT-3Z2K` and `UC-3Z2L` as `auth`. The IDs are shared by design and the content is module-scoped.
+
+...
+
+---
+
+Also mentions "calibration": `UC-4A2P`, `UC-51KX`, `FR-3Z2Z`.
+````
+
+**The use case table is the core of the block.** One row per matching UC, four columns, every cell one clause.
+
+**Code and Specs are lists keyed by UC ID**, so a feature with four use cases stays readable. When a UC has no Code Map row, write `[no Code Map row]` after its ID rather than omitting the line.
+
+**A repeated module-instance gets the blockquote note**, once per module, so nobody reads the two blocks as two different use cases.
+
+**The mention tier is the last line of the output**, after a rule. IDs only — no description and no path.
 
 When the search found nothing, say so, print the three closest entities by name, and add:
 

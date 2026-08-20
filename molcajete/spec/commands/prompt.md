@@ -92,23 +92,39 @@ Emit one primary command and one named follow-up. Never two co-equal commands, a
 
 ## Step 6: Report
 
-Emit the command in a fenced block, ready to copy:
+This is the shape. The command comes first, because it is what the user came for:
+
+`````markdown
+## Run `/m:change`
 
 ```
 /m:change UC-3Z2L UC-3Z2M "remove the 100-point ceiling on calibration output; calibrated scores may exceed 100. FR-3Z2Z currently caps the value at 100 and SC-3Z2P rejects above-ceiling input — both must allow the higher range."
 ```
 
-The shape is fixed: resolved IDs first, in the order that command's own `argument-hint` expects, then one quoted description that restates the request **and names the specific `FR` or `SC` that must move**.
+| ID | Name | Status | Module |
+|---|---|---|---|
+| `UC-3Z2L` | Calibrate a raw score | implemented | `scoring` |
+| `UC-3Z2M` | Display a calibrated score | implemented | `console` |
 
-Under the block, three lines and no more:
+**The spec line that moves**
 
-- **IDs touched** — each as an ID Summary Line, with its status.
-- **The spec line that moves** — the quote from Step 3, with its file path. Write `[none — the spec is silent]` for row 2 or row 5.
-- **Why this command** — the row of the tree that matched, in one sentence.
+> `FR-3Z2Z` — "the system shall cap the calibrated value at 100"
+> `specs/features/scoring/FEAT-3Z2J-calibration/REQUIREMENTS.md`
 
-Add a follow-up as one line, only when Step 5 found one:
+**Why this command.** The request contradicts a requirement that already states the behavior, so the spec changes before the code does.
 
-> Then: `/m:spec "..."` for the {part} — it is additive, and `/m:change` will not carry it.
+> Then: `/m:spec "expose the raw pre-calibration score"` — that part is additive, and `/m:change` will not carry it.
+`````
+
+**The command block is fixed in shape:** resolved IDs first, in the order that command's own `argument-hint` expects, then one quoted description that restates the request **and names the specific `FR` or `SC` that must move**.
+
+**The ID table prints one row per resolved ID.** Omit the table when the run resolved none — rows 2 and 5 of the tree resolve nothing, and an empty table says less than no table.
+
+**The spec quote is a blockquote**, with the file path on the second line. Write `[none — the spec is silent]` in its place for rows 2 and 5.
+
+**Why this command is one sentence**, naming the row of the tree that matched.
+
+**The follow-up line prints only when Step 5 found one.**
 
 ## Step 7: Offer to Save
 

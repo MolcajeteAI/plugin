@@ -43,16 +43,55 @@ Run the skill's **Context Assembly** at **depth 2** for every resolved entity: t
 
 ## Step 5: Report
 
-One block per ID, in the order the user typed them. Each block carries:
+One block per ID, in the order the user typed them. This is the shape, filled from a `UC`:
 
-- The **ID Summary Line** from the skill.
-- **What it is** — the description, quoted from the spec rather than paraphrased. For a UC, the objective and the trigger. For an SC, the Given and the Outcomes. For an FR or NFR, the requirement line and its Fit Criterion. For an ADR, the decision paragraph.
-- **Where it sits** — the parent chain, and for a UC its scenario names.
-- **Where it lives in code** — the implementation files as clickable `path/to/file.ext:line` references. Say `[no Code Map row]` when neither the Code Map nor a traceability comment names a file.
-- **How it is covered** — the integration test path, or `[missing]` when no file exists there.
-- **Last change** — the newest changelog entry's reason and date, for a UC.
+````markdown
+## UC-3Z2L · Send Email OTP
 
-A miss prints inline in its typed position: the token, why it did not resolve, and whatever the not-found branch found — a near neighbor, or a reference with no definition.
+|  |  |
+|---|---|
+| Status | `implemented` |
+| Module | `auth` |
+| Feature | FEAT-3Z2K · Email OTP Authentication |
+| Spec | `specs/features/auth/FEAT-3Z2K-email-otp/UC-3Z2L-send-email-otp.md` |
+| Test | `tests/auth/FEAT-3Z2K-email-otp/UC-3Z2L-send-email-otp.test.ts` |
+| Last change | 2026-08-04 — raised the OTP expiry from 5 to 10 minutes |
+
+> Deliver a one-time passcode to a registered email address so the actor can sign in without a password.
+
+**Trigger.** The actor submits a registered email on the sign-in form.
+
+**Scenarios**
+
+- `SC-3Z2P` — Send OTP to a registered address
+- `SC-3Z2Q` — Reject an unregistered address
+
+**Code**
+
+- `src/auth/otp.ts:44` — `sendEmailOtp()`
+- `src/auth/mailer.ts:12` — `deliver()`
+````
+
+Three containers, one per kind of content. Never mix them.
+
+- **The table takes every short fact.** One row each, label in the left column. Nothing else belongs here.
+- **The blockquote takes the description**, quoted from the spec rather than paraphrased. It needs room to run several lines, so it never sits after a label.
+- **A list takes a genuine list.** An entry may use `— ` only because both sides are short. A label followed by a dash and a paragraph is the shape this format exists to remove.
+
+**Fill the table per prefix.** Omit a row that does not apply rather than printing it empty.
+
+| Prefix | Rows | Body |
+|--------|------|------|
+| `FEAT` | Status, Module, Domain, Spec | Objective, then a Use Cases list |
+| `UC` | Status, Module, Feature, Spec, Test, Last change | Objective, Trigger, Scenarios, Code |
+| `SC` | Use case, Feature, Spec, Test | Given and Outcomes, then Code |
+| `FR` / `NFR` | Feature, Spec, Linked to | The requirement line, then its Fit Criterion |
+| `US` | Feature, Spec | The story text |
+| `ADR` | Feature, Spec | The decision paragraph |
+
+**A missing value stays a row.** Write `| Test | [missing] |` and `| Code | [no Code Map row] |`, so the gap appears where the value would. Never drop the row and never explain the absence in prose.
+
+**A miss prints in its typed position**, as a short block with no table: the token as an H2, one line saying why it did not resolve, and whatever the not-found branch produced — a near neighbor, or a reference that no definition backs.
 
 When one `FEAT` or `UC` resolves to several module-instances, print one block per module and state that they share the ID by design.
 
