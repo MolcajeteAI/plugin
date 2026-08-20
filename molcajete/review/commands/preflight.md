@@ -53,14 +53,24 @@ Show clickable `file:line` references for the key changes in the brief so the us
 
 Run the `change-review` skill's **Review Rubric & Severity** against the change set — the same judgment `/m:review` makes, but in-session. Dispatch parallel **Agent** lenses if the change set is large (rules/principles, architecture, shortcut, bug, spec/test), and merge into **one severity-sorted list**.
 
-Present the list compactly (title, severity, location, one-line what) and the current verdict. If there are no issues, say so plainly — the work is clean against the rubric — and skip to Step 7.
+Present the verdict as a heading, then the issues as one table. This table is the map for the fix loop in Step 6, so it carries no detail — each issue opens in full when its turn comes.
+
+````markdown
+## Verdict — CHANGES REQUESTED
+
+| # | Severity | Title | Type | Location |
+|---|---|---|---|---|
+| 1 | HIGH | Calibrated score is capped at 100 | `bug` | `src/calibration/score.ts:142` |
+| 2 | MEDIUM | No integration test on OTP expiry | `missing-test` | `src/auth/otp.ts:44` |
+````
+
+If there are no issues, say so plainly — the work is clean against the rubric — and skip to Step 7.
 
 ## Step 6: Interactive Fix Loop
 
 Walk the issues in severity order. For each, the full issue is the brief:
 
-- Brief: print the issue in full — what it is, what the Spec says, what the Test says, the risk, and
-  the possible fixes with `file:line` references. Recommend a disposition.
+- Brief: print the issue per the `change-review` skill's **Issue Block Format** — heading, citation table, description, risk, and the possible fixes as a list with `file:line` references. Recommend a disposition.
 - Question: "Issue #{n} — what do you want to do?"
 - Header: the severity (12 characters maximum)
 - Options: **"Fix now"** / **"Skip (waive)"**
@@ -78,12 +88,27 @@ Track each issue's disposition: fixed / waived / deferred-to-spec.
 
 ## Step 7: Readiness Report
 
-Tell the user:
+One heading for the residual verdict, one table for the dispositions, one list for the files touched:
 
-- What was fixed (per issue, with the file touched).
-- What was waived or deferred, and why (especially any `missing-spec` that needs `/m:change`).
-- The residual verdict after fixes (`BLOCK` / `CHANGES REQUESTED` / `APPROVE`) — whether it is clear to ship.
-- The files edited this session (so you can review before committing).
+````markdown
+## Residual verdict — APPROVE
+
+Clear to ship. One item needs a spec before it can be built.
+
+| # | Issue | Disposition | Note |
+|---|---|---|---|
+| 1 | Calibrated score is capped at 100 | fixed | Clamp removed |
+| 2 | No integration test on OTP expiry | fixed | Test added |
+| 3 | Retry budget is undefined | deferred to spec | Needs `/m:change` on `UC-3Z2L` |
+| 4 | Duplicate date helper | waived | You chose to keep it |
+
+**Files edited**
+
+- `src/calibration/score.ts`
+- `tests/auth/FEAT-3Z2K-email-otp/UC-3Z2L-send-email-otp.test.ts`
+````
+
+The `Note` column holds one clause, never a paragraph. A `deferred to spec` row always names the command that unblocks it.
 
 `/m:preflight` does **not** commit. End with:
 

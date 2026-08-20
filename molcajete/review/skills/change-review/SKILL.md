@@ -101,21 +101,44 @@ Used by `/m:review` and `/m:preflight` (the walkthrough narrates changes, it doe
   against principles 1–5, including the 1.1–1.5 test-writing rules and the 5.1–5.5 comment rules.
 - **Host rules** — any `.claude/rules/*.md` that applies to the touched paths, plus the root `CLAUDE.md`.
 
-**Severity** and **verdict**:
+**Severity:**
 
-- `HIGH` — correctness bug, a rule violation with real risk, a missing spec/test on important behavior.
-- `MEDIUM` — a rule/architecture violation or gap that should change before merge but isn't dangerous.
-- `LOW` — nits, style, optional cleanups.
-- **Verdict:** `BLOCK` if any `HIGH`; else `CHANGES REQUESTED` if any `MEDIUM`; else `APPROVE`.
+| Level | What earns it |
+|-------|---------------|
+| `HIGH` | A correctness bug, a rule violation with real risk, or a missing spec or test on important behavior |
+| `MEDIUM` | A rule or architecture violation that should change before merge but is not dangerous |
+| `LOW` | Nits, style, optional cleanups |
 
-**Every issue is spec-anchored.** Each finding carries a **Spec says** line (`UC-XXXX` SC-YYYY + a quote of
-the required behavior, or `[missing]` when no spec defines the behavior) and a **Test says** line (the
-integration-test path + what it asserts, or `[missing]` when nothing covers it). A missing spec, a missing
-test, or a touched file below the 80% coverage floor is a **first-class issue**, judged like any other.
-Assess coverage **statically** — reason from the tests tree; never run CI.
+**Verdict:** `BLOCK` if any `HIGH`; otherwise `CHANGES REQUESTED` if any `MEDIUM`; otherwise `APPROVE`.
 
-**Issue types** (a one-word hint, not a grouping): `bug` · `rule` · `architecture` · `shortcut` ·
+**Issue types** — a one-word hint, not a grouping: `bug` · `rule` · `architecture` · `shortcut` ·
 `missing-spec` · `missing-test` · `low-coverage` · `confusing`.
 
-Findings from any parallel review lenses merge into **one severity-sorted list** — there are no per-lens
+**Every issue is spec-anchored.** Each one carries a `Spec says` value (a `UC-XXXX` / `SC-YYYY` pair and a
+quote of the required behavior) and a `Test says` value (the integration-test path and what it asserts).
+Write `[missing]` when the spec or the test is absent. A missing spec, a missing test, or a touched file
+below the 80% coverage floor is a first-class issue, judged like any other. Assess coverage **statically** —
+reason from the tests tree, and never run CI.
+
+Findings from any parallel review lenses merge into **one severity-sorted list**. There are no per-lens
 sections.
+
+## Issue Block Format
+
+`/m:review` and `/m:preflight` render an issue the same way. Four containers, never mixed:
+
+| Container | Carries |
+|-----------|---------|
+| H3 heading | `SEVERITY · #n · title` — the anchor, so one issue never runs into the next |
+| Two-column table | `Type`, `Location`, `Spec says`, `Test says` — every short fact, labels aligned in one column |
+| Prose | The description, unlabeled under the table, then `**Risk.**` as a sentence opener |
+| List | The possible fixes, one per line |
+
+A suggested comment for the pull-request author goes in a **fenced code block**, never in prose. The
+reviewer pastes it, so it must survive verbatim and stay one click to copy.
+
+**Never stack a bold label and a long description on consecutive lines.** That shape is what these four
+containers exist to replace. A label may share a line only when what follows it is a few words, as in a
+table cell or a list entry.
+
+`/m:review` renders the whole document; see its **Document template** for the block filled in.

@@ -58,70 +58,133 @@ Run these lenses over the change set. They only exist to get broad coverage — 
 
 ### Document template
 
-````markdown
+`````markdown
 # Code Review — <PR title or branch>
 
-| | |
+|  |  |
 |---|---|
 | PR / Branch | #<n> · `<branch>` → `<base>` |
-| Author · Commits | @<author> · <n> commits |
+| Author | @<author> · <n> commits |
 | Size | <n> files · +<add> / −<del> |
-| Modules touched | <module list> |
+| Modules | `auth`, `console` |
 | Generated | <YYYY-MM-DD HH:MM> |
-| Verdict | BLOCK — <n> High issues (#1, #2) |
 
-## TL;DR
-- 3–5 bullets: what the change does, the verdict, and the single most important thing to verify.
+## Verdict — BLOCK
+
+<One or two sentences: why this verdict, and the single most important thing to fix.>
+
+| Severity | Count | Issues |
+|---|---|---|
+| HIGH | 2 | #1, #2 |
+| MEDIUM | 3 | #3, #4, #5 |
+| LOW | 1 | #6 |
+
+## What this change does
+
+- <3–5 bullets, one clause each>
 
 ---
 
-## Part 1 — Orientation (read this before the diff)
+## Orientation
 
-### 1.1 The problem
-Plain-language description of the need this change addresses.
-**Spec anchor:** FEAT-XXXX / UC-XXXX — "<what the spec says the system should do>". If the change references no spec/UC, say so here — it is also an issue in Part 2.
+### The problem
 
-### 1.2 The solution from 10,000 ft
-Narrative of the approach plus a small flow map (mermaid) of the changed path, so the reviewer holds the shape before reading code.
+<Plain-language description of the need this change addresses.>
 
-### 1.3 Guided reading order (don't read randomly)
-Work top-down. Every file is **strongly recommended** or **optional** — never tell the reviewer to skip; they decide.
+> `UC-3Z2L` says: "<what the spec requires>"
+
+When the change references no spec, say so here in one line. That absence is also an issue below.
+
+### The approach
+
+<Narrative of the solution, then a mermaid flow map of the changed path, so the reviewer holds the shape before reading code.>
+
+### Reading order
+
+Work top-down. Every file is `strongly recommended` or `optional` — never tell the reviewer to skip a file; they decide.
+
 | # | File | Why it matters | What to look for | Read |
 |---|------|----------------|------------------|------|
-| 1 | `…/service.ts` | Core logic change | The validation branch | strongly recommended |
-| … | `…/gen.ts` | Generated wiring | Only if signatures changed | optional |
+| 1 | `src/auth/otp.ts` | Core logic change | The validation branch | strongly recommended |
+| 2 | `src/gen/wiring.ts` | Generated wiring | Only if signatures changed | optional |
 
-### 1.4 Critical areas to focus on
-The 2–4 hotspots where a bug would hurt most — one sentence each, and why.
+### Where a bug would hurt most
 
----
-
-## Part 2 — Issues (one list, sorted by severity)
-
-**Everything is an issue, treated the same** — convention violation, potential or actual bug, confusing code, wrong architecture, missing spec, or missing integration test — all in this single list, `HIGH` → `MEDIUM` → `LOW`. Each issue MUST carry a **Spec says** and a **Test says** line; use `[missing]` when the spec or test is absent (that absence is the issue).
-
-> ### HIGH · #1 · <one-line title> · type: bug
-> **Location:** `path/to/file.ts:142`
-> **What:** <what is wrong, concretely>.
-> **Spec says:** `UC-XXXX` SC-YYYY — "<quote of the required behavior>". *(or: [missing] — no spec defines this behavior.)*
-> **Test says:** `…/003-http-….test.ts` asserts <exact value>. *(or: [missing] — no integration test covers this.)*
-> **Risk:** <what breaks in production / for the user>.
-> **Suggested comment:** "<short, paste-ready comment for the author>."
-> **Possible fixes:** (a) <option>; (b) <option>.
-
-`type` is a free one-word hint (not a grouping): `bug` · `rule` · `architecture` · `shortcut` · `missing-spec` · `missing-test` · `low-coverage` · `confusing`.
+- `src/calibration/score.ts:142` — the clamp runs on every request path.
+- `src/auth/otp.ts:44` — a failure here locks every user out.
 
 ---
 
-## Reviewer checklist (final pass)
+## Issues
+
+| # | Severity | Title | Type | Location |
+|---|---|---|---|---|
+| 1 | HIGH | Calibrated score is capped at 100 | `bug` | `src/calibration/score.ts:142` |
+| 2 | HIGH | No integration test on OTP expiry | `missing-test` | `src/auth/otp.ts:44` |
+
+### HIGH · #1 · Calibrated score is capped at 100
+
+|  |  |
+|---|---|
+| Type | `bug` |
+| Location | `src/calibration/score.ts:142` |
+| Spec says | `UC-3Z2L` / `SC-3Z2P` — "the calibrated score may exceed 100" |
+| Test says | `[missing]` — nothing covers the above-ceiling case |
+
+The clamp in `normalize()` runs after calibration, so any score above 100 silently becomes 100.
+
+**Risk.** Every user in the top decile shows an identical score, and the ranking below them is wrong.
+
+**Possible fixes**
+
+- Remove the clamp and widen the response type.
+- Keep the clamp behind a flag, defaulting to off.
+
+**Suggested comment**
+
+```
+The clamp on line 142 runs after calibration, so scores above 100 collapse to 100. SC-3Z2P says they may exceed it.
+```
+
+---
+
+## Reviewer checklist
+
 - [ ] Every HIGH issue resolved or explicitly waived
 - [ ] Every changed behavior has a spec reference and a passing integration test
 - [ ] Touched files meet the 80% coverage floor
-````
+`````
+
+### Rules for the template
+
+**Every issue goes in the one list**, sorted `HIGH` → `MEDIUM` → `LOW`. A convention violation, a bug, confusing code, wrong architecture, a missing spec, and a missing integration test are all issues and all rank the same way.
+
+**The index table comes before the issue blocks.** It gives the reviewer the shape of the review before they read a word of it.
+
+**`Spec says` and `Test says` are mandatory rows.** Write `[missing]` when the spec or the test is absent — that absence is the issue, so the row stays and carries it.
+
+**`Type` is a one-word hint, not a grouping:** `bug` · `rule` · `architecture` · `shortcut` · `missing-spec` · `missing-test` · `low-coverage` · `confusing`.
+
+**Four containers, never mixed.** Short facts go in the table. Description and risk are prose under it. Options are a list. The suggested comment is a fenced block, because the reviewer pastes it into the pull request and it must survive verbatim.
 
 ## Step 6: Report
 
-Tell the user the review file path and the verdict, and the count of issues by severity. End with:
+Print the verdict as a heading, then the same count table the document carries, then the file path on its own line:
+
+````markdown
+## Verdict — BLOCK
+
+| Severity | Count | Issues |
+|---|---|---|
+| HIGH | 2 | #1, #2 |
+| MEDIUM | 3 | #3, #4, #5 |
+
+Written to `reviews/code-review--feat-otp--142--2608201430.md`.
+````
+
+Print no issue detail on screen. The file holds it, and repeating it here makes the reader choose between two copies.
+
+End with:
 
 > Next: address the issues, or run `/m:preflight` to fix them interactively before opening the PR.
 
