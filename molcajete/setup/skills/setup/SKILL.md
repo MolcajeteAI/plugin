@@ -109,7 +109,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 
 - **Artifact:** `.claude/rules/principles.md`
 - **Category:** NEW ARTIFACT (when missing) or CONTENT DRIFT (when stale)
-- **Detection:** File does not exist, **OR** file exists but its content does not start with `# Engineering Principles` and contain headings matching the current plugin skill (`# Engineering Principles`, `## The Meta-Principle...`, `## 1. Integration Tests...`, `## 2. Hexagonal Architecture...`, `## 3. Dependency Injection...`, `## 4. 80% Coverage Floor...`, `## 5. Universal Software Craft`, `## 6. Principles Are Technology-Agnostic`, `## 7. Every Word Is Simplified Technical English`, `## How Molcajete Enforces These`, `## Override`).
+- **Detection:** File does not exist, **OR** file exists but its content does not start with `# Engineering Principles` and contain headings matching the current plugin skill (`# Engineering Principles`, `## The Meta-Principle...`, `## 1. Integration Tests...`, `## 2. Hexagonal Architecture...`, `## 3. Dependency Injection...`, `## 4. 80% Coverage Floor...`, `## 5. Universal Software Craft`, `## 6. Principles Are Technology-Agnostic`, `## 7. Every Word Earns Its Place`, `## How Molcajete Enforces These`, `## Override`).
 - **Fix:** Run the principles-file step's logic. When the file exists but is stale, the existing per-file AskUserQuestion in that step ("Keep existing / Regenerate from plugin skill") applies — update mode does not force overwrite.
 - **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` (body only, frontmatter stripped).
 
