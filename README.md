@@ -36,6 +36,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
 4. **Review** — A spec-traceable review surface: `/m:review` writes a severity-scored review, `/m:preflight` surfaces and fixes issues interactively before you open a PR, and `/m:walkthrough` gives a guided, hierarchical tour of a change set.
 5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
+6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
 
 ### Why Specs?
 
@@ -113,6 +114,14 @@ Create and maintain structured specifications from freeform descriptions or exis
 | `/m:fix` | Record a bug against an existing FEAT/UC and produce the regression plan (specs edited only when the spec was wrong) |
 | `/m:cover` | Reverse-extract specs from existing code (tests come later via `/m:plan` + `/m:build`) |
 
+Three read-only commands query the spec tree instead of writing to it:
+
+| Command | Description |
+|---------|-------------|
+| `/m:desc` | Print what one or more `FEAT`/`UC`/`SC`/`FR`/`NFR`/`US`/`ADR` IDs mean, with the code and test around each |
+| `/m:ids` | Find the IDs that match a capability description, grouped by module, with spec file paths |
+| `/m:prompt` | Turn a freeform request into a ready-to-paste `/m:spec`, `/m:change`, `/m:fix`, or `/m:cover` command with the IDs resolved |
+
 ### Plan Module
 
 | Command | Description |
@@ -154,6 +163,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | spec | `architecture` | ARCHITECTURE.md schema, spec-ID → code map, table-filling rules |
 | spec | `reverse-engineering` | Code-to-spec extraction patterns and scope discovery |
 | spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — module-instance fan-out, spec-edit rules, log/status, plan hand-off |
+| spec | `spec-lookup` | Machinery shared by `/m:desc`, `/m:ids`, and `/m:prompt` — ID taxonomy, resolve by ID or keyword, context assembly |
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, review rubric and severity |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |

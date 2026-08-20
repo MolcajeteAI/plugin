@@ -26,7 +26,10 @@
     "./shared/commands/doc.md",
     "./spec/commands/change.md",
     "./spec/commands/cover.md",
+    "./spec/commands/desc.md",
     "./spec/commands/fix.md",
+    "./spec/commands/ids.md",
+    "./spec/commands/prompt.md",
     "./spec/commands/spec.md"
   ],
   "skills": [
@@ -50,6 +53,7 @@
     "./spec/skills/architecture",
     "./spec/skills/feature-authoring",
     "./spec/skills/reverse-engineering",
+    "./spec/skills/spec-lookup",
     "./spec/skills/spec-revision",
     "./spec/skills/usecase-authoring"
   ]
