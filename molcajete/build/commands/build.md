@@ -400,22 +400,57 @@ Emit a row for every artifact whose state **changed**, and for every artifact th
 
 ## Step 11: Report
 
-Lead with the outcome in one sentence: the plan ID, the mode, and how many tasks completed against how many failed.
+This is the shape. Every section below the task table is conditional — print it only when it has content, and never print an empty one.
 
-Then report what the user must act on:
+````markdown
+## Build complete — plan `20260820T1430-otp-expiry`
 
-- **Unverified prerequisites** — when the plan carried a `**Prerequisites:**` line other than `—`, list every prerequisite verbatim and state in one line: "`/m:build` did not verify these. You confirmed them at the Step 6 gate." Never write that a prerequisite was checked, met, or satisfied — this command has no way to establish any of those. Omit this section when the line was `—` or absent.
-- **Per completed task** — one line: `T-NNN`, outcome, and its materialized test file path. Under `--commit`, add the short commit hash. In `mode: mixed`, group into "Coverage (pinned existing behavior)" and "Implement (new behavior)".
-- **Commits** — only under `--commit`: one line naming the branch and how many commits this run created. When a commit failed in 8.11, name the task and state that its work is on disk but uncommitted.
-- **Per escalation** — `T-NNN` and the escalation file path.
-- **Completeness gaps** from 9.3 — every uncovered scenario, missing assertion, and stray marker. **This section is exempt from the budget.** List all of them, or state that there are none.
-- **Status** for each UC and Feature whose status changed this run.
-- Plan checklist progress, one line (e.g., "3 of 5 tasks complete in plan `{plan-id}`").
+`mode: default` · 2 of 3 tasks complete · 1 failed
 
-Report per-touched-file coverage numbers, the 8.7 loop's resolutions, and 8.11's migration dispositions **only when one of them fell below the floor, stayed unresolved, or was deferred**. A number that passed its gate is not news; the gate already enforced it.
+| Task | Outcome | Test file | Commit |
+|---|---|---|---|
+| T-001 | Sends OTP to a registered address | `tests/auth/FEAT-3Z2K-email-otp/UC-3Z2L.test.ts` | `a1b2c3d` |
+| T-002 | Rejects an unregistered address | `tests/auth/FEAT-3Z2K-email-otp/UC-3Z2L.test.ts` | `b2c3d4e` |
+| T-003 | Expires the OTP after 10 minutes | — | failed |
 
-If the host project's coverage collector wasn't available (per Step 7) and you estimated against the floor, say so in one line.
+**Status changes**
 
-If every task in the plan is now complete, suggest: "Plan `{plan-id}` is fully executed."
+| Artifact | Before | After |
+|---|---|---|
+| `UC-3Z2L` | dirty | implemented |
+| `FEAT-3Z2K` | dirty | dirty |
 
-If unfinished tasks remain, suggest: "Next: `/m:build {plan-id}` to run the remaining {N} tasks."
+**Escalations**
+
+- `T-003` — `.molcajete/escalations/20260820T1430-otp-expiry-T-003.md`
+
+**Unverified prerequisites**
+
+`/m:build` did not verify these. You confirmed them at the Step 6 gate.
+
+- A Postmark sandbox token exists in the test environment.
+
+**Completeness gaps**
+
+- `SC-3Z2Q` has no covering assertion in `UC-3Z2L.test.ts`.
+
+Plan `20260820T1430-otp-expiry` — 2 of 3 tasks complete.
+
+> Next: `/m:build 20260820T1430-otp-expiry` to run the remaining 1 task.
+````
+
+### Section rules
+
+**The heading and the metadata line always print.** The `mode`, the completed count, and the failed count go on one line under the heading.
+
+**The task table always prints**, one row per task attempted. A failed task shows `—` for its test file and `failed` in the last column. The `Commit` column appears only under `--commit`; omit the column entirely otherwise rather than filling it with dashes. In `mode: mixed`, split into two tables under **Coverage (pinned existing behavior)** and **Implement (new behavior)**.
+
+**Unverified prerequisites** prints when the plan carried a `**Prerequisites:**` line other than `—`. List every prerequisite verbatim under that fixed sentence. **Never write that a prerequisite was checked, met, or satisfied** — this command has no way to establish any of those.
+
+**Completeness gaps** from 9.3 lists every uncovered scenario, missing assertion, and stray marker. **This section is exempt from the output budget.** List all of them, or omit the section when there are none.
+
+**Commits** gets its own line under the table only when a commit failed in 8.11 — name the task and state that its work is on disk but uncommitted. A successful commit is already in the `Commit` column.
+
+**Coverage numbers, the 8.7 loop's resolutions, and 8.11's migration dispositions print only when one of them fell below the floor, stayed unresolved, or was deferred.** A number that passed its gate is not news; the gate already enforced it. When the host project's coverage collector was unavailable per Step 7 and you estimated against the floor, say so in one line.
+
+**The closing line** states plan progress. When every task is complete, write "Plan `{plan-id}` is fully executed." and print no `Next:` line. Otherwise print the `Next:` hand-off naming the remaining count.

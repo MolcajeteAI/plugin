@@ -101,14 +101,43 @@ Per-command entry values:
 
 ## Step 9: Report
 
-Tell the user what was created or updated:
+This is the shape. One heading and one table per feature extracted:
 
-- Features extracted with file paths and inline scenario counts.
-- For each extracted or extended UC: the new UC status (`pending`) and the log entry that was appended.
-- ARCHITECTURE.md tables populated per feature.
-- New actors / tech-stack entries added.
-- **Testing Decisions** — one line per testability concern the gate resolved: the service or pattern, the chosen decision, and the feature `ARCHITECTURE.md` that now carries the row. Omit this section when the scan raised no concern.
-- **Non-canonical Test Paths** — if the discovery scan found existing test files outside the canonical Test File Convention layout, list every such path under a clearly-labeled section. Include a one-line note: "`/m:plan` will consult this list when it decomposes these UCs and ask you per file whether to reference (default — read as input for the canonical integration test, leave original in place), migrate (same, plus delete original after 8.9 succeeds), or ignore." Omit this section if all test files are already canonical.
+````markdown
+## FEAT-3Z2K extracted — Email OTP Authentication
+
+| Module | Use case | Scenarios | Extracted from | Status |
+|---|---|---|---|---|
+| `auth` | `UC-3Z2L` Send Email OTP | 2 | `src/auth/otp.ts` | pending |
+| `auth` | `UC-3Z2M` Verify Email OTP | 3 | `src/auth/verify.ts` | pending |
+
+`ARCHITECTURE.md` populated: Component Inventory, Data Model, API Surface, Code Map.
+Added 1 actor to `specs/ACTORS.md` and 2 entries to `specs/TECH-STACK.md`.
+
+**Testing decisions**
+
+| Service or pattern | Decision | Recorded in |
+|---|---|---|
+| Postmark email delivery | Sandbox token in the test environment | `.../FEAT-3Z2K-email-otp/ARCHITECTURE.md` |
+
+**Non-canonical test paths**
+
+`/m:plan` will ask you per file whether to reference, migrate, or ignore each one.
+
+- `src/auth/otp.test.ts`
+- `src/auth/verify.test.ts`
+````
+
+**One row per module-instance of each UC.** The `Extracted from` cell names the source file, or the first
+of several when the UC spans more.
+
+**Testing decisions prints only when the scan raised a concern.** Omit the section otherwise.
+
+**Non-canonical test paths prints only when the scan found test files outside the canonical Test File
+Convention layout.** List every such path — `/m:cover` never moves or rewrites them. The one-line note
+above the list stays fixed; the per-file choice belongs to `/m:plan`, which offers reference (the default —
+read as input for the canonical integration test and leave the original in place), migrate (the same, plus
+delete the original after 8.9 succeeds), or ignore.
 
 End the report with the explicit hand-off:
 

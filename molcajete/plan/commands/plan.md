@@ -77,12 +77,25 @@ Run the **Producing a Plan** procedure from the `plan-authoring` skill (loaded i
 
 ## Step 6: Report
 
-Tell the user:
+This is the shape:
 
-- The plan file path: `specs/plans/<plan-id>.md`.
-- The mode (`default`, `cover`, or `mixed`).
-- The tasks written — each `T-NNN`, its outcome, and the scenarios it covers. In `mode: mixed`, sub-group into "Coverage tasks (pin existing behavior)" and "Implement tasks (new behavior)" so the split is visible.
-- The pending log entries flipped to `dirty`.
+````markdown
+## Plan written — `20260820T1430-otp-expiry`
+
+`mode: default` · 3 tasks · `specs/plans/20260820T1430-otp-expiry.md`
+
+| Task | Outcome | Covers |
+|---|---|---|
+| T-001 | Sends OTP to a registered address | `SC-3Z2P` |
+| T-002 | Rejects an unregistered address | `SC-3Z2Q` |
+| T-003 | Expires the OTP after 10 minutes | `SC-3Z2R`, `SC-3Z2S` |
+
+**Log entries flipped to `dirty`**
+
+- `UC-3Z2L` · module `auth` — stamped with this plan ID.
+````
+
+In `mode: mixed`, split the task table in two under **Coverage tasks (pin existing behavior)** and **Implement tasks (new behavior)**, so the split is visible at a glance.
 
 End the report with the explicit hand-off:
 

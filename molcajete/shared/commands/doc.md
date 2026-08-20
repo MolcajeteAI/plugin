@@ -90,7 +90,22 @@ Do not rewrite existing documentation that is already accurate and complete.
 
 ## Step 6: Report
 
-Summarize what was documented:
-- Files created or updated
-- Directories skipped (from the skip list)
-- Stack variant used
+This is the shape:
+
+````markdown
+## Documented 4 directories
+
+| File | Action | Variant |
+|---|---|---|
+| `src/auth/README.md` | created | backend |
+| `src/auth/otp/README.md` | created | backend |
+| `web/components/README.md` | updated | frontend |
+| `config/README.md` | updated | config |
+
+**Skipped**
+
+- `node_modules/` — skip list
+- `dist/` — skip list
+````
+
+Omit the **Skipped** section when the run skipped nothing.

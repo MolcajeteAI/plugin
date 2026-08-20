@@ -123,13 +123,36 @@ stamped.
 
 ## Reporting
 
-Tell the user:
+This is the shape. The heading states the outcome, one table covers every module-instance touched, and the
+plan follows.
 
-- The spec edits made per module-instance (one or two lines each), grouped by UC-XXXX — or that none were needed.
-- The log entry appended per module-instance (note the `modules:` token when multi-module).
-- The new status per module-instance and per affected feature.
-- Any module-instances that were resolved but skipped by the user, when there were any.
-- The plan written: `specs/plans/<plan-id>.md`, and its task(s).
+````markdown
+## UC-3Z2L revised — 2 module-instances
+
+| Module | What changed | Status | Log entry |
+|---|---|---|---|
+| `auth` | `SC-3Z2P` outcome now allows a score above 100 | dirty | appended, `modules:auth,console` |
+| `console` | `SC-3Z2T` display range widened | dirty | appended, `modules:auth,console` |
+
+`FEAT-3Z2K` rolled up to `dirty`.
+
+**Plan written** — `specs/plans/20260820T1430-remove-score-ceiling.md`
+
+| Task | Outcome | Covers |
+|---|---|---|
+| T-001 | Calibrated score passes through above 100 | `SC-3Z2P` |
+| T-002 | Console renders the wider range | `SC-3Z2T` |
+````
+
+**One table row per module-instance.** The `What changed` cell holds one clause, not a paragraph. Write
+`no edit needed` in that cell when the command changed no spec — that is a result, not an omission.
+
+**Note the `modules:` token** in the `Log entry` cell only when the UC has two or more instances.
+
+**A skipped instance still gets a row**, with `skipped` in `What changed` and its prior status unchanged.
+Print no section for skipped instances when the user skipped none.
+
+When the run touched several `UC-XXXX` IDs, print one heading and one table per UC.
 
 End the report with the command's explicit hand-off line, which always names the plan file and the
 `/m:build <plan-id>` invocation — which runs every unfinished task in the plan — plus the

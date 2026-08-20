@@ -138,13 +138,29 @@ Per-command entry values:
 
 ## Step 11: Report
 
-Tell the user what was created and updated, grouped by UC. For each:
+This is the shape. One heading and one table per UC touched:
 
-- The new or modified files (`UC-XXXX-{slug}.md`, `CHANGELOG.md`, REQUIREMENTS.md edits, FEATURES.md row, etc.).
-- The new UC status (`pending` or `dirty`) and the new Feature status if it changed.
-- The changelog entry that was appended.
+````markdown
+## UC-3Z2L created — Send Email OTP
 
-If testability signals were detected in any new scenario (external APIs without sandbox, time/randomness, env-flag branches), the Step 9 gate already resolved them. List each one here as one line — the service or pattern, the decision, and the `ARCHITECTURE.md` that now carries the `## Testing Decisions` row. Omit the list when the run raised no concern.
+| Module | Files | Scenarios | Status |
+|---|---|---|---|
+| `auth` | `UC-3Z2L-send-email-otp.md`, `CHANGELOG.md` | `SC-3Z2P`, `SC-3Z2Q` | pending |
+
+`FEAT-3Z2K` rolled up to `pending`. Row added to `specs/FEATURES.md` and to the feature's `USE-CASES.md`.
+
+**Testing decisions**
+
+| Service or pattern | Decision | Recorded in |
+|---|---|---|
+| Postmark email delivery | Sandbox token in the test environment | `specs/features/auth/FEAT-3Z2K-email-otp/ARCHITECTURE.md` |
+````
+
+**One row per module-instance.** The `Files` cell names what was written or edited, comma separated. The
+`Scenarios` cell lists the SC IDs created or appended.
+
+**Testing decisions prints only when the Step 9 gate resolved a concern** — an external API without a
+sandbox, a dependency on time or randomness, an env-flag branch. Omit the whole section otherwise.
 
 End the report with the explicit hand-off:
 

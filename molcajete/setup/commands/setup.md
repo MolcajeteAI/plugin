@@ -226,8 +226,32 @@ The injection is silent — no user prompt; the block is plugin-owned metadata t
 
 ## Step 14: Report
 
-Tell the user what was written and what to do next:
+This is the shape:
 
-> Created `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, `.molcajete/settings.json`, `.claude/rules/principles.md`, and updated `CLAUDE.md` with the Molcajete principles block. The **Running tests** and **Coverage** rows in TECH-STACK.md were filled where I could detect them; verify them before running `/m:build`. The Testing framework field was filled where detectable; the build loop infers the rest from manifests at run time. Engineering principles are operative immediately — `/m:plan` and `/m:build` will read `.claude/rules/principles.md`; edit it to adapt principles to your project.
->
+````markdown
+## Project foundation ready
+
+| File | Holds |
+|---|---|
+| `specs/PROJECT.md` | What this project is |
+| `specs/MODULES.md` | 3 modules, their directories, tests, and driving ports |
+| `specs/TECH-STACK.md` | Per-module language, framework, and test tooling |
+| `specs/ACTORS.md` | 4 actors |
+| `specs/DOMAINS.md` | 3 domains |
+| `specs/GLOSSARY.md` | 8 terms |
+| `specs/FEATURES.md` | Empty registry, one section per domain |
+| `.molcajete/settings.json` | Coverage threshold, 80% |
+| `.claude/rules/principles.md` | Engineering principles, operative now |
+| `CLAUDE.md` | Updated with the Molcajete principles block |
+
+**Verify before your first build**
+
+- The **Running tests** and **Coverage** rows in `specs/TECH-STACK.md` were filled where detection succeeded. Check them.
+- The **Testing framework** field was filled where detectable. The build loop infers the rest from manifests at run time.
+
+Edit `.claude/rules/principles.md` to adapt the principles to your project. `/m:plan` and `/m:build` read it on every run.
+
 > Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:build <plan-id>` to execute.
+````
+
+The `Holds` column carries a count or one clause, never a sentence. Name every file written, including any the run skipped — a skipped file gets a row saying why.
