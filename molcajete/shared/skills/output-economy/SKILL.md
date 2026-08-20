@@ -46,11 +46,13 @@ Do not ask whether a sentence is short. Ask what it is for.
 
 A unit is a sentence, a bullet, a section, a table row, or a printed line. Run the test on the unit. Brevity is what falls out. Brevity is never the thing you aim at.
 
-Three units almost always fail the test:
+Five units almost always fail the test:
 
 - **Preamble.** Text that announces what you are about to do. Do the thing.
-- **Recap.** Text that restates what the user just said or what you just did. Say the outcome once.
+- **Recap.** Text that restates what the user just said or what you just did. Say the outcome once. A closing summary that repeats a reply the reader can still see is a recap. So is an apology, a tally of past mistakes, or a detailed account of an error.
 - **Echo.** An artifact printed to screen and then written to a file. Print the outcome and the path.
+- **Option survey.** A tour of approaches the reply will not pursue. Give the recommendation instead.
+- **Narration.** Text announcing what you are about to do next. Do it, then report what happened.
 
 ## The Four Containers
 
@@ -93,7 +95,7 @@ Count sentences, bullets, and sections. **Never count words.** Models track sent
 | Command report | a heading naming the outcome, one metadata line, then at most 5 sections |
 | One section of a report | one table, or one list, or at most 3 sentences |
 | One table cell or list entry | one clause |
-| Section of a written document | 6 sentences (`writing-style` rule 6.6) |
+| Section of a written document | 6 sentences (`writing-style` rule 1) |
 | Question brief | 250 words, at most 4 options (`asking-questions`) |
 | Runtime event | one line |
 
@@ -135,7 +137,11 @@ The budget yields in these cases. Each one is a place where a missing item is wo
 - **Enumerations the spec owns.** Every scenario, side effect, requirement, and acceptance criterion. Economy governs the prose around them, never the list itself.
 - **EARS clauses.** Never reword a requirement to fit a budget. Split the requirement.
 - **Load-bearing detail.** Numbers, conditions, scope qualifiers, IDs, and file paths.
+- **Every step of a walkthrough.** The step you drop is the step the reader needed. This protects sequences, which the entries above do not.
+- **Every link in a causal chain.** When you diagnose a failure, state the cause, the mechanism, and the evidence. A chain missing a link is an assertion.
 - **What the user asked for by name.** A direct request outranks every ceiling here.
+
+**When detail wins and the artifact runs long, say why in one sentence.** "This is long because the failure has four causes and each needs its own evidence." A silent overrun reads as padding. A stated one reads as a reason.
 
 ## How This Pairs With `writing-style`
 
@@ -144,7 +150,9 @@ The budget yields in these cases. Each one is a place where a missing item is wo
 | `writing-style` | The shape of a sentence | Does this read one way only? |
 | `output-economy` | The amount that gets written | Does the reader need this at all? |
 
-Run `writing-style` on what survives this skill. Splitting a sentence to meet the 20-word rule can add a line; that is correct, and it is not this skill's concern.
+Run `writing-style` on what survives this skill. Splitting a sentence to meet the 20-word rule can add a line. That is correct, and it is not this skill's concern.
+
+**This skill decides what gets cut. `writing-style` never makes that call.** Both defects look like a long artifact, and only one of them is fixed by writing less.
 
 ## Self-Check
 
