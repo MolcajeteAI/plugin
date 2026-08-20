@@ -19,7 +19,7 @@ Molcajete.ai is a Claude Code plugin that provides opinionated, reusable workflo
 
 ### Tech Stack
 
-Pure Markdown plugin system with zero runtime dependencies. Commands and skills are Markdown files with YAML frontmatter specifying model, allowed tools, and prompts. Models are pinned per command: `claude-opus-5` for `/m:spec`, `/m:change`, `/m:fix`, `/m:cover`, `/m:plan`, `/m:review`, and `/m:preflight`; `claude-sonnet-5` for `/m:build`, `/m:setup`, `/m:walkthrough`, `/m:research`, and `/m:doc`.
+Pure Markdown plugin system with zero runtime dependencies. Commands and skills are Markdown files with YAML frontmatter specifying model, allowed tools, and prompts. Models are pinned per command: `claude-fable-5` for `/m:plan`; `claude-opus-5` for `/m:spec`, `/m:change`, `/m:fix`, `/m:cover`, `/m:review`, and `/m:preflight`; `claude-sonnet-5` for `/m:build`, `/m:setup`, `/m:walkthrough`, `/m:research`, and `/m:doc`.
 
 ### Conventions
 
