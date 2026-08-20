@@ -1,5 +1,5 @@
 ---
-description: Read pending log entries on referenced UCs, design architecture (or accept the existing one in cover mode), decompose into vertical tasks, and write the prose plan that /m:build will execute.
+description: Read pending log entries on referenced UCs, design architecture (or accept the existing one for cover work), decompose into vertical tasks each carrying a kind, and write the prose plan that /m:build will execute.
 model: claude-fable-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...]
 allowed-tools:
@@ -82,20 +82,20 @@ This is the shape:
 ````markdown
 ## Plan written — `20260820T1430-otp-expiry`
 
-`mode: default` · 3 tasks · `specs/plans/20260820T1430-otp-expiry.md`
+`mode: mixed` · 3 tasks · `specs/plans/20260820T1430-otp-expiry.md`
 
-| Task | Outcome | Covers |
-|---|---|---|
-| T-001 | Sends OTP to a registered address | `SC-3Z2P` |
-| T-002 | Rejects an unregistered address | `SC-3Z2Q` |
-| T-003 | Expires the OTP after 10 minutes | `SC-3Z2R`, `SC-3Z2S` |
+| Task | Kind | Outcome | Covers |
+|---|---|---|---|
+| T-001 | cover | Pins the current OTP send path | `SC-3Z2P` |
+| T-002 | implement | Rejects an unregistered address | `SC-3Z2Q` |
+| T-003 | change | Expires the OTP after 10 minutes | `SC-3Z2R`, `SC-3Z2S` |
 
 **Log entries flipped to `dirty`**
 
 - `UC-3Z2L` · module `auth` — stamped with this plan ID.
 ````
 
-In `mode: mixed`, split the task table in two under **Coverage tasks (pin existing behavior)** and **Implement tasks (new behavior)**, so the split is visible at a glance.
+Rows stay in `T-NNN` order — the `Kind` column carries the split, so never regroup the table by kind. When the plan holds more than one kind, add one line under the table giving the count per kind.
 
 End the report with the explicit hand-off:
 

@@ -45,9 +45,15 @@ Judges **correctness** — whether the implementation actually does what the spe
 1. **Meaningful assertions** — each covered `SC-XXXX` has at least one assertion pinning a user-observable exit (response/status, persisted state, an external call/message, an observable side effect), not vacuous line coverage.
 2. **Right expectation** — the asserted expected values match what the scenario says must happen. The Reviewer derives the expected behavior from the spec itself and flags any assertion that pins a value the spec does not call for.
 3. **Real implementation** — production code genuinely implements every covered scenario; no stub, `TODO`, `FIXME`, `not implemented`, or hard-coded return that only satisfies the fixture.
-4. **No missing scenario** — every scenario in `Covers` is addressed in both test and (for implement tasks) code.
+4. **No missing scenario** — every scenario in `Covers` is addressed in the test, and in the code for every kind except `cover`.
 
-**Returns:** exactly one of `correct`, or `defects{list}` where each defect names the `SC-XXXX`, the file, and what is wrong. A `defects` result sends the task back to the Implementer; it is never resolved by placating the Reviewer superficially — the fix must satisfy the spec.
+**Returns:** exactly one of `correct`, `defects{list}`, or `spec_defect{list}`.
+
+`defects{list}` — the spec is right and the work does not match it. Each defect names the `SC-XXXX`, the file, and what is wrong. This sends the task back to the Implementer; it is never resolved by placating the Reviewer superficially — the fix must satisfy the spec.
+
+`spec_defect{list}` — **the spec itself is the problem.** Each item names the `SC-XXXX` (or the behavior that has no `SC-XXXX`), and states whether the spec is *wrong* (it specifies behavior that is incorrect or contradicts a sibling scenario) or *silent* (the code must handle a case no scenario covers). Return this only when changing the code or the test cannot resolve the finding, because the spec is what they would have to satisfy.
+
+The distinction matters because the two results go to different places. `defects` loops back to the Implementer. `spec_defect` reaches the orchestrator's adaptation path, where the spec is edited and a task is added — the Reviewer cannot edit a spec and must not try. Without this third value a Reviewer that finds a wrong spec has only `defects`, which sends the Implementer to fix code that was already right.
 
 ## Test-First
 

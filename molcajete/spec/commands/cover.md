@@ -141,4 +141,4 @@ delete the original after 8.9 succeeds), or ignore.
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the extracted UCs into coverage tasks and write the plan that `/m:build` will execute (in `mode: cover` — tests only, no production code).
+> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the extracted UCs into `cover` tasks and write the plan that `/m:build` will execute (tests only, no production code).

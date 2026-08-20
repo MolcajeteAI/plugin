@@ -72,6 +72,27 @@ For each `UC-XXXX` ID:
 For FEAT IDs the same fan-out applies transitively: expand the FEAT to its UCs (per **Loading the
 Referenced Specs**), then resolve each UC's module-instances here.
 
+## Diagnosing a Defect
+
+Every defect resolves to exactly one of three diagnoses, and the diagnosis decides both whether a spec is
+edited and what kind of task the plan gets. Run this before any edit.
+
+| Diagnosis | When | Spec edit | Task kind |
+|-----------|------|-----------|-----------|
+| **Spec correct, code wrong** | The current spec already states the desired behavior; the defect is purely in the implementation. | none | `fix` |
+| **Spec silent** | The spec does not address the behavior at all — a missing scenario or a missing FR. | Add the missing scenario or FR to the relevant UC / feature. | `fix` |
+| **Spec wrong** | The spec explicitly states the incorrect behavior; the spec itself needs correcting. | Edit the offending scenario / FR. Increment UC `version`. | `change` |
+
+**The diagnosis can differ per module-instance.** A defect may live entirely in one module's code while the
+peer module is correct. Never force a single diagnosis across module-instances.
+
+**Spec silent produces a `fix`, not an `implement`.** The behavior already ships; writing the scenario down
+records what was always intended, and the task then makes the code match it.
+
+This table has three callers. `/m:fix` runs it in its Step 6 against the user's bug description.
+`/m:change` does not run it — a change request is a spec edit by definition, so its diagnosis is always
+**Spec wrong**. The `plan-adaptation` skill runs it mid-build against a defect `/m:build` discovered.
+
 ## Applying Spec Edits
 
 For each module-instance the command confirmed, edit its `UC-XXXX-{slug}.md` (the UC spec file, a sibling
@@ -113,8 +134,10 @@ module-instances get an entry.
 
 ## Producing the Plan
 
-Run the **Producing a Plan** procedure from the `plan-authoring` skill over the entries just logged. Both
-commands always produce **`mode: default`** (implement tasks).
+Run the **Producing a Plan** procedure from the `plan-authoring` skill over the entries just logged. The
+task `**Kind:**` follows the calling command: `/m:fix` produces `fix` tasks, `/m:change` produces `change`
+tasks. The plan's `**Mode:**` is derived from the final task kinds, so it reads `implement` until the
+coverage step adds `cover` tasks, and `mixed` after.
 
 The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate
 — a wrong reading of the request is caught here before any code is built), writes

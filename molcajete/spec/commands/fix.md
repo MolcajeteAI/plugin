@@ -61,15 +61,7 @@ Diagnosis, spec edits, and log entries in the next steps iterate over the confir
 
 ## Step 6: Diagnose
 
-For each module-instance in each target set, compare the description in `$ARGUMENTS` against that module-instance's spec. Pick exactly one diagnosis **per module-instance**:
-
-| Diagnosis | When | Action in Step 7 |
-|-----------|------|------------------|
-| **Spec correct, code wrong** | The current spec already states the desired behavior; the bug is purely in the implementation. | No spec edit. Log entry only. |
-| **Spec silent** | The spec doesn't address the buggy behavior at all (missing scenario, missing FR). | Add the missing scenario or FR to the relevant UC / feature. |
-| **Spec wrong** | The spec explicitly states the broken behavior; the spec itself needs to be corrected. | Edit the offending scenario / FR. Increment UC `version`. |
-
-**Diagnosis can differ per module-instance.** A bug may live entirely in one module's code while the peer module is correct. Do not force a single diagnosis across module-instances.
+For each module-instance in each target set, compare the description in `$ARGUMENTS` against that module-instance's spec. Pick exactly one diagnosis **per module-instance**, per the `spec-revision` skill's **Diagnosing a Defect** table — it defines the three diagnoses, the spec edit each one requires in Step 7, the task `**Kind:**` each one produces, and the rule that the diagnosis may differ per module-instance.
 
 Surface the diagnosis(es) one prompt per affected module-instance. The diagnosis is the brief:
 

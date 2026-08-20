@@ -33,6 +33,7 @@
     "./spec/commands/spec.md"
   ],
   "skills": [
+    "./build/skills/plan-adaptation",
     "./plan/skills/plan-authoring",
     "./research/skills/headless-research",
     "./research/skills/research-methods",

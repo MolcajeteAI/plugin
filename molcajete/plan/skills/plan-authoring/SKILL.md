@@ -41,15 +41,17 @@ specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md
 ## Plan File Structure
 
 A plan has a title, a one- or two-line summary, a `**Specs:**` line, a `**Prerequisites:**`
-line, an optional short context paragraph, and then one `## [ ] T-NNN` section per task.
+line, a `**Provenance:**` line, an optional short context paragraph, and then one
+`## [ ] T-NNN` section per task.
 
 ```markdown
 # Plan: {Descriptive Name}
 
 {One or two sentences: the working capability this plan delivers, and why.}
 
-**Specs:** FEAT-XXXX-{slug} · UC-XXXX-{slug} · SC-XXXX, SC-YYYY  ·  **Mode:** default | cover | mixed
+**Specs:** FEAT-XXXX-{slug} · UC-XXXX-{slug} · SC-XXXX, SC-YYYY  ·  **Mode:** implement | cover | mixed
 **Prerequisites:** —
+**Provenance:** UC-XXXX v{n} ({entry-timestamp}) · UC-YYYY v{n} ({entry-timestamp})
 
 {Optional short paragraph of shared context — what we're building and the slice of the
 architecture it touches. Reference the spec files once here (`specs/features/{module}/
@@ -57,6 +59,7 @@ FEAT-XXXX-{slug}/…`) so no task has to repeat them.}
 
 ## [ ] T-001 — {User-visible behavior, stated as an outcome}
 
+**Kind:** implement
 **Covers:** SC-XXXX, SC-YYYY
 **Depends on:** —
 
@@ -64,6 +67,7 @@ FEAT-XXXX-{slug}/…`) so no task has to repeat them.}
 
 ## [ ] T-002 — {Next behavior}
 
+**Kind:** implement
 **Covers:** SC-ZZZZ
 **Depends on:** T-001
 
@@ -71,10 +75,18 @@ FEAT-XXXX-{slug}/…`) so no task has to repeat them.}
 ```
 
 The `**Specs:**` line names every FEAT and UC the plan touches plus the scenarios in scope,
-and a `**Mode:**` label (`default`, `cover`, or `mixed`) summarizing the plan: `default` when
-every task builds new/changed behavior, `cover` when every task pins existing behavior, `mixed`
-when both. The label is a human summary; per-task truth is carried by each task's own prose
-(implement vs coverage — see Task Objectives).
+and a `**Mode:**` label summarizing the plan. The label is **derived from the task kinds**, so
+it never states anything the tasks do not already say:
+
+| Mode | When |
+|------|------|
+| `cover` | every task has `**Kind:** cover` |
+| `implement` | no task has `**Kind:** cover` |
+| `mixed` | at least one task of each |
+
+The label is a human summary. Per-task truth is the task's own `**Kind:**` field — that is what
+`/m:build` dispatches on. A plan written before the `**Kind:**` field existed carries
+`**Mode:** default`; read `default` as a synonym for `implement`.
 
 The `**Prerequisites:**` line is **mandatory and always present**. It names work that must be
 done **outside this plan** before `/m:build` may start, or `—` when there is none. It uses the
@@ -101,13 +113,42 @@ Write one clause per item. Name the file and the canonical test path it needs:
 `src/auth/token.ts` (`tests/FEAT-0A1b-auth/UC-0KTg-sign-in.test.ts`)
 ```
 
+### The Provenance line
+
+The `**Provenance:**` line records the spec state the plan was written against. A plan is a
+reading of the specs at one moment, and a later `/m:fix`, `/m:change`, or `/m:spec` can move the
+specs underneath it. Without this line nothing can tell a current plan from a stale one, so
+`/m:build` executes a drifted plan as confidently as a fresh one.
+
+One clause per use case in scope, `·`-separated:
+
+```markdown
+**Provenance:** UC-0KTg v4 (20260616T141530) · UC-3Z2L v2 (20260614T090012, 20260614T090012)
+```
+
+| Part | Value |
+|------|-------|
+| `UC-XXXX` | the use case ID, matching the `**Specs:**` line |
+| `v{n}` | the `version` in that UC spec's frontmatter, read at plan-write time |
+| `({timestamps})` | the timestamps of the `pending` changelog entries this plan consumed for that UC, comma-separated |
+
+For a UC that spans several module-instances, record one clause per instance and name the module:
+`UC-3Z2L@auth v2 (…)`. The versions can differ per instance, and a drift check that reads only
+one of them misses the other.
+
+The line is written once, by P6, and is never edited afterward. It states what was true when the
+plan was written, so amending it would destroy the only evidence drift detection has. A plan
+written before this field existed carries no such line; `/m:build` skips the drift check and says
+so in its report.
+
 ## Task Shape
 
-Every task is a level-2 heading carrying a checkbox, then two fields, then prose:
+Every task is a level-2 heading carrying a checkbox, then three fields, then prose:
 
 ```markdown
 ## [ ] T-NNN — {outcome phrased as a user-visible behavior}
 
+**Kind:** implement | change | fix | cover
 **Covers:** <comma-separated SC-/FR- IDs>
 **Depends on:** <comma-separated T-NNN IDs, or —>
 
@@ -118,6 +159,9 @@ Every task is a level-2 heading carrying a checkbox, then two fields, then prose
   build's status ledger. There is no status frontmatter anywhere else.
 - **T-NNN** — plan-local task ID, `T-001`, `T-002`, … assigned in dependency order. Numbering
   crosses FEAT/UC boundaries — there is one `T-NNN` sequence per plan.
+- **Kind** — the work this task does, one of four values. See Task Kind below. This is the field
+  `/m:build` dispatches on; it decides whether the first test run must be RED or GREEN, whether
+  the task may write production code, and whether it may delete code for a retired scenario.
 - **Covers** — a **comma-separated list** of the `SC-XXXX` scenario IDs (and `FR-XXXX`
   requirement IDs) this task closes.
 - **Depends on** — a **comma-separated list** of the prior `T-NNN` tasks this task builds on,
@@ -168,20 +212,39 @@ plan-mode plan, not a filled-in form.
    end, the task is the right size. Split a task only at a genuine logical boundary — or when it
    would not fit a single ~200k-token build context. Splitting to isolate a layer is never valid.
 
-## Task Objectives — implement vs coverage
+## Task Kind
 
-Most tasks are **implement** tasks: net-new or changed behavior. Their integration test starts
-RED and the build writes production code until it is GREEN.
+`**Kind:**` carries the work a task does. It takes one of four values, and the values match the
+four spec commands, so a task's origin stays legible in the plan.
 
-A task may instead be a **coverage** task: it pins the behavior of code that already ships,
-adding assertions with no new production code. Its test starts GREEN, and the build's mutation
-step proves the assertions have teeth. State plainly in the prose which kind a task is (e.g.
-"This pins existing behavior — no production code changes"). The build reads the prose to decide
-the RED-vs-GREEN expectation; there is no `objective` field to set.
+| Kind | Written when | First test run | Production code | Retires scenarios |
+|------|--------------|----------------|-----------------|-------------------|
+| `implement` | The spec asks for behavior the code does not have. | RED | writes new code | no |
+| `change` | The spec now states different behavior for code that already ships. | RED | modifies existing code | yes — deletes the tests and code of every `SC-` the UC retired |
+| `fix` | The spec is already right and the code does not match it. | RED | corrects existing code | no |
+| `cover` | The code already ships and nothing asserts it. | GREEN | none | no |
 
-When a plan mixes coverage and implement tasks for the same UC, order all coverage tasks (lower
-NNN) before the implement tasks that change that behavior, so existing behavior is pinned before
-it is modified.
+`/m:build` reads this field directly. Nothing about the kind is inferred from prose.
+
+**One plan holds tasks of different kinds.** This is the point of the field. A plan that changes
+a use case may open with a `cover` task that pins the code it is about to touch, follow with a
+`fix` task for a defect that surfaced while pinning it, and close with the `change` tasks that
+were the original objective. The plan's `**Mode:**` label summarizes whatever mix results.
+
+**Ordering across kinds.** When tasks of different kinds touch the same behavior, order them
+`cover`, then `fix`, then `change` or `implement` — pin what ships, correct what is broken, then
+change it. Give the earlier kinds the lower `T-NNN`.
+
+**Distinguishing `fix` from `change`.** Both act on shipped code, and the spec decides which.
+When the spec already states the behavior you want, the task is a `fix`. When the spec had to be
+edited to state it, the task is a `change`. This is the same three-way diagnosis `/m:fix` runs,
+and the `spec-revision` skill owns it.
+
+**Writing a `cover` task.** Word it as a characterization test: it records what the code does
+now, not what it should do, so a surprising current behavior is pinned rather than corrected. The
+build's mutation step then proves the assertions have teeth. When the code has no seam the
+integration test can drive, say so in the prose and include the mechanical seam work in the task
+— a `cover` task may move a dependency behind a port, and it still adds no new behavior.
 
 ## Test File Convention
 
@@ -228,32 +291,37 @@ scope, read their `UC-XXXX-{slug}.md` specs, each feature's `REQUIREMENTS.md` an
 `ARCHITECTURE.md`, and written the `pending` entries. The caller must have loaded the `architecture`, `principles`, and `uc-log`
 skills (and, only when cover-mode entries are possible, `reverse-engineering`).
 
-**P1 — Determine the provisional mode.** From the originating commands of the in-scope pending
-entries:
+**P1 — Assign a kind to each in-scope entry.** Every pending entry names the command that wrote
+it, and that command sets the kind of the tasks the entry produces:
 
-- only `command:spec` / `command:fix` / `command:change` → **default** (all implement tasks).
-- only `command:cover` → **cover** (all coverage tasks).
-- both → **mixed**.
+| Entry | Task kind |
+|-------|-----------|
+| `command:cover` | `cover` |
+| `command:change` | `change` |
+| `command:fix` | `fix` |
+| `command:spec` | `implement` |
 
-The mode has a **second source**: the test-coverage decision in P4. When the user answers "Add
-coverage to this plan", coverage tasks join the plan, so a **default** plan becomes **mixed** and
-a **cover** plan stays **cover**. Re-derive the mode at the end of P4 and write that final value.
-P1's value is provisional until P4 closes.
+A single plan may consume entries of every command at once, and the resulting plan carries tasks
+of every kind. Nothing here refuses a mixed set.
 
-`/m:fix` and `/m:change` derive **default** from their entries, and become **mixed** when P4 adds
-coverage tasks. The mode is written on the plan's `**Specs:**` line.
+The mode is **derived**, not chosen: read it off the task kinds per the table in Plan File
+Structure. Because P4 can add `cover` tasks, derive the mode at the end of P4 and write that
+value — any value computed earlier is provisional.
 
 **P2 — Architecture pass.** Apply the engineering principles: Principle 2 (hexagonal default),
 Principle 3 (DI), Principle 1 (every task's tests are integration tests — never scaffold unit tests).
 
-- **default** — design or revise the architecture for the affected UCs: identify driving/driven
-  ports (driver ports come from `specs/MODULES.md`'s `Driving Ports`), adapters, domain boundaries,
-  and cross-cutting work (migrations, shared adapters, config); wire through DI. Reflect the design
-  into each feature's `ARCHITECTURE.md` per the architecture skill's Table Filling rules.
-- **cover** — skip design; reconstruct the shipped structure with the reverse-engineering skill and
-  ensure each `ARCHITECTURE.md` reflects what actually ships.
-- **mixed** — cover pass first (pin the current design as baseline), then the default pass for the
-  new/modified behavior; reflect both into `ARCHITECTURE.md`.
+Run the pass over the kinds present, not over the mode label:
+
+- **For `implement`, `change`, and `fix` work** — design or revise the architecture for the
+  affected UCs: identify driving/driven ports (driver ports come from `specs/MODULES.md`'s
+  `Driving Ports`), adapters, domain boundaries, and cross-cutting work (migrations, shared
+  adapters, config); wire through DI. Reflect the design into each feature's `ARCHITECTURE.md`
+  per the architecture skill's Table Filling rules.
+- **For `cover` work** — skip design; reconstruct the shipped structure with the
+  reverse-engineering skill and ensure each `ARCHITECTURE.md` reflects what actually ships.
+- **When both are present** — run the cover pass first, so the current design is the baseline,
+  then design the new behavior on top. Reflect both into `ARCHITECTURE.md`.
 
 This step designs; it does not ask. The review gate that presents the architecture, the
 decomposition, and the test-coverage disposition together runs in **P4**, after the tasks exist
@@ -262,7 +330,8 @@ and after the coverage decision is made. Hold the architecture direction until t
 **P3 — Decompose into tasks.** Per the Vertical-Increment Rules above, produce the minimal ordered
 list of vertical, working-software tasks that closes every in-scope scenario exactly once, ordered
 by dependency (that order is the `T-NNN` sequence). Write each task per the Task Shape (heading +
-`Covers` + `Depends on` + prose) and, in **mixed** mode, the Task Objectives ordering rule.
+`Kind` + `Covers` + `Depends on` + prose), giving each task the kind P1 assigned to the entry it
+serves, and apply the Task Kind ordering rule wherever two kinds touch the same behavior.
 
 **P4 — Probe test coverage, then run the plan gate.** The P3 task list names the files, so the
 probe runs here and never earlier. The probe is **static**: `/m:plan` runs no commands and never
@@ -308,16 +377,11 @@ per-file loop turns a five-file plan into five interrogations.
 
 Two options. Never add a third. A third option is how a build stops halfway.
 
-**On "Add coverage to this plan".** Emit one coverage task per uncovered file, or per cohesive
-group of files under one UC. Give them the lowest `T-NNN` values and renumber the P3 tasks
-upward; the Task Objectives ordering rule already requires coverage tasks before the implement
-tasks that change the same behavior. Write each task's prose per Task Objectives, so `/m:build`
-reads it as a coverage task and expects GREEN first. Word them as **characterization tests**: the
-task records what the code does now, not what it should do, so a surprising current behavior is
-pinned and never fixed. When the code has no seam the integration test can drive, say so in the
-prose and include the mechanical seam work in that task — a coverage task may move a dependency
-behind a port, and it still adds no new behavior. Write `**Prerequisites:** —`. Re-derive the
-mode per P1.
+**On "Add coverage to this plan".** Emit one task per uncovered file, or per cohesive group of
+files under one UC, each carrying `**Kind:** cover`. Give them the lowest `T-NNN` values and
+renumber the P3 tasks upward; the Task Kind ordering rule already requires `cover` tasks before
+the tasks that change the same behavior. Write each one per Task Kind's rule for a `cover` task.
+Write `**Prerequisites:** —`. Re-derive the mode from the final task kinds.
 
 **On "Handle separately".** Write no coverage tasks and keep the P3 numbering. Write the
 `**Prerequisites:**` line naming the canonical coverage each uncovered file needs, with its
@@ -343,7 +407,7 @@ The direction goes in the brief, never in `question` and never in an option `pre
 pane truncates, and the direction is identical under every option, so it is shared context. On
 "Edit", the user's correction arrives via the built-in `Other`. On "Cancel", write nothing.
 
-**P5 — Consult non-canonical tests (cover / mixed only).** Skip in default mode. For each UC with a
+**P5 — Consult non-canonical tests.** Skip when no task in the plan has `**Kind:** cover`. For each UC with a
 `command:cover` pending entry, read its `CHANGELOG.md`, find the most recent `command: cover` entry,
 and collect the **non-canonical test file paths** it recorded (existing tests touching the UC's
 production code that live outside the canonical tests tree). For each, prompt once:
@@ -363,8 +427,14 @@ This step never moves or deletes files.
 
 **P6 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Write a
 **new** single file `specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md` (UTC timestamp to the second) per the
-Plan File Structure above — summary, `**Specs:**` line (with the mode), optional context paragraph,
-and one `## [ ] T-NNN` section per task.
+Plan File Structure above — summary, `**Specs:**` line (with the mode), `**Prerequisites:**` line,
+`**Provenance:**` line, optional context paragraph, and one `## [ ] T-NNN` section per task.
+
+Build the `**Provenance:**` line here, per The Provenance line above. For every UC in scope, read
+the `version` from the frontmatter of the `UC-XXXX-{slug}.md` the caller already loaded, and list
+the timestamps of the entries P7 is about to stamp. Read the version from the spec file — never
+carry a value forward from an earlier step, because P2 may have edited `ARCHITECTURE.md` and
+another command may have written the UC since the caller read it.
 
 **P7 — Stamp the changelog.** For every consumed entry, use the `uc-log` skill to flip its status
 `pending → dirty` and set `plan:<plan-id>` (the folder name). The entry stays under `TODO:`; the
@@ -384,8 +454,9 @@ Stand up the first phase of patient onboarding end to end: capturing a name, the
 phone number, so a new patient can complete step 1 and move on. Each task is a full-stack slice
 of one behavior, not a layer.
 
-**Specs:** FEAT-0Fy0-onboarding · UC-0KTg-collect-identity · SC-0KTg-01, SC-0KTg-02, SC-0KTg-03  ·  **Mode:** default
+**Specs:** FEAT-0Fy0-onboarding · UC-0KTg-collect-identity · SC-0KTg-01, SC-0KTg-02, SC-0KTg-03  ·  **Mode:** implement
 **Prerequisites:** —
+**Provenance:** UC-0KTg v1 (20260727T142140)
 
 We're building against the `patient` module (`specs/features/patient/FEAT-0Fy0-onboarding/`).
 The onboarding flow is a client wizard backed by an HTTP profile service; persistence is the
@@ -393,6 +464,7 @@ existing `profiles` store. Everything here rides the module's `http` driving por
 
 ## [ ] T-001 — A patient submits their name and advances to step 2
 
+**Kind:** implement
 **Covers:** SC-0KTg-01
 **Depends on:** —
 
@@ -413,6 +485,7 @@ specifies neither behavior, so both stay out of scope for this plan.
 
 ## [ ] T-002 — A patient adds a phone number and receives a verification code
 
+**Kind:** implement
 **Covers:** SC-0KTg-02, SC-0KTg-03
 **Depends on:** T-001
 

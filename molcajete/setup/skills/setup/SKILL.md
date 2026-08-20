@@ -137,13 +137,21 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Fix:** For each affected module, re-run the stack-detection step's logic to derive the coverage command. If the project does not expose a coverage collector, write `not available` (`/m:build` estimates against the 80% floor in that case).
 - **Source of truth:** Same as `tech-stack-running-tests`.
 
-### `settings-testing-threshold`
+### `settings-testing-thresholds`
 
-- **Artifact:** `.molcajete/settings.json` `testing.threshold` key.
-- **Category:** CONTENT DRIFT
-- **Detection:** Read the file as JSON. Verify `testing.threshold` is present and is a number. List as drift when missing or non-numeric.
-- **Fix:** Read existing file (preserving all other keys and nested structure), merge in `testing.threshold = 80`, write back.
-- **Source of truth:** `setup.md`'s foundation-write step (inlined default `{"testing": {"threshold": 80}}`).
+- **Artifact:** `.molcajete/settings.json` `testing.thresholds` key.
+- **Category:** SCHEMA GAPS
+- **Detection:** Read the file as JSON. Verify `testing.thresholds` is present, is an object, and carries the four numeric dimensions `lines`, `statements`, `branches`, and `funcs`. List as drift when the key is missing, is a number rather than an object (the legacy singular `testing.threshold`), or omits a dimension.
+- **Fix:** Read the existing file, preserving all other keys and nested structure. When the legacy singular `testing.threshold = N` is present, expand `N` to all four dimensions and remove the singular key. Otherwise merge in the missing dimensions at `80`. Write back.
+- **Source of truth:** `build.md` Step 3, which resolves the four per-dimension floors and performs the same in-place upgrade at build time.
+
+### `settings-adaptation`
+
+- **Artifact:** `.molcajete/settings.json` `adaptation` key.
+- **Category:** SCHEMA GAPS
+- **Detection:** Read the file as JSON. Verify `adaptation` is present and is an object carrying `maxAmendments` (number), `maxTasksPerAmendment` (number), and `allowSpecEdits` (boolean). List as drift when the key is missing or any of the three is absent or the wrong type. Never list a *value* as drift — a project that sets `maxAmendments: 0` has chosen to keep the pre-adaptation behavior, and update mode must not undo that choice.
+- **Fix:** Read the existing file, preserving all other keys. Merge in only the missing keys, at `maxAmendments: 3`, `maxTasksPerAmendment: 2`, `allowSpecEdits: true`. Write back. Tell the user that `/m:build` can now amend a plan mid-run, and that `maxAmendments: 0` restores the previous halt-on-discovery behavior.
+- **Source of truth:** the `plan-adaptation` skill's **Budget** section.
 
 ### `dot-claude-rules-dir`
 
