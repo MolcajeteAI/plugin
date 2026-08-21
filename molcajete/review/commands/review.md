@@ -186,7 +186,7 @@ Print no issue detail on screen. The file holds it, and repeating it here makes 
 
 End with:
 
-> Next: address the issues, or run `/m:preflight` to fix them interactively before opening the PR.
+> Next: address the issues, or run `/m:preflight` to decide each one and get the prompt that resolves it before opening the PR.
 
 ## Rules for this command
 
