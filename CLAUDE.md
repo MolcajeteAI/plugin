@@ -30,6 +30,21 @@ Pure Markdown plugin system with zero runtime dependencies. Commands and skills 
 - Commands use sub-agents for context gathering and parallel research
 - **Step numbering in commands and skills**: top-level steps are integers (`## Step 1`, `## Step 2`, …). Sub-steps under a single top-level step use one decimal level (`### 1.1`, `### 1.2`). Triple-decimals (`### 1.1.1`) and inserted-decimal steps (`### Step 4.5`, `### 7.6.5`) are forbidden. When a new step is inserted anywhere, **renumber every following step** instead of appending a decimal — cross-references inside the file are part of the renumber. Decimals are reserved exclusively for genuine hierarchical sub-steps, never as a shortcut to avoid renumbering.
 
+## Choosing Between Solutions
+
+Rank every candidate solution in this order. A lower rank never beats a higher one.
+
+1. **What is right beats what is cheap.** The cheapest option is the least preferred option. It buys today with technical debt, and someone pays for it again later. Favor the correct solution, present it first, and explore it in full. When a cheap option is on the table, say plainly why it loses.
+2. **Good principles and good architecture.** Between two correct options, take the one that respects the boundaries, the separation, and the patterns the project already holds. `molcajete/shared/skills/principles/SKILL.md` holds the operative set.
+3. **Effort, and only as the last tiebreak.** Effort separates two options that already tie on correctness and on architecture. It never promotes a worse option above a better one.
+
+**Never trust your own effort estimate.** A model estimates in human hours, because human hours are what its training data measured. An agent does the same work in a small fraction of that time, so the estimate runs far too high — and an inflated number argues for the cheap option and against the right one.
+
+Two rules follow:
+
+- **Never quote hours or days.** Count what an agent can count instead: files touched, tests to write, specs to edit, use cases affected. The Fibonacci story points above stay the unit for a plan task.
+- **Never let an estimate rank the options.** Report the effort as a fact beside each option. The user weighs it. You do not weigh it for them.
+
 ## Clarifying Questions
 
 When the user gives an instruction that is ambiguous, open-ended, or could be interpreted in multiple ways, always use the AskUserQuestion tool to clarify intent before proceeding. Only skip this when the request is straightforward and unambiguous.
