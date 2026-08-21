@@ -1,7 +1,7 @@
 ---
 module: molcajete-ai
 purpose: Spec-driven development framework for Claude Code — EARS requirements, use cases with explicit side effects, prose plans, and automated build dispatch
-last-updated: 2026-07-27
+last-updated: 2026-08-20
 ---
 
 # Molcajete.ai
@@ -34,7 +34,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
 2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
 3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
-4. **Review** — A spec-traceable review surface: `/m:review` writes a severity-scored review, `/m:preflight` surfaces and fixes issues interactively before you open a PR, and `/m:walkthrough` gives a guided, hierarchical tour of a change set.
+4. **Review** — A spec-traceable review surface. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue with you, and hands you the prompt that fixes it. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
 5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
 6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
 
@@ -141,8 +141,12 @@ Spec-traceable code review of a PR, branch, or ref range. Molcajete-only — eve
 | Command | Description |
 |---------|-------------|
 | `/m:review` | Guided, severity-scored review written to a `reviews/` file; read-only, never posts to GitHub |
-| `/m:preflight` | Interactive pre-PR pass — get familiar with your change set, surface the issues, and fix them one by one until it's clear to ship |
+| `/m:preflight` | Interactive pre-PR pass — walk your change set, decide each issue one at a time, and get the prompt that resolves it. Never edits code |
 | `/m:walkthrough` | Interactive, hierarchical tour (feature → UC → scenario) of a change set with clickable `file:line` links |
+
+**`/m:preflight` hands you prompts. It never edits your code.** A fix usually moves more than one of the three elements — spec, code, test — and an edit made during a review skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own. The spec then goes stale and the test breaks.
+
+Preflight decides each issue with you instead, one at a time. It reads the spec line, the code, and the test, explains the options in prose, and asks which direction you want. The correct fix always leads that list and is always the recommendation — effort is reported as a fact, never as a reason to rank a cheaper option higher. Then it shows the exact change for your approval before it opens the next issue. Each decision becomes a ready-to-paste prompt — a Molcajete command when one owns the work, or a direct instruction when none does. The run ends with every issue decided, and with a file at `.molcajete/prompts/<timestamp>-preflight-<slug>.md` that holds the prompts in the order you run them.
 
 ### Setup, Research & Shared
 
@@ -165,6 +169,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — module-instance fan-out, spec-edit rules, log/status, plan hand-off |
 | spec | `spec-lookup` | Machinery shared by `/m:desc`, `/m:ids`, and `/m:prompt` — ID taxonomy, resolve by ID or keyword, context assembly |
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
+| build | `plan-adaptation` | Mid-build plan change — trigger catalog, insert/revise operations, the three-option gate, and the audit trail |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, review rubric and severity |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
 | research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
@@ -210,6 +215,15 @@ specs/
     └── <YYYYMMDDTHHMMSS>-<slug>.md     # Prose plan (one file): vertical `## [ ] T-NNN` tasks
 ```
 
+Commands that write outside the spec tree use a `.molcajete/` working directory:
+
+```
+.molcajete/
+├── research/       # Context briefs written before spec-writing
+├── prompts/        # Ready-to-paste commands from /m:prompt and /m:preflight
+└── escalations/    # Unresolved-item reports from headless runs
+```
+
 ### Key Conventions
 
 - **EARS requirements** — Every functional requirement uses explicit keywords (When, While, If/Then) and includes a measurable fit criterion.
@@ -234,8 +248,9 @@ molcajete/
 ├── plan/                  # Plan module — /m:plan + plan-authoring skill
 │   ├── commands/
 │   └── skills/
-├── build/                 # Build module — /m:build (TDD + mutation + coverage + correctness review)
-│   └── commands/
+├── build/                 # Build module — /m:build (TDD + mutation + coverage + correctness review) + plan-adaptation skill
+│   ├── commands/
+│   └── skills/
 ├── review/                # Review module — /m:review, /m:preflight, /m:walkthrough + change-review skill
 │   ├── commands/
 │   └── skills/
