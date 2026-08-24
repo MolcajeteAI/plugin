@@ -6,7 +6,7 @@ description: >-
   spec guard hook enforces, the difference between a hole and a decided default,
   the fixed-category analysis sweep, the relevance filter and the question cap,
   the batched ask, and the halt-and-escalate rule for headless runs. Loaded by
-  /m:spec, /m:cover, /m:fix, /m:change, and /m:plan.
+  /m:spec, /m:cover, /m:fix, /m:change, and the CLI's planning session.
 ---
 
 # Resolution Gate
@@ -28,13 +28,14 @@ The order is fixed:
 A command that cannot finish step 2 does not run step 3. It writes nothing for that entity.
 
 The rule binds every file a Molcajete command creates or edits under `specs/`. That includes
-`REQUIREMENTS.md`, `UC-XXXX-{slug}.md`, `ARCHITECTURE.md`, `USE-CASES.md`, `FEATURES.md`, and
-`specs/plans/<plan-id>.md`.
+`REQUIREMENTS.md`, `UC-XXXX-{slug}.md`, `ARCHITECTURE.md`, `USE-CASES.md`, `FEATURES.md`,
+`INTERFACE.md`, `DATA.md`, and `specs/changes/{change-id}/request.md`.
 
 ## Why
 
-A Molcajete spec is not a draft. `/m:plan` reads it and `/m:build` executes it, so it is
-baselined the moment it is written. A hole in it is a defect, not a work-in-progress state.
+A Molcajete spec is not a draft. The CLI applies the request and executes against it unattended,
+so it is baselined the moment the run is triggered. A hole in it is a defect, not a
+work-in-progress state.
 
 The `principles` skill already gives the reason: "Specs, plans, comments, and reports are read
 by the next AI agent with no back-channel. It cannot ask what an ambiguous sentence meant, so
@@ -190,14 +191,14 @@ Each command sweeps the categories it owns:
 | `/m:cover` | C1 to C13, collected across the whole scan |
 | `/m:fix` | C1, C3, C6, C7, C10, C12, and C13 — a fix can retire a scenario a sibling depends on |
 | `/m:change` | C1 to C9, C12, and C13 |
-| `/m:plan` | C4, C6, C7, C9, C10, and C13 — the spec settled the rest, and this is the last gate before code is written |
+| The CLI's planning session | C4, C6, C7, C9, C10, and C13 — the spec settled the rest. The planning session runs unattended, so a finding it cannot resolve follows the executor's decide-and-record rule instead of producing a question. |
 
 **C13 resolves differently from the other twelve.** The other categories find a missing answer, so
 they produce a question. A C13 finding is usually not a question. It is work in this run: the
-command edits the sibling spec, bumps its `version`, writes its changelog entry, and sets its
-status per the `status-rollup` skill. It becomes a question only when the user must choose between
-competing repairs, or when the repair is large enough to be its own command invocation. Even then,
-the question is asked in this run. It is never recorded as a note for a later command.
+command adds the sibling spec's repair to the change request as its own diff — before and after,
+`version` bump noted. It becomes a question only when the user must choose between competing
+repairs, or when the repair is large enough to be its own command invocation. Even then, the
+question is asked in this run. It is never recorded as a note for a later command.
 
 ## The Relevance Filter and the Cap
 

@@ -130,7 +130,7 @@ percent = 48 / 50 * 100      # = 96.0 percent on lines — passes
 pass = false
 ```
 
-Read the middle step: `4 / 6 = 0.667`, then `0.667 * 100 = 66.7`. A file at 96 percent lines and 66.7 percent branches does not pass. Two uncovered branches, not two uncovered lines, are what the Implementer must resolve.
+Read the middle step: `4 / 6 = 0.667`, then `0.667 * 100 = 66.7`. A file at 96 percent lines and 66.7 percent branches does not pass. Two uncovered branches, not two uncovered lines, are what the builder must resolve.
 
 **Why:** a formula hides its rounding, its unit conversions, and its exponents. Real numbers expose all three.
 

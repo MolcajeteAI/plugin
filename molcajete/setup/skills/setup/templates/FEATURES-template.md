@@ -5,10 +5,9 @@
 
 ## Status Key
 
-- `pending` -- Spec written, not yet implemented
-- `implemented` -- Code exists that fulfills this spec
-- `dirty` -- Spec changed after implementation; code needs to catch up
-- `deprecated` -- No longer active; retained for audit trail
+- `pending` -- Spec written, not yet fully implemented
+- `implemented` -- Code and tests exist that fulfill this spec
+- `deprecated` -- No longer active; retained for audit trail (legacy `dirty` values are preserved until a run rebuilds the artifact)
 
 ## {domain}
 

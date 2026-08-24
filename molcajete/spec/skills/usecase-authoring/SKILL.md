@@ -216,7 +216,7 @@ Include a UI block when the step produces a visible change the actor responds to
 
 ## Side Effects Rules
 
-Side Effects is the most critical field for the build loop. The Implementer subagent uses side effects as the assertion targets when writing tests for this scenario — they correspond to the Five Exit Doors in `shared/skills/testing/SKILL.md`. Missing or vague side effects produce incomplete test coverage.
+Side Effects is the most critical field for the build loop. The task session uses side effects as the assertion targets when writing tests for this scenario — they are the user-observable exits the `shared/skills/testing/SKILL.md` **Assertions** rules name. Missing or vague side effects produce incomplete test coverage.
 
 ### Three Categories
 
@@ -238,7 +238,7 @@ Side Effects is the most critical field for the build loop. The Implementer suba
 ### Rules
 
 - Every scenario must have at least one side effect or at least one non-side-effect. A scenario that changes nothing is not a scenario.
-- Non-side-effects start with "No" and name the thing that does NOT happen — they tell the Implementer what to assert does NOT occur.
+- Non-side-effects start with "No" and name the thing that does NOT happen — they tell the builder what to assert does NOT occur.
 - Event names follow `{domain}.{entity}.{verb}` convention (e.g., `auth.session.created`, `billing.invoice.sent`).
 - Payload fields are listed in backtick-wrapped comma-separated format.
 
@@ -256,7 +256,7 @@ Scenarios describe what actors do and observe, not internal system behavior. Int
 
 ## E2E Testing Philosophy
 
-All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write Given/Steps/Outcomes/Side Effects as if everything is testable through the public entry point of the relevant `Application`, with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
+All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write Given/Steps/Outcomes/Side Effects as if everything is testable through the public entry point of the relevant `Application`, with real infrastructure inside the service boundary; the builder chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
 
 ### Potential Concerns
 

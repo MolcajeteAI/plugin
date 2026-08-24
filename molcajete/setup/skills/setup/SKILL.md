@@ -136,7 +136,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Artifact:** `specs/TECH-STACK.md` per-module `Coverage:` field.
 - **Category:** SCHEMA GAP
 - **Detection:** Same shape as `tech-stack-running-tests`; check for `- **Coverage:**` line in each module section.
-- **Fix:** For each affected module, re-run the stack-detection step's logic to derive the coverage command. If the project does not expose a coverage collector, write `not available` (`/m:build` estimates against the 80% floor in that case).
+- **Fix:** For each affected module, re-run the stack-detection step's logic to derive the coverage command. If the project does not expose a coverage collector, write `not available` (the verify hook estimates against the 80% floor in that case).
 - **Source of truth:** Same as `tech-stack-running-tests`.
 
 ### `settings-testing-thresholds`
