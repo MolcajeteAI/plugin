@@ -44,7 +44,7 @@ Search inline with Glob and Grep. Do not dispatch a subagent — the skill state
 
 ## Step 4: Assemble Context
 
-Run the skill's **Context Assembly** at **depth 1** for every main-tier hit, then add depth 2's **implementation files** for each one. The user asked where each ID lives, so the Code Map lookup is part of the answer.
+Run the skill's **Context Assembly** at **depth 1** for every main-tier hit, then add depth 2's **implementation files** and **public interface elements** for each one. The user asked where each ID lives, so the Code Map lookup and the `INTERFACE.md` element rows are part of the answer.
 
 Skip the mention tier. Those entries report as IDs only.
 

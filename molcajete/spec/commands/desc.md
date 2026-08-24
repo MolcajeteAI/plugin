@@ -39,7 +39,7 @@ One miss never aborts the run. Record it and continue to the next token.
 
 ## Step 4: Assemble Context
 
-Run the skill's **Context Assembly** at **depth 2** for every resolved entity: the parent chain, the implementation files from the feature's `ARCHITECTURE.md` Code Map, the integration test path, and the newest changelog reason.
+Run the skill's **Context Assembly** at **depth 2** for every resolved entity: the parent chain, the public interface elements mapped to the ID in the module's `INTERFACE.md`, the implementation files from the feature's `ARCHITECTURE.md` Code Map, the integration test path, and the newest changelog reason.
 
 ## Step 5: Report
 
