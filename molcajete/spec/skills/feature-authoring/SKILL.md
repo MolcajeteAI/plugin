@@ -189,10 +189,11 @@ Images are a post-creation enhancement: the `assets/` directory is created insid
 
 ### Asset Management
 
-- Feature-level images go in `specs/features/{module}/FEAT-XXXX-{slug}/assets/`
+- Feature-level images live in `specs/features/{module}/FEAT-XXXX-{slug}/assets/`
 - File naming: `{descriptive-slug}.{ext}` -- lowercase, hyphens, no spaces, max 50 character slug
 - Supported formats: PNG, JPG
 - When the user provides image file paths during creation or update, copy the files and add references
+- **How the copy happens depends on the command.** `/m:spec`, `/m:change`, and `/m:fix` never touch the spec tree, so they stage assets in `specs/changes/{change-id}/assets/` and the CLI's apply step lands them in the feature's `assets/` folder (see the change-request skill's The UI Is Contract Content). `/m:cover` and `/m:setup` write the spec tree directly, so they copy straight to the feature folder.
 
 ### When to Include
 
