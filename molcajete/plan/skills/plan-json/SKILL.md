@@ -21,6 +21,7 @@ One directory per change, under the spec tree:
 specs/changes/
 └── {change-id}/                # e.g. 20260823T104500-order-expiry
     ├── request.md              # written at authoring — what the human reviews
+    ├── assets/                 # written at authoring — user-provided images the request references
     ├── plan.json               # written by the CLI at execution start
     ├── decisions.md            # what the run decided alone — created on first entry
     ├── validation/             # reviewer findings, one file per cycle

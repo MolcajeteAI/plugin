@@ -23,7 +23,7 @@ The request is written for a scanner, not a reader. Tables and diagrams first, p
 specs/changes/{change-id}/request.md
 ```
 
-The authoring command creates the change directory and its ID — `{YYYYMMDDTHHMMSS}-{slug}`, timestamp from the clock (`date -u +%Y%m%dT%H%M%S`), never composed — and writes exactly one file into it. Everything else in the directory (`plan.json`, `decisions.md`, `validation/`, `report.md`) is the CLI's, written at execution time.
+The authoring command creates the change directory and its ID — `{YYYYMMDDTHHMMSS}-{slug}`, timestamp from the clock (`date -u +%Y%m%dT%H%M%S`), never composed — and writes `request.md` into it, plus an `assets/` subdirectory when the change carries user-provided images (see **The UI Is Contract Content**). Everything else in the directory (`plan.json`, `decisions.md`, `validation/`, `report.md`) is the CLI's, written at execution time.
 
 The template is [request-template.md](./templates/request-template.md). Fill it; never compose the shape from prose memory.
 
@@ -67,6 +67,18 @@ A **note** is a clarification, and it is the one part of the request meant to be
 
 An **example** pins exact values and carries a tag — `E-001`, `E-002`, sequential within the request. An example is never wasted: **every example becomes test material**. The planner assigns each example to a task through the task's `examples` field, the builder turns it into a fixture or an assertion using the example's exact values, and the final verification treats an example no test asserts as a finding. The scenario states what happens; the example states the exact values it happens with.
 
+## The UI Is Contract Content
+
+When a change involves a graphical interface, the spec diffs in section 2 carry **ASCII art mockups** — the layout and element hierarchy of every screen the change touches, in fenced blocks, exactly as the feature-authoring skill defines for `## UI` sections and the usecase-authoring skill defines for in-scenario `**UI:**` blocks. The mockup is reviewed like any other diff: the human sees how the screen is going to look and corrects it before the run starts.
+
+The mockups are not decoration, and they are not disposable examples. Three rules bind them, mirroring how notes and examples flow:
+
+- **The apply step lands them verbatim.** A UI block in a spec diff reaches the spec tree character-for-character, like every other diff line.
+- **They flow into the build.** Screen names, fields, and labels in a mockup are the vocabulary of the tasks that build the UI — the planning session carries them into the tasks' `contracts` and `rationale`, and the builder implements what the mockup shows.
+- **The final verification checks UI conformance.** Every screen the applied specs mock up must exist in the built UI with the elements the mockup names. A mocked-up element no code renders is a finding.
+
+**High-definition images and other assets travel with the request.** The authoring command copies user-provided files into `specs/changes/{change-id}/assets/` — descriptive names per the feature-authoring skill's Asset Management rules — and the request's diffs reference them there. The apply step copies each referenced asset into the owning feature's `specs/features/{module}/FEAT-XXXX-{slug}/assets/` directory and rewrites the landed reference to point there. `/m:cover`, which writes the spec tree directly, keeps copying assets straight to the feature folder.
+
 ## Retired Scenarios
 
 When the change retires a scenario (`/m:change` only), the spec diff marks it **retired** — stating what it used to assert — so the planning session can populate the `retires` list of the task that deletes its tests and code. A scenario the request does not mark retired is never deleted.
@@ -80,8 +92,9 @@ The CLI's apply step executes the request on the run branch, before any task run
 3. **Notes are never applied.** They flow into task `rationale` at planning, nothing else.
 4. **Changelog entries are written at apply time**, per the uc-log skill: one `pending` entry per touched UC module-instance, carrying the originating command's token and the change ID.
 5. **Statuses are written at apply time**, per the status-rollup skill: new UCs `pending`, modified previously-`implemented` UCs `pending`, features re-rolled.
-6. **One commit.** The whole application is the run branch's first commit, so "the request was applied" has exactly one marker a resumed run can check.
-7. **Applied means fully specified.** If a diff cannot be applied mechanically — an anchor missing, a before-text that does not match — the apply step stops and reports which entry is ambiguous. It never guesses.
+6. **Assets land with the diffs.** Every asset the request references under `specs/changes/{change-id}/assets/` is copied into the owning feature's `assets/` directory, and the landed reference points at the feature-relative path. An asset the request references but the change directory does not hold is an apply error.
+7. **One commit.** The whole application is the run branch's first commit, so "the request was applied" has exactly one marker a resumed run can check.
+8. **Applied means fully specified.** If a diff cannot be applied mechanically — an anchor missing, a before-text that does not match, a referenced asset missing — the apply step stops and reports which entry is ambiguous. It never guesses.
 
 ## `/m:cover` — The One Exception
 
