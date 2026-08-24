@@ -1,75 +1,44 @@
 ---
 name: testing
 description: >-
-  Technology-agnostic rules for the test-first build loop. Implementer, Validator,
-  and Reviewer role contracts, outer-edge mocking, reading specs/TECH-STACK.md,
-  Runner Inference, coverage gate scoped to touched files, reactive refactor.
+  Technology-agnostic testing rules for the build loop. One actor writes the
+  exam and then passes it: entry-point-only integration tests, outer-edge
+  mocking, the verify-hook contract, the mutation check, the Test File
+  Convention, reading specs/TECH-STACK.md, Runner Inference, and the
+  four-dimension coverage floors.
 ---
 
 # Testing
 
-Authoritative testing rules for the default build flow.
+Authoritative testing rules for the build loop.
 
-## Three Subagent Roles
+## One Actor Writes the Exam and Then Passes It
 
-The build loop runs three agents in series per task. The Validator's mechanical signal (green + coverage) and the Reviewer's correctness signal must **both** be positive before a task's checkbox flips.
+A task runs in one session, and that session does both halves. For a `code` task: write the integration test at the module's entry point first, then write however much production code it takes to pass, in the same session. For a `test` task: write assertions that pin what ships, and touch no production code.
 
-### Implementer
-
-For one behavior at a time: write the test first (file order is the only enforcement), then write production code in its final form to make it pass.
-
-**Receives:** task description (the plan's `T-NNN` prose), architecture doc, the relevant `Module` section of `specs/TECH-STACK.md`, current code state, list of behaviors already covered, previous Validator/Reviewer feedback if any.
-
-**Returns:** list of files changed, the behavior just covered, a one-line note.
-
-The Implementer cannot mark a task done.
-
-### Validator
-
-Runs the project's test command and the coverage command, independently of the Implementer. This is a **mechanical** check — it proves the tests are green and the coverage floors are met, and (with the mutation step) that the tests are not vacuous. It does **not** judge whether the implementation is correct.
-
-**Receives:** files changed this round; the resolved test + coverage commands; the threshold.
-
-**Returns:** exactly one of `pass`, `tests_failed{failures}`, or `coverage_low{gaps}`.
-
-Does not see the Implementer's reasoning. Maker–checker boundary.
-
-### Reviewer
-
-Judges **correctness** — whether the implementation actually does what the spec says, not merely whether its own tests pass. A separate agent from the Implementer (maker–checker), reading the UC spec independently of the test's assertions.
-
-**Receives:** the owning UC spec body (the `SC-XXXX` scenarios in the task's `Covers`, verbatim); the task's `Covers` list and grading prose; the final integration test file; the final production files the task touched. It does **not** receive the Implementer's reasoning.
-
-**Verifies:**
-
-1. **Meaningful assertions** — each covered `SC-XXXX` has at least one assertion pinning a user-observable exit (response/status, persisted state, an external call/message, an observable side effect), not vacuous line coverage.
-2. **Right expectation** — the asserted expected values match what the scenario says must happen. The Reviewer derives the expected behavior from the spec itself and flags any assertion that pins a value the spec does not call for.
-3. **Real implementation** — production code genuinely implements every covered scenario; no stub, `TODO`, `FIXME`, `not implemented`, or hard-coded return that only satisfies the fixture.
-4. **No missing scenario** — every scenario in `Covers` is addressed in the test, and in the code for every kind except `cover`.
-
-**Returns:** exactly one of `correct`, `defects{list}`, or `spec_defect{list}`.
-
-`defects{list}` — the spec is right and the work does not match it. Each defect names the `SC-XXXX`, the file, and what is wrong. This sends the task back to the Implementer; it is never resolved by placating the Reviewer superficially — the fix must satisfy the spec.
-
-`spec_defect{list}` — **the spec itself is the problem.** Each item names the `SC-XXXX` (or the behavior that has no `SC-XXXX`), and states whether the spec is *wrong* (it specifies behavior that is incorrect or contradicts a sibling scenario) or *silent* (the code must handle a case no scenario covers). Return this only when changing the code or the test cannot resolve the finding, because the spec is what they would have to satisfy.
-
-The distinction matters because the two results go to different places. `defects` loops back to the Implementer. `spec_defect` reaches the orchestrator's adaptation path, where the spec is edited and a task is added — the Reviewer cannot edit a spec and must not try. Without this third value a Reviewer that finds a wrong spec has only `defects`, which sends the Implementer to fix code that was already right.
-
-## Test-First
-
-Test file is created or extended before any production-code edit in the same round. The orchestrator diffs the test-file set between rounds and rejects rounds with no new test path.
+There is no separate test-writer, no separate code-writer, and no red-first ceremony. The test-before-code order inside the session is the only sequencing rule — the test file is created or extended before any production-code edit.
 
 Write production code in its final form on the first pass. No throwaway-minimum-then-refactor middle step.
 
-## Integration Tests Only
+Two mechanical guards replace the old role split, and a judgment layer sits above both:
+
+- **The verify hook** proves the impacted tests are green and the metrics meet their floors. See **The Verify Hook** below.
+- **The mutation check** proves the assertions detect a broken implementation. See **The Mutation Check** below.
+- **The final verification** — the CLI's read-only reviewer session at the end of each cycle — judges what only judgment can: spec conformance, real implementation versus stubs, module ownership, and example coverage. The builder never grades its own correctness.
+
+## Entry-Point-Only
+
+Testing is hexagonal and entry-point-only: the test drives the module through the interface element named by the task's `entryType` — the element's row in the module's INTERFACE.md names the transport and address — mocks at the outer edge, and asserts user-observable exits. How the module does it internally is never asserted.
 
 Integration-tests-only is Principle 1 (`principles` skill) — that section is canonical for what Molcajete does and does not generate, and for how pre-existing host unit tests are treated.
 
-Operationally: the integration test is the contract for the task's scenarios. Where the contract cannot be economically exercised through the driver port, the task's design is wrong — either the seam or the scenario. Escalate; do not fall back to a unit test.
+Operationally: the integration test is the contract for the task's scenarios. Where the contract cannot be economically exercised through the entry point, the task's design is wrong — either the seam or the scenario. Escalate; do not fall back to a unit test.
 
 ## Outer-Edge Mocking
 
-Principle 2 sets the boundary. Applied to a build round: run for real — handlers, services, domain layer, repositories, validation, serialization. Mock at the outer edge only — network transport you don't own, the database driver (or use testcontainers), third-party APIs, time, randomness.
+Principle 2 sets the boundary. Applied to a task: run for real — handlers, services, domain layer, repositories, validation, serialization. Mock at the outer edge only — network transport you don't own, the database driver (or use testcontainers), third-party APIs, time, randomness.
+
+Tests must not require pre-running infrastructure: rely on testcontainers, in-process drivers, or outer-edge interceptors, so the verify hook can run them anywhere.
 
 ## Assertions
 
@@ -78,6 +47,40 @@ Assert on the user-observable consequences of the subject — response, state ch
 Cross-boundary effects the subject *causes* (welcome email enqueued, downstream event fired) belong on this subject's tests. Assert on the observation, not the producer's internals.
 
 One assertion target per test. Split if a single test would assert on three independent things.
+
+**Examples are assertions.** Every `E-NNN` example the task carries becomes a fixture or an assertion using the example's exact values. The final verification treats an example no test asserts as a finding.
+
+## The Verify Hook
+
+Validation is the host's, not Molcajete's. The hook is generated by `molcajete setup`, and Molcajete knows nothing about how tests run — it hands over the changed files and reads back a verdict. That is the entire integration contract with the host project.
+
+```ts
+// input
+{ files: string[], thresholds: { coverage: {...}, complexity: number, crap: number } }
+
+// output
+{
+  status: "success" | "failure" | "infra_failure",
+  issues: string[],          // fed back verbatim as the only retry context
+  metrics: {                 // per touched file / function
+    coverage: {...},         // the four-dimension floors, default 80
+    complexity: {...},       // cyclomatic complexity per function, against the ceiling
+    crap: {...}              // CRAP index per function, against the ceiling
+  }
+}
+```
+
+The hook runs the **impacted tests only** — never the full suite, not even the module's suite. On `failure`, the `issues[]` list goes back to the task session verbatim; nothing else does. On `infra_failure` the run halts — retrying against dead infrastructure teaches nothing.
+
+The CRAP index — Change Risk Anti-Patterns, by Alberto Savoia and Bob Evans — is `CRAP(m) = comp(m)² × (1 − cov(m))³ + comp(m)`, where `comp(m)` is the function's cyclomatic complexity and `cov(m)` is its branch coverage as a fraction: a complex function is acceptable when well covered, a simple one when lightly covered, and a complex uncovered one fails. The classic ceiling is 30. Complexity tooling is language-specific, which is exactly why it lives in the host's hook.
+
+**Every step ends with a hook call, including steps that change no production code.** A `test`-kind task, a spec-apply step, a step that only edits INTERFACE.md — each still calls the hook, passing an empty (or code-free) changed-file list, and the hook returns success trivially. One procedure, no special cases.
+
+## The Mutation Check
+
+With one actor writing both test and code in one session, vacuous tests are the failure mode to guard against. The mutation check is the only mechanical proof that the assertions detect a broken implementation: replace each export in the task's `provides` with a throw, run the impacted tests, expect red. A mutant that survives means the assertions never exercised the export — the task is not done.
+
+One extra scoped run per task. Formatting and lint are the host's business and out of scope here.
 
 ## Reading `specs/TECH-STACK.md`
 
@@ -118,23 +121,11 @@ When halting to ask, follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-question
 - Header: "Runner"
 - Options: one per detected candidate
 
-Cache the resolution on the in-memory loop state for this invocation; do not write back to `specs/TECH-STACK.md` unless asked.
+Cache the resolution for this invocation; do not write back to `specs/TECH-STACK.md` unless asked.
 
-### Scoped command shapes
+## Coverage Floors
 
-For touched-files coverage, use the runner's per-file flag:
-
-| Runner | Scoped test | Scoped coverage flag |
-|---|---|---|
-| Vitest | `npx vitest run {paths}` | `--coverage --coverage.include={src}` (repeat per file) |
-| Jest | `npx jest {paths}` | `--coverage --collectCoverageFrom={src}` (repeat per file) |
-| pytest | `pytest {paths}` | `--cov={module_or_dir}` (repeat) |
-| go test | `go test {pkgs}` | `-cover -coverpkg={pkgs}` |
-| cargo | `cargo test {filter}` | `cargo llvm-cov --include-files {src}` if available |
-
-## Coverage Gate
-
-The gate is **four-dimensional**: lines, statements, branches, and funcs. The floor for each comes from `.molcajete/settings.json`:
+The floors are **four-dimensional**: lines, statements, branches, and funcs. Each comes from `.molcajete/settings.json`:
 
 ```json
 {
@@ -149,36 +140,28 @@ The gate is **four-dimensional**: lines, statements, branches, and funcs. The fl
 }
 ```
 
-**Backwards compatibility.** If `testing.threshold` (singular, a single number) is set and `testing.thresholds` (plural, the object) is not, apply the single number to all four dimensions. If both are present, the plural object wins. `/m:build` upgrades a legacy single-number setting on first read (Step 3) by writing the expanded form back without changing behavior.
+**Backwards compatibility.** If `testing.threshold` (singular, a single number) is set and `testing.thresholds` (plural, the object) is not, apply the single number to all four dimensions. If both are present, the plural object wins.
 
-Coverage is **scoped to the touched files** — the union of the files the task's prose names (create + modify) and every file the Implementer has changed during the loop. The Validator never judges the whole project.
+Coverage is **scoped to the touched files** — the hook receives the changed-file list and judges only those. `success` requires: impacted test run green AND, for every touched file, every one of the four dimensions at or above its floor. A file with lines at 100% but branches at 66% does NOT pass.
 
-`pass` requires: scoped test run green AND, for every touched file, every one of the four dimensions at or above its floor. A file with lines at 100% but branches at 66% does NOT pass.
+### Gap classification
 
-`coverage_low` lists per-touched-file gaps **per dimension**, with concrete locations:
+For every coverage gap the hook reports, the task session must classify it before resolving:
 
-- Uncovered line ranges (for the `lines` / `statements` dimensions).
-- Uncovered branches with the conditional location (file:line and the condition text).
-- Uncovered functions by name.
-
-### Gap classification (build-time)
-
-For every gap reported by the runner, the Implementer must classify it before resolving:
-
-1. **Reachable behavior** — the gap maps to an `SC-XXXX` in the UC spec that the current test plan does not assert (or asserts only the happy path). **Resolution: add the missing test case.** If the new assertion belongs to a scenario not yet in the task's `Covers` list, add the corresponding `SC-XXXX` to the task's `Covers` in the plan file.
+1. **Reachable behavior** — the gap maps to an `SC-XXXX` in the UC spec that the current tests do not assert (or assert only the happy path). **Resolution: add the missing test case.** If the new assertion belongs to a scenario not in the task's `covers`, report it — the orchestrator revises the plan; the task session never edits `plan.json`.
 2. **Defensive / unreachable** — the gap is a branch or function that cannot be reached from any specified scenario (typical examples: `if (!input) throw` guards on internal calls, default switch arms, error paths that the type system already forbids). **Resolution: delete the code.** If the code must stay for runtime safety, scope the runner's ignore directive to that branch only with a one-line comment that names the reason and links back to where the guarantee comes from.
-3. **Orphaned assertion / dead behavior** — a test case, assertion, comment, or production path that serves an `SC-`/`FR-`/`NFR-` no longer present in the current UC spec (typically because `/m:fix` or `/m:change` retired it). **Resolution: delete it** — the test case, its explanatory comment, and the now-dead production code together. This is proactive cleanup per Principle 1.5, not coverage padding: never keep the code alive by asserting the retired behavior is gone.
+3. **Orphaned assertion / dead behavior** — a test case, assertion, comment, or production path that serves an `SC-`/`FR-`/`NFR-` no longer present in the current UC spec. **Resolution: delete it** — but only when the retired ID is in the task's `retires` list. This is proactive cleanup per Principle 1.5, not coverage padding: never keep the code alive by asserting the retired behavior is gone.
 
-**Raising the floor is never a resolution.** The thresholds are a minimum bar; the goal under "every line fulfills a requirement" is to be close to 100% on every dimension. If the model is tempted to lower the floor, the gap is one of the two cases above — pick one.
+**Raising the floor is never a resolution.** The thresholds are a minimum bar; the goal under "every line fulfills a requirement" is to be close to 100% on every dimension. If the model is tempted to lower the floor, the gap is one of the cases above — pick one.
 
-The Implementer prefers branches whose addition exercises a real path over padding totals — every test added in case 1 must come from a UC scenario, not a contrived input designed to clip a branch.
+Prefer branches whose addition exercises a real path over padding totals — every test added in case 1 must come from a UC scenario or a request example, not a contrived input designed to clip a branch.
 
 ## Reconciling Changed Behavior
 
-When a task's owning UC changed via `/m:fix`, `/m:change`, or `/m:spec` (the UC is `dirty`), the existing canonical test file (and its production code) may now describe behavior the spec no longer contains. Before adding or adjusting any assertion, reconcile the file against the **current** UC spec:
+When a task's owning UC changed in this run (the request's diffs touched it), the existing canonical test file (and its production code) may describe behavior the spec no longer contains. Before adding or adjusting any assertion, reconcile the file against the **current** UC spec on the run branch:
 
-- Diff the UC's current `SC-`/`FR-`/`NFR-` set against the IDs the existing test file references (in the task's `Covers`, in `// SC-XXXX:` comments, and in the assertions themselves).
-- **Retired IDs** — delete their test cases, their explanatory comments, and the production code that existed only to serve them (per Principle 1.5 and the "Orphaned assertion / dead behavior" gap class).
+- Diff the UC's current `SC-`/`FR-`/`NFR-` set against the IDs the existing test file references (in `// SC-XXXX:` comments and in the assertions themselves).
+- **Retired IDs** — for every ID in the task's `retires` list: delete its test cases, their explanatory comments, and the production code that existed only to serve them. An ID not in `retires` is never deleted, no matter how dead it looks — report it instead.
 - **Changed IDs** — rewrite the assertion to the new expected values; do not keep the old expectation alongside.
 - **New FR / behaviorally-observable NFR** — add a positive test case that asserts the new behavior directly.
 
@@ -188,22 +171,35 @@ Do **not** convert a retired scenario into a test that asserts it now fails or i
 
 Restructure only when:
 
-1. Validator feedback requires it (the fix isn't additive — shape is wrong), or
+1. Hook feedback requires it (the fix isn't additive — shape is wrong), or
 2. A later task's behavior doesn't fit the shape of earlier-task code; reshape as part of the current task.
 
 Don't reshape just because the code "could be cleaner." Writing in final form on the first pass is the goal.
 
-When the task is a coverage-recovery task (description names uncovered paths in existing code), touch production only when the seam is untestable (e.g., outer-edge client constructed internally with no injection point); reshape the minimum needed.
+When the task is a `test`-kind task against code with no drivable seam (e.g., an outer-edge client constructed internally with no injection point), reshape the minimum needed to create the seam — that mechanical seam work belongs to the task and still adds no new behavior.
 
 ## Test Naming
 
 `when X then Y`. Describe blocks (or runner equivalent) mirror the behavior hierarchy.
 
-## Where Integration Tests Live
+## Test File Convention
 
-Test files are placed at a canonical path derived from the task's owning UC and `specs/MODULES.md`. The agent does not pick the path — it is computed. See the plan-authoring skill's "Test File Convention" for the formula and the build command's task-validation step for validation.
+This section is canonical — the planner and the builder both derive test paths from it; nobody picks a path ad hoc.
 
-The canonical layout is a **dedicated tests tree keyed by module**, mirroring the spec tree module → feature → UC test. The `Tests` column of each module's row in `specs/MODULES.md` names this tree (typical values: `server/tests/{module}`, `tests/{module}`, `packages/{module}/tests`). **Integration tests do not live inside module source directories** — that would mix behavior tests with implementation code and break the "grep the tests tree to find every test for a feature" property.
+Integration test files are placed at a canonical path derived from the task's owning UC and `specs/MODULES.md`. The layout mirrors the spec tree **module → feature → use case test** so any reader can grep the tree by feature or UC and find the integration test that pins its behavior:
+
+```
+{module.Tests}/{feature-dir-name}/{uc-dir-name}.{test-ext}
+```
+
+| Token | Resolution |
+|-------|-----------|
+| `{module.Tests}` | The `Tests` column of the module's row in `specs/MODULES.md` (set by `/m:setup`). Integration tests live in a dedicated tests tree, not inside module source dirs. |
+| `{feature-dir-name}` | The task's parent feature dir under `specs/features/{module}/`, e.g. `FEAT-3FA1-onboarding` |
+| `{uc-dir-name}` | The parent UC's ID and slug, e.g. `UC-9KC2-order-expiry` — this is the test file's own name, not a subdirectory |
+| `{test-ext}` | Per-runner extension from `specs/TECH-STACK.md` Testing row or Runner Inference: `test.ts` (Vitest/Jest), `_test.py` (pytest), `_integration_test.go` (Go, with `//go:build integration`), `_spec.rb` (RSpec), etc. |
+
+One test file per UC: every task that closes scenarios in that UC — whether from the UC's original change or a later fix — targets this same file, appending to it rather than producing a new one. The planner includes this path in the task's `files` footprint, so two tasks on one UC serialize instead of colliding.
 
 Pre-existing unit tests in the repo are left exactly where they are — Molcajete does not migrate, delete, or reason about them.
 
