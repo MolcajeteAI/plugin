@@ -163,6 +163,14 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Fix:** Add the missing column, inferring each module's value from imports and service calls in the codebase. For each missing charter, run the charter interview from the module-authoring skill — responsibilities are intent and cannot be extracted from code, so this fix asks per module.
 - **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/MODULES-template.md`.
 
+### `spec-anchors`
+
+- **Artifact:** the `<a id>` anchor lines above ID-bearing headings across `specs/features/`.
+- **Category:** SCHEMA GAPS
+- **Detection:** Sample up to 5 UC spec files (`specs/features/*/FEAT-*/UC-*.md`) and 5 `REQUIREMENTS.md` files. List as drift when any sampled ID-bearing heading (`# UC-XXXX:`, `### SC-XXXX:`, `**FR-XXXX**`, `**NFR-XXXX**`) has no `<a id="{ID}"></a>` line immediately above it.
+- **Fix:** Recommend `/m:migrate`. The repair is spec migration, not drift — anchors, INTERFACE.md/DATA.md population, and the charters belong to one migration pass, and setup never performs it. The report line reads: "v3 spec files without anchors — run `/m:migrate` to migrate the spec tree."
+- **Source of truth:** the anchor rules in `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md` and `feature-authoring/SKILL.md`; the migration pass in `${CLAUDE_PLUGIN_ROOT}/spec/commands/migrate.md`.
+
 ### `dot-claude-rules-dir`
 
 - **Artifact:** `.claude/rules/` directory.
