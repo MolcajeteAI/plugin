@@ -3,10 +3,10 @@ name: spec-revision
 description: >-
   Shared machinery for the revising spec commands (/m:fix, /m:change). Owns the
   skill load list, the prerequisite gate, loading the referenced specs, resolving a
-  UC-XXXX to its module-instances with the multi-module fan-out, the spec-edit
-  application rules, changelog and status writing, plan production, and the report
-  shape. Both commands revise an existing FEAT/UC and hand a plan straight to
-  /m:build.
+  UC-XXXX to its module-instances with the multi-module fan-out, the defect
+  diagnosis, the diff-drafting rules, and the report shape. Both commands revise
+  an existing FEAT/UC by composing a change request — they never edit the spec
+  tree, and the CLI applies the request on the run branch.
 ---
 
 # Spec Revision
@@ -14,13 +14,14 @@ description: >-
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 The revising family — `/m:fix` and `/m:change` — both start from one or more existing `FEAT-XXXX` /
-`UC-XXXX` IDs, resolve each UC to the module-instances that actually exist for it, edit the specs (always
-for `/m:change`, conditionally for `/m:fix`), log the event, and **produce the plan themselves** in the
-same invocation — there is no separate `/m:plan` step. This skill owns that machinery. Neither command
-ever writes production code or tests; hand-off to `/m:build` is mandatory.
+`UC-XXXX` IDs, resolve each UC to the module-instances that actually exist for it, draft the spec revision
+(always for `/m:change`, conditionally for `/m:fix`), and **compose a change request** — `request.md`
+under `specs/changes/{change-id}/`, per the change-request skill. This skill owns that machinery. Neither
+command edits the spec tree, writes a plan, or writes production code or tests; the base branch's specs
+stay untouched until `molcajete build {change-id}` applies the request on the run branch.
 
 The calling command supplies what is genuinely its own: its argument examples and refusal string, its
-decision step, its `command` token and `reason` policy, and its hand-off line.
+decision step, its `command` token, and its hand-off line.
 
 ## Skills to Load
 
@@ -29,12 +30,11 @@ Load these after this skill:
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before any spec edit is applied.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
-8. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used by **Producing the Plan** below.
-9. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in **Producing the Plan** applies these.
+4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/module-authoring/SKILL.md` — the charters and the two authoring questions; the INTERFACE.md and DATA.md formats the request's sections 3 and 4 use.
+5. `${CLAUDE_PLUGIN_ROOT}/spec/skills/change-request/SKILL.md` — the request.md format and its apply rules.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before the request is written.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
+8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing).
 
 ## Prerequisites
 
@@ -49,6 +49,7 @@ For each FEAT/UC ID:
 - Resolve the spec path. Read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` for UC IDs.
 - Read the feature's `ARCHITECTURE.md`.
 - Read the UC's `CHANGELOG.md` (for context on prior changes).
+- Read the owning module's `specs/modules/{module}/INTERFACE.md` and `DATA.md` — the request's interface and data sections revise them.
 
 ## Resolving UC Module-Instances
 
@@ -67,116 +68,90 @@ For each `UC-XXXX` ID:
    - Options: "All ({N})" / one option per module ("Only {module}")
 
    Do not add a "Custom — I'll list them" option; the built-in `Other` already collects a subset.
-5. Record the confirmed target set per UC-XXXX. All subsequent steps iterate over that set.
+5. Record the confirmed target set per UC-XXXX. All subsequent steps iterate over that set. The request's per-module sections are built from it.
 
 For FEAT IDs the same fan-out applies transitively: expand the FEAT to its UCs (per **Loading the
 Referenced Specs**), then resolve each UC's module-instances here.
 
 ## Diagnosing a Defect
 
-Every defect resolves to exactly one of three diagnoses, and the diagnosis decides both whether a spec is
-edited and what kind of task the plan gets. Run this before any edit.
+Every defect resolves to exactly one of three diagnoses, and the diagnosis decides both whether the
+request carries a spec diff and which `command` token the request records. Run this before any drafting.
 
-| Diagnosis | When | Spec edit | Task kind |
-|-----------|------|-----------|-----------|
+| Diagnosis | When | Spec diff in the request | Request command |
+|-----------|------|--------------------------|-----------------|
 | **Spec correct, code wrong** | The current spec already states the desired behavior; the defect is purely in the implementation. | none | `fix` |
-| **Spec silent** | The spec does not address the behavior at all — a missing scenario or a missing FR. | Add the missing scenario or FR to the relevant UC / feature. | `fix` |
-| **Spec wrong** | The spec explicitly states the incorrect behavior; the spec itself needs correcting. | Edit the offending scenario / FR. Increment UC `version`. | `change` |
+| **Spec silent** | The spec does not address the behavior at all — a missing scenario or a missing FR. | Add the missing scenario or FR, shown whole and marked new. | `fix` |
+| **Spec wrong** | The spec explicitly states the incorrect behavior; the spec itself needs correcting. | The offending scenario / FR as before and after, with the `version` increment noted. | `change` |
 
 **The diagnosis can differ per module-instance.** A defect may live entirely in one module's code while the
 peer module is correct. Never force a single diagnosis across module-instances.
 
-**Spec silent produces a `fix`, not an `implement`.** The behavior already ships; writing the scenario down
-records what was always intended, and the task then makes the code match it.
+**Spec silent produces a `fix`, not new-behavior work.** The behavior already ships; writing the scenario down
+records what was always intended, and the run then makes the code match it.
 
-This table has three callers. `/m:fix` runs it in its Step 6 against the user's bug description.
-`/m:change` does not run it — a change request is a spec edit by definition, so its diagnosis is always
-**Spec wrong**. The `plan-adaptation` skill runs it mid-build against a defect `/m:build` discovered.
+This table has three callers. `/m:fix` runs it against the user's bug description. `/m:change` does not run
+it — a change request is a spec edit by definition, so its diagnosis is always **Spec wrong**. The CLI runs
+it mid-execution against a defect the run discovered, routing the outcome through its decide-and-record rule.
 
-## Applying Spec Edits
+## Drafting the Diffs
 
-For each module-instance the command confirmed, edit its `UC-XXXX-{slug}.md` (the UC spec file, a sibling
-of REQUIREMENTS / USE-CASES / ARCHITECTURE for that module's feature folder). Increment frontmatter
-`version` on each edited file — versions are per-file. Update that module's `ARCHITECTURE.md` per the
-architecture skill's additive rules; the calling command states how far that update reaches.
+For each module-instance the command confirmed, draft the revision as the request's before-and-after
+diffs — the spec file itself is never touched. Two rules from the in-place era survive as diff rules:
 
-**Edits replace, never annotate.** Replace the incorrect or superseded text with the behavior that should
-hold now — do not keep the old wording or annotate it with "was X, now Y" / "previously X". The changelog
-entry's `reason` is the only record of what changed and why.
+**The After text replaces, never annotates.** Write the behavior that should hold now — do not keep the
+old wording inside the After, and do not annotate it with "was X, now Y" / "previously X". The request's
+diff already shows the Before, and the changelog entry the apply step writes is the record of what changed.
 
-This replace-never-annotate rule governs the **spec files only**. It never reaches the CHANGELOG, which is
-append-only — see below.
+**Replace the text, never the ID.** Every `FEAT-`, `UC-`, `SC-`, `FR-`, `NFR-`, `US-`, and `ADR-` ID in the
+Before survives into the After character-for-character, anchors included. Rewriting a scenario's Steps does
+not change its `SC-XXXX`; retiring one scenario does not renumber the others; propagating an edit to a peer
+module-instance never carries a peer's IDs across. Only a genuinely new entity gets a generated ID. See the
+`id-generation` skill's **Immutability** section.
 
-**Replace the text, never the ID.** Every `FEAT-`, `UC-`, `SC-`, `FR-`, `NFR-`, `US-`, and `ADR-` ID already in
-the file survives the edit character-for-character. Rewriting a scenario's Steps does not change its `SC-XXXX`;
-retiring one scenario does not renumber the others; propagating an edit to a peer module-instance never carries
-a peer's IDs across. Only a genuinely new entity gets a generated ID. See the `id-generation` skill's
-**Immutability** section, including its post-edit self-check.
+A revision that changes the module's public surface or its stores also drafts the matching INTERFACE.md and
+DATA.md diffs (the request's sections 3 and 4). When the revision needs a relationship not in the module's
+`Depends on`, or a responsibility no charter holds, ask the module-authoring skill's two questions — the
+charter amendment goes into the request's section 6.
 
-## Logging and Status
+## Composing the Request
 
-For each module-instance in the set the calling command names, append the changelog entry per the `uc-log`
-skill, then write that instance's and its parent feature's status per the `status-rollup` skill. A peer
-instance not touched in this run keeps its prior status.
+Compose `request.md` per the change-request skill: create the change directory
+(`date -u +%Y%m%dT%H%M%S` for the timestamp, short kebab-case slug), fill the template's six sections
+from the confirmed diffs, close every change entry with its `### Additional Notes` and `### Examples`
+subsections, and seed examples the user's description already pins (exact values) as `E-NNN` entries.
 
-"Append" here means the `uc-log` skill's mutation 1: **insert a new line at the top of `TODO:`**. The
-CHANGELOG is append-only. Never edit, replace, re-timestamp, or delete an existing entry — not even when
-this run's `reason` reads much like an entry already in the file. A repeated run is two entries, and that
-repetition is history the log is meant to keep.
+`/m:change` marks every retired scenario **retired** in section 2 — stating what it used to assert — so
+the planning session can populate the `retires` list of the tasks that delete its tests and code.
 
-Entry values shared by both commands:
-
-- plan: `—`
-- timestamp: the **same** UTC timestamp for every module-instance in this fan-out
-
-The calling command supplies the `command` token, the `reason` policy, the `modules` token rule, and which
-module-instances get an entry.
-
-## Producing the Plan
-
-Run the **Producing a Plan** procedure from the `plan-authoring` skill over the entries just logged. The
-task `**Kind:**` follows the calling command: `/m:fix` produces `fix` tasks, `/m:change` produces `change`
-tasks. The plan's `**Mode:**` is derived from the final task kinds, so it reads `implement` until the
-coverage step adds `cover` tasks, and `mixed` after.
-
-The procedure runs the architecture pass, presents the task breakdown via AskUserQuestion (the review gate
-— a wrong reading of the request is caught here before any code is built), writes
-`specs/plans/<plan-id>.md`, and flips the logged entries from `pending` to `dirty` with the plan-id
-stamped.
+Run the `resolution-gate` procedure before writing. The request file is the only file the command writes.
 
 ## Reporting
 
 This is the shape. The heading states the outcome, one table covers every module-instance touched, and the
-plan follows.
+hand-off follows.
 
 ````markdown
-## UC-3Z2L revised — 2 module-instances
+## Change request ready — {change-id}
 
-| Module | What changed | Status | Log entry |
-|---|---|---|---|
-| `auth` | `SC-3Z2P` outcome now allows a score above 100 | dirty | appended, `modules:auth,console` |
-| `console` | `SC-3Z2T` display range widened | dirty | appended, `modules:auth,console` |
-
-`FEAT-3Z2K` rolled up to `dirty`.
-
-**Plan written** — `specs/plans/20260820T1430-remove-score-ceiling.md`
-
-| Task | Outcome | Covers |
+| Module | What changes | Diagnosis |
 |---|---|---|
-| T-001 | Calibrated score passes through above 100 | `SC-3Z2P` |
-| T-002 | Console renders the wider range | `SC-3Z2T` |
+| `auth` | The above-ceiling outcome (SC-3Z2P) now allows a score above 100 | spec wrong |
+| `console` | The display-range scenario (SC-3Z2T) widens | spec wrong |
+
+Review `specs/changes/{change-id}/request.md`. Edit the **Additional Notes** and **Examples**
+subsections freely — the run reads them at trigger time.
 ````
 
-**One table row per module-instance.** The `What changed` cell holds one clause, not a paragraph. Write
-`no edit needed` in that cell when the command changed no spec — that is a result, not an omission.
+**One table row per module-instance.** The `What changes` cell holds one clause, not a paragraph. Write
+`no spec diff — code-only fix` in that cell when the diagnosis was **Spec correct, code wrong** — that is
+a result, not an omission.
 
-**Note the `modules:` token** in the `Log entry` cell only when the UC has two or more instances.
-
-**A skipped instance still gets a row**, with `skipped` in `What changed` and its prior status unchanged.
-Print no section for skipped instances when the user skipped none.
+**A skipped instance still gets a row**, with `skipped` in `What changes`. Print no section for skipped
+instances when the user skipped none.
 
 When the run touched several `UC-XXXX` IDs, print one heading and one table per UC.
 
-End the report with the command's explicit hand-off line, which always names the plan file and the
-`/m:build <plan-id>` invocation — which runs every unfinished task in the plan — plus the
-`/m:build <plan-id> T-001 [more ...]` form for a subset.
+End the report with the command's explicit hand-off line, which always names the change directory and the
+`molcajete build {change-id}` invocation, and states that deleting the change directory abandons the
+request with the spec tree untouched.
