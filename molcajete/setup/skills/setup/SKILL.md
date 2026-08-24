@@ -3,8 +3,9 @@ name: setup
 description: >-
   Rules and templates for the /m:setup command. One-shot foundation setup
   from a single project description plus codebase detection. Generates
-  PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, MODULES.md,
-  DOMAINS.md, FEATURES.md, and .molcajete/settings.json.
+  PROJECT.md, TECH-STACK.md, ACTORS.md, GLOSSARY.md, MODULES.md with module
+  charters, DOMAINS.md, FEATURES.md, the per-module INTERFACE.md and DATA.md
+  scaffolds, and .molcajete/settings.json.
 ---
 
 # Project Setup
@@ -18,7 +19,8 @@ description: >-
 From the user's description and the codebase scan, compose:
 
 - **PROJECT.md** — 1–2 paragraph project description.
-- **MODULES.md** — physical application layers (one per `apps/*/`, `services/*/`, `packages/*/`, `cmd/*/`, or one root module). Each: ID (kebab-case), Name, Description, Directory, Tests, Driving Ports. The `Tests` column is the per-module root for integration/component test files; see the "Tests Column" rule below for per-language defaults. The `Driving Ports` column lists the kinds of entry points the module exposes; see the "Driving Ports Column" rule below for detection.
+- **MODULES.md** — physical application layers (one per `apps/*/`, `services/*/`, `packages/*/`, `cmd/*/`, or one root module). Each: ID (kebab-case), Name, Description, Directory, Tests, Driving Ports, Depends on — plus a charter section below the table per the module-authoring skill. The `Tests` column is the per-module root for integration/component test files; see the "Tests Column" rule below for per-language defaults. The `Driving Ports` column lists the kinds of entry points the module exposes; see the "Driving Ports Column" rule below for detection. The `Depends on` column is the closed allowed set of module relationships, inferred from imports and service calls.
+- **modules/{module}/INTERFACE.md and DATA.md** — per-module contract scaffolds from the module-authoring skill's templates. Empty on a fresh project; populated from detection on an existing codebase.
 - **TECH-STACK.md** — per-module Language, Framework, Build, Key libraries, Styling, Testing, Lint/Format; project-level Runtime, Services, Applications, External Services, Repository Structure, Tooling, Environment, Conventions. Leave `Modules.{name}.Testing` blank when detection finds no clear runner — the build loop's Runner Inference handles it.
 - **ACTORS.md** — discovered from auth middleware, admin routes, webhook handlers, API key validation, plus any mentioned in the description.
 - **DOMAINS.md** — logical concerns (identity, billing, notifications, etc.) inferred from route prefixes, model names, or the description.
@@ -39,7 +41,7 @@ Per-module testing tool detection follows `${CLAUDE_PLUGIN_ROOT}/shared/skills/t
 
 ## Tests Column (MODULES.md)
 
-Every module gets a `Tests` value at setup time. It is the per-module root directory under which integration/component test files live (UC test files are derived from this root plus the UC's feature dir — see the plan-authoring skill's "Test File Convention").
+Every module gets a `Tests` value at setup time. It is the per-module root directory under which integration/component test files live (UC test files are derived from this root plus the UC's feature dir — see the testing skill's "Test File Convention").
 
 Always per-module, derived from `{module.Directory}` using a language-aware default. Pick the row that matches the module's primary language:
 
@@ -143,15 +145,23 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Category:** SCHEMA GAPS
 - **Detection:** Read the file as JSON. Verify `testing.thresholds` is present, is an object, and carries the four numeric dimensions `lines`, `statements`, `branches`, and `funcs`. List as drift when the key is missing, is a number rather than an object (the legacy singular `testing.threshold`), or omits a dimension.
 - **Fix:** Read the existing file, preserving all other keys and nested structure. When the legacy singular `testing.threshold = N` is present, expand `N` to all four dimensions and remove the singular key. Otherwise merge in the missing dimensions at `80`. Write back.
-- **Source of truth:** `build.md` Step 3, which resolves the four per-dimension floors and performs the same in-place upgrade at build time.
+- **Source of truth:** the CLI's verify-hook contract, which passes the four per-dimension floors as `thresholds.coverage`.
 
-### `settings-adaptation`
+### `module-contract-files`
 
-- **Artifact:** `.molcajete/settings.json` `adaptation` key.
+- **Artifact:** `specs/modules/{module}/INTERFACE.md` and `specs/modules/{module}/DATA.md`, one pair per module in `specs/MODULES.md`.
+- **Category:** NEW ARTIFACTS
+- **Detection:** For each module row in `specs/MODULES.md`, check that both files exist. One finding per missing file.
+- **Fix:** Scaffold the missing file from the module-authoring skill's template (`INTERFACE-template.md` / `DATA-template.md`). Scaffold only — populating the rows from code is `/m:migrate`'s job, and the fix says so in its report line.
+- **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/spec/skills/module-authoring/SKILL.md` and its templates.
+
+### `modules-charter`
+
+- **Artifact:** `specs/MODULES.md` `Depends on` column and per-module charter sections.
 - **Category:** SCHEMA GAPS
-- **Detection:** Read the file as JSON. Verify `adaptation` is present and is an object carrying `maxAmendments` (number), `maxTasksPerAmendment` (number), and `allowSpecEdits` (boolean). List as drift when the key is missing or any of the three is absent or the wrong type. Never list a *value* as drift — a project that sets `maxAmendments: 0` has chosen to keep the pre-adaptation behavior, and update mode must not undo that choice.
-- **Fix:** Read the existing file, preserving all other keys. Merge in only the missing keys, at `maxAmendments: 3`, `maxTasksPerAmendment: 2`, `allowSpecEdits: true`. Write back. Tell the user that `/m:build` can now amend a plan mid-run, and that `maxAmendments: 0` restores the previous halt-on-discovery behavior.
-- **Source of truth:** the `plan-adaptation` skill's **Budget** section.
+- **Detection:** The registry table has no `Depends on` column, **OR** a module row has no `## {module}` charter section below the table carrying the three parts (Responsibilities, Not responsible for, Relationships).
+- **Fix:** Add the missing column, inferring each module's value from imports and service calls in the codebase. For each missing charter, run the charter interview from the module-authoring skill — responsibilities are intent and cannot be extracted from code, so this fix asks per module.
+- **Source of truth:** `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/templates/MODULES-template.md`.
 
 ### `dot-claude-rules-dir`
 
@@ -166,7 +176,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
 - **Artifact:** entire `specs/` tree.
 - **Category:** SCHEMA GAPS (structural migration; no plugin-owned content is overwritten, but files are moved and renamed).
 - **Detection:** Any of:
-  - `specs/modules/` directory exists.
+  - Any `specs/modules/{module}/features/` directory exists (the old module-first feature layout — the bare `specs/modules/{module}/` directory is NOT legacy; it holds the v4 INTERFACE.md and DATA.md contract files).
   - Any `specs/features/**/UC-*/usecase.md` file exists (old UC-as-folder-with-usecase.md layout).
   - Any `specs/features/**/UC-*/UC-*.log` files exist (old log naming).
 - **Fix:** Walk every legacy feature folder under `specs/modules/{module}/features/` and migrate per these rules. The target path always includes `{module}/`. Confirm once for the whole migration before applying: the full list of planned moves (grouped by feature, as a Markdown table of from-path and to-path) is the brief; the question is "Apply these {N} file moves?" with options "Apply all" / "Cancel".
@@ -175,7 +185,7 @@ The catalog is the **single source of truth** for what update mode can repair. C
      - Move `UC-AAAA-{slug}/usecase.md` up one level to `FEAT-*/UC-AAAA-{slug}.md` (the UC spec becomes a sibling of REQUIREMENTS / USE-CASES / ARCHITECTURE).
      - Rename `UC-AAAA-{slug}/UC-AAAA-{slug}.log` → `UC-AAAA-{slug}/CHANGELOG.md`.
   3. Update USE-CASES.md file links inside each FEAT folder: replace `UC-AAAA-{slug}/usecase.md` with `UC-AAAA-{slug}.md`.
-  4. Remove the now-empty `specs/modules/` directory tree (only after every feature has migrated successfully).
+  4. Remove each now-empty `specs/modules/{module}/features/` subtree (only after every feature has migrated successfully). Leave `specs/modules/{module}/` itself in place — the v4 contract files live there.
 - **Source of truth:** This catalog entry and the updated path conventions in the feature-authoring / usecase-authoring skills.
 - **Safety:** If any planned target path already exists (collision), abort that feature's migration and surface the conflict in the report. Never overwrite. Leave the source files in place when conflicts block a feature so the user can resolve manually before re-running.
 

@@ -13,15 +13,16 @@ allowed-tools:
 
 # Set Up Project Foundation
 
-One AskUserQuestion: the user describes the project. From that single answer, write `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, and `.molcajete/settings.json`. Detect everything else from the codebase or the description. **Use AskUserQuestion only for the description and the final confirmation** — no multi-stage interview.
+One AskUserQuestion: the user describes the project. From that single answer, write `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/GLOSSARY.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md`, the per-module `specs/modules/{module}/INTERFACE.md` and `DATA.md` scaffolds, and `.molcajete/settings.json`. Detect everything else from the codebase or the description. **Use AskUserQuestion only for the description, the module-charter interview when responsibilities cannot be inferred, and the final confirmation** — no other interview stages.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
 **Writing style:** every document you write and every message you print uses Simplified Technical English. Every one carries only what its reader needs. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/output-economy/SKILL.md` before writing.
 
-## Step 1: Load Skill
+## Step 1: Load Skills
 
-Read `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` for templates and rules.
+1. `${CLAUDE_PLUGIN_ROOT}/setup/skills/setup/SKILL.md` — templates and rules.
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/module-authoring/SKILL.md` — the module charter, INTERFACE.md, and DATA.md rules.
 
 ## Step 2: Regeneration Check
 
@@ -121,7 +122,7 @@ Update complete:
 
 End with the standard hand-off:
 
-> Next: review the changes, commit when satisfied. If `/m:plan` or `/m:build` were planning runs, re-run them so they pick up any new principles or schema additions.
+> Next: review the changes, commit when satisfied. The next run picks up any new principles or schema additions.
 
 ## Step 7: Detect Existing Stack (parallel)
 
@@ -147,16 +148,19 @@ Optionally include scoped follow-ups in the same AskUserQuestion call (up to 4) 
 Combine the description (Step 8) and the codebase findings (Step 7) into a single mental model, and resolve every document per the skill's **Composition** section. Two TECH-STACK fields come only from Step 7's detection:
 
 - **`Running tests`** — the exact command to run the tests for the module. Required when the module ships testable code.
-- **`Coverage`** — the exact coverage command + where to read stats. If the module does not expose coverage stats, write `not available` — `/m:build` will estimate against the 80% floor.
+- **`Coverage`** — the exact coverage command + where to read stats. If the module does not expose coverage stats, write `not available` — the build estimates against the 80% floor.
+
+Compose each module's **charter** — Responsibilities, Not responsible for, Relationships — and its `Depends on` set, per the module-authoring skill. Infer the `Depends on` set from imports and service calls in the scan; infer responsibilities from the description and the module's code. Responsibilities are intent, so when neither source states what a module is for, ask — one AskUserQuestion per unresolved module, brief first per the asking-questions skill. Never write an empty charter silently.
 
 ## Step 10: Present Composite for Confirmation
 
 Present the composed foundation as a brief, then ask:
 
 - Brief: print the full composed foundation as Markdown — a one-sentence project summary, a table
-  of modules (directory, language, framework, runner, running-tests, coverage), then lists of
-  services with types, external services, actors with roles, and domains. Name the 8 files that
-  will be written. Recommend "Write all files". Close with the escape-hatch line.
+  of modules (directory, language, framework, runner, running-tests, coverage, depends-on), each
+  module's charter, then lists of services with types, external services, actors with roles, and
+  domains. Name every file that will be written. Recommend "Write all files". Close with the
+  escape-hatch line.
 - Question: "Write the foundation files now?"
 - Header: "Foundation"
 - Options: "Write all files" / "Edit one section" / "Cancel"
@@ -171,15 +175,15 @@ In a single parallel batch:
 mkdir -p specs .molcajete .claude/rules
 ```
 
-Per module: `mkdir -p specs/features/{module}`. Every project — single- or multi-module — gets a per-module folder under `specs/features/`.
+Per module: `mkdir -p specs/features/{module} specs/modules/{module}`. Every project — single- or multi-module — gets a per-module folder under `specs/features/` and under `specs/modules/`.
 
-Write each foundation file from its template per the skill's **Document Generation** table. For TECH-STACK.md specifically: populate **Running tests** and **Coverage** for every module that ships testable code, using the commands detected in Step 7 (or marked `not available` when the project does not provide a coverage collector).
+Write each foundation file from its template per the skill's **Document Generation** table. Write each module's `specs/modules/{module}/INTERFACE.md` and `DATA.md` from the module-authoring skill's templates: on a fresh project they are scaffolds — diagram stub, empty tables — and on an existing codebase populate what the scan detected. MODULES.md carries the `Depends on` column and one charter section per module, composed in Step 9. For TECH-STACK.md specifically: populate **Running tests** and **Coverage** for every module that ships testable code, using the commands detected in Step 7 (or marked `not available` when the project does not provide a coverage collector).
 
 Write `.molcajete/settings.json` as `{"testing": {"threshold": 80}}` if it doesn't exist; preserve existing keys when it does.
 
 ## Step 12: Write Engineering Principles File
 
-The host project receives a local copy of the engineering principles at `.claude/rules/principles.md`. This is the operative version that `/m:plan` and `/m:build` read; the team can edit it to adapt principles to their context.
+The host project receives a local copy of the engineering principles at `.claude/rules/principles.md`. This is the operative version the executor's sessions read; the team can edit it to adapt principles to their context.
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` and strip its YAML frontmatter (everything between the leading `---` and the closing `---`, plus the closing line itself), keeping the body verbatim from the `# Engineering Principles` heading on.
 
@@ -235,7 +239,9 @@ This is the shape:
 | File | Holds |
 |---|---|
 | `specs/PROJECT.md` | What this project is |
-| `specs/MODULES.md` | 3 modules, their directories, tests, and driving ports |
+| `specs/MODULES.md` | 3 modules, their charters, dependencies, and driving ports |
+| `specs/modules/{m}/INTERFACE.md` | Public-surface scaffold per module |
+| `specs/modules/{m}/DATA.md` | Owned-store scaffold per module |
 | `specs/TECH-STACK.md` | Per-module language, framework, and test tooling |
 | `specs/ACTORS.md` | 4 actors |
 | `specs/DOMAINS.md` | 3 domains |
@@ -250,9 +256,9 @@ This is the shape:
 - The **Running tests** and **Coverage** rows in `specs/TECH-STACK.md` were filled where detection succeeded. Check them.
 - The **Testing framework** field was filled where detectable. The build loop infers the rest from manifests at run time.
 
-Edit `.claude/rules/principles.md` to adapt the principles to your project. `/m:plan` and `/m:build` read it on every run.
+Edit `.claude/rules/principles.md` to adapt the principles to your project. Every run reads it.
 
-> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:build <plan-id>` to execute.
+> Next: `/m:spec "describe a feature"` to write your first change request, then `molcajete build <change-id>` to execute it.
 ````
 
 The `Holds` column carries a count or one clause, never a sentence. Name every file written, including any the run skipped — a skipped file gets a row saying why.
