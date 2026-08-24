@@ -119,8 +119,9 @@ Before you write, run the `resolution-gate` skill's **The Procedure** once over 
 4. Compose the data section per touched module: the entity-relationship diagram with every field's responsibility, touched tables marked, read-only tables kept for context.
 5. Compose the flows: one sequence diagram per changed flow.
 6. Compose the module-relationships section, including any charter amendment Step 6's questions produced.
-7. Close every change entry with its `### Additional Notes` and `### Examples` subsections — present even when empty. Seed examples the user already gave (exact values from Step 5's input) as `E-NNN` entries.
-8. Write `specs/changes/{change-id}/request.md`. This is the only file this command writes.
+7. Stage the assets. When the input describes a graphical interface, the spec diffs carry ASCII mockups per the change-request skill's **The UI Is Contract Content**. When the user provided image files, copy each one to `specs/changes/{change-id}/assets/` with a descriptive name (feature-authoring skill, Asset Management) and reference it from the diff — the apply step lands it in the feature's `assets/` folder.
+8. Close every change entry with its `### Additional Notes` and `### Examples` subsections — present even when empty. Seed examples the user already gave (exact values from Step 5's input) as `E-NNN` entries.
+9. Write `specs/changes/{change-id}/request.md`. Besides the staged assets, this is the only thing this command writes.
 
 ## Step 10: Report
 

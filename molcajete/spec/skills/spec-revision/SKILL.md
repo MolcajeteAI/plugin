@@ -121,6 +121,12 @@ Compose `request.md` per the change-request skill: create the change directory
 from the confirmed diffs, close every change entry with its `### Additional Notes` and `### Examples`
 subsections, and seed examples the user's description already pins (exact values) as `E-NNN` entries.
 
+When the revision touches a graphical interface, the diffs carry the ASCII mockups per the
+change-request skill's **The UI Is Contract Content** — the After shows the screen as it will look.
+When the user provided image files, copy each one to `specs/changes/{change-id}/assets/` with a
+descriptive name and reference it from the diff; the apply step lands it in the feature's `assets/`
+folder.
+
 `/m:change` marks every retired scenario **retired** in section 2 — stating what it used to assert — so
 the planning session can populate the `retires` list of the tasks that delete its tests and code.
 
