@@ -5,7 +5,8 @@ description: >-
   the read-only prerequisite gate, the ID taxonomy that maps each prefix to its
   definition site, resolve-by-ID with its miss and partial branches, resolve-by-
   keyword with glossary expansion and two-tier ranking, and context assembly at two
-  depths. Reads the spec tree; never writes to it.
+  depths — including the INTERFACE.md map from spec IDs to public elements.
+  Reads the spec tree; never writes to it.
 ---
 
 # Spec Lookup
@@ -47,7 +48,7 @@ The `UC` glob is the same one `spec-revision` uses for the write-side module fan
 
 Validate the token against `^(FEAT|UC|SC|FR|NFR|US|ADR)-[0-9A-Za-z]{4}$`, then run that prefix's find pattern.
 
-**Case is significant.** IDs are base-62, so `0KTg` and `0ktg` are different IDs. Match case-sensitively first. Retry case-insensitively only when that returns nothing, and report the corrected ID rather than accepting the typed one.
+**Case is significant.** New IDs draw only from digits and uppercase letters, but legacy IDs mix case, so `0KTg` and `0KTG` are different IDs. Match case-sensitively first. Retry case-insensitively only when that returns nothing, and report the corrected ID rather than accepting the typed one.
 
 **When the token carries no prefix** (`/m:desc 3Z2L`), run all seven patterns and report every prefix that matches.
 
@@ -69,7 +70,7 @@ Validate the token against `^(FEAT|UC|SC|FR|NFR|US|ADR)-[0-9A-Za-z]{4}$`, then r
 
 1. Retry the pattern case-insensitively.
 2. Glob the same prefix and compare the four characters. Report any neighbor that differs by one character.
-3. Grep `specs/` and `specs/plans/` for the raw string. A plan `**Covers:**` line or a Code Map row that names an ID with no defining heading is itself the answer worth printing: the ID is referenced but nothing defines it.
+3. Grep `specs/` (including `specs/changes/` and `specs/modules/`) for the raw string. A plan `covers` entry, an INTERFACE.md row, or a Code Map row that names an ID with no defining heading is itself the answer worth printing: the ID is referenced but nothing defines it.
 
 If all three find nothing, say so and point to `/m:ids <keywords>` for a search by description.
 
@@ -98,7 +99,7 @@ Per expanded term, run two case-insensitive greps:
 - `specs/features/*/FEAT-*/UC-*.md`
 - `specs/features/*/FEAT-*/REQUIREMENTS.md`
 
-Do not grep `ARCHITECTURE.md`, `CHANGELOG.md`, or `specs/plans/` in this pass. They restate spec text, so they inflate the result set without adding a match the first two files missed.
+Do not grep `ARCHITECTURE.md`, `CHANGELOG.md`, `specs/modules/`, or `specs/changes/` in this pass. They restate spec text, so they inflate the result set without adding a match the first two files missed.
 
 ### Pass 3 — score
 
@@ -147,6 +148,7 @@ Two depths. The calling command names the one it needs.
 Depth 1, plus:
 
 - **Parent chain** — the SC's UC, the UC's feature, the feature's domain.
+- **Public interface elements** — grep the ID in the owning module's `specs/modules/{module}/INTERFACE.md` `Covers` column. Every matching element row (name, kind, signature) is part of the answer: it is the public surface that serves the ID, and through it every test and file. This is the point of the traceability map.
 - **Implementation files** — read the feature's `ARCHITECTURE.md` **Code Map** table first. That table maps each UC and SC to `file:function()`, and the `architecture` skill calls it the primary bridge between specs and code. Grep for `// UC-XXXX` or `// SC-XXXX` traceability comments only when the Code Map has no row for the ID.
 - **Integration test** — the canonical path is `{module.Tests}/{feature-dir}/{uc-dir}.{ext}`, where `Tests` comes from the module's row in `specs/MODULES.md`. Report the path and whether the file exists.
 - **Latest change** — the newest entry in `specs/features/{module}/FEAT-*/UC-XXXX-*/CHANGELOG.md`. Its `reason` states why the UC last moved.

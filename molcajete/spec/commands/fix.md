@@ -1,5 +1,5 @@
 ---
-description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Updates specs only when the spec was wrong, then produces the regression plan directly for /m:build.
+description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Composes a change request whose spec diffs exist only when the spec was silent or wrong; the CLI applies and executes it.
 model: claude-opus-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
@@ -14,9 +14,9 @@ allowed-tools:
 
 # Fix Command
 
-`/m:fix` records a bug against an existing UC: **"the use case is supposed to do X, but the code does Y."** The bug may or may not require a spec edit — the Step 6 diagnosis decides.
+`/m:fix` records a bug against an existing UC: **"the use case is supposed to do X, but the code does Y."** The bug may or may not require a spec diff — the Step 6 diagnosis decides.
 
-`/m:fix` then **produces the regression plan itself** — it logs the entry and runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong diagnosis is caught and editable before any code is built.
+`/m:fix` writes one artifact: `request.md` under `specs/changes/{change-id}/`, per the change-request skill. It never edits the spec tree, never writes a plan, and never writes production code or tests. Hand-off to `molcajete build {change-id}` is mandatory. A **Spec correct, code wrong** diagnosis still produces a request — one whose spec section records the expected behavior with no diff, so the run writes the regression test and the code change.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -36,11 +36,11 @@ If `$ARGUMENTS` does **not** start with a valid ID, refuse:
 
 Stop without writing anything.
 
-Every affected module-instance must end up with a log entry in Step 8: features expand to all their UCs (after Step 6 you must list each affected UC explicitly), and each multi-module UC expands to its module-instances in Step 5.
+Every affected module-instance must end up in the request: features expand to all their UCs (after Step 6 you must list each affected UC explicitly), and each multi-module UC expands to its module-instances in Step 5.
 
 ## Step 2: Load Skills
 
-1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the machinery `/m:fix` shares with `/m:change`: the prerequisite gate, spec loading, module-instance resolution, spec-edit rules, logging and status, plan production, and the report shape.
+1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the machinery `/m:fix` shares with `/m:change`: the prerequisite gate, spec loading, module-instance resolution, the diagnosis, diff-drafting rules, request composition, and the report shape.
 2. The skills listed in that skill's **Skills to Load** — including the host engineering principles.
 
 ## Step 3: Verify Prerequisites
@@ -57,45 +57,32 @@ Before diagnosing, follow the `spec-revision` skill's **Resolving UC Module-Inst
 
 > "`{UC-XXXX}` exists in {N} modules: {list}. Which modules does this bug affect?"
 
-Diagnosis, spec edits, and log entries in the next steps iterate over the confirmed target set.
+Diagnosis and drafting in the next steps iterate over the confirmed target set.
 
 ## Step 6: Diagnose
 
-For each module-instance in each target set, compare the description in `$ARGUMENTS` against that module-instance's spec. Pick exactly one diagnosis **per module-instance**, per the `spec-revision` skill's **Diagnosing a Defect** table — it defines the three diagnoses, the spec edit each one requires in Step 7, the task `**Kind:**` each one produces, and the rule that the diagnosis may differ per module-instance.
+For each module-instance in each target set, compare the description in `$ARGUMENTS` against that module-instance's spec. Pick exactly one diagnosis **per module-instance**, per the `spec-revision` skill's **Diagnosing a Defect** table — it defines the three diagnoses, the spec diff each one puts in the request, the request `command` token each one records, and the rule that the diagnosis may differ per module-instance.
 
 Surface the diagnosis(es) one prompt per affected module-instance. The diagnosis is the brief:
 
 - Brief: name the UC and module, state the diagnosis with a one-sentence justification, and show
-  the proposed spec edit as a fenced diff — or say plainly that no spec edit is needed and why.
+  the proposed spec diff as a fenced diff — or say plainly that no spec diff is needed and why.
 - Question: "Is this diagnosis for `{UC-XXXX}` in `{module}` right?"
 - Header: "Diagnosis"
 - Options: "Proceed" / "Edit" / "Cancel"
 
-## Step 7: Apply Spec Edits (if any)
+## Step 7: Compose the Request
 
-Only module-instances diagnosed **Spec silent** or **Spec wrong** are edited; a **Spec correct, code wrong** instance gets no spec edit at all. For the ones that are edited, follow the `spec-revision` skill's **Applying Spec Edits** (including its replace-never-annotate rule). ARCHITECTURE.md reach for a fix: update that module's tables **only if** the edit changed the Component Inventory / API Surface / Code Map surface.
+Follow the `spec-revision` skill's **Composing the Request** over the confirmed diagnoses.
 
-## Step 8: Append Log Entries and Update UC Status
+Only module-instances diagnosed **Spec silent** or **Spec wrong** carry a spec diff, drafted per **Drafting the Diffs**. A **Spec correct, code wrong** instance carries no diff — its request entry states the expected behavior **positively**: describe what the code should do, so the run writes a regression test that asserts the correct behavior (Principle 1.5), not a test that merely proves the bug is absent. Put the observed misbehavior and any exact reproduction values into the entry's `### Examples` as `E-NNN` items — a reproduction is test material.
 
-Follow the `spec-revision` skill's **Logging and Status**, over **every module-instance in each UC-XXXX target set** — not just the edited ones.
+Entry values the request records: `command: fix`, and one reason paragraph per module-instance capturing the bug **as it manifests in that module**. Reasons may differ per module-instance when the diagnosis differs. Module-instances the user excluded in Step 5 do not appear.
 
-Per-command entry values:
-
-- command: `fix`
-- reason: one paragraph capturing the bug **as it manifests in this module**. When the diagnosis was Spec correct/Code wrong, the reason names the misbehavior and states the expected behavior **positively** — describe what the code should do, so the plan writes a regression test that asserts the correct behavior (Principle 1.5), not a test that merely proves the bug is absent. When the diagnosis required a spec edit, the reason summarizes the spec edit too. Reasons may differ per module-instance when the diagnosis differs.
-
-Append a log entry **even when the spec was untouched** — the entry drives the regression plan regardless of whether the spec moved. Module-instances the user excluded in Step 5 are not logged.
-
-## Step 9: Produce the Plan
-
-Follow the `spec-revision` skill's **Producing the Plan** over the entries logged in Step 8. A fix's tasks are a regression test that starts RED, then the code change that turns it GREEN.
-
-For a purely local, single-scenario regression the plan is typically one task; do not manufacture extra tasks.
-
-## Step 10: Report
+## Step 8: Report
 
 Report per the `spec-revision` skill's **Reporting**, with one addition: lead with **the diagnosis per module-instance, grouped by UC-XXXX**.
 
 End the report with the explicit hand-off:
 
-> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id>` to execute the regression fix. That runs every unfinished task in the plan. Add task IDs — `/m:build <plan-id> T-001 [more ...]` — to run a subset.
+> Next: review `specs/changes/{change-id}/request.md`. When ready, run `molcajete build {change-id}` to execute the regression fix. To abandon it, delete the change directory; the spec tree never changed.

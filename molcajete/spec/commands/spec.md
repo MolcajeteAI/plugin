@@ -17,9 +17,9 @@ allowed-tools:
 
 # Spec Command
 
-The single spec-authoring entry point. Takes free-form natural language and creates or updates features, use cases, and inline scenarios — across any number of entities in one invocation.
+The single spec-authoring entry point. Takes free-form natural language and proposes new or updated features, use cases, and inline scenarios — across any number of entities in one invocation.
 
-**`/m:spec` writes spec prose only** — no plans, no code, no tests, no task IDs. After spec completes, the lifecycle continues with `/m:plan` → `/m:build`.
+**`/m:spec` writes one artifact: `request.md`** — the change request under `specs/changes/{change-id}/`, per the change-request skill. It never edits the spec tree — the base branch's specs stay exactly as they are until execution applies the request on the run branch. No plans, no code, no tests, no task IDs. After spec completes, the lifecycle continues with `molcajete build {change-id}`.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -30,10 +30,10 @@ The single spec-authoring entry point. Takes free-form natural language and crea
 1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
 2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
 3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before Step 9 writes anything.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/module-authoring/SKILL.md` — the charters, INTERFACE.md, DATA.md, and the two authoring questions.
+5. `${CLAUDE_PLUGIN_ROOT}/spec/skills/change-request/SKILL.md` — the request.md format Step 9 writes.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before Step 9 writes anything.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
 
 ## Step 2: Verify Prerequisites
 
@@ -41,7 +41,8 @@ The single spec-authoring entry point. Takes free-form natural language and crea
 
 ## Step 3: Load Spec Context
 
-- Project-level: `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md` (skip missing optional files)
+- Project-level: `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/MODULES.md` (including the charters), `specs/DOMAINS.md`, `specs/FEATURES.md` (skip missing optional files)
+- Per-module: `specs/modules/{module}/INTERFACE.md` and `DATA.md` for every module the input plausibly touches.
 - Per-feature: For every feature in FEATURES.md, read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` and `USE-CASES.md`. On very large projects launch one Explore subagent per domain.
 
 ## Step 4: Research (optional)
@@ -58,7 +59,9 @@ If `$ARGUMENTS` is empty, ask via AskUserQuestion: "Describe what to spec out �
 
 Parse the free-form text against the loaded context and classify each entity as a **new feature** (a capability not in any existing feature — resolve module + domain per the feature-authoring skill's Module and Domain Resolution), a **new use case** (a workflow belonging to an existing feature), a **modified feature** (adds or changes requirements), or a **modified use case** (adds or changes scenarios). Step 9 has the write mechanics for each.
 
-Then look sideways. Run the `resolution-gate` skill's `C13` category across every sibling spec loaded in Step 3: find each already-written FEAT or UC that the entities above contradict, rename, or retire. A UC whose scenario asserts a behavior this run redefines is contradicted, even when the user asked for no change to it. Add every contradicted UC to the **Modified UCs** list, with one line that names what contradicts it. Those UCs then flow through Step 9's **Modified Use Cases** mechanics and Step 10's changelog and status writes, unchanged. Never carry the contradiction forward as a note for a later command.
+Then look sideways. Run the `resolution-gate` skill's `C13` category across every sibling spec loaded in Step 3: find each already-written FEAT or UC that the entities above contradict, rename, or retire. A UC whose scenario asserts a behavior this run redefines is contradicted, even when the user asked for no change to it. Add every contradicted UC to the **Modified UCs** list, with one line that names what contradicts it. Those UCs then flow through Step 9's **Modified Use Cases** mechanics, unchanged. Never carry the contradiction forward as a note for a later command.
+
+Then check the charters, per the module-authoring skill's two questions. When the new behavior fits no module's charter, ask which module absorbs it or whether it justifies a new module — the charter amendment goes into the request. When the change needs a relationship not in the caller's `Depends on`, ask whether the relationship should exist — the charter addition, with its why, goes into the request. Never resolve either silently.
 
 Present the full plan as a brief, then gate on it:
 
@@ -100,68 +103,43 @@ node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js {t
 
 Assign prefixes in order.
 
-## Step 9: Write Spec Documents
+## Step 9: Write the Change Request
 
-Before you write the first file, run the `resolution-gate` skill's **The Procedure** once over every entity in scope. Testability concerns noticed while drafting enter that gate. No file is written while an item is open.
+Before you write, run the `resolution-gate` skill's **The Procedure** once over every entity in scope. Testability concerns noticed while drafting enter that gate. Nothing is written while an item is open.
 
-Write in dependency order: parents before children.
+**This step edits no spec file.** It composes every proposed edit into one `request.md`, per the change-request skill and its template. The apply step executes these diffs verbatim at execution time, so write each diff exactly as it must land.
 
-**New Features** (per selected module):
-1. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug}` — UCs are direct children of this folder.
-2. Write REQUIREMENTS.md (from template, with module + domain frontmatter; follow feature-authoring section order).
-3. Write empty USE-CASES.md.
-4. Write ARCHITECTURE.md scaffold from `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/templates/ARCHITECTURE-template.md`. Populate every applicable table per the architecture skill's **Table Filling** rules — Component Inventory, API Surface, Code Map, and Event Topology / Integration Points where the feature has rows for them. Leave a table empty only when the feature genuinely has no rows.
-5. Append FEATURES.md row.
+1. Create the change directory: run `date -u +%Y%m%dT%H%M%S` for the timestamp, pick a short kebab-case slug, then `mkdir -p specs/changes/{timestamp}-{slug}`.
+2. Compose the spec diffs, in dependency order — parents before children:
+   - **New Features** (per selected module): the full REQUIREMENTS.md content the apply step will write (from the feature-authoring template, module + domain frontmatter, section order per the skill), the FEATURES.md row, and the ARCHITECTURE.md scaffold note. Shown whole, marked new.
+   - **Modified Features:** each REQUIREMENTS.md item as before and after.
+   - **New Use Cases** — per module-instance, per the usecase-authoring skill's multi-module rules: the full UC file content (frontmatter with `status: pending, version: 1`, objective, preconditions, trigger, inline scenarios with their `<a id>` anchors), the USE-CASES.md row, and the ARCHITECTURE.md rows the scenarios imply. Every module-instance shares the same `UC-XXXX` ID but carries its own module-scoped name, actor, trigger, scenarios, and side effects.
+   - **Modified Use Cases:** resolve the UC-XXXX to its module-instances (glob `specs/features/*/FEAT-*/UC-XXXX-*.md`); show each affected item as before and after; note the per-file `version` increment. Never change the UC-XXXX ID.
+3. Compose the interface section per touched module: the INTERFACE.md element and type diffs, and the class diagram of the surface as it will be.
+4. Compose the data section per touched module: the entity-relationship diagram with every field's responsibility, touched tables marked, read-only tables kept for context.
+5. Compose the flows: one sequence diagram per changed flow.
+6. Compose the module-relationships section, including any charter amendment Step 6's questions produced.
+7. Stage the assets. When the input describes a graphical interface, the spec diffs carry ASCII mockups per the change-request skill's **The UI Is Contract Content**. When the user provided image files, copy each one to `specs/changes/{change-id}/assets/` with a descriptive name (feature-authoring skill, Asset Management) and reference it from the diff — the apply step lands it in the feature's `assets/` folder.
+8. Close every change entry with its `### Additional Notes` and `### Examples` subsections — present even when empty. Seed examples the user already gave (exact values from Step 5's input) as `E-NNN` entries.
+9. Write `specs/changes/{change-id}/request.md`. Besides the staged assets, this is the only thing this command writes.
 
-**Modified Features:** Edit REQUIREMENTS.md. Refresh ARCHITECTURE.md tables affected by the new/changed requirements per the architecture skill's additive Population Rules.
+## Step 10: Report
 
-**New Use Cases** — for every new UC, iterate over every module the UC applies to (one iteration for single-module UCs, multiple iterations for shared-ID multi-module UCs per the usecase-authoring skill):
-
-1. Compute the module-scoped slug from the module-scoped UC name confirmed for this module.
-2. `mkdir -p specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}` — the UC's support folder. `CHANGELOG.md` lives inside this folder.
-3. Write the UC spec file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}.md` (sibling of REQUIREMENTS.md / USE-CASES.md / ARCHITECTURE.md) with frontmatter (id, name, feature, status: pending, version: 1, actor) + title + objective + preconditions + trigger + inline scenarios with `---` separators. **Every module-instance shares the same `UC-XXXX` ID but carries its own module-scoped `name:`, actor, trigger, scenarios, and side effects.**
-4. Initialize the change log file `specs/features/{module}/FEAT-XXXX-{slug-for-module}/UC-XXXX-{slug-for-module}/CHANGELOG.md` per the `uc-log` shared skill (empty TODO/DONE sections). Step 10 appends the first entry.
-5. Append USE-CASES.md row to that module's feature folder (file link points to the module-scoped `UC-XXXX-{slug-for-module}.md`, a direct sibling). Update that module's feature ARCHITECTURE.md per the architecture skill: every file that this module-instance's scenarios imply must have a Component Inventory row; every `SC-` and the module-instance's UC itself must have a Code Map row; new endpoints must appear in API Surface. Update the `use_cases` and `scenarios` frontmatter arrays and `last_update`.
-
-**Modified Use Cases:** Resolve the UC-XXXX to its module-instances (glob `specs/features/*/FEAT-*/UC-XXXX-*.md`). Apply the edit to each affected module-instance's `UC-XXXX-{slug}.md`; increment frontmatter `version` per file; never change the UC-XXXX ID. Update each affected module's ARCHITECTURE.md rows for newly touched files.
-
-## Step 10: Append Changelog Entry and Update Statuses
-
-For every UC-XXXX touched in Step 9 (new or modified), iterate over every module-instance: append the changelog entry per the `uc-log` shared skill, then write that instance's and its parent feature's status per the `status-rollup` shared skill.
-
-Per-command entry values:
-
-- command: `spec`
-- plan: `—`
-- timestamp: the **same** UTC timestamp across every module-instance of the same UC-XXXX in this run
-- reason: one-line description of what was created or changed (e.g., "added UC for password reset", "added FR-0Pq2 to require email verification"). Reasons may differ per module-instance when the change is module-scoped.
-
-## Step 11: Report
-
-This is the shape. One heading and one table per UC touched:
+Present the request for review. The report is the request's own summary, not a rewrite of it:
 
 ````markdown
-## UC-3Z2L created — Send Email OTP
+## Change request ready — {change-id}
 
-| Module | Files | Scenarios | Status |
-|---|---|---|---|
-| `auth` | `UC-3Z2L-send-email-otp.md`, `CHANGELOG.md` | `SC-3Z2P`, `SC-3Z2Q` | pending |
-
-`FEAT-3Z2K` rolled up to `pending`. Row added to `specs/FEATURES.md` and to the feature's `USE-CASES.md`.
-
-**Testing decisions**
-
-| Service or pattern | Decision | Recorded in |
+| Feature | Module | What changes |
 |---|---|---|
-| Postmark email delivery | Sandbox token in the test environment | `specs/features/auth/FEAT-3Z2K-email-otp/ARCHITECTURE.md` |
-````
+| Send email OTP ([FEAT-3Z2K](../features/auth/FEAT-3Z2K-email-otp/REQUIREMENTS.md#FEAT-3Z2K)) | `auth` | New UC, 2 scenarios, 1 new interface element |
 
-**One row per module-instance.** The `Files` cell names what was written or edited, comma separated. The
-`Scenarios` cell lists the SC IDs created or appended.
+Review `specs/changes/{change-id}/request.md`. Edit the **Additional Notes** and **Examples** subsections freely — the run reads them at trigger time. Notes flow into task rationale; every example becomes a test fixture or assertion.
+````
 
 **Testing decisions prints only when the Step 9 gate resolved a concern** — an external API without a
 sandbox, a dependency on time or randomness, an env-flag branch. Omit the whole section otherwise.
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the changes into tasks and write the plan that `/m:build` will execute.
+> Next: review the request, then run `molcajete build {change-id}` to apply it and execute. To abandon it, delete the change directory — the spec tree never changed.

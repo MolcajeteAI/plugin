@@ -8,24 +8,23 @@ Molcajete.ai is a Claude Code plugin that provides opinionated, reusable workflo
 
 ### What It Ships
 
-- **`m` plugin** (v3.21.0) — 15 slash commands and 24 reusable skills
+- **`m` plugin** (v4.0.0) — 12 slash commands and 25 reusable skills. Authoring only: the lifecycle commands compose change requests under `specs/changes/`, and the `molcajete` CLI is the only executor. The CLI loads this plugin via `--plugin-dir`, so the skills exist in exactly one place.
 
 ### Key Directories
 
-- `molcajete/` — Plugin root, one directory per module (`build/`, `plan/`, `research/`, `review/`, `setup/`, `shared/`, `spec/`), each holding its own `commands/` (Markdown with YAML frontmatter) and/or `skills/` (SKILL.md files)
+- `molcajete/` — Plugin root, one directory per module (`plan/`, `research/`, `review/`, `setup/`, `shared/`, `spec/`), each holding its own `commands/` (Markdown with YAML frontmatter) and/or `skills/` (SKILL.md files)
 - `molcajete/.claude-plugin/plugin.json` — Plugin manifest and canonical version
 - `research/` — Lifecycle research documents
 - `scripts/bump.sh` — Version bump script
 
 ### Tech Stack
 
-Pure Markdown plugin system with zero runtime dependencies. Commands and skills are Markdown files with YAML frontmatter specifying model, allowed tools, and prompts. Models are pinned per command: `claude-fable-5` for `/m:plan`; `claude-opus-5` for `/m:spec`, `/m:change`, `/m:fix`, `/m:cover`, `/m:prompt`, `/m:review`, and `/m:preflight`; `claude-sonnet-5` for `/m:build`, `/m:setup`, `/m:walkthrough`, `/m:research`, `/m:doc`, `/m:desc`, and `/m:ids`.
+Pure Markdown plugin system with zero runtime dependencies. Commands and skills are Markdown files with YAML frontmatter specifying model, allowed tools, and prompts. Models are pinned per command: `claude-opus-5` for `/m:spec`, `/m:change`, `/m:fix`, `/m:cover`, `/m:migrate`, and `/m:prompt`; `claude-sonnet-5` for `/m:setup`, `/m:walkthrough`, `/m:research`, `/m:doc`, `/m:desc`, and `/m:ids`.
 
 ### Conventions
 
-- ID scheme: Base-62 tags (e.g., `UC-0KTg-001`, `FR-0Fy0-003`)
+- ID scheme: 4-character tags from digits and uppercase letters (e.g., `UC-9KC2`, `FR-3FA1`); legacy mixed-case tags stay forever
 - Diagrams: Mermaid only (no ASCII art)
-- Task estimation: Fibonacci story points (1, 2, 3, 5, 8); split if >8
 - No emojis in documents
 - Commands use sub-agents for context gathering and parallel research
 - **Step numbering in commands and skills**: top-level steps are integers (`## Step 1`, `## Step 2`, …). Sub-steps under a single top-level step use one decimal level (`### 1.1`, `### 1.2`). Triple-decimals (`### 1.1.1`) and inserted-decimal steps (`### Step 4.5`, `### 7.6.5`) are forbidden. When a new step is inserted anywhere, **renumber every following step** instead of appending a decimal — cross-references inside the file are part of the renumber. Decimals are reserved exclusively for genuine hierarchical sub-steps, never as a shortcut to avoid renumbering.
@@ -42,7 +41,7 @@ Rank every candidate solution in this order. A lower rank never beats a higher o
 
 Two rules follow:
 
-- **Never quote hours or days.** Count what an agent can count instead: files touched, tests to write, specs to edit, use cases affected. The Fibonacci story points above stay the unit for a plan task.
+- **Never quote hours or days.** Count what an agent can count instead: files touched, tests to write, specs to edit, use cases affected.
 - **Never let an estimate rank the options.** Report the effort as a fact beside each option. The user weighs it. You do not weigh it for them.
 
 ## Clarifying Questions

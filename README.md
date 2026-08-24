@@ -1,7 +1,7 @@
 ---
 module: molcajete-ai
-purpose: Spec-driven development framework for Claude Code — EARS requirements, use cases with explicit side effects, prose plans, and automated build dispatch
-last-updated: 2026-08-20
+purpose: Spec-authoring plugin for the Molcajete lifecycle — humans review contracts as change requests, the molcajete CLI applies and executes them
+last-updated: 2026-08-23
 ---
 
 # Molcajete.ai
@@ -11,39 +11,37 @@ Without a structured specification, you're not engineering — you're gambling. 
 The problem isn't the agent. It's the gap between your intent and the code.
 Molcajete.ai closes that gap.
 
-It puts a layer of structured specifications between what you want and what gets built — EARS requirements, use cases with explicit side effects, and architecture documents that agents can actually follow. Not as suggestions. As constraints.
+It puts a layer of structured contracts between what you want and what gets built — EARS requirements, use cases with explicit side effects, module charters, interface maps, and data files that agents actually follow. Not as suggestions. As constraints.
 
-The specs become the source of truth. The code is derived from them — deterministically, traceably, repeatably.
+The contracts become the source of truth. The code is derived from them — deterministically, traceably, repeatably.
 You don't just get working software. You get software you understand, can test, and can hand to anyone on your team.
 
 ## What is Molcajete.ai?
 
-Molcajete.ai is a spec-driven development framework built on [Claude Code](https://www.anthropic.com/claude/code). It provides a pipeline that transforms freeform feature descriptions into structured specs, then uses those specs to drive implementation through coordinated agent workflows.
+Molcajete.ai is a spec-driven development framework built on [Claude Code](https://www.anthropic.com/claude/code). An architect needs five things to control a system: the features, the modules, the use cases and requirements under each feature, the public interface of every module, and the data layer. Everything else is implementation, and implementation is the machine's job.
 
 The framework ships two components:
 
-- **`m` plugin** — A Claude Code plugin with slash commands and skills organized into modules: spec, plan, build, review, setup, research, and shared.
-- **`@MolcajeteAI/cli`** — A Node.js CLI ([source](https://github.com/MolcajeteAI/molcajete)) that orchestrates spec development in unattended mode, running the full spec-to-build pipeline without manual interaction.
+- **`m` plugin** — A Claude Code plugin that authors specs. Its commands compose **change requests** — the one artifact a human reviews — and never plan, build, or review code.
+- **`molcajete` CLI** — A Node.js CLI ([source](https://github.com/MolcajeteAI/molcajete)) that is the only executor: it applies the change request on a run branch, plans its own work as machine-facing JSON, builds task by task with a verify hook and a mutation check, and closes each cycle with a read-only final verification.
 
-### The Pipeline
+### The Lifecycle
 
 ```
-Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → Build
+Change idea → request.md (human reviews this) → molcajete build → one merge delivers specs, tests, and code together
 ```
 
-1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
-2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
-3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
-4. **Review** — A spec-traceable review surface. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue with you, and hands you the prompt that fixes it. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
-5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
-6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
+1. **Author** — `/m:spec` (new behavior), `/m:change` (different behavior for shipped code), and `/m:fix` (code disagrees with a correct spec) compose `request.md` under `specs/changes/{change-id}/`: spec diffs, interface diffs, data diagrams, flows, and module relationships. The base branch's specs stay untouched. `/m:cover` extracts specs from existing code — the one command that writes the spec tree directly.
+2. **Review** — The human reads the request. Every change entry closes with **Additional Notes** (clarifications that flow into task rationale) and **Examples** (`E-NNN` exact values that become test fixtures and assertions). This is the whole review.
+3. **Execute** — `molcajete build {change-id}` creates the run branch, applies the request, writes `plan.json`, and runs the main loop: task sessions fork one base session, a host-generated verify hook validates every step, a mutation check proves the assertions bite, and a read-only reviewer closes each cycle. Decisions the run makes alone land in `decisions.md`; the run ends with `report.md`.
+4. **Merge** — One merge delivers specs, tests, and code together. Abandoning a change is deleting a branch.
 
-### Why Specs?
+### Why Contracts?
 
-- **Deterministic agent behavior** — Agents follow structured requirements, not ambiguous prose. Same spec, same output.
-- **Traceable coverage** — Every requirement has a fit criterion, every use case has scenarios with explicit outcomes and side effects, every scenario maps to code via the architecture document.
-- **Reversible** — Extract specs from existing codebases with reverse commands, then use the same pipeline to extend them.
-- **Unattended execution** — The `@MolcajeteAI/cli` runs the pipeline end-to-end without human-in-the-loop, using specs as the contract.
+- **The contract is the review surface.** Every change to a feature, scenario, requirement, interface, or table is shown as a diff before the work starts, or recorded as a decision when discovered mid-run.
+- **The machine plans its own work.** The plan is JSON, written and mutated by the CLI, never reviewed by a human.
+- **Validation is mechanical first, judgmental second.** A hook runs the impacted tests and the metrics. A read-only reviewer checks the module rules. The human checks neither.
+- **Deep modules.** A module owns one responsibility end to end; no module touches another module's tables; the closed `Depends on` set makes every undeclared relationship a finding.
 
 ## Installation
 
@@ -87,104 +85,68 @@ For persistent plugin configuration across sessions, add to `.claude/settings.js
 /plugin marketplace list
 ```
 
-You should see `molcajete` in the list with the `m` plugin enabled:
-
-```json
-{
-  "enabledPlugins": {
-    "m@Molcajete.ai": true
-  }
-}
-```
+You should see `molcajete` in the list with the `m` plugin enabled.
 
 ---
 
 ## The `m` Plugin
 
-The `m` plugin is organized into modules, each owning a stage of the development lifecycle: **spec**, **plan**, **build**, **review**, **setup**, **research**, and **shared**.
+Twelve commands. Five author, one migrates, six are read-only helpers.
 
-### Spec Module
+### Lifecycle Commands
 
-Create and maintain structured specifications from freeform descriptions or existing code. Spec-phase commands write spec prose and log pending work; `/m:fix` and `/m:change` additionally produce their own plan.
+| Command | Intent | Output |
+|---------|--------|--------|
+| `/m:setup` | Bootstrap a project | The foundation files, the module charters, and empty `specs/modules/{m}/INTERFACE.md` and `DATA.md` scaffolds |
+| `/m:spec` | New behavior | `request.md` |
+| `/m:change` | Different behavior for shipped code | `request.md`, with retired scenarios marked |
+| `/m:fix` | Code disagrees with a correct spec | `request.md` |
+| `/m:cover` | Extract specs from existing code | Writes the spec tree directly; its `request.md` lists the files to spec and test |
+| `/m:migrate` | Move a v3 spec tree to v4 | Anchors, INTERFACE.md, DATA.md, and the charters — one invocation, existing IDs untouched |
 
-| Command | Description |
-|---------|-------------|
-| `/m:spec` | Create or update features and use cases (with inline scenarios) from natural language |
-| `/m:change` | Intentionally change an existing FEAT/UC — updates the specs, marks them dirty, and produces the change plan |
-| `/m:fix` | Record a bug against an existing FEAT/UC and produce the regression plan (specs edited only when the spec was wrong) |
-| `/m:cover` | Reverse-extract specs from existing code (tests come later via `/m:plan` + `/m:build`) |
+No command emits a plan. Authoring thinks in contracts; only the executor thinks in tasks.
 
-Three read-only commands query the spec tree instead of writing to it:
-
-| Command | Description |
-|---------|-------------|
-| `/m:desc` | Print what one or more `FEAT`/`UC`/`SC`/`FR`/`NFR`/`US`/`ADR` IDs mean, with the code and test around each |
-| `/m:ids` | Find the IDs that match a capability description, grouped by module, with spec file paths |
-| `/m:prompt` | Turn a freeform request into a ready-to-paste `/m:spec`, `/m:change`, `/m:fix`, or `/m:cover` command with the IDs resolved |
-
-### Plan Module
+### Read-Only Helpers
 
 | Command | Description |
 |---------|-------------|
-| `/m:plan` | Decompose pending spec work into a single prose plan of vertical, working-software tasks under `specs/plans/` |
-
-### Build Module
-
-| Command | Description |
-|---------|-------------|
-| `/m:build` | Execute a plan — every unfinished task by default, or a named `T-NNN` subset (TDD red/green → mutation check → coverage gate → correctness review). Add `--commit` to commit each task as it passes |
-
-### Review Module
-
-Spec-traceable code review of a PR, branch, or ref range. Molcajete-only — every finding is anchored to a `FEAT/UC/SC` and its integration test.
-
-| Command | Description |
-|---------|-------------|
-| `/m:review` | Guided, severity-scored review written to a `reviews/` file; read-only, never posts to GitHub |
-| `/m:preflight` | Interactive pre-PR pass — walk your change set, decide each issue one at a time, and get the prompt that resolves it. Never edits code |
 | `/m:walkthrough` | Interactive, hierarchical tour (feature → UC → scenario) of a change set with clickable `file:line` links |
-
-**`/m:preflight` hands you prompts. It never edits your code.** A fix usually moves more than one of the three elements — spec, code, test — and an edit made during a review skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own. The spec then goes stale and the test breaks.
-
-Preflight decides each issue with you instead, one at a time. It reads the spec line, the code, and the test, explains the options in prose, and asks which direction you want. The correct fix always leads that list and is always the recommendation — effort is reported as a fact, never as a reason to rank a cheaper option higher. Then it shows the exact change for your approval before it opens the next issue. Each decision becomes a ready-to-paste prompt — a Molcajete command when one owns the work, or a direct instruction when none does. The run ends with every issue decided, and with a file at `.molcajete/prompts/<timestamp>-preflight-<slug>.md` that holds the prompts in the order you run them.
-
-### Setup, Research & Shared
-
-| Command | Description |
-|---------|-------------|
-| `/m:setup` | Initialize the project foundation in one shot (PROJECT / MODULES / TECH-STACK / ACTORS / GLOSSARY / DOMAINS / FEATURES and host rules) |
 | `/m:research` | Deep research with tech stack context, parallel agents, and long-form output |
+| `/m:desc` | Print what one or more `FEAT`/`UC`/`SC`/`FR`/`NFR`/`US`/`ADR` IDs mean — including the public interface elements mapped to each |
+| `/m:ids` | Find the IDs that match a capability description, grouped by module |
+| `/m:prompt` | Turn a freeform request into the ready-to-paste command that delivers it |
 | `/m:doc` | Generate or update directory documentation (README.md) |
 
 ### Skills
 
-Skills are reusable knowledge documents loaded by commands at runtime. Each encodes conventions, patterns, and standards for a specific domain.
+Skills are reusable knowledge documents loaded by commands — and by the CLI's sessions — at runtime.
 
 | Module | Skill | What it encodes |
 |--------|-------|----------------|
-| spec | `feature-authoring` | EARS syntax, fit criteria, non-goals positioning, creation interview |
-| spec | `usecase-authoring` | UC file structure, flat inline scenarios, mandatory side effects |
+| spec | `feature-authoring` | EARS syntax, fit criteria, non-goals positioning, explicit anchors |
+| spec | `usecase-authoring` | UC file structure, flat inline scenarios, mandatory side effects, anchors |
 | spec | `architecture` | ARCHITECTURE.md schema, spec-ID → code map, table-filling rules |
+| spec | `module-authoring` | The module charter, INTERFACE.md, DATA.md, per-property responsibilities, the two authoring questions |
+| spec | `change-request` | The request.md format, notes and examples, and the apply rules |
 | spec | `reverse-engineering` | Code-to-spec extraction patterns and scope discovery |
-| spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — module-instance fan-out, spec-edit rules, log/status, plan hand-off |
-| spec | `spec-lookup` | Machinery shared by `/m:desc`, `/m:ids`, and `/m:prompt` — ID taxonomy, resolve by ID or keyword, context assembly |
-| plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
-| build | `plan-adaptation` | Mid-build plan change — trigger catalog, insert/revise operations, the three-option gate, and the audit trail |
-| review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, review rubric and severity |
-| setup | `setup` | One-shot project initialization, module detection, host-rule generation |
-| research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
+| spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — diagnosis, diff drafting, request composition |
+| spec | `spec-lookup` | ID taxonomy, resolve by ID or keyword, context assembly with the INTERFACE.md map |
+| plan | `plan-json` | The plan.json schema, decomposition rules, and the four plan operations — loaded only by the CLI |
+| review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping for the walkthrough |
+| setup | `setup` | One-shot project initialization, module detection, host-rule generation, the drift catalog |
+| research | `research-methods` | Parallel research fan-out with source evaluation |
 | research | `headless-research` | Silent, no-interaction research brief written before spec-writing |
-| shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion carrying only the decision |
-| shared | `resolution-gate` | Analyze, then ask, then write — no unresolved item ever reaches a generated spec or plan |
+| shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion |
+| shared | `resolution-gate` | Analyze, then ask, then write — no unresolved item reaches a generated document |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
-| shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, scoped coverage |
-| shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
+| shared | `testing` | One-actor loop, entry-point-only tests, the verify-hook contract, the mutation check, the Test File Convention |
+| shared | `status-rollup` | Status enum (pending / implemented), UC-as-leaf, Feature roll-up |
 | shared | `uc-log` | Per-UC CHANGELOG.md mechanics — entry format and status transitions |
 | shared | `code-documentation` | README structure and documentation conventions |
-| shared | `git-committing` | Commit message standards for automated task execution — read by `/m:build --commit` |
+| shared | `git-committing` | Commit message standards for automated task execution |
 | shared | `git-conflict-resolution` | Merge/rebase conflict anatomy and resolution strategies |
-| shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
-| shared | `writing-style` | How a sentence reads — Simplified Technical English, the accuracy rules that outrank length, and naming a concept before its ID |
+| shared | `id-generation` | Timestamp ID generation, digits and uppercase letters only, permanent immutability |
+| shared | `writing-style` | Simplified Technical English, the accuracy rules, and name-before-identifier with the identifier as a link |
 | shared | `output-economy` | How much gets written — the content test, the four output containers, per-surface budgets |
 
 ---
@@ -196,12 +158,16 @@ Molcajete.ai produces a structured `specs/` directory in your project:
 ```
 specs/
 ├── PROJECT.md                     # Mission, scope, constraints
-├── MODULES.md                     # Module → directory / tests tree / driving-ports map
+├── MODULES.md                     # Module registry + charters (Depends on is a closed set)
 ├── TECH-STACK.md                  # Technology inventory, test runner, coverage
 ├── ACTORS.md                      # Actor definitions and roles
 ├── GLOSSARY.md                    # Domain vocabulary
 ├── DOMAINS.md                     # Domain registry
 ├── FEATURES.md                    # Feature index with status
+├── modules/
+│   └── {module}/
+│       ├── INTERFACE.md           # The public surface, mapped to spec IDs
+│       └── DATA.md                # The tables the module owns
 ├── features/
 │   └── {module}/
 │       └── FEAT-XXXX-{slug}/
@@ -211,8 +177,13 @@ specs/
 │           ├── UC-XXXX-{slug}.md      # Use case: inline scenarios + side effects (carries UC status)
 │           └── UC-XXXX-{slug}/
 │               └── CHANGELOG.md       # Per-UC change log (markers, not the status source)
-└── plans/
-    └── <YYYYMMDDTHHMMSS>-<slug>.md     # Prose plan (one file): vertical `## [ ] T-NNN` tasks
+└── changes/
+    └── {YYYYMMDDTHHMMSS}-{slug}/       # One directory per change
+        ├── request.md                  # Written at authoring — what the human reviews
+        ├── plan.json                   # Written by the CLI at execution start
+        ├── decisions.md                # What the run decided alone
+        ├── validation/                 # Reviewer findings, one file per cycle
+        └── report.md                   # Written when the run ends
 ```
 
 Commands that write outside the spec tree use a `.molcajete/` working directory:
@@ -220,7 +191,7 @@ Commands that write outside the spec tree use a `.molcajete/` working directory:
 ```
 .molcajete/
 ├── research/       # Context briefs written before spec-writing
-├── prompts/        # Ready-to-paste commands from /m:prompt and /m:preflight
+├── prompts/        # Ready-to-paste commands from /m:prompt
 └── escalations/    # Unresolved-item reports from headless runs
 ```
 
@@ -228,11 +199,11 @@ Commands that write outside the spec tree use a `.molcajete/` working directory:
 
 - **EARS requirements** — Every functional requirement uses explicit keywords (When, While, If/Then) and includes a measurable fit criterion.
 - **Flat scenarios** — No main/alternative flow distinction. Every scenario (success, error, edge case) has the same shape: Given, Steps, Outcomes, Side Effects.
-- **Side effects are mandatory** — Every scenario declares what changes (events, DB writes) AND what does not (non-side-effects become `And no ...` assertions).
-- **Architecture as bridge** — ARCHITECTURE.md maps spec IDs to source files, giving agents precise context for implementation.
-- **Vertical tasks** — Plans decompose work into vertical, working-software increments (one behavior across all its layers), never by layer.
-- **First-class status** — FEAT and UC carry a `status` (pending | dirty | implemented); the UC is the leaf, and a feature rolls up from its UCs.
-- **Base-62 IDs** — Entity IDs are timestamp-based and permanent (e.g., `FEAT-0S9A`, `UC-0KTg`), generated via the id-generation script — never reused.
+- **Side effects are mandatory** — Every scenario declares what changes (events, DB writes) AND what does not.
+- **Every identifier is a link** — Generated documents write the name first, then the identifier as a Markdown link to its explicit `<a id>` anchor. A bare ID in a generated document is a defect.
+- **Deep modules** — Business logic of one module never appears in another; no module touches another module's tables; a relationship not in `Depends on` is forbidden.
+- **First-class status** — FEAT and UC carry a `status` (pending | implemented); the UC is the leaf, and a feature rolls up from its UCs.
+- **Immutable IDs** — Entity IDs are timestamp-based and permanent, drawn from digits and uppercase letters (e.g., `FEAT-3FA1`, `UC-9KC2`), generated via the id-generation script — never reused, never renumbered.
 
 ---
 
@@ -242,34 +213,31 @@ Commands that write outside the spec tree use a `.molcajete/` working directory:
 molcajete/
 ├── .claude-plugin/
 │   └── plugin.json       # Plugin manifest (commands, skills, version)
-├── spec/                  # Spec module — spec/change/fix/cover + authoring/architecture/reverse-engineering skills
+├── spec/                  # spec/change/fix/cover/migrate + the authoring skills
 │   ├── commands/
 │   └── skills/
-├── plan/                  # Plan module — /m:plan + plan-authoring skill
+├── plan/                  # plan-json skill (loaded only by the CLI)
+│   └── skills/
+├── review/                # /m:walkthrough + change-review skill
 │   ├── commands/
 │   └── skills/
-├── build/                 # Build module — /m:build (TDD + mutation + coverage + correctness review) + plan-adaptation skill
+├── setup/                 # /m:setup + setup skill
 │   ├── commands/
 │   └── skills/
-├── review/                # Review module — /m:review, /m:preflight, /m:walkthrough + change-review skill
+├── research/              # /m:research + research skills
 │   ├── commands/
 │   └── skills/
-├── setup/                 # Setup module — /m:setup + setup skill
-│   ├── commands/
-│   └── skills/
-├── research/              # Research module — /m:research + research skills
-│   ├── commands/
-│   └── skills/
-└── shared/                # Shared command (/m:doc) + cross-module skills (asking-questions, principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation, writing-style, output-economy)
+└── shared/                # /m:doc + cross-module skills
     ├── commands/
     └── skills/
 ```
 
 ### Key Concepts
 
-- **Commands** — User-facing slash commands (e.g., `/m:build`). Markdown prompts with YAML frontmatter specifying model, tools, and behavior.
-- **Skills** — Structured knowledge documents loaded by commands at runtime. Encode conventions, templates, and rules that commands follow.
-- **Modules** — Logical groupings (spec, plan, build, review, setup, research, shared) that own a stage of the lifecycle.
+- **Commands** — User-facing slash commands (e.g., `/m:spec`). Markdown prompts with YAML frontmatter specifying model, tools, and behavior.
+- **Skills** — Structured knowledge documents loaded by commands — and by the CLI's sessions via `--plugin-dir` — at runtime. One plugin, one source of truth, no vendored mirror.
+- **Templates** — Every file Molcajete generates has its own template file under the owning skill's `templates/` directory. No inline templates, ever.
+- **Modules** — Logical groupings (spec, plan, review, setup, research, shared) that own a stage of the lifecycle.
 
 ---
 
@@ -283,7 +251,7 @@ molcajete/
 Guidelines:
 - Commands are plain Markdown with YAML frontmatter
 - Skills use YAML frontmatter with `name` and `description` fields
-- Place new commands and skills in the module they belong to (spec, plan, build, review, setup, research, or shared)
+- Place new commands and skills in the module they belong to (spec, plan, review, setup, research, or shared)
 
 ---
 
@@ -296,7 +264,7 @@ Guidelines:
 
 ## About
 
-**Molcajete** (mol-ca-HEH-teh) is a traditional Mexican mortar and pestle made from volcanic rock, used for grinding and transforming raw ingredients into refined creations. Just as a molcajete transforms raw ingredients, Molcajete.ai transforms freeform feature descriptions into structured specifications that drive deterministic agent behavior.
+**Molcajete** (mol-ca-HEH-teh) is a traditional Mexican mortar and pestle made from volcanic rock, used for grinding and transforming raw ingredients into refined creations. Just as a molcajete transforms raw ingredients, Molcajete.ai transforms freeform feature descriptions into structured contracts that drive deterministic agent behavior.
 
 ## License
 

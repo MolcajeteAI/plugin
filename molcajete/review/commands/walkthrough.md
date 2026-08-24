@@ -22,11 +22,11 @@ allowed-tools:
 
 ## Step 1: Load Skill
 
-Read `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, and diff→spec mapping. Apply its **Prerequisites** gate; if it is not a Molcajete project, refuse and stop. (The walkthrough narrates changes; it does not score them, so it does not load the review rubric.)
+Read `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, and diff→spec mapping. Apply its **Prerequisites** gate; if it is not a Molcajete project, refuse and stop. (The walkthrough narrates changes; it does not score them.)
 
 ## Step 2: Resolve the Target and Map to Specs
 
-Follow the `change-review` skill's **Resolving the Change Set** (parse `$ARGUMENTS` — empty → current branch vs detected base; a branch; a PR number; or two refs — with base detection and AskUserQuestion confirmation) and **Mapping the Diff to Specs** to build the hierarchy: `FEAT → UC → SC → the changed files/functions under it`. Read each touched UC's scenarios (the behavioral source of truth) and, when the change came through a plan, the owning task's prose in `specs/plans/*.md` — that prose states what the increment was meant to make real and why.
+Follow the `change-review` skill's **Resolving the Change Set** (parse `$ARGUMENTS` — empty → current branch vs detected base; a branch; a PR number; or two refs — with base detection and AskUserQuestion confirmation) and **Mapping the Diff to Specs** to build the hierarchy: `FEAT → UC → SC → the changed files/functions under it`. Read each touched UC's scenarios (the behavioral source of truth) and, when the change came through a run, the change directory's `request.md` and `decisions.md` under `specs/changes/{change-id}/` — the request states what the change was meant to do, and the decisions state what the run decided alone.
 
 Any changed file that maps to no `FEAT/UC/SC` is grouped under an **"Unmapped changes"** node at the end — mention it plainly (it has no spec authority), but still explain what it does.
 
@@ -45,7 +45,7 @@ When more than three features are touched, list them all in the brief and offer 
 Descend the hierarchy one node at a time — feature → UC → scenario → the concrete diff under it. At each **scenario / change** node, explain three things in plain language:
 
 1. **What changed** — the concrete edit (files, functions), with clickable `path/to/file.ext:line` references so the user can open the exact spot in their editor.
-2. **Why** — tie it to the driving reason: the UC scenario it satisfies (quote the `SC-XXXX`), the task prose in the plan file, and the commit subject. If the change has no spec behind it, say so.
+2. **Why** — tie it to the driving reason: the UC scenario it satisfies (quote the `SC-XXXX`), the request entry or decision record behind it, and the commit subject. If the change has no spec behind it, say so.
 3. **What it means** — the consequence: the behavior a user or caller now gets, and anything downstream that depends on it.
 
 After each node, navigate. The node's explanation above is the brief, so this loop prompt needs no fresh one:
@@ -64,4 +64,4 @@ Keep each step short and concrete — one node's worth of change, not a wall of 
 
 When the user has covered the tree (or chooses "Done"), give a one-paragraph recap: every feature/UC touched, and the single most important change to keep in mind. Remind them this was a read-only tour, and suggest the next step:
 
-> Next: run `/m:review` for a written, severity-scored review, or `/m:preflight` to decide each issue and get the prompt that resolves it before opening the PR.
+> Next: for a run branch, read `specs/changes/{change-id}/report.md` and `decisions.md` — the run's own account of what it did and decided — then merge when satisfied.

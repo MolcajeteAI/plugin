@@ -5,8 +5,9 @@ description: >-
   ASD-STE100: active voice, one meaning per word, simple tenses, short sentences,
   no phrasal verbs. Holds the four accuracy rules that outrank every length cap,
   how to explain a new concept, how to show a computed value and a code block,
-  and the rule that an opaque ID never appears without its name. Pairs with
-  output-economy, which governs how much gets written. Loaded by every command.
+  and the rule that an opaque ID never appears without its name — and never
+  without a link to where it is defined. Pairs with output-economy, which
+  governs how much gets written. Loaded by every command.
 ---
 
 # Writing Style
@@ -89,7 +90,7 @@ ELI10 means "explain like I am 10 years old". Explain a concept the first time i
 |---|---|
 | Mutation testing, and what a surviving mutant proves | The host project's test command |
 | Hexagonal architecture, and what a driving port is | Which host module owns which adapter |
-| Base-62 encoding, and why an ID is 4 characters | What `FEAT-0Fy0` refers to in this project |
+| The ID alphabet, and why a tag is 4 characters | What `FEAT-3FA1` refers to in this project |
 | The EARS requirement syntax | The wording of an existing `FR-XXXX` |
 
 ## 4. Give Every Computed Value a Worked Example
@@ -129,7 +130,7 @@ percent = 48 / 50 * 100      # = 96.0 percent on lines — passes
 pass = false
 ```
 
-Read the middle step: `4 / 6 = 0.667`, then `0.667 * 100 = 66.7`. A file at 96 percent lines and 66.7 percent branches does not pass. Two uncovered branches, not two uncovered lines, are what the Implementer must resolve.
+Read the middle step: `4 / 6 = 0.667`, then `0.667 * 100 = 66.7`. A file at 96 percent lines and 66.7 percent branches does not pass. Two uncovered branches, not two uncovered lines, are what the builder must resolve.
 
 **Why:** a formula hides its rounding, its unit conversions, and its exponents. Real numbers expose all three.
 
@@ -145,30 +146,38 @@ Read the middle step: `4 / 6 = 0.667`, then `0.667 * 100 = 66.7`. A file at 96 p
 
 This rule covers code **shown to the reader**. Code **committed to the repository** follows the `principles` skill, rules 5.1 to 5.5, which is a stricter standard.
 
-## 6. Name the Concept Before the Identifier
+## 6. Name the Concept Before the Identifier — and Link the Identifier
 
-Write the name first. Put the identifier in parentheses after it.
+Write the name first. Put the identifier in parentheses after it. In a generated document, the identifier is a Markdown link to the exact place it is defined.
 
-- Write "odds calibration (FEAT-0Fy0)". Never write "FEAT-0Fy0" alone.
+- Write "order expiry ([UC-9KC2](../features/orders/FEAT-9KC2-order-expiry/UC-9KC2-order-expiry.md#UC-9KC2))". Never write "UC-9KC2" alone.
 - This rule covers every opaque identifier: `FEAT`, `UC`, `SC`, `FR`, `NFR`, `US`, `ADR`, a task ID, a plan ID, a ticket number, and a commit hash. Write "the plan-dispatch commit (8c7c4f6)", not "8c7c4f6".
 - Give the name on the first use in each message, section, or document. After that first use, the identifier alone is enough inside the same message.
 - If you cannot name the concept, you have not read it. Read the spec before you cite it. A wrong name is worse than a bare identifier, so verify the name against the source.
 
-**Why:** a bare identifier forces the reader to stop and search the spec tree. A project holds hundreds of them, and no reader keeps them in memory. The search costs more time than the name costs to write.
+**Why:** a bare identifier forces the reader to stop and search the spec tree. A project holds hundreds of them, and no reader keeps them in memory. The search costs more time than the name costs to write. A link removes the search entirely — the reader clicks and arrives at the definition.
 
 | Wrong | Right |
 |---|---|
-| "SC-3Z2P now passes." | "The above-ceiling score scenario (SC-3Z2P) now passes." |
-| "This closes UC-0KTg and FR-0Fy0." | "This closes register user (UC-0KTg) and the duplicate-email requirement (FR-0Fy0)." |
-| "T-003 failed." | "Expiring the OTP after 10 minutes (T-003) failed." |
+| "SC-3Z2P now passes." | "The above-ceiling score scenario ([SC-3Z2P](...#SC-3Z2P)) now passes." |
+| "This closes UC-9KC2 and FR-3FA1." | "This closes order expiry ([UC-9KC2](...#UC-9KC2)) and the retention requirement ([FR-3FA1](...#FR-3FA1))." |
+| "T-003 failed." | "Expiring orders after 30 days (T-003) failed." |
 
-### 6.1 Three places keep the bare identifier
+### 6.1 The link targets an explicit anchor
 
-Each one holds data or follows a fixed convention. Stripping the identifier there breaks tooling.
+Every spec item carries an explicit anchor: the authoring skills write `<a id="SC-9KC2-01"></a>` immediately above the item's heading. The link target is therefore the bare ID — `UC-9KC2-order-expiry.md#SC-9KC2-01` — and renaming the item's title never breaks a link.
 
-- **A machine-readable field.** Examples are `id: UC-0KTg`, `feature: FEAT-0Fy0`, and a `**Covers:**` list. Molcajete parses these fields.
+Never derive a link target from heading text. A heading-derived anchor breaks on every rename. The explicit anchor costs one line and never breaks, because IDs are immutable.
+
+This binds every surface Molcajete generates: `request.md`, `INTERFACE.md`, `DATA.md`, the module charters, `decisions.md`, the validation files, and `report.md`. An unlinked ID in a generated document is a defect. In a screen reply, where no file link resolves, the name-in-parentheses form without a link is enough.
+
+### 6.2 Three places keep the bare identifier
+
+Each one holds data or follows a fixed convention. Stripping the identifier there breaks tooling, and none of them takes a link.
+
+- **A machine-readable field.** Examples are `id: UC-9KC2`, `feature: FEAT-3FA1`, a `covers` array in `plan.json`, and a `**Covers:**` list. Tooling parses these fields, not people.
 - **A file path.** An example is `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md`.
-- **A code comment or a spec heading that the project defines.** An example is `// UC-0KTg: Register User` from the `principles` skill. That format already carries the name.
+- **A code comment or a spec heading that the project defines.** An example is `// UC-9KC2: Order Expiry` from the `principles` skill. That format already carries the name.
 
 ## Where Other Molcajete Rules Win
 
@@ -176,7 +185,6 @@ Simplified Technical English governs the shape of a sentence. It never overrides
 
 - **Volume belongs to `output-economy`.** That skill decides what gets cut and what is protected. This skill never makes that call. Apply these six rules to whatever survives it.
 - **EARS syntax wins inside requirements.** `When {trigger}, the system shall {response}` is already correct. Never reword an EARS clause to meet a sentence-length limit. Split the requirement instead, because a requirement that needs 30 words is usually two requirements.
-- **Plan prose stays narrative.** The `plan-authoring` skill requires flowing explanation, not labeled lists. Shorten the sentences. Do not convert the prose into bullets.
 - **Closed vocabularies win.** The step verbs in `usecase-authoring` and the commit verbs in `git-committing` are already one word for one meaning. Use them exactly as written.
 - **Question briefs keep their shape.** The `asking-questions` skill sets the brief's structure and its 250-word budget. These rules apply to the sentences inside that structure.
 
@@ -205,7 +213,7 @@ Before you write a document or print a report, read your longest sentence again.
 4. No word in the sentence carries more than one meaning in this document.
 5. No noun cluster is longer than 3 words.
 6. The tense is simple, unless rule 2.2 applies.
-7. No opaque identifier appears without its name on first use.
+7. No opaque identifier appears without its name on first use, and in a generated document every identifier links to its definition.
 8. Every code block carries a language tag and, when it comes from the repository, a `file:line` caption.
 
 If a sentence fails a check, split it. Do not delete the fact it carries. When a shorter sentence would drop a condition, a scope qualifier, or a number, keep the longer sentence.

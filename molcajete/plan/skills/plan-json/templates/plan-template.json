@@ -1,0 +1,40 @@
+{
+  "plan": "{change-id}",
+  "created": "{iso-8601-utc-from-the-clock}",
+  "specs": ["{FEAT-XXXX-slug}", "{UC-XXXX@module}"],
+  "provenance": [
+    { "useCase": "{UC-XXXX@module}", "version": 0, "entries": ["{changelog-entry-timestamp}"] }
+  ],
+  "budget": {
+    "maxTasks": 40,
+    "maxSpendUsd": 25.0,
+    "maxValidationCycles": 3,
+    "maxTaskRetries": 3
+  },
+  "tasks": [
+    {
+      "id": "T-001",
+      "round": 1,
+      "done": false,
+      "outcome": "{user-visible behavior, stated as an outcome}",
+      "kind": "{test | code}",
+      "origin": "{spec | change | fix | cover}",
+      "covers": ["{SC-XXXX-NN}"],
+      "examples": ["{E-NNN}"],
+      "retires": [],
+      "dependsOn": [],
+      "useCase": "{UC-XXXX@module}",
+      "feature": "{FEAT-XXXX-slug}",
+      "module": "{module}",
+      "entryType": "{http | event | cli | job | ...}",
+      "files": { "create": ["{path}"], "modify": ["{path}"] },
+      "provides": ["{exported-symbol}"],
+      "interface": ["{INTERFACE.md element name}"],
+      "rationale": "{the why and the trade-offs accepted at design time; request notes flow here}",
+      "contracts": "{the exact signatures the task exposes}",
+      "grading": "{how verification judges the task done — observable behavior with exact values}",
+      "audit": []
+    }
+  ],
+  "knownIssues": []
+}

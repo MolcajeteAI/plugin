@@ -161,7 +161,7 @@ The brief's "Current Best Practices" and "Key Libraries/APIs" sections directly 
 
 ## Table Filling
 
-ARCHITECTURE.md ships with empty tables in the scaffold so the file remains valid before the architecture pass runs. `/m:spec` (forward) and `/m:cover` (reverse) MUST populate the tables before declaring the architecture pass complete — `/m:plan` reads them downstream to scope tasks, route mutations, and locate implementation files. An ARCHITECTURE.md with empty Component Inventory, API Surface, or Code Map blocks the plan pass.
+ARCHITECTURE.md ships with empty tables in the scaffold so the file remains valid before the architecture pass runs. `/m:spec` (forward) and `/m:cover` (reverse) MUST populate the tables before declaring the architecture pass complete — the CLI's planning session reads them downstream to scope tasks, route mutations, and locate implementation files. An ARCHITECTURE.md with empty Component Inventory, API Surface, or Code Map blocks the planning session.
 
 For every new use case or scenario added under this feature, populate at minimum:
 
@@ -173,7 +173,7 @@ For every new use case or scenario added under this feature, populate at minimum
 | Event Topology | Events named in scenarios' Side Effects | Producer/consumer pairs traced through the event-bus call sites |
 | Integration Points | External systems named in scenarios | External clients located in the codebase |
 
-`/m:plan` reads these tables to write each task's prose — a task's target files must already appear in Component Inventory and Code Map. If a task would touch a file or contract not in the architecture tables, the architecture pass is incomplete.
+The CLI's planning session reads these tables to write each task's fields — a task's target files must already appear in Component Inventory and Code Map. If a task would touch a file or contract not in the architecture tables, the architecture pass is incomplete.
 
 Leave a table empty only when the feature genuinely has no rows for it (e.g., Event Topology when the feature emits no events; State Transitions when no entity has a lifecycle).
 

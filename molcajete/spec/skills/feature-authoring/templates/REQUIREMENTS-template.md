@@ -8,6 +8,7 @@ version: 1
 refs: [] # Optional: feature IDs this feature depends on (e.g., [FEAT-0A1b])
 ---
 
+<a id="FEAT-XXXX"></a>
 # {Feature Name}
 
 > {One sentence: what this feature does and who it serves.}
@@ -52,22 +53,30 @@ refs: [] # Optional: feature IDs this feature depends on (e.g., [FEAT-0A1b])
 
 > Written in EARS syntax. Each requirement has a Fit Criterion and links to use cases.
 
+<a id="FR-XXXX"></a>
 **FR-XXXX** `When {trigger}, the system shall {response}.`
 Fit Criterion: Given {precondition}, {measurable outcome that proves this is satisfied}.
 Linked to: UC-XXXX
 
+<a id="FR-XXXX"></a>
 **FR-XXXX** `While {precondition}, the system shall {response}.`
 Fit Criterion: {measurable condition}.
 Linked to: UC-XXXX
 
+<a id="FR-XXXX"></a>
 **FR-XXXX** `If {trigger}, then the system shall {response}.`
 Fit Criterion: {measurable condition}.
 Linked to: UC-XXXX
 
 ## Non-Functional Requirements
 
+<a id="NFR-XXXX"></a>
 **NFR-XXXX** Performance: `When {trigger}, the system shall {response} within {threshold} at {percentile}.`
+
+<a id="NFR-XXXX"></a>
 **NFR-XXXX** Security: `The system shall {security behavior}.`
+
+<a id="NFR-XXXX"></a>
 **NFR-XXXX** Reliability: `When {failure condition}, the system shall {recovery behavior}.`
 
 ## Acceptance

@@ -7,6 +7,7 @@ version: 1
 actor: {Primary actor role}
 ---
 
+<a id="UC-XXXX"></a>
 # UC-XXXX: {Use Case Name}
 
 > {One sentence: what the actor achieves by completing this use case.}
@@ -22,6 +23,7 @@ actor: {Primary actor role}
 
 ---
 
+<a id="SC-XXXX"></a>
 ### SC-XXXX: {Scenario Name}
 
 **Given:**
@@ -51,6 +53,7 @@ actor: {Primary actor role}
 
 ---
 
+<a id="SC-XXXX"></a>
 ### SC-XXXX: {Scenario Name}
 
 **Given:**

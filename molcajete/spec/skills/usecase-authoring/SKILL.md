@@ -99,13 +99,16 @@ One sentence only. Either an actor action ("User clicks Submit") or a system eve
 
 Scenarios are the core of the UC file. Every scenario -- success, error, edge case -- has the same shape and the same level of detail. There is no distinction between "main" and "alternative" flows.
 
-Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Scenarios are separated by `---` horizontal rules to give agents an unambiguous boundary signal. Each scenario gets a unique `SC-XXXX` ID. Generate codes by running `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js [count]` (use the count arg for multiple scenarios) and prepend `SC-` to each output line.
+Each scenario is a `### SC-XXXX:` heading, preceded by its explicit anchor line `<a id="SC-XXXX"></a>`, followed by four bold-label fields. Scenarios are separated by `---` horizontal rules to give agents an unambiguous boundary signal. Each scenario gets a unique `SC-XXXX` ID. Generate codes by running `node ${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/scripts/generate-id.js [count]` (use the count arg for multiple scenarios) and prepend `SC-` to each output line.
+
+**Every ID-bearing heading carries an explicit anchor.** Write `<a id="{ID}"></a>` on its own line immediately above the heading — the UC title and every scenario heading. The anchor makes the bare ID a durable link target (`UC-XXXX-{slug}.md#SC-XXXX`), so renaming a title never breaks a link. Never derive a link from heading text, and never edit an existing anchor — anchors are as immutable as the IDs they carry.
 
 **SC IDs are permanent.** Generate an ID only for a scenario that has none. An existing scenario keeps its `SC-XXXX` through every later edit — rewriting its Steps, reordering the scenario blocks, or retiring a neighbouring scenario never changes it, and the survivors are never renumbered to close a gap. Scenario order and scenario IDs are independent. A retired scenario's ID is spent forever. See the `id-generation` skill's **Immutability** section.
 
 ```
 ---
 
+<a id="SC-XXXX"></a>
 ### SC-XXXX: {Scenario Name}
 
 **Given:**
@@ -124,6 +127,7 @@ Each scenario is a `### SC-XXXX:` heading followed by four bold-label fields. Sc
 
 ---
 
+<a id="SC-XXXX"></a>
 ### SC-XXXX: {Scenario Name}
 
 **Given:**
@@ -212,7 +216,7 @@ Include a UI block when the step produces a visible change the actor responds to
 
 ## Side Effects Rules
 
-Side Effects is the most critical field for the build loop. The Implementer subagent uses side effects as the assertion targets when writing tests for this scenario — they correspond to the Five Exit Doors in `shared/skills/testing/SKILL.md`. Missing or vague side effects produce incomplete test coverage.
+Side Effects is the most critical field for the build loop. The task session uses side effects as the assertion targets when writing tests for this scenario — they are the user-observable exits the `shared/skills/testing/SKILL.md` **Assertions** rules name. Missing or vague side effects produce incomplete test coverage.
 
 ### Three Categories
 
@@ -234,7 +238,7 @@ Side Effects is the most critical field for the build loop. The Implementer suba
 ### Rules
 
 - Every scenario must have at least one side effect or at least one non-side-effect. A scenario that changes nothing is not a scenario.
-- Non-side-effects start with "No" and name the thing that does NOT happen — they tell the Implementer what to assert does NOT occur.
+- Non-side-effects start with "No" and name the thing that does NOT happen — they tell the builder what to assert does NOT occur.
 - Event names follow `{domain}.{entity}.{verb}` convention (e.g., `auth.session.created`, `billing.invoice.sent`).
 - Payload fields are listed in backtick-wrapped comma-separated format.
 
@@ -252,7 +256,7 @@ Scenarios describe what actors do and observe, not internal system behavior. Int
 
 ## E2E Testing Philosophy
 
-All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write Given/Steps/Outcomes/Side Effects as if everything is testable through the public entry point of the relevant `Application`, with real infrastructure inside the service boundary; the Implementer chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
+All scenarios assume the build loop will exercise the code end-to-end with the project's real internal stack and only the outer edge mocked (see `shared/skills/testing/SKILL.md` for the full rule). Write Given/Steps/Outcomes/Side Effects as if everything is testable through the public entry point of the relevant `Application`, with real infrastructure inside the service boundary; the builder chooses what to mock at the outer edge per the project's `specs/TECH-STACK.md`. Never design scenarios around mocking. If a scenario requires a database row, the Given step describes the real state. If a scenario publishes an event, the Side Effect names the event on the real bus.
 
 ### Potential Concerns
 
@@ -280,7 +284,7 @@ Every resolved testing decision is recorded in the feature's ARCHITECTURE.md und
 | `id` | string | `UC-XXXX` -- 4-character timestamp ID |
 | `name` | string | Verb-noun goal phrase (e.g., "Create Feature") |
 | `feature` | string | Parent feature ID: `FEAT-XXXX` |
-| `status` | string | `pending` \| `dirty` \| `implemented` -- the UC's first-class state. `pending` on creation. Written directly by spec-phase commands (when a previously-`implemented` UC is modified, status flips to `dirty`) and by `/m:build` (written directly from the plan's covering-task checkboxes on successful build). See the `status-rollup` shared skill for semantics. Authors do not edit this field manually. |
+| `status` | string | `pending` \| `implemented` -- the UC's first-class state. `pending` on creation. Written by the CLI's apply step (a modified previously-`implemented` UC returns to `pending` on the run branch) and by the run (written directly from the plan's covering-task state on completion). See the `status-rollup` shared skill for semantics. Authors do not edit this field manually. |
 | `version` | integer | Starts at `1`. Incremented by /m:change on each edit |
 | `actor` | string | Primary actor role (must exist in specs/ACTORS.md) |
 
@@ -317,7 +321,7 @@ When creating a use case, add a new row to the feature's `USE-CASES.md`:
 **Column rules:**
 - **ID:** `UC-XXXX` -- the generated ID
 - **Name:** Verb-noun goal phrase (matches frontmatter `name`)
-- **Status:** `pending` on creation; managed by the `status-rollup` shared skill thereafter (written by spec-phase commands and `/m:build`).
+- **Status:** `pending` on creation; managed by the `status-rollup` shared skill thereafter (written by the CLI's apply step and by the run).
 - **Description:** One sentence -- enough for an agent to identify this use case
 - **File:** Relative Markdown link to `UC-XXXX-{slug}.md` (the UC spec file, a sibling of USE-CASES.md inside the FEAT folder)
 
