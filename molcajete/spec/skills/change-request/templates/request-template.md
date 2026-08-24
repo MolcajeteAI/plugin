@@ -20,7 +20,20 @@ created: {YYYY-MM-DD, from the clock}
 
 #### New — {item name} ([{SC-XXXX-NN}]({link}#{SC-XXXX-NN}))
 
-{The item shown whole, exactly as it will land — including its `<a id="{SC-XXXX-NN}"></a>` anchor line.}
+{The item shown whole, exactly as it will land — including its `<a id="{SC-XXXX-NN}"></a>` anchor line. When the item has a graphical interface, its `**UI:**` block or `## UI` section lands too, exactly as below.}
+
+   **UI:**
+   ```
+   +----------------------------------+
+   | {Screen title}                   |
+   |----------------------------------|
+   | {Key UI elements at this step}   |
+   |                                  |
+   | [ {Action button} ]              |
+   +----------------------------------+
+   ```
+
+   ![{Description}](assets/{descriptive-slug}.png) <!-- the file lives at specs/changes/{change-id}/assets/; the apply step moves it to the feature's assets/ -->
 
 ##### Additional Notes
 
