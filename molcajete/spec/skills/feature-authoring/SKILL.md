@@ -204,7 +204,7 @@ UI is specification, not decoration. Screen names, button labels, and form field
 
 ## Feature Status
 
-Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | dirty | implemented` (legacy `deprecated` preserved when present). The field is the feature's first-class state: `pending` on creation, recomputed by rolling up over child UC statuses thereafter. It is written directly by spec-phase commands and `/m:build` per the `status-rollup` shared skill, which owns the roll-up rule. Authors do not edit this field manually.
+Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | implemented` (legacy `deprecated` and `dirty` preserved when present). The field is the feature's first-class state: `pending` on creation, recomputed by rolling up over child UC statuses thereafter. It is written by the CLI's apply step and by the run per the `status-rollup` shared skill, which owns the roll-up rule. Authors do not edit this field manually.
 
 ## FEAT-XXXX ID Assignment
 
@@ -228,6 +228,10 @@ Prepend the appropriate prefix to each output line:
 - `US-` for user stories (e.g., `US-0Fy2`)
 
 **IDs are permanent.** Once assigned, an FR/NFR/US ID is never reused.
+
+## Explicit Anchors
+
+**Every ID-bearing item carries an explicit anchor.** Write `<a id="{ID}"></a>` on its own line immediately above the item — the feature title heading (`FEAT-XXXX`) and every `**FR-XXXX**`, `**NFR-XXXX**`, and `**US-XXXX**` entry, as the REQUIREMENTS template shows. The anchor makes the bare ID a durable link target (`REQUIREMENTS.md#FR-XXXX`), so retitling never breaks a link. Never derive a link from heading text, and never edit an existing anchor — anchors are as immutable as the IDs they carry.
 
 ## Slug Generation
 
