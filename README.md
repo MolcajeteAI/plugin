@@ -33,7 +33,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 
 1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
 2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
-3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
+3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass). The gate holds a new file to the threshold in full, and an existing file only on the lines the task wrote; a file that was already under the threshold is reported and offered as a GitHub issue, never used to block the task.
 4. **Review** — A spec-traceable review surface, scoped to the change and nothing around it. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue with you, and hands you the prompt that fixes it. Both offer a GitHub issue for anything they meet outside the change. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
 5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
 6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
@@ -150,6 +150,8 @@ A finding earns a place in the issue list only when it sits on a line the change
 
 **Everything else becomes an observation.** Neither command searches for observations — they are what you meet while judging the change. They are listed apart from the issues, they carry no severity, and at the end you get one question: open a GitHub issue for them, so a later pull request fixes them under their own use case. A pre-existing bug in a file you edited is not your pull request's problem, and it no longer blocks it.
 
+**Every issue Molcajete opens is findable and actionable.** It carries `AI-finding`, so you can filter for everything the tool raised, plus exactly one kind label — `bug`, `coverage`, `rule violation`, or `spec` — so you can take them one class at a time. It also carries the Molcajete prompt that fixes it, resolved down to the `UC-XXXX` and the `file:line`, so the issue is work someone can start and not a research task. `/m:build` opens issues under the same rules for a file below the coverage threshold.
+
 **`/m:preflight` hands you prompts. It never edits your code.** A fix usually moves more than one of the three elements — spec, code, test — and an edit made during a review skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own. The spec then goes stale and the test breaks.
 
 Preflight decides each issue with you instead, one at a time. It reads the spec line, the code, and the test, explains the options in prose, and asks which direction you want. The correct fix always leads that list and is always the recommendation — effort is reported as a fact, never as a reason to rank a cheaper option higher. Then it shows the exact change for your approval before it opens the next issue. Each decision becomes a ready-to-paste prompt — a Molcajete command when one owns the work, or a direct instruction when none does. The run ends with every issue decided, and with a file at `.molcajete/prompts/<timestamp>-preflight-<slug>.md` that holds the prompts in the order you run them.
@@ -183,12 +185,13 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion carrying only the decision |
 | shared | `resolution-gate` | Analyze, then ask, then write — no unresolved item ever reaches a generated spec or plan |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
-| shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, scoped coverage |
+| shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, coverage scoped to a new file in full and to an existing file's changed lines |
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
 | shared | `uc-log` | Per-UC CHANGELOG.md mechanics — entry format and status transitions |
 | shared | `code-documentation` | README structure and documentation conventions |
 | shared | `git-committing` | Commit message standards for automated task execution — read by `/m:build --commit` |
 | shared | `git-conflict-resolution` | Merge/rebase conflict anatomy and resolution strategies |
+| shared | `github-issues` | Issues Molcajete opens — the `AI-finding` label plus one kind label, label creation, the batched offer, and the fix prompt every issue carries |
 | shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
 | shared | `writing-style` | How a sentence reads — Simplified Technical English, the accuracy rules that outrank length, and naming a concept before its ID |
 | shared | `output-economy` | How much gets written — the content test, the four output containers, per-surface budgets |
