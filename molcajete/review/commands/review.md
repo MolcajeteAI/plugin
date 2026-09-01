@@ -68,7 +68,9 @@ For any finding that points outside the diff, write the causal sentence first: n
 
 Skip this step when the run produced no observation.
 
-Follow the `change-review` skill's **Offering the issues** — check the remote, write the brief, ask once, and create only what the user approved. Record each issue URL against its observation, because Step 7 writes it into the document.
+Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md` now — most runs reach this step, but a run with no observation never needs it.
+
+Follow the `change-review` skill's **Offering the issues** — check the remote, write the brief, ask once, and create only what the user approved. Every issue carries `AI-finding` plus one kind label, and every issue carries the Molcajete prompt that fixes it. Record each issue URL against its observation, because Step 7 writes it into the document.
 
 This is the only step that writes anything outside this repository, and it writes nothing the user did not approve.
 

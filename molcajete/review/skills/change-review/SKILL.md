@@ -176,6 +176,24 @@ table cell or a list entry.
 
 `/m:review` renders the whole document; see its **Document template** for the block filled in.
 
+## Choosing the Fix Command
+
+Neither assessing command edits source. Both hand over a prompt, and both pick the command from what the fix must move. `/m:preflight` uses this table at its direction gate; the GitHub issue body uses it for work outside the change.
+
+| What must move | Route |
+|---|---|
+| code only, behavior unchanged — dead code, naming, a comment rule, a duplicate helper | direct change; no command owns a behavior-preserving cleanup |
+| test only — specified behavior that nothing asserts | `/m:cover "<the code path>"`, which writes the pending log entry for `/m:plan` and `/m:build` |
+| code + test, and the spec is right | `/m:fix <UC-XXXX>` |
+| spec + code (+ test), and the spec states the wrong behavior | `/m:fix <UC-XXXX>`, with the spec correction stated in the prompt |
+| spec + code + test, and the user revises the behavior on purpose | `/m:change <UC-XXXX>` |
+| unmapped code that no spec covers (`missing-spec`) | `/m:cover "<the code path>"` |
+| behavior the spec never described, and it must exist | `/m:spec "..."` |
+
+Separate `/m:fix` from `/m:change` by the quoted spec line, the same guard `/m:prompt` uses: route to `/m:change` only when a spec line states the behavior the user revises on purpose. When the reading is genuinely two-way, that is a question, not a guess.
+
+`/m:cover`, `/m:fix`, and `/m:change` each write a plan and stop. A prompt list that names one of them therefore ends with `/m:build <plan-id>`, or the work never runs.
+
 ## Observations and the GitHub Issue Offer
 
 An observation is a real problem that the change did not cause and does not own. Both assessing commands collect observations in their own section, apart from the issues, and both offer to open a GitHub issue for each one so a later pull request can fix it.
@@ -193,29 +211,15 @@ Keep an observation to three or four lines. The detail belongs in the GitHub iss
 
 ### Offering the issues
 
-Run this once per command, after every issue is settled. Never ask once per observation.
+Run this once per command, after every issue is settled, and never once per observation.
 
-1. **Check the remote.** Run `gh repo view --json nameWithOwner`. If `gh` is absent or the command fails, print one line — "No GitHub repository reachable, so the observations stay in this document." — and skip the rest of this section.
-2. **Write the brief** per the `asking-questions` skill: the observation table, plus the title each issue would carry. The question itself carries none of it.
-3. **Ask once:**
-   - Question: "Open GitHub issues for these observations?"
-   - Header: "Observations"
-   - Options: "Open all" / "Let me pick" / "Open none"
-4. **On "Let me pick"**, ask again with one option per observation and `multiSelect: true`. Four options is the hard cap, so ask in batches of four when there are more than four.
-5. **Create each approved issue** with `gh issue create --title "<title>" --body "<body>"`. Pass no `--label`: a label the repository does not define makes the command fail and loses the issue.
+Follow `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md`, which owns the mechanics: the label vocabulary and the label creation that must run first, the batched offer question, the body shape, and the rule that every issue carries the Molcajete prompt that fixes it.
 
-The body carries what a person needs to pick the work up cold:
+Two values come from here, not from that skill:
 
-````markdown
-Found while reviewing `<branch or PR #>`, outside the scope of that change.
+- **The question** — "Open GitHub issues for these observations?", under the header "Observations".
+- **The kind label** — map the observation's issue type with that skill's **Labels** table. A `bug` observation takes `bug`, a `missing-spec` takes `spec`, a `low-coverage` or `missing-test` takes `coverage`, and a `rule`, `architecture`, `shortcut`, or `confusing` takes `rule violation`. `AI-finding` goes on every one.
 
-**Location** — `src/auth/session.ts:88`
+Write the body's opening line as "Found while reviewing `<branch or PR #>`, outside the scope of that change", and fill **Why it is separate** with the reason the observation failed the admission test. Pick the fix prompt with **Choosing the Fix Command** above.
 
-**What it is** — `refreshToken()` returns `null` on every failure, so an expired token and a network failure look identical to every caller.
-
-**Why it is separate** — the line predates that branch, and the change did not touch it.
-
-**Suggested direction** — run `/m:cover "the refresh-token error path"` to spec the behavior, then fix it under its own use case.
-````
-
-Print each created issue as `#<n> <url>` on its own line, and record the URL against its observation so the document that follows carries it.
+Record each issue URL against its observation, so the document that follows carries it.

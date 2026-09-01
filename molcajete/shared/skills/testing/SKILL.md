@@ -3,7 +3,9 @@ name: testing
 description: >-
   Technology-agnostic rules for the test-first build loop. Implementer, Validator,
   and Reviewer role contracts, outer-edge mocking, reading specs/TECH-STACK.md,
-  Runner Inference, coverage gate scoped to touched files, reactive refactor.
+  Runner Inference, coverage gate scoped to a new file in full and to the changed
+  lines of an existing file, legacy coverage reported and never blocking, reactive
+  refactor.
 ---
 
 # Testing
@@ -28,9 +30,9 @@ The Implementer cannot mark a task done.
 
 Runs the project's test command and the coverage command, independently of the Implementer. This is a **mechanical** check — it proves the tests are green and the coverage floors are met, and (with the mutation step) that the tests are not vacuous. It does **not** judge whether the implementation is correct.
 
-**Receives:** files changed this round; the resolved test + coverage commands; the threshold.
+**Receives:** files changed this round, each marked as created or pre-existing; the resolved test + coverage commands; the thresholds.
 
-**Returns:** exactly one of `pass`, `tests_failed{failures}`, or `coverage_low{gaps}`.
+**Returns:** exactly one of `pass`, `tests_failed{failures}`, or `coverage_low{gaps}`, and — beside whichever it returns — the non-blocking list `legacy_coverage{files}`. That list names pre-existing files whose whole-file coverage sits under the floor. It never changes the returned state, and it never blocks a task.
 
 Does not see the Implementer's reasoning. Maker–checker boundary.
 
@@ -153,7 +155,16 @@ The gate is **four-dimensional**: lines, statements, branches, and funcs. The fl
 
 Coverage is **scoped to the touched files** — the union of the files the task's prose names (create + modify) and every file the Implementer has changed during the loop. The Validator never judges the whole project.
 
-`pass` requires: scoped test run green AND, for every touched file, every one of the four dimensions at or above its floor. A file with lines at 100% but branches at 66% does NOT pass.
+**Inside a touched file, the floor applies to the code this build wrote.** The two cases differ:
+
+| Touched file | What the floor covers |
+|---|---|
+| The task **created** it | The whole file. Every line in it is new, so all of it is this build's work. |
+| The file **existed** before | Only the lines the task added or modified. The rest of the file is older debt, and this task did not take it on. |
+
+`pass` requires: scoped test run green AND, for every touched file, every one of the four dimensions at or above its floor **within that scope**. A new file with lines at 100% but branches at 66% does NOT pass. An existing file whose changed lines all pass DOES pass, even when the file as a whole sits under the floor.
+
+**A pre-existing file below the floor is an observation, never a failure.** When the whole-file number for an existing touched file sits under the threshold, the Validator still returns `pass` on the scoped result, and reports the file separately as **legacy coverage**: the path, the whole-file number per dimension, and the floor it misses. Blocking the task would make this build pay a debt another change created, and the run would stall on work nobody planned. `/m:build` reports the list at the end and offers a GitHub issue for it.
 
 `coverage_low` lists per-touched-file gaps **per dimension**, with concrete locations:
 

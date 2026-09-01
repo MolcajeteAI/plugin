@@ -142,19 +142,7 @@ Close the brief with the escape-hatch line: `Other` takes the user's own approac
 
 Do not add an "Other" option, and do not add a "Discuss" option. Both are built in, and both already do what a hand-written option would do.
 
-The candidates come from the elements that move:
-
-| What must move | Route |
-|---|---|
-| code only, behavior unchanged — dead code, naming, a comment rule, a duplicate helper | direct change |
-| test only — specified behavior that nothing asserts | `/m:cover "<the code path>"`, which writes the pending log entry for `/m:plan` and `/m:build` |
-| code + test, and the spec is right | `/m:fix <UC-XXXX>` |
-| spec + code (+ test), and the spec states the wrong behavior | `/m:fix <UC-XXXX>`, with the spec correction stated in the prompt |
-| spec + code + test, and the user revises the behavior on purpose | `/m:change <UC-XXXX>` |
-| unmapped code that no spec covers (`missing-spec`) | `/m:cover "<the code path>"` |
-| behavior the spec never described, and it must exist | `/m:spec "..."` |
-
-Separate `/m:fix` from `/m:change` by the quoted spec line, the same guard `/m:prompt` uses: route to `/m:change` only when a spec line states the behavior the user revises on purpose. When the reading is genuinely two-way, that is a question, not a guess.
+The candidates come from the elements that move. Take the route for each from the `change-review` skill's **Choosing the Fix Command**, which maps what must move onto the command that owns it, and which holds the `/m:fix` against `/m:change` guard.
 
 **Ask a follow-up whenever the answer leaves a real choice open.** Each follow-up is two moves again — brief first, then the ask. Ask the ones that apply:
 
@@ -221,7 +209,11 @@ Then open the next issue at 6.1. Print nothing about it until this one is record
 
 Skip this step when the run produced no observation.
 
+Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md` now — a run with no observation never reaches this step, so it never loads it.
+
 Follow the `change-review` skill's **Offering the issues** — check the remote, write the brief, ask once, and create only what the user approved. One question covers every observation. Never open one conversation per observation, because none of them is this change's work.
+
+Every issue carries `AI-finding` plus one kind label, and every issue carries the Molcajete prompt that fixes it. The prompt rules are the same ones Step 6 applies to an in-change fix: resolve every value, and never hand a choice to the reader.
 
 Record each issue URL against its observation. Step 8 prints it, and Step 9 writes it to the file.
 

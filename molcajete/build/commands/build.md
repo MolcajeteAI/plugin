@@ -94,7 +94,8 @@ Read:
 6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — **Immutability** section. This command writes `SC-XXXX` IDs into task `Covers` lists and into test-file comments. It copies existing IDs verbatim and never generates, renumbers, or alters one. Task tags (`T-NNN`) are not spec IDs and are re-tagged by the `plan-adaptation` skill under its own rules.
 7. **Only when `--commit` is set** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/git-committing/SKILL.md` — message format, style detection, the spec-references block, and the no-attribution rule. A run without the modifier does not read it.
 8. **Only when an amendment needs a spec edit** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md`. Load them at the moment the `plan-adaptation` skill's step 3 runs, not up front — most runs never edit a spec.
-9. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, correctness review, and refactor in this command must respect these principles.
+9. **Only when Step 11 has a legacy-coverage list to offer** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md` — the labels, the label creation that must run first, the batched offer, and the issue body with its fix prompt. A run where every touched file met its floor never loads it.
+10. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, correctness review, and refactor in this command must respect these principles.
 
 ## Step 3: Verify Prerequisites
 
@@ -334,7 +335,11 @@ Parse the per-file coverage output into the four-dimension table per touched fil
 | branches   | `<n>` | `<n>`  | OK / GAP |
 | funcs      | `<n>` | `<n>`  | OK / GAP |
 
-If every dimension is OK for every touched file → proceed to 8.8.
+**Read each file against the right scope**, per the testing skill's **Coverage Gate**. A file the task created is measured whole. A file that existed before is measured on the lines the task added or modified — take those line numbers from the task's own diff, and judge the dimensions inside that range.
+
+**Record, but never block on, legacy coverage.** When an existing touched file passes on its changed lines and its whole-file number still sits under a floor, that is inherited debt, not this task's gap. Add the file to the run's `legacy_coverage` list with its per-dimension numbers, and carry on. Never open the gap-resolution loop for it, and never hold a task for it — Step 11 reports the list and offers a GitHub issue for it.
+
+If every dimension is OK for every touched file, inside its own scope → proceed to 8.8.
 
 If any dimension is GAP, run the **gap-resolution loop** (max 3 iterations per task):
 
@@ -508,6 +513,12 @@ This is the shape. Every section below the task table is conditional — print i
 
 - `SC-3Z2Q` has no covering assertion in `UC-3Z2L.test.ts`.
 
+**Legacy coverage** — below the threshold before this build, and not fixed by it
+
+| File | lines | branches | funcs | statements | Floor |
+|---|---|---|---|---|---|
+| `src/auth/session.ts` | 54% | 41% | 60% | 54% | 80% |
+
 Plan `20260820T1430-otp-expiry` — 2 of 3 tasks complete.
 
 > Next: `/m:build 20260820T1430-otp-expiry` to run the remaining 1 task.
@@ -528,6 +539,36 @@ Plan `20260820T1430-otp-expiry` — 2 of 3 tasks complete.
 **Plan drift** from 5.2 lists every signal the provenance check found, one line each. **This section is exempt from the output budget** — a drift the report truncates is a drift the user never acts on. When the plan carried no `**Provenance:**` line, replace the list with the single sentence 5.2 defines. Omit the section only when the check ran and found nothing.
 
 **Completeness gaps** from 9.3 lists every uncovered scenario, missing assertion, and stray marker. **This section is exempt from the output budget.** List all of them, or omit the section when there are none.
+
+**Legacy coverage** prints when 8.7 recorded a pre-existing file under a floor. One row per file, with its whole-file number on each dimension and the floor it misses. **This section is exempt from the output budget** — a file the report truncates is a file nobody fixes.
+
+State plainly that the build did not cause this and did not fix it: the task's own lines met the floor, and the rest of the file was already under it. Then offer the issue, once for the whole list:
+
+- Question: "Open GitHub issues for the files under the coverage threshold?"
+- Header: "Coverage"
+- Options: "Open all" / "Let me pick" / "Open none"
+
+Write the brief before the question, per the `asking-questions` skill: the table above, plus the title each issue would carry.
+
+**Skip the offer, and print the table with its prompts instead, when the run cannot open an issue:** `gh` is absent, no GitHub repository is reachable, or the run is headless and has nobody to ask. Say which of the three it was, in one line. The build never opens an issue nobody approved.
+
+Create each approved issue with the labels **`AI-finding`** and **`coverage`**, per the `github-issues` skill — create the labels first, or `gh` rejects the issue and the finding is lost. The body names the file, its numbers, the floor, and the branch the build ran on. It ends with the prompt that fixes it, which for a coverage gap is always two commands:
+
+````markdown
+**Fix with Molcajete**
+
+1. Spec the untested paths and log the work:
+
+```
+/m:cover "src/auth/session.ts — lines 54%, branches 41%, funcs 60% against an 80% floor. The refresh and revoke paths carry no assertion."
+```
+
+2. Run the plan it writes:
+
+```
+/m:build <plan-id>
+```
+````
 
 **Commits** gets its own line under the table only when a commit failed in 8.11 — name the task and state that its work is on disk but uncommitted. A successful commit is already in the `Commit` column.
 
