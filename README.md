@@ -34,7 +34,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
 2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
 3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass).
-4. **Review** — A spec-traceable review surface. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue with you, and hands you the prompt that fixes it. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
+4. **Review** — A spec-traceable review surface, scoped to the change and nothing around it. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue with you, and hands you the prompt that fixes it. Both offer a GitHub issue for anything they meet outside the change. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
 5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
 6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
 
@@ -140,9 +140,15 @@ Spec-traceable code review of a PR, branch, or ref range. Molcajete-only — eve
 
 | Command | Description |
 |---------|-------------|
-| `/m:review` | Guided, severity-scored review written to a `reviews/` file; read-only, never posts to GitHub |
+| `/m:review` | Guided, severity-scored review of what the change did, written to a `reviews/` file. Never edits code and never comments on the PR |
 | `/m:preflight` | Interactive pre-PR pass — walk your change set, decide each issue one at a time, and get the prompt that resolves it. Never edits code |
 | `/m:walkthrough` | Interactive, hierarchical tour (feature → UC → scenario) of a change set with clickable `file:line` links |
+
+**The review judges the change, and only the change.** `/m:review` and `/m:preflight` answer four questions: is the change architecturally sound, does it follow the rules, do its added and modified lines meet the 80% coverage floor, and does it introduce a defect. Coverage is measured on what the change wrote, not on the whole file — unless the change created that file.
+
+A finding earns a place in the issue list only when it sits on a line the change wrote, when one sentence names the changed hunk that broke something elsewhere, or when the change added behavior that no spec defines and no test asserts. Nothing else scores, and nothing else moves the verdict.
+
+**Everything else becomes an observation.** Neither command searches for observations — they are what you meet while judging the change. They are listed apart from the issues, they carry no severity, and at the end you get one question: open a GitHub issue for them, so a later pull request fixes them under their own use case. A pre-existing bug in a file you edited is not your pull request's problem, and it no longer blocks it.
 
 **`/m:preflight` hands you prompts. It never edits your code.** A fix usually moves more than one of the three elements — spec, code, test — and an edit made during a review skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own. The spec then goes stale and the test breaks.
 
@@ -170,7 +176,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | spec | `spec-lookup` | Machinery shared by `/m:desc`, `/m:ids`, and `/m:prompt` — ID taxonomy, resolve by ID or keyword, context assembly |
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
 | build | `plan-adaptation` | Mid-build plan change — trigger catalog, insert/revise operations, the three-option gate, and the audit trail |
-| review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, review rubric and severity |
+| review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, the four review questions and the admission test, rubric and severity, observations and their GitHub issue offer |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
 | research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
 | research | `headless-research` | Silent, no-interaction research brief written before spec-writing |
