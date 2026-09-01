@@ -1,5 +1,5 @@
 ---
-description: Interactively review your own change set before opening a PR — get familiar with the solution, surface the known problems and rule violations, decide each one with you, and emit the prompt that fixes it. Never edits source.
+description: Interactively review your own change set before opening a PR — get familiar with the solution, surface the problems the change itself introduces, decide each one with you, and emit the prompt that fixes it. Never edits source; offers a GitHub issue for anything found outside the change.
 model: claude-opus-5
 argument-hint: "[base branch — omit to auto-detect and confirm]"
 allowed-tools:
@@ -18,11 +18,12 @@ allowed-tools:
 
 **It never edits source.** Molcajete is a multi-command system, and a fix usually moves more than one of the three elements — spec, code, test. An edit made here skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own, so the spec goes stale and the test breaks. Preflight therefore hands you a prompt, and the command you paste does the work.
 
-Three rules bind the run:
+Four rules bind the run:
 
-1. **Every issue ends in one of three states** — `command`, `direct`, or `waived`. The run never ends with an open question.
-2. **The emitted prompt carries no decision.** Preflight decides the route, the diagnosis, and every value the fix needs. The prompt states what to do. It never says that the downstream command will work it out.
-3. **Correctness first, architecture second, effort last.** The right fix is the recommended fix, whatever it costs — the cheap fix buys today and bills the project later. Between two correct fixes, take the one the principles and the existing architecture support. Effort separates only what already ties on both, and it never promotes a worse fix above a better one.
+1. **Only the change is on trial.** Preflight answers four questions: is the change architecturally sound, does it follow the rules, do its added and modified lines meet the 80% coverage floor, and does it introduce a defect. A problem the change did not cause is not an issue here. It becomes an **observation**, it never enters the decision loop, and you decide at the end whether it becomes a GitHub issue for a later pull request. The `change-review` skill's **Scope of the Review** owns that boundary.
+2. **Every issue ends in one of three states** — `command`, `direct`, or `waived`. The run never ends with an open question. An observation is not an issue, so it takes none of these states.
+3. **The emitted prompt carries no decision.** Preflight decides the route, the diagnosis, and every value the fix needs. The prompt states what to do. It never says that the downstream command will work it out.
+4. **Correctness first, architecture second, effort last.** The right fix is the recommended fix, whatever it costs — the cheap fix buys today and bills the project later. Between two correct fixes, take the one the principles and the existing architecture support. Effort separates only what already ties on both, and it never promotes a worse fix above a better one.
 
 **Base argument:** $ARGUMENTS
 
@@ -32,7 +33,7 @@ Three rules bind the run:
 
 ## Step 1: Load Skills and Rubric
 
-1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, and the review rubric + severity.
+1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, the scope of the review with its admission test, the rubric + severity, and the observation bucket with its GitHub issue offer.
 2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
 3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — so a prompt that orders a test names the scenario and the precise values the integration-test rules require.
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — analyze, then ask, then write. No decision survives into an emitted prompt or into the decision file.
@@ -59,7 +60,11 @@ Show clickable `file:line` references for the key changes in the brief so the us
 
 ## Step 5: Surface the Known Issues
 
-Run the `change-review` skill's **Review Rubric & Severity** against the change set — the same judgment `/m:review` makes, but in-session. Dispatch parallel **Agent** lenses if the change set is large (rules/principles, architecture, shortcut, bug, spec/test), and merge into **one severity-sorted list**.
+Run the `change-review` skill's **Review Rubric & Severity** against **what the change added and modified** — the same judgment `/m:review` makes, but in-session. Dispatch parallel **Agent** lenses if the change set is large (architecture, rules/principles, shortcut, bug, spec/test/coverage), and merge into **one severity-sorted list**.
+
+Then put every candidate finding through that skill's **admission test**, and split the list in two. A finding is an issue only when the change put the defect on a line it wrote, when one sentence names the changed hunk that broke something elsewhere, or when the change added behavior that no spec defines and no test asserts. Everything else is an observation.
+
+**When you cannot write that sentence, the finding is an observation.** Never widen the change set to make a finding fit, and never search the surrounding code for more of them.
 
 Present the verdict as a heading, then the issues as one table. This table is the map for the decision loop in Step 6, so it carries no detail — each issue opens in full when its turn comes.
 
@@ -76,9 +81,23 @@ Present the verdict as a heading, then the issues as one table. This table is th
 | 4 | LOW | Duplicate module constant | `rule` | code | `src/auth/config.ts:12` |
 ````
 
-If there are no issues, say so plainly — the work is clean against the rubric — and skip to Step 7.
+Then print the observations as their own table, under its own heading, so the two are never read as one list. Write this table only when the run produced an observation. It carries no severity and no `Touches`, because nothing here is yours to decide in this run.
+
+````markdown
+## Observations — outside this change
+
+These did not come from your change, and they do not affect the verdict. Step 7 offers a GitHub issue for each one.
+
+| # | Title | Location | Why it is out |
+|---|---|---|---|
+| O1 | `refreshToken()` swallows every error | `src/auth/session.ts:88` | The line predates this branch |
+````
+
+If there is no issue, say so plainly — the change is clean against the rubric — and skip to Step 7. Observations do not change that statement, because a clean change with an observation beside it is still a clean change.
 
 ## Step 6: Decide Every Issue, One at a Time
+
+This loop runs over the issue table only. **An observation never enters it.** The loop exists to settle what this change does before it becomes a pull request, and an observation is not part of this change, so it carries no direction to pick and no prompt to emit. Step 7 handles the observations in one question.
 
 One issue is one conversation, and it runs to the end before the next one opens. Never print two issues in one turn, and never cover two issues in one question.
 
@@ -144,7 +163,7 @@ Separate `/m:fix` from `/m:change` by the quoted spec line, the same guard `/m:p
 - the exact value a limit, a timeout, or a boundary takes,
 - which module-instance of a shared UC the issue touches.
 
-There is no cap on follow-ups. A question you do not ask becomes a decision inside the prompt, and Step 8 rejects that prompt.
+There is no cap on follow-ups. A question you do not ask becomes a decision inside the prompt, and Step 9 rejects that prompt.
 
 ### 6.4 Show what will change, then get approval
 
@@ -198,7 +217,15 @@ Record the issue as `command`, `direct`, or `waived`, together with the approved
 
 Then open the next issue at 6.1. Print nothing about it until this one is recorded.
 
-## Step 7: Decision Report
+## Step 7: Offer to Open GitHub Issues for the Observations
+
+Skip this step when the run produced no observation.
+
+Follow the `change-review` skill's **Offering the issues** — check the remote, write the brief, ask once, and create only what the user approved. One question covers every observation. Never open one conversation per observation, because none of them is this change's work.
+
+Record each issue URL against its observation. Step 8 prints it, and Step 9 writes it to the file.
+
+## Step 8: Decision Report
 
 One heading for the residual verdict, one table for the decisions:
 
@@ -217,15 +244,17 @@ Four issues, four decisions. Three carry a prompt.
 
 The `Prompt` column holds one clause, never a paragraph — the full prompt already printed in Step 6. Every row carries `command`, `direct`, or `waived`. A row with any other value means Step 6 left the issue open, so return to it.
 
-## Step 8: Write the Decision File
+When the run produced observations, add one line under the table: how many there were, and which ones became issues — "Two observations sit outside this change. One is now issue #412." Print no observation detail here.
 
-Skip this step when the run found no issue.
+## Step 9: Write the Decision File
+
+Skip this step when the run found no issue and no observation.
 
 Run `date +%Y%m%dT%H%M%S` and copy the output. Never compose the timestamp yourself. Then write `.molcajete/prompts/<timestamp>-preflight-<slug>.md`, where `<slug>` is a short kebab-case phrase from the change set — the branch name, or the primary feature. Write it without asking.
 
-The file holds **every issue**, waived ones included. One section each: the title, the severity, the `file:line`, the decision, and the fenced prompt when the issue carries one.
+The file holds **every issue**, waived ones included. One section each: the title, the severity, the `file:line`, the decision, and the fenced prompt when the issue carries one. The observations follow at the end, in their own table, and they carry no prompt.
 
-Number the sections in run order, and carry the Step 7 issue number as a field. The reader runs the file from top to bottom, so the numbering follows the run, never the severity sort.
+Number the sections in run order, and carry the Step 8 issue number as a field. The reader runs the file from top to bottom, so the numbering follows the run, never the severity sort.
 
 `````markdown
 # Preflight — `feat/calibration-ceiling`
@@ -261,12 +290,23 @@ Remove the private helper `formatStamp()` at src/calibration/report.ts:88. Nothi
 | Issue | Title | Reason |
 |---|---|---|
 | #4 | Duplicate module constant | You keep it until the merge lands |
+
+## Observations — outside this change
+
+Not part of this change, and not part of these prompts. Fix each one under its own pull request.
+
+| # | Title | Location | GitHub issue |
+|---|---|---|---|
+| O1 | `refreshToken()` swallows every error | `src/auth/session.ts:88` | #412 |
+| O2 | Stale timezone table | `src/shared/tz.ts:20` | not opened |
 `````
 
-**The order is the run order**, because each step needs the one before it: `/m:cover` first, then `/m:fix` and `/m:change`, then `/m:spec`, then the direct changes. Waived issues go last, under their own heading.
+**The order is the run order**, because each step needs the one before it: `/m:cover` first, then `/m:fix` and `/m:change`, then `/m:spec`, then the direct changes. Waived issues go next, under their own heading, and the observations go last.
 
-Before the file is final, run the `resolution-gate` skill's **G5** check over it. A banned marker, a conditional sentence, or a prompt that hands a choice to its reader means Step 6 missed a question. Go back, ask it, and rewrite the prompt.
+Write the `Observations` section only when the run produced one, and write `not opened` for an observation the user declined. That value is a decision the user made, not a hole in the file.
 
-`/m:preflight` edits nothing and commits nothing. End with:
+Before the file is final, run the `resolution-gate` skill's **G5** check over it. A banned marker, a conditional sentence, or a prompt that hands a choice to its reader means Step 6 missed a question. Go back, ask it, and rewrite the prompt. The check runs over the issue sections; the observations carry no prompt, so they carry no decision to resolve.
+
+`/m:preflight` edits no source file and commits nothing. The only thing it writes outside this repository is a GitHub issue the user approved in Step 7. End with:
 
 > Next: run the prompts in the order the file lists them. `/m:fix` and `/m:change` each write a plan, so run `/m:build <plan-id>` after each one. Then commit and open the PR.

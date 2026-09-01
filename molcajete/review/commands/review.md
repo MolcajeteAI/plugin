@@ -1,5 +1,5 @@
 ---
-description: Produce a guided, spec-traceable code review of a PR, branch, or ref range and write it to a reviews/ file. Read-only; never posts to GitHub.
+description: Produce a guided, spec-traceable code review of what a PR, branch, or ref range changed, and write it to a reviews/ file. Never edits source and never comments on the PR; opens a GitHub issue only for an out-of-scope observation you approve.
 model: claude-opus-5
 argument-hint: "[PR # | branch | ref-A ref-B — omit for current branch vs base]"
 allowed-tools:
@@ -14,9 +14,11 @@ allowed-tools:
 
 # Review Command
 
-`/m:review` produces a review document that **walks the reviewer by the hand** — first orient them (the problem, the 10,000-ft solution, where to look), then list every issue in one place, each traced back to what the spec says (`FEAT/UC/SC`) and what the integration test asserts. It writes the result to a file under `reviews/`. It never edits source and never posts anything to GitHub.
+`/m:review` produces a review document that **walks the reviewer by the hand** — first orient them (the problem, the 10,000-ft solution, where to look), then list every issue in one place, each traced back to what the spec says (`FEAT/UC/SC`) and what the integration test asserts. It writes the result to a file under `reviews/`. It never edits source, and it never comments on the pull request.
 
-The whole point is traceability: **every issue cites the spec and the integration test.** A missing spec or a missing test is not an omission in the review — it is one of the most important issues to report.
+**The review judges the change, and only the change.** It answers four questions: is the change architecturally sound, does it follow the rules, do its added and modified lines meet the 80% coverage floor, and does it introduce a defect. A problem the change did not cause is not part of this review. It goes to the observations, where you decide whether to open a GitHub issue for it and fix it under its own pull request. The `change-review` skill's **Scope of the Review** owns that boundary, and Step 5 enforces it.
+
+The whole point is traceability: **every issue cites the spec and the integration test.** A missing spec or a missing test on behavior the change wrote is not an omission in the review — it is one of the most important issues to report.
 
 **Target argument:** $ARGUMENTS
 
@@ -26,7 +28,7 @@ The whole point is traceability: **every issue cites the spec and the integratio
 
 ## Step 1: Load Skills and Rubric
 
-1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, and the review rubric + severity.
+1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, the scope of the review with its admission test, the rubric + severity, and the observation bucket with its GitHub issue offer.
 2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
 
 Apply the `change-review` skill's **Prerequisites** gate now. If it is not a Molcajete project, refuse per that skill and stop.
@@ -41,18 +43,40 @@ Follow the `change-review` skill's **Mapping the Diff to Specs**, and load the h
 
 ## Step 4: Review Lenses (one output stream)
 
-Run these lenses over the change set. They only exist to get broad coverage — there are no per-lens sections; everything merges in Step 5. **If the change set is large, dispatch them as parallel Agent sub-agents**, giving each the diff, the touched-file list, the loaded specs/tests, and the applicable rules; otherwise run them inline.
+Run these lenses over **what the diff added and modified**. Each one answers part of one of the four questions in the `change-review` skill's **Scope of the Review**. They only exist to get broad coverage — there are no per-lens sections; everything merges in Step 7. **If the change set is large, dispatch them as parallel Agent sub-agents**, giving each the diff, the touched-file list, the loaded specs/tests, the applicable rules, and the admission test; otherwise run them inline.
 
-- **Rules / principles** — violations of `.claude/rules/*`, `CLAUDE.md`, and principles 1–5.
-- **Architecture** — boundary violations, god files, duplication that should be reuse, hexagonal drift, business logic in the wrong layer.
-- **Shortcut** — can-kicking, TODOs that hide scope, legacy paths left behind, silent truncation/caps, disabled or renamed tests.
-- **Bug** — correctness, edge cases, concurrency, nil, overflow, unit mismatches.
-- **Spec / test** — resolve `FEAT/UC/SC` for each touched behavior, confirm a spec defines it and an integration test asserts it, and reason statically about the 80% coverage floor on touched files.
+- **Architecture** — is the change sound? Boundary violations, god files, duplication the change should have reused, hexagonal drift, business logic the change put in the wrong layer.
+- **Rules / principles** — does the change follow `.claude/rules/*`, `CLAUDE.md`, and principles 1–5?
+- **Shortcut** — does the change kick a can? TODOs that hide scope, legacy paths it left behind, silent truncation or caps it added, tests it disabled or renamed.
+- **Bug** — does the change introduce a defect? Correctness, edge cases, concurrency, nil, overflow, unit mismatches, and callers the change broke.
+- **Spec / test / coverage** — resolve `FEAT/UC/SC` for each behavior the change added or modified, confirm a spec defines it and an integration test asserts it, and reason statically about the 80% floor **on the added and modified lines**. Judge a whole file only when the change created it.
 
-## Step 5: Synthesize and Write the File
+Every lens judges the change. None of them audits the code around it. A lens that reports a problem on a line the change never touched must carry the sentence that ties it to a changed hunk, and Step 5 removes it when that sentence is absent.
 
-- Merge and dedupe issues across lenses into **one list, sorted `HIGH` → `MEDIUM` → `LOW`** (severity per the rubric).
-- Assign the verdict: `BLOCK` (any High) / `CHANGES REQUESTED` (Mediums only) / `APPROVE` (Lows / nits only).
+## Step 5: Apply the Scope Filter
+
+Put every candidate finding through the `change-review` skill's **admission test** before it earns a severity, then split the list in two:
+
+- **Issues** — the findings that pass. They carry a severity, and they set the verdict.
+- **Observations** — the findings that fail. They carry no severity, and they never touch the verdict.
+
+For any finding that points outside the diff, write the causal sentence first: name the changed hunk, and name what it broke. A finding whose sentence you cannot write is an observation.
+
+**Drop nothing.** A finding that fails the test moves to the observations. It does not disappear, and it does not get argued back into the issue list.
+
+## Step 6: Offer to Open GitHub Issues for the Observations
+
+Skip this step when the run produced no observation.
+
+Follow the `change-review` skill's **Offering the issues** — check the remote, write the brief, ask once, and create only what the user approved. Record each issue URL against its observation, because Step 7 writes it into the document.
+
+This is the only step that writes anything outside this repository, and it writes nothing the user did not approve.
+
+## Step 7: Synthesize and Write the File
+
+- Merge and dedupe the **issues** into **one list, sorted `HIGH` → `MEDIUM` → `LOW`** (severity per the rubric).
+- Assign the verdict from the issues alone: `BLOCK` (any High) / `CHANGES REQUESTED` (Mediums only) / `APPROVE` (Lows and nits only, or no issue at all). **Observations never change the verdict.**
+- Merge and dedupe the **observations** into their own list, numbered `O1`, `O2`, in the order you met them. They stay unsorted, because they carry no severity.
 - Render the template below and `Write` it to `reviews/code-review--{branch}--{PR# or "no-pr"}--{YYMMDDHHmm}.md` (sanitize the branch name: replace `/` with `-`; timestamp is local `YYMMDDHHmm`). Create `reviews/` if needed.
 - Output is **emoji-free**: text severity labels and `[missing]` markers.
 
@@ -148,16 +172,38 @@ The clamp on line 142 runs after calibration, so scores above 100 collapse to 10
 
 ---
 
+## Observations — outside this change
+
+These are not part of this review, and they do not affect the verdict. This change did not cause them. Each one is a candidate for its own issue and its own pull request.
+
+| # | Title | Location | Why it is out | GitHub issue |
+|---|---|---|---|---|
+| O1 | `refreshToken()` swallows every error | `src/auth/session.ts:88` | The line predates this branch | #412 |
+
+### O1 · `refreshToken()` swallows every error
+
+`refreshToken()` returns `null` on every failure, so an expired token and a network failure look identical to every caller.
+
+**Why it is out.** The change did not touch this function, and nothing it changed reaches this path.
+
+**GitHub issue** — #412 · https://github.com/acme/app/issues/412
+
+---
+
 ## Reviewer checklist
 
 - [ ] Every HIGH issue resolved or explicitly waived
-- [ ] Every changed behavior has a spec reference and a passing integration test
-- [ ] Touched files meet the 80% coverage floor
+- [ ] Every behavior the change added or modified has a spec reference and a passing integration test
+- [ ] The lines the change added and modified meet the 80% coverage floor
 `````
 
 ### Rules for the template
 
-**Every issue goes in the one list**, sorted `HIGH` → `MEDIUM` → `LOW`. A convention violation, a bug, confusing code, wrong architecture, a missing spec, and a missing integration test are all issues and all rank the same way.
+**Every issue goes in the one list**, sorted `HIGH` → `MEDIUM` → `LOW`. A convention violation, a bug, confusing code, wrong architecture, a missing spec, and a missing integration test are all issues and all rank the same way — when the change owns them.
+
+**An observation never enters that list.** The two sections stay apart, and the count table above the issues counts issues only. Write the Observations section only when the run produced one; a review with no observation carries no empty section, and no "none found" line.
+
+**`Why it is out` names one reason, in one clause.** It states why the finding failed the admission test — the line predates the branch, the change did not reach this path, the coverage gap is on code the change did not write. It never argues the finding's importance, because importance is not what put it here.
 
 **The index table comes before the issue blocks.** It gives the reviewer the shape of the review before they read a word of it.
 
@@ -167,9 +213,9 @@ The clamp on line 142 runs after calibration, so scores above 100 collapse to 10
 
 **Four containers, never mixed.** Short facts go in the table. Description and risk are prose under it. Options are a list. The suggested comment is a fenced block, because the reviewer pastes it into the pull request and it must survive verbatim.
 
-## Step 6: Report
+## Step 8: Report
 
-Print the verdict as a heading, then the same count table the document carries, then the file path on its own line:
+Print the verdict as a heading, then the same count table the document carries, then one line for the observations, then the file path on its own line:
 
 ````markdown
 ## Verdict — BLOCK
@@ -179,10 +225,12 @@ Print the verdict as a heading, then the same count table the document carries, 
 | HIGH | 2 | #1, #2 |
 | MEDIUM | 3 | #3, #4, #5 |
 
+Two observations sit outside this change. One is now issue #412.
+
 Written to `reviews/code-review--feat-otp--142--2608201430.md`.
 ````
 
-Print no issue detail on screen. The file holds it, and repeating it here makes the reader choose between two copies.
+Print the observation line only when the run produced an observation. Print no issue detail and no observation detail on screen. The file holds both, and repeating them here makes the reader choose between two copies.
 
 End with:
 
@@ -191,3 +239,5 @@ End with:
 ## Rules for this command
 
 - Cite real `file:line`, real `FEAT/UC/SC`, and real test paths — never guess an ID, and never leave a **Spec says** / **Test says** line blank.
+- Judge the change, never the repository around it. When a finding fails the admission test, move it to the observations. Never widen the change set to make a finding fit.
+- Open a GitHub issue only for an observation the user approved in Step 6. Never comment on the pull request, and never edit source.
