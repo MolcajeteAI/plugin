@@ -1,7 +1,7 @@
 ---
 module: molcajete-ai
 purpose: Spec-driven development framework for Claude Code — EARS requirements, use cases with explicit side effects, prose plans, and automated build dispatch
-last-updated: 2026-08-20
+last-updated: 2026-09-08
 ---
 
 # Molcajete.ai
@@ -33,7 +33,7 @@ Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → B
 
 1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
 2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
-3. **Build** — `/m:build` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass). The gate holds a new file to the threshold in full, and an existing file only on the lines the task wrote; a file that was already under the threshold is reported and offered as a GitHub issue, never used to block the task.
+3. **Build** — `/m:execute` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass). The gate holds a new file to the threshold in full, and an existing file only on the lines the task wrote; a file that was already under the threshold is reported and offered as a GitHub issue, never used to block the task. `/m:build` runs the whole lifecycle end to end from one request: one interview, then an autonomous pass through plan, specs, code, tests, and scoped validation, closed by a before/after change report.
 4. **Review** — A spec-traceable review surface, scoped to the change and nothing around it. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue with you, and hands you the prompt that fixes it. Both offer a GitHub issue for anything they meet outside the change. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
 5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
 6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
@@ -112,7 +112,7 @@ Create and maintain structured specifications from freeform descriptions or exis
 | `/m:spec` | Create or update features and use cases (with inline scenarios) from natural language |
 | `/m:change` | Intentionally change an existing FEAT/UC — updates the specs, marks them dirty, and produces the change plan |
 | `/m:fix` | Record a bug against an existing FEAT/UC and produce the regression plan (specs edited only when the spec was wrong) |
-| `/m:cover` | Reverse-extract specs from existing code (tests come later via `/m:plan` + `/m:build`) |
+| `/m:cover` | Reverse-extract specs from existing code (tests come later via `/m:plan` + `/m:execute`) |
 
 Three read-only commands query the spec tree instead of writing to it:
 
@@ -132,7 +132,8 @@ Three read-only commands query the spec tree instead of writing to it:
 
 | Command | Description |
 |---------|-------------|
-| `/m:build` | Execute a plan — every unfinished task by default, or a named `T-NNN` subset (TDD red/green → mutation check → coverage gate → correctness review). Add `--commit` to commit each task as it passes |
+| `/m:build` | Build a feature, a change, or a fix end to end from one request — one interview, then an autonomous run through plan, specs, code, tests, and scoped validation, closed by a before/after change report. Progress and decisions live in a `.molcajete/change-request/` file the run updates as it goes |
+| `/m:execute` | Execute a plan — every unfinished task by default, or a named `T-NNN` subset (TDD red/green → mutation check → coverage gate → correctness review). Add `--commit` to commit each task as it passes |
 
 ### Review Module
 
@@ -150,9 +151,9 @@ A finding earns a place in the issue list only when it sits on a line the change
 
 **Everything else becomes an observation.** Neither command searches for observations — they are what you meet while judging the change. They are listed apart from the issues, they carry no severity, and at the end you get one question: open a GitHub issue for them, so a later pull request fixes them under their own use case. A pre-existing bug in a file you edited is not your pull request's problem, and it no longer blocks it.
 
-**Every issue Molcajete opens is findable and actionable.** It carries `AI-finding`, so you can filter for everything the tool raised, plus exactly one kind label — `bug`, `coverage`, `rule violation`, or `spec` — so you can take them one class at a time. It also carries the Molcajete prompt that fixes it, resolved down to the `UC-XXXX` and the `file:line`, so the issue is work someone can start and not a research task. `/m:build` opens issues under the same rules for a file below the coverage threshold.
+**Every issue Molcajete opens is findable and actionable.** It carries `AI-finding`, so you can filter for everything the tool raised, plus exactly one kind label — `bug`, `coverage`, `rule violation`, or `spec` — so you can take them one class at a time. It also carries the Molcajete prompt that fixes it, resolved down to the `UC-XXXX` and the `file:line`, so the issue is work someone can start and not a research task. `/m:execute` and `/m:build` open issues under the same rules for a file below the coverage threshold.
 
-**`/m:preflight` hands you prompts. It never edits your code.** A fix usually moves more than one of the three elements — spec, code, test — and an edit made during a review skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own. The spec then goes stale and the test breaks.
+**`/m:preflight` hands you prompts. It never edits your code.** A fix usually moves more than one of the three elements — spec, code, test — and an edit made during a review skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, `/m:build`, and `/m:execute` own. The spec then goes stale and the test breaks.
 
 Preflight decides each issue with you instead, one at a time. It reads the spec line, the code, and the test, explains the options in prose, and asks which direction you want. The correct fix always leads that list and is always the recommendation — effort is reported as a fact, never as a reason to rank a cheaper option higher. Then it shows the exact change for your approval before it opens the next issue. Each decision becomes a ready-to-paste prompt — a Molcajete command when one owns the work, or a direct instruction when none does. The run ends with every issue decided, and with a file at `.molcajete/prompts/<timestamp>-preflight-<slug>.md` that holds the prompts in the order you run them.
 
@@ -177,6 +178,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — module-instance fan-out, spec-edit rules, log/status, plan hand-off |
 | spec | `spec-lookup` | Machinery shared by `/m:desc`, `/m:ids`, and `/m:prompt` — ID taxonomy, resolve by ID or keyword, context assembly |
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
+| build | `change-report` | The `/m:build` change report — before/after tables for interface, data layer, event, and configuration changes, plus Before/Now/Why blocks for spec edits |
 | build | `plan-adaptation` | Mid-build plan change — trigger catalog, insert/revise operations, the three-option gate, and the audit trail |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, the four review questions and the admission test, rubric and severity, observations and their GitHub issue offer |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
@@ -189,7 +191,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
 | shared | `uc-log` | Per-UC CHANGELOG.md mechanics — entry format and status transitions |
 | shared | `code-documentation` | README structure and documentation conventions |
-| shared | `git-committing` | Commit message standards for automated task execution — read by `/m:build --commit` |
+| shared | `git-committing` | Commit message standards for automated task execution — read by `/m:execute --commit` |
 | shared | `git-conflict-resolution` | Merge/rebase conflict anatomy and resolution strategies |
 | shared | `github-issues` | Issues Molcajete opens — the `AI-finding` label plus one kind label, label creation, the batched offer, and the fix prompt every issue carries |
 | shared | `id-generation` | Base-62 timestamp ID generation (FEAT-, UC-, SC- prefixes) |
@@ -230,6 +232,7 @@ Commands that write outside the spec tree use a `.molcajete/` working directory:
 .molcajete/
 ├── research/       # Context briefs written before spec-writing
 ├── prompts/        # Ready-to-paste commands from /m:prompt and /m:preflight
+├── change-request/ # Per-run plan + decision log + progress + report from /m:build
 └── escalations/    # Unresolved-item reports from headless runs
 ```
 
@@ -257,7 +260,7 @@ molcajete/
 ├── plan/                  # Plan module — /m:plan + plan-authoring skill
 │   ├── commands/
 │   └── skills/
-├── build/                 # Build module — /m:build (TDD + mutation + coverage + correctness review) + plan-adaptation skill
+├── build/                 # Build module — /m:build (end-to-end run) + /m:execute (TDD + mutation + coverage + correctness review) + change-report and plan-adaptation skills
 │   ├── commands/
 │   └── skills/
 ├── review/                # Review module — /m:review, /m:preflight, /m:walkthrough + change-review skill
