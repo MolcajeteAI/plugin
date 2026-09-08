@@ -236,7 +236,7 @@ Print the observation line only when the run produced an observation. Print no i
 
 End with:
 
-> Next: address the issues, or run `/m:preflight` to decide each one and get the prompt that resolves it before opening the PR.
+> Next: address the issues, or run `/m:preflight` to get the decided fix prompts before opening the PR.
 
 ## Rules for this command
 

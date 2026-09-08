@@ -87,16 +87,8 @@ Found while <what was running>, outside the scope of that work.
 
 **Fix with Molcajete**
 
-1. Spec the error path and log the work:
-
 ```
-/m:cover "the refresh-token error path at src/auth/session.ts:88 — refreshToken() returns null on every failure, and no scenario describes the expired-token case"
-```
-
-2. Run the plan it writes:
-
-```
-/m:execute <plan-id>
+/m:build "the refresh-token error path at src/auth/session.ts:88 — refreshToken() returns null on every failure, so an expired token and a network failure look identical to every caller. No scenario describes the expired-token case. Spec the error path, make refreshToken() distinguish the two failures, and cover both with integration tests."
 ```
 ````
 
@@ -105,8 +97,7 @@ Found while <what was running>, outside the scope of that work.
 **No exception.** An issue that states a problem and no way in hands the reader a research task, and it sits unfixed. The prompt is what turns the issue into work someone can start.
 
 - **Resolve every value before you write it.** The `UC-XXXX`, the `file:line`, and the behavior in one sentence. A prompt that tells its reader to work something out is not finished.
-- **List multiple commands in run order**, numbered, each in its own fenced block, with one line above it that says what it does.
-- **A route through `/m:cover`, `/m:fix`, or `/m:change` always takes at least two commands.** Each of them writes a plan and stops, so the list ends with `/m:execute <plan-id>` or the work never runs.
-- **When no command owns the work** — a behavior-preserving cleanup — write the direct instruction in the fenced block instead: the `file:line`, the change, the reason, and the constraint that behavior stays identical.
+- **`/m:build` runs end to end** — it plans, updates the specs, writes the code and the tests, and validates in one run, so one prompt is the whole route and no follow-up command is listed.
+- **A direct instruction replaces the command** when the `change-review` skill's route rules allow one — a small fix that moves a single element, or code + test only. Write the `file:line`, the change, the reason, and the constraint that behavior stays identical when it must.
 
-Pick the command from the `change-review` skill's **Choosing the Fix Command**, which maps what the fix must move onto the command that owns it.
+Pick the route from the `change-review` skill's **Choosing the Fix Command**.

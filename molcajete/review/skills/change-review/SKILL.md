@@ -158,7 +158,7 @@ Issues from any parallel review lenses merge into **one severity-sorted list**. 
 
 ## Issue Block Format
 
-`/m:review` and `/m:preflight` render an issue the same way. Four containers, never mixed:
+`/m:review` renders an issue this way. Four containers, never mixed:
 
 | Container | Carries |
 |-----------|---------|
@@ -178,21 +178,20 @@ table cell or a list entry.
 
 ## Choosing the Fix Command
 
-Neither assessing command edits source. Both hand over a prompt, and both pick the command from what the fix must move. `/m:preflight` uses this table at its direction gate; the GitHub issue body uses it for work outside the change.
+Neither assessing command edits source. Both hand over a prompt, and both pick the route from what the fix must move. `/m:preflight` uses this section in its decision pass; the GitHub issue body uses it for work outside the change.
 
-| What must move | Route |
-|---|---|
-| code only, behavior unchanged — dead code, naming, a comment rule, a duplicate helper | direct change; no command owns a behavior-preserving cleanup |
-| test only — specified behavior that nothing asserts | `/m:cover "<the code path>"`, which writes the pending log entry for `/m:plan` and `/m:execute` |
-| code + test, and the spec is right | `/m:fix <UC-XXXX>` |
-| spec + code (+ test), and the spec states the wrong behavior | `/m:fix <UC-XXXX>`, with the spec correction stated in the prompt |
-| spec + code + test, and the user revises the behavior on purpose | `/m:change <UC-XXXX>` |
-| unmapped code that no spec covers (`missing-spec`) | `/m:cover "<the code path>"` |
-| behavior the spec never described, and it must exist | `/m:spec "..."` |
+**`/m:build "<freeform request>"` is the default route for every fix.** It plans, updates the specs, writes the code and the tests, and validates — all in one run, with no follow-up command. One prompt may carry several small requests, numbered inside the quoted text, and `/m:build` orders them itself. `/m:execute` remains the route for a big planned feature only, and a review fix is never that.
 
-Separate `/m:fix` from `/m:change` by the quoted spec line, the same guard `/m:prompt` uses: route to `/m:change` only when a spec line states the behavior the user revises on purpose. When the reading is genuinely two-way, that is a question, not a guess.
+A **direct change** — a self-contained instruction with no command — is allowed only when both hold:
 
-`/m:cover`, `/m:fix`, and `/m:change` each write a plan and stop. A prompt list that names one of them therefore ends with `/m:execute <plan-id>`, or the work never runs.
+- the fix moves a single element (spec only, code only, or test only) or code + test only, and
+- the fix is small: a few files, no new scenario, no architectural movement.
+
+Anything that moves the spec together with code always routes through `/m:build`, because the changelog entry, the status flip, and the test lifecycle must move with it.
+
+**Batching.** Merge related small fixes in the same feature into one `/m:build` prompt. Gauge the batch by countable facts — files, use cases, scenarios, tests — and split it along use-case or file boundaries when it outgrows small-to-medium scope, roughly one use case's worth of change. Every prompt stays small-to-medium.
+
+The request text itself states the diagnosis — whether the spec is right, silent, or wrong — and every resolved value. `/m:build` classifies the work internally, so the prompt never names a kind and never defers a decision to the run.
 
 ## Observations and the GitHub Issue Offer
 
