@@ -8,19 +8,22 @@ PACKAGE_JSON="$SCRIPT_DIR/../molcajete/package.json"
 current=$(grep -o '"version": "[^"]*"' "$PLUGIN_JSON" | grep -o '[0-9]\+\.[0-9]\+\.[0-9]\+')
 IFS='.' read -r major minor patch <<< "$current"
 
-case "${1:-patch}" in
+case "${1:-revision}" in
   major) major=$((major + 1)); minor=0; patch=0 ;;
   minor) minor=$((minor + 1)); patch=0 ;;
-  patch) patch=$((patch + 1)) ;;
-  *) echo "Usage: $0 [major|minor|patch]" >&2; exit 1 ;;
+  revision|patch) patch=$((patch + 1)) ;;
+  *) echo "Usage: $0 [major|minor|revision]" >&2; exit 1 ;;
 esac
 
 new="$major.$minor.$patch"
 sed -i '' "s/\"version\": \"$current\"/\"version\": \"$new\"/" "$PLUGIN_JSON"
 sed -i '' "s/\"version\": \"$current\"/\"version\": \"$new\"/" "$PACKAGE_JSON"
 
+CLAUDE_MD="$SCRIPT_DIR/../CLAUDE.md"
+sed -i '' "s/(v$current)/(v$new)/" "$CLAUDE_MD"
+
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-git -C "$REPO_ROOT" add "$PLUGIN_JSON" "$PACKAGE_JSON"
+git -C "$REPO_ROOT" add "$PLUGIN_JSON" "$PACKAGE_JSON" "$CLAUDE_MD"
 git -C "$REPO_ROOT" commit -m "Bumps version to $new"
 git -C "$REPO_ROOT" tag -a "v$new" -m "v$new"
 

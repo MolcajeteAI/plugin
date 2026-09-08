@@ -8,7 +8,7 @@ Molcajete.ai is a Claude Code plugin that provides opinionated, reusable workflo
 
 ### What It Ships
 
-- **`m` plugin** (v3.26.0) — 16 slash commands and 27 reusable skills
+- **`m` plugin** (v3.25.0) — 16 slash commands and 27 reusable skills
 
 ### Key Directories
 
@@ -29,6 +29,12 @@ Pure Markdown plugin system with zero runtime dependencies. Commands and skills 
 - No emojis in documents
 - Commands use sub-agents for context gathering and parallel research
 - **Step numbering in commands and skills**: top-level steps are integers (`## Step 1`, `## Step 2`, …). Sub-steps under a single top-level step use one decimal level (`### 1.1`, `### 1.2`). Triple-decimals (`### 1.1.1`) and inserted-decimal steps (`### Step 4.5`, `### 7.6.5`) are forbidden. When a new step is inserted anywhere, **renumber every following step** instead of appending a decimal — cross-references inside the file are part of the renumber. Decimals are reserved exclusively for genuine hierarchical sub-steps, never as a shortcut to avoid renumbering.
+
+### Versioning
+
+- **Never bump the version on your own.** Bump only when the user asks — "bump version". A change commit never carries a version edit; the bump is always its own commit.
+- A bump runs `scripts/bump.sh [major|minor|revision]`. The script updates the version in `molcajete/.claude-plugin/plugin.json`, `molcajete/package.json`, and the version line in this file, then commits "Bumps version to X.Y.Z" and tags `vX.Y.Z`.
+- When the user names no level, assume `revision` — the last position, x.y.Z.
 
 ## Choosing Between Solutions
 

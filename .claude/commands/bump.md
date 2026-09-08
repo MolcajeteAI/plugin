@@ -1,10 +1,8 @@
 ---
-description: Bump plugin version and update changelog
+description: Bump the plugin version (revision by default), commit, and tag
 model: sonnet
 allowed-tools:
   - Read
-  - Edit
-  - Write
   - Bash
   - Glob
   - Grep
@@ -12,51 +10,33 @@ allowed-tools:
 
 # /bump
 
-Bump the plugin version and update the changelog.
+Bump the plugin version. This command runs only when the user asks for a bump — never as part of a change.
 
 ## Input
 
 The user provides:
-- **Bump level**: `patch`, `minor`, or `major` (default: `patch`)
-- **Summary**: Optional description of what changed
+- **Bump level**: `revision`, `minor`, or `major` (default: `revision`)
 
-If the user does not specify a bump level, infer it from the changes:
-- New commands or skills = `minor`
-- Bug fixes, typo corrections, refinements = `patch`
-- Breaking changes = `major`
+Never infer the level from the changes. When the user names no level, use `revision`.
 
 ## Skill
 
-Load and apply: `molcajete/skills/versioning/SKILL.md`
+Load and apply: `.claude/skills/versioning/SKILL.md`
 
 ## Workflow
 
-### Step 1: Determine Changes
+### Step 1: Check the tree
 
-Read `prd/changelog.md` to understand the current version and recent entries. Then review the git diff against the last version bump commit to understand what changed.
+Run `git status --porcelain`. If uncommitted changes exist, stop and tell the user — the bump commit carries only the version edits, so pending work must be committed first.
 
-```bash
-git log --oneline --all | head -20
-git diff $(git log --oneline --all --grep="Bumps version" -1 --format=%H)..HEAD --stat
-```
+### Step 2: Bump
 
-### Step 2: Bump Version
-
-Run the bump script:
+Run the bump script. It updates `molcajete/.claude-plugin/plugin.json`, `molcajete/package.json`, and the `CLAUDE.md` version line, commits "Bumps version to X.Y.Z", and tags `vX.Y.Z`.
 
 ```bash
 ./scripts/bump.sh <level>
 ```
 
-### Step 3: Update Changelog
+### Step 3: Summary
 
-Add a new entry at the top of the changelog in `prd/changelog.md` following the format defined in the versioning skill. Use today's date.
-
-Categorize changes into Added, Changed, Fixed, or Removed sections. Only include sections that have entries.
-
-### Step 4: Summary
-
-Output:
-- Previous version and new version
-- Changelog entry that was added
-- Remind the user to commit when ready
+Output the previous version, the new version, and the tag name.

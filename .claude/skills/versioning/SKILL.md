@@ -1,51 +1,41 @@
 ---
 name: versioning
-description: Version bump conventions and changelog update rules for the m plugin
+description: Version bump conventions for the m plugin — on request only, revision by default
 ---
 
 # Versioning
 
+## When to Bump
+
+**Never bump the version on your own.** A bump happens only when the user asks — "bump version". A change commit never carries a version edit; the bump is always its own commit.
+
 ## Semantic Versioning
 
-The `m` plugin follows semantic versioning (`MAJOR.MINOR.PATCH`):
+The `m` plugin follows semantic versioning (`MAJOR.MINOR.REVISION`):
 
 | Bump | When |
 |------|------|
-| `patch` | Bug fixes, typo corrections, minor skill/command refinements |
+| `revision` | Bug fixes, typo corrections, minor skill/command refinements — **the default when the user names no level** |
 | `minor` | New commands, new skills, notable skill enhancements |
 | `major` | Breaking changes to command interfaces, skill restructuring, plugin format changes |
 
 ## Version Location
 
-The canonical version lives in `molcajete/.claude-plugin/plugin.json` under the `"version"` field.
+The canonical version lives in `molcajete/.claude-plugin/plugin.json` under the `"version"` field. `molcajete/package.json` and the version line in the root `CLAUDE.md` mirror it.
 
 ## Bump Script
 
-Use `scripts/bump.sh` to increment the version:
+`scripts/bump.sh` does the whole bump: it updates all three version locations, commits "Bumps version to X.Y.Z", and tags `vX.Y.Z`.
 
 ```bash
-./scripts/bump.sh patch   # 2.3.9 -> 2.3.10
-./scripts/bump.sh minor   # 2.3.9 -> 2.4.0
-./scripts/bump.sh major   # 2.3.9 -> 3.0.0
+./scripts/bump.sh            # revision: 3.25.0 -> 3.25.1
+./scripts/bump.sh revision   # same
+./scripts/bump.sh minor      # 3.25.0 -> 3.26.0
+./scripts/bump.sh major      # 3.25.0 -> 4.0.0
 ```
-
-## Changelog
-
-After bumping, update `prd/changelog.md` with:
-
-1. The new version number and date as a heading
-2. A categorized list of changes using these sections:
-
-| Section | Content |
-|---------|---------|
-| Added | New commands, skills, or features |
-| Changed | Updates to existing commands or skills |
-| Fixed | Bug fixes and corrections |
-| Removed | Deleted commands, skills, or deprecated items |
 
 ## Workflow
 
-1. Make all changes to commands/skills
-2. Run `scripts/bump.sh <level>`
-3. Add changelog entry to `prd/changelog.md`
-4. Commit with message: `Bumps version to X.Y.Z`
+1. The user asks for a bump.
+2. Commit every pending change first — the bump commit carries only the version edits.
+3. Run `scripts/bump.sh <level>`, with no level when the user named none.
