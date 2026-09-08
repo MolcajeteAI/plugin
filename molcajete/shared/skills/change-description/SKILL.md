@@ -123,11 +123,35 @@ classDiagram
 
 Under a bare `**Flow**` label: the block's one-sentence lead, then the Before/After `sequenceDiagram` pair per diagram rule 3. Present only when the change altered a flow.
 
-### Atom 6 — Unmapped tail
+### Atom 6 — UI sketch
+
+Under a bare `**UI**` label: the block's one-sentence lead, then the screen as ASCII art in a plain fenced block — the Before layout above the After layout, stacked per layout rule 2. Present only when the change moves something a person sees on a screen. The sketch is the one non-Mermaid drawing (diagram rule 1). Draw each state at the width where the change is visible, and add the empty state or the refusal when the change creates one.
+
+````markdown
+**UI**
+
+The roster gains an Export control.
+
+```
+Before
++---------------------+
+| Roster              |
+| Ana  | Dermatology  |
++---------------------+
+
+After
++---------------------+
+| Roster    [Export]  |
+| Ana  | Dermatology  |
++---------------------+
+```
+````
+
+### Atom 7 — Unmapped tail
 
 Under the heading `## Not in the spec`: the cleanups and refactors that serve no spec change, one line each — the file, the edit, the reason.
 
-### Atom 7 — Architecture verdict
+### Atom 8 — Architecture verdict
 
 The closing judgment on the design, under the heading `## Architecture`. One or two sentences that answer: does the change fit the existing layering, does it add coupling, are the new dependencies justified, is anything replaced but left half-wired. When the design is questionable, name the simpler or cleaner alternative in one sentence. Close with one of three bold words and one sentence of justification: **Sound**, **Sound with concerns**, or **Questionable**. On a review surface (`/m:review`, `/m:preflight`) the command's own severity-based verdict replaces this atom — one document never carries two verdicts.
 
@@ -151,6 +175,10 @@ One `##` section per change unit, in user-visible-impact order, biggest first. A
 **Specs**
 
 {lead sentence, then spec-delta table(s)}
+
+**UI**
+
+{lead sentence, then the Before/After ASCII sketch — only when this unit changed a screen}
 
 **Flow**
 
@@ -193,7 +221,7 @@ A consumer renders one of three depths. Each depth is a strict prefix plus a sel
 | Depth | Carries | Rendered by |
 |---|---|---|
 | `full` | Every atom: lead, map, all units, cross-cutting, tail, verdict | the `/m:build` change report, via the `change-report` skill |
-| `orientation` | Lead, map, and the flow pairs of every unit that changed a flow | `/m:review`, as the document's opening |
-| `glance` | Lead and map only | `/m:preflight`, as the familiarize walk |
+| `orientation` | Lead, map, the UI sketch of every unit that changed a screen, and the flow pair of every unit that changed a flow | `/m:review`, as the document's opening |
+| `glance` | Lead, map, and the UI sketch of every unit that changed a screen | `/m:preflight`, as the familiarize walk |
 
 A worked rendering of the full depth — two units, every atom exercised once — lives in `research/universal-change-template.md`, section 5.1. Read it when the shape of a filled section is unclear.

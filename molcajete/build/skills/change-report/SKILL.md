@@ -3,7 +3,7 @@ name: change-report
 description: >-
   Owns the change report /m:build fills at its report step. The body is the
   change-description walk at full depth; this skill adds the report-only tail:
-  the UI sketch, the New IDs table, the interview decisions, and the closing
+  the New IDs table, the interview decisions, and the closing
   Done / Not done / Next step. The report is printed to the screen and appended
   to the change-request file.
 ---
@@ -21,17 +21,11 @@ The report is the `change-description` walk at **full depth**, with three adjust
 1. **The Lead opens in the first person.** `I {built | changed | fixed} {what, in product language}.` — then the one to three sentences the Lead atom defines.
 2. **The spec deltas come from the run's own record.** Fill each `Before` row from the change-request file's `## Replaced spec text` section, verbatim. For a new use case or a new feature: its name, its one-line description, and the IDs of the scenarios under it — never the whole file.
 3. **The spec blocks are exempt from the output budget.** Every edited spec element appears. Completeness outranks brevity there, and nowhere else.
+4. **The screen the user approved at the interview renders in its owning unit's `**UI**` block** — the walk's UI atom, not a tail section.
 
 Then the tail, in this order, after the walk's `## Architecture` section. Omit an empty section entirely, per the layout rules.
 
 ````markdown
-## UI
-
-```
-Before                         After
-{ASCII layout}                 {ASCII layout}
-```
-
 ## New IDs
 
 | ID | Kind | Name |
@@ -59,23 +53,11 @@ The full decision log is in `{change-request file path}`.
 {One action, one sentence.}
 ````
 
-The ASCII UI sketch is the one carve-out from the Mermaid-only convention, because Mermaid cannot draw a screen layout. It renders the layout the user approved at the interview.
-
 ## Example: the tail
 
-The body — lead, change map, the walk units, the tail sections of the walk — follows the worked rendering the `change-description` skill points to. The report tail under it reads like this, for a run that added a roster CSV export:
+The body — lead, change map, the walk units with their UI sketches, the tail sections of the walk — follows the worked rendering the `change-description` skill points to. The report tail under it reads like this, for a run that added a roster CSV export:
 
 ````markdown
-## UI
-
-```
-Before                         After
-+---------------------+        +---------------------+
-| Roster              |        | Roster    [Export]  |
-| Ana  | Dermatology  |        | Ana  | Dermatology  |
-+---------------------+        +---------------------+
-```
-
 ## New IDs
 
 | ID | Kind | Name |

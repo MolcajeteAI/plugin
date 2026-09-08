@@ -30,7 +30,7 @@ The whole point is traceability: **every issue cites the spec and the integratio
 
 1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, the scope of the review with its admission test, the rubric + severity, and the observation bucket with its GitHub issue offer.
 2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
-3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` — the universal change template. The document's opening renders its **orientation depth**: the Lead, the Change map, and the flow pairs.
+3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` — the universal change template. The document's opening renders its **orientation depth**: the Lead, the Change map, the UI sketches, and the flow pairs.
 
 Apply the `change-review` skill's **Prerequisites** gate now. If it is not a Molcajete project, refuse per that skill and stop.
 
@@ -120,6 +120,10 @@ When the change references no spec, say so here in one line. That absence is als
 
 ## Orientation
 
+### UI
+
+<The Before/After ASCII sketch of every unit that changed a screen, each with its one-sentence lead, per the change-description skill's UI atom. Omit this subsection when no screen changed.>
+
 ### Flows
 
 <The Before/After sequence-diagram pair of every unit that changed a flow, each with its one-sentence lead, per the change-description skill. Omit this subsection when no flow changed.>
@@ -200,7 +204,7 @@ These are not part of this review, and they do not affect the verdict. This chan
 
 ### Rules for the template
 
-**The opening is the change-description orientation depth.** The Lead, the Change map, and the flow pairs follow that skill's atoms exactly — its layout rules (the 3-column cap, stacked before/after, block leads) bind them. The review's own verdict replaces the template's architecture verdict.
+**The opening is the change-description orientation depth.** The Lead, the Change map, the UI sketches, and the flow pairs follow that skill's atoms exactly — its layout rules (the 3-column cap, stacked before/after, block leads) bind them. The review's own verdict replaces the template's architecture verdict.
 
 **Every issue goes in the one list**, sorted `HIGH` → `MEDIUM` → `LOW`. A convention violation, a bug, confusing code, wrong architecture, a missing spec, and a missing integration test are all issues and all rank the same way — when the change owns them.
 

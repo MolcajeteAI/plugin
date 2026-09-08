@@ -38,7 +38,7 @@ Five rules bind the run:
 2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
 3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — so a prompt that orders a test names the scenario and the precise values the integration-test rules require.
 4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — analyze, then decide, then write. No open decision survives into an emitted prompt or into the decision file.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` — the universal change template. Step 4 renders its **glance depth**: the Lead and the Change map.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` — the universal change template. Step 4 renders its **glance depth**: the Lead, the Change map, and the UI sketches.
 
 Apply the `change-review` skill's **Prerequisites** gate. If it is not a Molcajete project, refuse and stop.
 
@@ -52,7 +52,7 @@ Follow the `change-review` skill's **Mapping the Diff to Specs** to build the `F
 
 ## Step 4: Familiarize — walk the solution
 
-Before judging anything, make yourself familiar with what you are about to submit. Print the `change-description` skill's **glance depth**: the Lead (one to three sentences, in product language — what the change accomplishes and why), then the Change map (one row per change unit — `Change | Kind | Touches`). Under the map, list the 2–4 most important changes to understand, each with a clickable `file:line` reference so the user can open it.
+Before judging anything, make yourself familiar with what you are about to submit. Print the `change-description` skill's **glance depth**: the Lead (one to three sentences, in product language — what the change accomplishes and why), then the Change map (one row per change unit — `Change | Kind | Touches`), then the UI sketch of every unit that changed a screen (Before above After, in ASCII art, per that skill's UI atom). Under the map, list the 2–4 most important changes to understand, each with a clickable `file:line` reference so the user can open it.
 
 This step asks nothing. Print the glance and continue.
 
