@@ -95,7 +95,7 @@ The clamp is gone from calibration; every reader of the score now receives value
 | Depends on it | the leaderboard page and the season report |
 ```
 
-The rotation is the same for every surface. A data item's first rows are `Entity` and `Element`; an event item's are `Event`, `Publisher`, `Payload`, `Condition`, `Consumers`; a configuration item's are `Setting` and `Location`. Several changed items are several small tables, never one wide one. A data item adds an `erDiagram` under its tables when diagram rule 4 fires.
+The rotation is the same for every surface. A data item's first rows are `Entity` and `Element`; an event item's are `Event`, `Publisher`, `Payload`, `Condition`, `Consumers`; a configuration item's are `Setting` and `Location`. Several changed items are several small tables, never one wide one. A data item adds an `erDiagram` under its tables when diagram rule 4 fires. For a new entity, the `erDiagram` carries the shape — write an item table only for an element whose purpose the diagram cannot show.
 
 **An interface item names its dependents.** The `Depends on it` row lists who reads the changed member — a caller that must change is the most useful fact an interface item can carry. Omit the row only when nothing outside the change depends on the member.
 
