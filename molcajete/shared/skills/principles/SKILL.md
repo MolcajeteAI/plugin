@@ -5,7 +5,7 @@ description: >-
   reviews — integration tests as the trust contract, hexagonal default,
   dependency injection, 80% coverage floor, universal software craft
   (small functions, clear boundaries, no god files, refactor to reuse),
-  technology-agnostic. Loaded by /m:plan and /m:build. Mirrored to the
+  technology-agnostic. Loaded by /m:plan and /m:execute. Mirrored to the
   host project at `.claude/rules/principles.md` by /m:setup.
 ---
 
@@ -17,7 +17,7 @@ These are the rules every plan, every line of code, and every test must respect 
 
 In AI-assisted development, code churns. Functions move, names change, files split and merge. The only signal that survives that churn is **behavior verified by tests**. If the integration tests pass and they cover the right thing, the code does its job — regardless of how it looks. If the tests are shallow or absent, no amount of human review compensates.
 
-"Cover the right thing" is a **gate, not an assumption**: every task passes a correctness review (`/m:build`'s correctness-review step, the Reviewer role in the `testing` skill) in which a separate agent reads the UC scenarios independently of the test's assertions. A task is not done until both the mechanical gate (green + coverage + non-vacuous mutation) and the correctness gate pass.
+"Cover the right thing" is a **gate, not an assumption**: every task passes a correctness review (`/m:execute`'s correctness-review step, the Reviewer role in the `testing` skill) in which a separate agent reads the UC scenarios independently of the test's assertions. A task is not done until both the mechanical gate (green + coverage + non-vacuous mutation) and the correctness gate pass.
 
 Everything below follows from that.
 
@@ -141,7 +141,7 @@ Every task's touched files (the files the task creates and modifies, plus its in
 
 - The threshold is configurable via `.molcajete/settings.json testing.threshold`; 80% is the default and the floor.
 - Coverage is scoped to **touched files**, not the whole project. The goal is "we proved this change works," not "we hit a global percentage."
-- The host project's coverage collector (declared in `specs/TECH-STACK.md`'s **Coverage** rows per module) is the source of truth. When a module declares `not available`, `/m:build` makes a best-effort estimate against the floor and surfaces the estimate in its report.
+- The host project's coverage collector (declared in `specs/TECH-STACK.md`'s **Coverage** rows per module) is the source of truth. When a module declares `not available`, `/m:execute` makes a best-effort estimate against the floor and surfaces the estimate in its report.
 
 ## 5. Universal Software Craft
 
@@ -238,7 +238,7 @@ Every command loads both before it writes.
 | Command | Enforcement |
 |---------|-------------|
 | `/m:plan` | Designs architecture in hexagonal vocabulary. Each task names the driver port it drives and the driven ports its code reaches, and delivers one vertical, working increment (never a layer). Decomposition covers every scenario exactly once. |
-| `/m:build` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**, writing code that respects Principle 5. The coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle before a task's checkbox flips. |
+| `/m:execute` | Runs each task through scaffold integration test → implement → mutation check → coverage gate → **correctness review**, writing code that respects Principle 5. The coverage gate enforces Principle 4; the correctness review enforces the Meta-Principle before a task's checkbox flips. |
 | `uc-log` shared skill | Records every change, so new work stays explicit over time. |
 | `writing-style` shared skill | Every command loads it before it writes. Enforces the sentence half of Principle 7 across every generated document and every printed message. |
 | `output-economy` shared skill | Every command loads it before it writes. Enforces the volume half of Principle 7 across files, screen output, question briefs, and command output. |

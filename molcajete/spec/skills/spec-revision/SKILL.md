@@ -6,7 +6,7 @@ description: >-
   UC-XXXX to its module-instances with the multi-module fan-out, the spec-edit
   application rules, changelog and status writing, plan production, and the report
   shape. Both commands revise an existing FEAT/UC and hand a plan straight to
-  /m:build.
+  /m:execute.
 ---
 
 # Spec Revision
@@ -17,7 +17,7 @@ The revising family — `/m:fix` and `/m:change` — both start from one or more
 `UC-XXXX` IDs, resolve each UC to the module-instances that actually exist for it, edit the specs (always
 for `/m:change`, conditionally for `/m:fix`), log the event, and **produce the plan themselves** in the
 same invocation — there is no separate `/m:plan` step. This skill owns that machinery. Neither command
-ever writes production code or tests; hand-off to `/m:build` is mandatory.
+ever writes production code or tests; hand-off to `/m:execute` is mandatory.
 
 The calling command supplies what is genuinely its own: its argument examples and refusal string, its
 decision step, its `command` token and `reason` policy, and its hand-off line.
@@ -91,7 +91,7 @@ records what was always intended, and the task then makes the code match it.
 
 This table has three callers. `/m:fix` runs it in its Step 6 against the user's bug description.
 `/m:change` does not run it — a change request is a spec edit by definition, so its diagnosis is always
-**Spec wrong**. The `plan-adaptation` skill runs it mid-build against a defect `/m:build` discovered.
+**Spec wrong**. The `plan-adaptation` skill runs it mid-build against a defect `/m:execute` discovered.
 
 ## Applying Spec Edits
 
@@ -178,5 +178,5 @@ Print no section for skipped instances when the user skipped none.
 When the run touched several `UC-XXXX` IDs, print one heading and one table per UC.
 
 End the report with the command's explicit hand-off line, which always names the plan file and the
-`/m:build <plan-id>` invocation — which runs every unfinished task in the plan — plus the
-`/m:build <plan-id> T-001 [more ...]` form for a subset.
+`/m:execute <plan-id>` invocation — which runs every unfinished task in the plan — plus the
+`/m:execute <plan-id> T-001 [more ...]` form for a subset.

@@ -33,7 +33,7 @@ The rule binds every file a Molcajete command creates or edits under `specs/`. T
 
 ## Why
 
-A Molcajete spec is not a draft. `/m:plan` reads it and `/m:build` executes it, so it is
+A Molcajete spec is not a draft. `/m:plan` reads it and `/m:execute` executes it, so it is
 baselined the moment it is written. A hole in it is a defect, not a work-in-progress state.
 
 The `principles` skill already gives the reason: "Specs, plans, comments, and reports are read

@@ -5,14 +5,15 @@ description: >-
   written as a single file at specs/plans/<timestamp>-<slug>.md. Decomposes a use case
   into ordered, vertical, working-software tasks (never implementation layers),
   each a checkbox the build consumes. Referenced by /m:plan to emit the plan and
-  by /m:build to execute it.
+  by /m:execute to execute it. /m:build embeds the same task format in its
+  change-request file.
 ---
 
 # Plan Authoring
 
 A **plan** is a single Markdown document that describes, in prose, how a set of spec
 changes will be delivered. It is the bridge between the spec layer (what the software must
-do) and the build layer (working code + tests). `/m:plan` writes it; `/m:build` reads it.
+do) and the build layer (working code + tests). `/m:plan` writes it; `/m:execute` reads it.
 
 The unit of work is a **task** — one *vertical, working-software increment*. A task moves
 through whatever layers it needs (UI → API → domain → data) to make one named behavior real
@@ -35,7 +36,7 @@ specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md
   timestamp is the identity.
 - The plan lives under `specs/` because a plan is part of the recorded change history of the
   application — not a throwaway build artifact. It is tracked in git.
-- The plan ID is the filename without the `.md` extension (`<YYYYMMDDTHHMMSS>-<slug>`); `/m:build` resolves it to `specs/plans/<plan-id>.md`.
+- The plan ID is the filename without the `.md` extension (`<YYYYMMDDTHHMMSS>-<slug>`); `/m:execute` resolves it to `specs/plans/<plan-id>.md`.
 - Every `/m:plan` invocation creates a **new** file. Never amend an existing plan file.
 
 ## Plan File Structure
@@ -85,14 +86,14 @@ it never states anything the tasks do not already say:
 | `mixed` | at least one task of each |
 
 The label is a human summary. Per-task truth is the task's own `**Kind:**` field — that is what
-`/m:build` dispatches on. A plan written before the `**Kind:**` field existed carries
+`/m:execute` dispatches on. A plan written before the `**Kind:**` field existed carries
 `**Mode:** default`; read `default` as a synonym for `implement`.
 
 The `**Prerequisites:**` line is **mandatory and always present**. It names work that must be
-done **outside this plan** before `/m:build` may start, or `—` when there is none. It uses the
+done **outside this plan** before `/m:execute` may start, or `—` when there is none. It uses the
 same empty value as `Depends on` at the task level, and it has a different scope.
 
-| Field | Points at | How `/m:build` checks it |
+| Field | Points at | How `/m:execute` checks it |
 |-------|-----------|--------------------------|
 | `Depends on` | a task inside this plan | reads the upstream task's checkbox |
 | `Prerequisites` | work no task in this plan does | it cannot check. It asks the user, then records that it did not verify. |
@@ -118,7 +119,7 @@ Write one clause per item. Name the file and the canonical test path it needs:
 The `**Provenance:**` line records the spec state the plan was written against. A plan is a
 reading of the specs at one moment, and a later `/m:fix`, `/m:change`, or `/m:spec` can move the
 specs underneath it. Without this line nothing can tell a current plan from a stale one, so
-`/m:build` executes a drifted plan as confidently as a fresh one.
+`/m:execute` executes a drifted plan as confidently as a fresh one.
 
 One clause per use case in scope, `·`-separated:
 
@@ -138,7 +139,7 @@ one of them misses the other.
 
 The line is written once, by P6, and is never edited afterward. It states what was true when the
 plan was written, so amending it would destroy the only evidence drift detection has. A plan
-written before this field existed carries no such line; `/m:build` skips the drift check and says
+written before this field existed carries no such line; `/m:execute` skips the drift check and says
 so in its report.
 
 ## Task Shape
@@ -160,7 +161,7 @@ Every task is a level-2 heading carrying a checkbox, then three fields, then pro
 - **T-NNN** — plan-local task ID, `T-001`, `T-002`, … assigned in dependency order. Numbering
   crosses FEAT/UC boundaries — there is one `T-NNN` sequence per plan.
 - **Kind** — the work this task does, one of four values. See Task Kind below. This is the field
-  `/m:build` dispatches on; it decides whether the first test run must be RED or GREEN, whether
+  `/m:execute` dispatches on; it decides whether the first test run must be RED or GREEN, whether
   the task may write production code, and whether it may delete code for a retired scenario.
 - **Covers** — a **comma-separated list** of the `SC-XXXX` scenario IDs (and `FR-XXXX`
   requirement IDs) this task closes.
@@ -224,7 +225,7 @@ four spec commands, so a task's origin stays legible in the plan.
 | `fix` | The spec is already right and the code does not match it. | RED | corrects existing code | no |
 | `cover` | The code already ships and nothing asserts it. | GREEN | none | no |
 
-`/m:build` reads this field directly. Nothing about the kind is inferred from prose.
+`/m:execute` reads this field directly. Nothing about the kind is inferred from prose.
 
 **One plan holds tasks of different kinds.** This is the point of the field. A plan that changes
 a use case may open with a `cover` task that pins the code it is about to touch, follow with a
@@ -272,13 +273,13 @@ Molcajete generates **integration tests only** — tests driven through an entry
 task's behavior end to end. Host-project unit tests already in the repo are left where they are
 and are not subject to this layout.
 
-Build-time validation (owned by `/m:build`): refuse to dispatch a task if its `{entry-type}` is
+Build-time validation (owned by `/m:execute`): refuse to dispatch a task if its `{entry-type}` is
 missing from the module's `Driving Ports` list, or if the module row in MODULES.md has no `Tests`
 value.
 
 ## Status
 
-`/m:build` flips `## [ ] T-NNN` to `## [x] T-NNN` when a task passes verification, then writes UC
+`/m:execute` flips `## [ ] T-NNN` to `## [x] T-NNN` when a task passes verification, then writes UC
 status directly from task completion and rolls Feature status up from its UCs. See the
 `status-rollup` skill.
 
@@ -368,7 +369,7 @@ per-file loop turns a five-file plan into five interrogations.
   cohesive group of files under one UC, placed at the lowest `T-NNN`; those tasks write tests
   only and no production code; the mode becomes `mixed`; the plan gets longer. Under "Handle
   separately": the plan is written as decomposed, and a `**Prerequisites:**` line names the
-  coverage work; `/m:build` cannot verify that work, so it asks the user to confirm it before any
+  coverage work; `/m:execute` cannot verify that work, so it asks the user to confirm it before any
   task runs and records that it could not check. Recommend "Add coverage to this plan". Close
   with the escape-hatch line.
 - Question: "Some files this plan changes have no integration test coverage. How should I handle it?"
@@ -413,8 +414,8 @@ and collect the **non-canonical test file paths** it recorded (existing tests to
 production code that live outside the canonical tests tree). For each, prompt once:
 
 - Brief: name the test file and the UC it overlaps, say what it currently covers, and spell out
-  what each of the three dispositions means for `/m:build`. Recommend "Reference-only".
-- Question: "What should /m:build do with `{path}`?"
+  what each of the three dispositions means for `/m:execute`. Recommend "Reference-only".
+- Question: "What should /m:execute do with `{path}`?"
 - Header: "Test file"
 - Options: "Reference-only" / "Migrate" / "Ignore"
 
@@ -443,7 +444,7 @@ each updated independently.
 
 The procedure does **not** touch UC or Feature frontmatter `status` — that is owned by the
 spec-phase command (which writes `dirty` when it edits a previously-`implemented` UC) and by
-`/m:build` (which writes it from task completion).
+`/m:execute` (which writes it from task completion).
 
 ## Worked Example
 

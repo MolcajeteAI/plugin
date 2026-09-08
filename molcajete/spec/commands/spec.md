@@ -19,7 +19,7 @@ allowed-tools:
 
 The single spec-authoring entry point. Takes free-form natural language and creates or updates features, use cases, and inline scenarios — across any number of entities in one invocation.
 
-**`/m:spec` writes spec prose only** — no plans, no code, no tests, no task IDs. After spec completes, the lifecycle continues with `/m:plan` → `/m:build`.
+**`/m:spec` writes spec prose only** — no plans, no code, no tests, no task IDs. After spec completes, the lifecycle continues with `/m:plan` → `/m:execute`.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -164,4 +164,4 @@ sandbox, a dependency on time or randomness, an env-flag branch. Omit the whole 
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the changes into tasks and write the plan that `/m:build` will execute.
+> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the changes into tasks and write the plan that `/m:execute` will execute.

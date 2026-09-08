@@ -16,7 +16,7 @@ allowed-tools:
 
 `/m:preflight` is the pre-PR pass on **your own** work: it first walks you through the solution, then surfaces the design problems and rule violations the same way `/m:review` does — and then **decides every issue with you and emits the prompt that resolves it.**
 
-**It never edits source.** Molcajete is a multi-command system, and a fix usually moves more than one of the three elements — spec, code, test. An edit made here skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:build` own, so the spec goes stale and the test breaks. Preflight therefore hands you a prompt, and the command you paste does the work.
+**It never edits source.** Molcajete is a multi-command system, and a fix usually moves more than one of the three elements — spec, code, test. An edit made here skips the changelog entry, the status flip, and the test lifecycle that `/m:change`, `/m:fix`, `/m:cover`, and `/m:execute` own, so the spec goes stale and the test breaks. Preflight therefore hands you a prompt, and the command you paste does the work.
 
 Four rules bind the run:
 
@@ -301,4 +301,4 @@ Before the file is final, run the `resolution-gate` skill's **G5** check over it
 
 `/m:preflight` edits no source file and commits nothing. The only thing it writes outside this repository is a GitHub issue the user approved in Step 7. End with:
 
-> Next: run the prompts in the order the file lists them. `/m:fix` and `/m:change` each write a plan, so run `/m:build <plan-id>` after each one. Then commit and open the PR.
+> Next: run the prompts in the order the file lists them. `/m:fix` and `/m:change` each write a plan, so run `/m:execute <plan-id>` after each one. Then commit and open the PR.

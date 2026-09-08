@@ -204,7 +204,7 @@ UI is specification, not decoration. Screen names, button labels, and form field
 
 ## Feature Status
 
-Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | dirty | implemented` (legacy `deprecated` preserved when present). The field is the feature's first-class state: `pending` on creation, recomputed by rolling up over child UC statuses thereafter. It is written directly by spec-phase commands and `/m:build` per the `status-rollup` shared skill, which owns the roll-up rule. Authors do not edit this field manually.
+Every feature's `REQUIREMENTS.md` carries a frontmatter `status:` field with values `pending | dirty | implemented` (legacy `deprecated` preserved when present). The field is the feature's first-class state: `pending` on creation, recomputed by rolling up over child UC statuses thereafter. It is written directly by spec-phase commands, `/m:execute`, and `/m:build` per the `status-rollup` shared skill, which owns the roll-up rule. Authors do not edit this field manually.
 
 ## FEAT-XXXX ID Assignment
 

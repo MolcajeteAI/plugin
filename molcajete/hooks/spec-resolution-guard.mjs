@@ -34,7 +34,7 @@ const DENY = [
 //
 // TODO sits here and not in DENY for one reason: `TODO:` is the literal section
 // header of every specs/**/CHANGELOG.md (see the uc-log skill). Denying it would
-// hard-block /m:spec, /m:plan and /m:build on their first changelog write.
+// hard-block /m:spec, /m:plan and /m:execute on their first changelog write.
 //
 // "deferred command" is the third structural shape in the resolution-gate skill:
 // a sentence that assigns work to a later Molcajete command. It asks rather than

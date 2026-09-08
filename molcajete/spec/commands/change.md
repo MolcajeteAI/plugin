@@ -1,5 +1,5 @@
 ---
-description: Intentionally change the behavior of an existing FEAT/UC. Always updates specs first, marks the affected UCs dirty, then produces the change plan directly for /m:build.
+description: Intentionally change the behavior of an existing FEAT/UC. Always updates specs first, marks the affected UCs dirty, then produces the change plan directly for /m:execute.
 model: claude-opus-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
@@ -18,7 +18,7 @@ allowed-tools:
 
 Unlike `/m:fix` (where the spec might already be correct), `/m:change` **always** edits the spec — the change request *is* a spec edit. If the request only describes new behavior without a spec change, the user wanted `/m:fix` or `/m:spec` instead; suggest the right command and stop.
 
-`/m:change` then **produces the change plan itself** — after editing the specs and marking the affected UCs `dirty`, it runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong interpretation is caught and editable before any code is built.
+`/m:change` then **produces the change plan itself** — after editing the specs and marking the affected UCs `dirty`, it runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:execute` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong interpretation is caught and editable before any code is built.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -105,7 +105,7 @@ Per-command entry values:
 
 Follow the `spec-revision` skill's **Producing the Plan** over the entries logged in Step 8.
 
-Direct the plan's **summary and context paragraph to be the consolidated change record**: state plainly what changed, in which UCs/features (naming each), and the approach — this is the single narrative the change produces, spanning every affected UC in one document (the per-UC `CHANGELOG.md` stays as the terse marker log). Because the UC specs already describe the new behavior, the tasks reconcile the code to match: `/m:build` will delete tests/code for retired scenarios and add tests for the new behavior (Principle 1.5).
+Direct the plan's **summary and context paragraph to be the consolidated change record**: state plainly what changed, in which UCs/features (naming each), and the approach — this is the single narrative the change produces, spanning every affected UC in one document (the per-UC `CHANGELOG.md` stays as the terse marker log). Because the UC specs already describe the new behavior, the tasks reconcile the code to match: `/m:execute` will delete tests/code for retired scenarios and add tests for the new behavior (Principle 1.5).
 
 ## Step 10: Report
 
@@ -113,4 +113,4 @@ Report per the `spec-revision` skill's **Reporting**.
 
 End the report with the explicit hand-off:
 
-> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id>` to execute the change. That runs every unfinished task in the plan. Add task IDs — `/m:build <plan-id> T-001 [more ...]` — to run a subset.
+> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:execute <plan-id>` to execute the change. That runs every unfinished task in the plan. Add task IDs — `/m:execute <plan-id> T-001 [more ...]` — to run a subset.

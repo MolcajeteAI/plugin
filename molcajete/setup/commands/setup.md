@@ -121,7 +121,7 @@ Update complete:
 
 End with the standard hand-off:
 
-> Next: review the changes, commit when satisfied. If `/m:plan` or `/m:build` were planning runs, re-run them so they pick up any new principles or schema additions.
+> Next: review the changes, commit when satisfied. If `/m:plan` or `/m:execute` were planning runs, re-run them so they pick up any new principles or schema additions.
 
 ## Step 7: Detect Existing Stack (parallel)
 
@@ -147,7 +147,7 @@ Optionally include scoped follow-ups in the same AskUserQuestion call (up to 4) 
 Combine the description (Step 8) and the codebase findings (Step 7) into a single mental model, and resolve every document per the skill's **Composition** section. Two TECH-STACK fields come only from Step 7's detection:
 
 - **`Running tests`** — the exact command to run the tests for the module. Required when the module ships testable code.
-- **`Coverage`** — the exact coverage command + where to read stats. If the module does not expose coverage stats, write `not available` — `/m:build` will estimate against the 80% floor.
+- **`Coverage`** — the exact coverage command + where to read stats. If the module does not expose coverage stats, write `not available` — `/m:execute` will estimate against the 80% floor.
 
 ## Step 10: Present Composite for Confirmation
 
@@ -179,7 +179,7 @@ Write `.molcajete/settings.json` as `{"testing": {"threshold": 80}}` if it doesn
 
 ## Step 12: Write Engineering Principles File
 
-The host project receives a local copy of the engineering principles at `.claude/rules/principles.md`. This is the operative version that `/m:plan` and `/m:build` read; the team can edit it to adapt principles to their context.
+The host project receives a local copy of the engineering principles at `.claude/rules/principles.md`. This is the operative version that `/m:plan` and `/m:execute` read; the team can edit it to adapt principles to their context.
 
 Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` and strip its YAML frontmatter (everything between the leading `---` and the closing `---`, plus the closing line itself), keeping the body verbatim from the `# Engineering Principles` heading on.
 
@@ -250,9 +250,9 @@ This is the shape:
 - The **Running tests** and **Coverage** rows in `specs/TECH-STACK.md` were filled where detection succeeded. Check them.
 - The **Testing framework** field was filled where detectable. The build loop infers the rest from manifests at run time.
 
-Edit `.claude/rules/principles.md` to adapt the principles to your project. `/m:plan` and `/m:build` read it on every run.
+Edit `.claude/rules/principles.md` to adapt the principles to your project. `/m:plan` and `/m:execute` read it on every run.
 
-> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:build <plan-id>` to execute.
+> Next: `/m:spec "describe a feature"` to add your first feature, then `/m:plan <UC-XXXX>` followed by `/m:execute <plan-id>` to execute.
 ````
 
 The `Holds` column carries a count or one clause, never a sentence. Name every file written, including any the run skipped — a skipped file gets a row saying why.

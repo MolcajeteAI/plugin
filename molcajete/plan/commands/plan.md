@@ -1,5 +1,5 @@
 ---
-description: Read pending log entries on referenced UCs, design architecture (or accept the existing one for cover work), decompose into vertical tasks each carrying a kind, and write the prose plan that /m:build will execute.
+description: Read pending log entries on referenced UCs, design architecture (or accept the existing one for cover work), decompose into vertical tasks each carrying a kind, and write the prose plan that /m:execute will execute.
 model: claude-fable-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...]
 allowed-tools:
@@ -14,14 +14,14 @@ allowed-tools:
 
 # Plan Command
 
-`/m:plan` is the architect step. It reads the pending log entries written by `/m:spec` or `/m:cover`, decides the architecture and decomposition, and writes a reviewable prose plan that `/m:build` consumes.
+`/m:plan` is the architect step. It reads the pending log entries written by `/m:spec` or `/m:cover`, decides the architecture and decomposition, and writes a reviewable prose plan that `/m:execute` consumes.
 
 `/m:plan` produces:
 
 - A single prose plan file at `specs/plans/<timestamp>-<slug>.md` — one `## [ ] T-NNN` task per vertical, working-software increment.
 - Updated log entries (status flipped from `pending` to `dirty`, plan-id stamped).
 
-`/m:plan` does **not** write production code or tests. Hand-off to `/m:build` is mandatory.
+`/m:plan` does **not** write production code or tests. Hand-off to `/m:execute` is mandatory.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -99,4 +99,4 @@ Rows stay in `T-NNN` order — the `Kind` column carries the split, so never reg
 
 End the report with the explicit hand-off:
 
-> Next: review `plan.md`. When ready, run `/m:build <plan-id>` to execute. That runs every unfinished task in the plan. Add task IDs — `/m:build <plan-id> T-001 [more ...]` — to run a subset.
+> Next: review `plan.md`. When ready, run `/m:execute <plan-id>` to execute. That runs every unfinished task in the plan. Add task IDs — `/m:execute <plan-id> T-001 [more ...]` — to run a subset.

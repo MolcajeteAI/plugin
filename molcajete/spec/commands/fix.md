@@ -1,5 +1,5 @@
 ---
-description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Updates specs only when the spec was wrong, then produces the regression plan directly for /m:build.
+description: Record a bug ("spec says X, code does Y") against one or more existing FEAT/UC IDs. Updates specs only when the spec was wrong, then produces the regression plan directly for /m:execute.
 model: claude-opus-5
 argument-hint: <FEAT-XXXX | UC-XXXX> [more IDs ...] <description>
 allowed-tools:
@@ -16,7 +16,7 @@ allowed-tools:
 
 `/m:fix` records a bug against an existing UC: **"the use case is supposed to do X, but the code does Y."** The bug may or may not require a spec edit — the Step 6 diagnosis decides.
 
-`/m:fix` then **produces the regression plan itself** — it logs the entry and runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:build` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong diagnosis is caught and editable before any code is built.
+`/m:fix` then **produces the regression plan itself** — it logs the entry and runs the plan-authoring skill's "Producing a Plan" procedure in the same invocation, so there is no separate `/m:plan` step. It never writes production code or tests. Hand-off to `/m:execute` is mandatory. The plan is written to disk and confirmed via AskUserQuestion before finalizing, so a wrong diagnosis is caught and editable before any code is built.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -98,4 +98,4 @@ Report per the `spec-revision` skill's **Reporting**, with one addition: lead wi
 
 End the report with the explicit hand-off:
 
-> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:build <plan-id>` to execute the regression fix. That runs every unfinished task in the plan. Add task IDs — `/m:build <plan-id> T-001 [more ...]` — to run a subset.
+> Next: review `specs/plans/<plan-id>.md`. When ready, run `/m:execute <plan-id>` to execute the regression fix. That runs every unfinished task in the plan. Add task IDs — `/m:execute <plan-id> T-001 [more ...]` — to run a subset.

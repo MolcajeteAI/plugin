@@ -151,7 +151,7 @@ The gate is **four-dimensional**: lines, statements, branches, and funcs. The fl
 }
 ```
 
-**Backwards compatibility.** If `testing.threshold` (singular, a single number) is set and `testing.thresholds` (plural, the object) is not, apply the single number to all four dimensions. If both are present, the plural object wins. `/m:build` upgrades a legacy single-number setting on first read (Step 3) by writing the expanded form back without changing behavior.
+**Backwards compatibility.** If `testing.threshold` (singular, a single number) is set and `testing.thresholds` (plural, the object) is not, apply the single number to all four dimensions. If both are present, the plural object wins. `/m:execute` upgrades a legacy single-number setting on first read (Step 3) by writing the expanded form back without changing behavior.
 
 Coverage is **scoped to the touched files** — the union of the files the task's prose names (create + modify) and every file the Implementer has changed during the loop. The Validator never judges the whole project.
 
@@ -164,7 +164,7 @@ Coverage is **scoped to the touched files** — the union of the files the task'
 
 `pass` requires: scoped test run green AND, for every touched file, every one of the four dimensions at or above its floor **within that scope**. A new file with lines at 100% but branches at 66% does NOT pass. An existing file whose changed lines all pass DOES pass, even when the file as a whole sits under the floor.
 
-**A pre-existing file below the floor is an observation, never a failure.** When the whole-file number for an existing touched file sits under the threshold, the Validator still returns `pass` on the scoped result, and reports the file separately as **legacy coverage**: the path, the whole-file number per dimension, and the floor it misses. Blocking the task would make this build pay a debt another change created, and the run would stall on work nobody planned. `/m:build` reports the list at the end and offers a GitHub issue for it.
+**A pre-existing file below the floor is an observation, never a failure.** When the whole-file number for an existing touched file sits under the threshold, the Validator still returns `pass` on the scoped result, and reports the file separately as **legacy coverage**: the path, the whole-file number per dimension, and the floor it misses. Blocking the task would make this build pay a debt another change created, and the run would stall on work nobody planned. `/m:execute` and `/m:build` report the list at the end and offer a GitHub issue for it.
 
 `coverage_low` lists per-touched-file gaps **per dimension**, with concrete locations:
 

@@ -1,5 +1,5 @@
 ---
-description: Extract specs from existing code (scope inferred from freeform input). Tests come later via /m:plan + /m:build.
+description: Extract specs from existing code (scope inferred from freeform input). Tests come later via /m:plan + /m:execute.
 model: claude-opus-5
 argument-hint: <freeform description — capability, feature, UC, or single code path>
 allowed-tools:
@@ -141,4 +141,4 @@ delete the original after 8.9 succeeds), or ignore.
 
 End the report with the explicit hand-off:
 
-> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the extracted UCs into `cover` tasks and write the plan that `/m:build` will execute (tests only, no production code).
+> Next: run `/m:plan <FEAT-XXXX | UC-XXXX> [more IDs ...]` to decompose the extracted UCs into `cover` tasks and write the plan that `/m:execute` will execute (tests only, no production code).

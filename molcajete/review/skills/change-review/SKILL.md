@@ -183,7 +183,7 @@ Neither assessing command edits source. Both hand over a prompt, and both pick t
 | What must move | Route |
 |---|---|
 | code only, behavior unchanged — dead code, naming, a comment rule, a duplicate helper | direct change; no command owns a behavior-preserving cleanup |
-| test only — specified behavior that nothing asserts | `/m:cover "<the code path>"`, which writes the pending log entry for `/m:plan` and `/m:build` |
+| test only — specified behavior that nothing asserts | `/m:cover "<the code path>"`, which writes the pending log entry for `/m:plan` and `/m:execute` |
 | code + test, and the spec is right | `/m:fix <UC-XXXX>` |
 | spec + code (+ test), and the spec states the wrong behavior | `/m:fix <UC-XXXX>`, with the spec correction stated in the prompt |
 | spec + code + test, and the user revises the behavior on purpose | `/m:change <UC-XXXX>` |
@@ -192,7 +192,7 @@ Neither assessing command edits source. Both hand over a prompt, and both pick t
 
 Separate `/m:fix` from `/m:change` by the quoted spec line, the same guard `/m:prompt` uses: route to `/m:change` only when a spec line states the behavior the user revises on purpose. When the reading is genuinely two-way, that is a question, not a guess.
 
-`/m:cover`, `/m:fix`, and `/m:change` each write a plan and stop. A prompt list that names one of them therefore ends with `/m:build <plan-id>`, or the work never runs.
+`/m:cover`, `/m:fix`, and `/m:change` each write a plan and stop. A prompt list that names one of them therefore ends with `/m:execute <plan-id>`, or the work never runs.
 
 ## Observations and the GitHub Issue Offer
 

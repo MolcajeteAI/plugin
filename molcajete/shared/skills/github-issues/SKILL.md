@@ -5,13 +5,13 @@ description: >-
   Owns the label vocabulary (AI-finding plus one kind label), the label creation
   that must run first, the batched offer question, the issue body shape, and the
   rule that every issue carries the Molcajete prompt that fixes it. Loaded by
-  /m:review and /m:preflight for an out-of-scope observation, and by /m:build for
-  a file under the coverage threshold.
+  /m:review and /m:preflight for an out-of-scope observation, and by /m:execute
+  and /m:build for a file under the coverage threshold.
 ---
 
 # GitHub Issues
 
-Molcajete opens an issue for a real problem it found while doing something else. The review commands find them beside the change they judge. `/m:build` finds them in a file it edited but did not write. In both cases the work belongs to a later pull request, and the issue is how it survives until then.
+Molcajete opens an issue for a real problem it found while doing something else. The review commands find them beside the change they judge. `/m:execute` and `/m:build` find them in a file they edited but did not write. In both cases the work belongs to a later pull request, and the issue is how it survives until then.
 
 Every issue this skill produces is **findable** and **actionable**: findable because the labels say where it came from and what class it belongs to, actionable because it carries the prompt that fixes it.
 
@@ -96,7 +96,7 @@ Found while <what was running>, outside the scope of that work.
 2. Run the plan it writes:
 
 ```
-/m:build <plan-id>
+/m:execute <plan-id>
 ```
 ````
 
@@ -106,7 +106,7 @@ Found while <what was running>, outside the scope of that work.
 
 - **Resolve every value before you write it.** The `UC-XXXX`, the `file:line`, and the behavior in one sentence. A prompt that tells its reader to work something out is not finished.
 - **List multiple commands in run order**, numbered, each in its own fenced block, with one line above it that says what it does.
-- **A route through `/m:cover`, `/m:fix`, or `/m:change` always takes at least two commands.** Each of them writes a plan and stops, so the list ends with `/m:build <plan-id>` or the work never runs.
+- **A route through `/m:cover`, `/m:fix`, or `/m:change` always takes at least two commands.** Each of them writes a plan and stops, so the list ends with `/m:execute <plan-id>` or the work never runs.
 - **When no command owns the work** — a behavior-preserving cleanup — write the direct instruction in the fenced block instead: the `file:line`, the change, the reason, and the constraint that behavior stays identical.
 
 Pick the command from the `change-review` skill's **Choosing the Fix Command**, which maps what the fix must move onto the command that owns it.

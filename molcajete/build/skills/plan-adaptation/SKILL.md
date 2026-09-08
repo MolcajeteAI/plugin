@@ -1,20 +1,21 @@
 ---
 name: plan-adaptation
 description: >-
-  Lets /m:build change the plan it is running instead of halting. Owns the trigger catalog
+  Lets /m:execute change the plan it is running instead of halting. Owns the trigger catalog
   (the seven discoveries that used to stop a run), the two amendment operations (insert a task,
   revise a task), the slot-and-run task ID scheme, the three-option gate, the adaptation budget,
   and the audit trail. Calls plan-authoring to write task prose and spec-revision to edit specs.
-  Loaded by /m:build.
+  Loaded by /m:execute only. /m:build does not load it — its standing rule
+  (choose, record, continue) replaces the amendment gate.
 ---
 
 # Plan Adaptation
 
-A plan is written before the code is read, so it is always a prediction. `/m:build` executes it and finds what the prediction missed: a file nothing asserts, shipped code that is broken, a spec that says the wrong thing.
+A plan is written before the code is read, so it is always a prediction. `/m:execute` executes it and finds what the prediction missed: a file nothing asserts, shipped code that is broken, a spec that says the wrong thing.
 
 Without this skill every one of those discoveries ends the run. The user starts `/m:fix` or `/m:change`, gets a second plan, and now holds two unfinished plans instead of one. Do that twice and nothing finishes.
 
-This skill gives `/m:build` a third move between "carry on blind" and "stop": **change the plan and keep going.** The build drafts the correction, shows it, asks once, and continues in the same run.
+This skill gives `/m:execute` a third move between "carry on blind" and "stop": **change the plan and keep going.** The build drafts the correction, shows it, asks once, and continues in the same run.
 
 **Three rules bound it.** The build never amends silently — every amendment passes the gate in this skill. The build never exceeds the budget — a run that keeps finding work stops and escalates rather than growing without limit. And the build never amends a completed task — `[x]` is final.
 
@@ -49,7 +50,7 @@ Because `/m:plan` writes only integer tags, a decimal tag is itself the signal t
 
 | Reference | Resolves to |
 |---|---|
-| `/m:build <plan-id> T-003` after slot `003` was amended | every task in the run, in order |
+| `/m:execute <plan-id> T-003` after slot `003` was amended | every task in the run, in order |
 | `**Depends on:** T-003` written before the amendment | satisfied when **every** task in the run reads `[x]` |
 | `**Depends on:** T-003.2` | that one task |
 
@@ -57,7 +58,7 @@ A dependency line written before an amendment therefore never needs editing, and
 
 ## The Trigger Catalog
 
-Seven discoveries reach this skill. Each names the `/m:build` sub-step that detects it. All seven halt the run outright when this skill is not in play.
+Seven discoveries reach this skill. Each names the `/m:execute` sub-step that detects it. All seven halt the run outright when this skill is not in play.
 
 | ID | Trigger | Detected at | Spec edit | Produces | Skip |
 |----|---------|-------------|-----------|----------|------|
@@ -85,7 +86,7 @@ Match the discovery to exactly one catalog row. Read the row's `Spec edit` and `
 
 ### 2. Check the budget
 
-Read the `adaptation` block resolved in `/m:build` Step 3. When `maxAmendments` is already spent, stop here: halt with an escalation naming the budget, the amendments already made, and this discovery. Do not ask — there is nothing the user could choose that the budget allows.
+Read the `adaptation` block resolved in `/m:execute` Step 3. When `maxAmendments` is already spent, stop here: halt with an escalation naming the budget, the amendments already made, and this discovery. Do not ask — there is nothing the user could choose that the budget allows.
 
 When `allowSpecEdits` is `false` and the row's `Spec edit` is `yes`, do the same and name the setting.
 
@@ -182,17 +183,17 @@ The user knows about the gap and chooses to finish the plan first. Record it so 
 
 3. **Continue the current task** from where it stopped. The task must still be able to finish, which is why this option is absent for a row whose `Skip` is `no`.
 
-The `## Known Issues` section is the only heading in a plan file that is not a task. It never carries a checkbox, and `/m:build` never executes it.
+The `## Known Issues` section is the only heading in a plan file that is not a task. It never carries a checkbox, and `/m:execute` never executes it.
 
 ### Stop here
 
-The original behavior. Write `.molcajete/escalations/{plan-id}-{T-NNN}.md` carrying the discovery, the drafted amendment, and the drafted spec edit, then halt the run per `/m:build` Step 8's failure policy. Completed tasks keep their `[x]`, Step 9 still runs, and the user resolves it and re-runs `/m:build {plan-id}`.
+The original behavior. Write `.molcajete/escalations/{plan-id}-{T-NNN}.md` carrying the discovery, the drafted amendment, and the drafted spec edit, then halt the run per `/m:execute` Step 8's failure policy. Completed tasks keep their `[x]`, Step 9 still runs, and the user resolves it and re-runs `/m:execute {plan-id}`.
 
 Write the draft into the escalation file even though nothing applied it. The work of diagnosing was already done, and throwing it away makes the user do it again.
 
 ## Budget
 
-`/m:build` Step 3 reads an `adaptation` block from `.molcajete/settings.json`:
+`/m:execute` Step 3 reads an `adaptation` block from `.molcajete/settings.json`:
 
 ```json
 "adaptation": {
@@ -204,7 +205,7 @@ Write the draft into the escalation file even though nothing applied it. The wor
 
 | Key | Default | Meaning |
 |-----|---------|---------|
-| `maxAmendments` | `3` | Amendments allowed in one `/m:build` run. "Note and continue" does not count — it changes no task. |
+| `maxAmendments` | `3` | Amendments allowed in one `/m:execute` run. "Note and continue" does not count — it changes no task. |
 | `maxTasksPerAmendment` | `2` | Tasks one amendment may insert. A discovery needing more is too large to absorb mid-run. |
 | `allowSpecEdits` | `true` | When `false`, a trigger whose row says `Spec edit: yes` escalates instead of asking. |
 
@@ -220,8 +221,8 @@ In a headless run every trigger writes its escalation and halts, per the `resolu
 
 ## What This Skill Never Does
 
-- It never writes production code or test code. It changes the plan; `/m:build`'s own sub-steps then run the amended task through the full lifecycle, including the coverage gate, the mutation check, and the correctness review. An amended task gets no shortcut.
-- It never flips a checkbox. `/m:build` 8.11 owns that.
+- It never writes production code or test code. It changes the plan; `/m:execute`'s own sub-steps then run the amended task through the full lifecycle, including the coverage gate, the mutation check, and the correctness review. An amended task gets no shortcut.
+- It never flips a checkbox. `/m:execute` 8.11 owns that.
 - It never edits the `**Provenance:**` line. That line is evidence of the plan's origin, and amending it would erase the only record drift detection reads.
 - It never removes a task, a `## Known Issues` line, or an audit line.
 - It never re-tags or renumbers a task whose checkbox reads `[x]`.

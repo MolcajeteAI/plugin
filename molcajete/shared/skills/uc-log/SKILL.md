@@ -6,13 +6,13 @@ description: >-
   forbids any command from removing or rewriting an existing entry, and
   entry-status transitions
   (pending → dirty → implemented). Referenced by /m:spec, /m:fix, /m:change,
-  /m:cover, /m:plan, and /m:build. The changelog is a context log + marker
+  /m:cover, /m:plan, /m:execute, and /m:build. The changelog is a context log + marker
   file; it is NOT the source of truth for artifact status (see status-rollup).
 ---
 
 # UC Changelog
 
-Every use case carries a sidecar changelog file that records each spec-phase change requested for that UC and tracks it through plan and build. The changelog is the contract between the spec-phase commands (`/m:spec`, `/m:fix`, `/m:change`, `/m:cover`), the architect (`/m:plan`), and the executor (`/m:build`).
+Every use case carries a sidecar changelog file that records each spec-phase change requested for that UC and tracks it through plan and build. The changelog is the contract between the spec-phase commands (`/m:spec`, `/m:fix`, `/m:change`, `/m:cover`), the architect (`/m:plan`), and the executor (`/m:execute`). The end-to-end command (`/m:build`) plays every one of those roles in a single run and performs the same mutations at the same points.
 
 The changelog answers two questions: **what changed and why** (for plan) and **what's still outstanding** (for plan and build).
 
@@ -26,7 +26,9 @@ Exactly three mutations are permitted. There are no others:
 |---|----------|-----|
 | 1 | Insert a **new** entry line at the top of `TODO:`. | `/m:spec`, `/m:fix`, `/m:change`, `/m:cover` |
 | 2 | On one existing TODO line, flip `[pending]` → `[dirty]` and replace the `plan:—` field with `plan:<plan-id>`. Nothing else on the line changes. | `/m:plan` |
-| 3 | On one existing TODO line, flip `[dirty]` → `[implemented]` and move the line **verbatim** to the top of `DONE:`. Nothing else on the line changes. | `/m:build` |
+| 3 | On one existing TODO line, flip `[dirty]` → `[implemented]` and move the line **verbatim** to the top of `DONE:`. Nothing else on the line changes. | `/m:execute` |
+
+`/m:build` performs all three mutations in one run: mutation 1 when it edits a spec, mutation 2 when its change-request plan consumes the entry, and mutation 3 when the covering tasks complete. Every rule in this file binds it identically.
 
 Everything else is forbidden. Specifically, never:
 
@@ -68,7 +70,7 @@ If either fails, the edit destroyed history: restore the removed lines immediate
 
 ## The changelog is not the status source of truth
 
-Artifact status (UC, feature) lives on each artifact's frontmatter `status:` field; task status is the plan's `## [ ]` / `## [x]` checkbox. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. This skill defines only the changelog file mechanics. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:build`.
+Artifact status (UC, feature) lives on each artifact's frontmatter `status:` field; task status is the plan's `## [ ]` / `## [x]` checkbox. The changelog's entries have their own per-entry status field, but that is **not** the canonical state of the UC. This skill defines only the changelog file mechanics. See the `status-rollup` shared skill for how status is owned by spec-phase commands and `/m:execute`.
 
 ## File Path
 
@@ -143,12 +145,12 @@ The commands say "append the changelog entry." That always means **insert a new 
 ## Status Transitions
 
 ```
-pending ──plan──► dirty ──/m:build──► implemented
+pending ──plan──► dirty ──/m:execute──► implemented
 ```
 
-- `pending` — written by a spec-phase command, or by `/m:build` recording a known issue. No plan has consumed it yet. Lives under `TODO:`.
-- `dirty` — a plan has consumed the entry, stamped its plan-id, and addresses it. The stamp comes from whichever command ran **Producing a Plan** — `/m:plan`, `/m:fix`, `/m:change`, or `/m:build` amending the plan it is running. Build has not finished yet. Lives under `TODO:`.
-- `implemented` — `/m:build` finished the corresponding tasks; tests pass. Lives under `DONE:`.
+- `pending` — written by a spec-phase command, or by `/m:execute` recording a known issue. No plan has consumed it yet. Lives under `TODO:`.
+- `dirty` — a plan has consumed the entry, stamped its plan-id, and addresses it. The stamp comes from whichever command ran **Producing a Plan** — `/m:plan`, `/m:fix`, `/m:change`, or `/m:execute` amending the plan it is running. Build has not finished yet. Lives under `TODO:`.
+- `implemented` — `/m:execute` finished the corresponding tasks; tests pass. Lives under `DONE:`.
 
 No other transitions. A `pending` entry never becomes `implemented` without first becoming `dirty` — plan is mandatory. Statuses never roll back. A superseded change gets a **new** entry; the entry it supersedes stays in the file untouched, per **Append-Only**.
 
@@ -163,9 +165,9 @@ Every row below applies **per module-instance**, per the fan-out rules above. Ev
 | `/m:change` | Insert a new `pending` entry at the top of TODO. `command:change`. `plan:—`. | 1 |
 | `/m:cover` | Insert a new `pending` entry at the top of TODO. `command:cover`. `plan:—`. Once per module-instance at extraction time. | 1 |
 | `/m:plan`, `/m:fix`, `/m:change` | For each `pending` entry the plan consumes: flip status to `dirty`, set `plan:<plan-id>`. Entries stay in TODO. Every command that runs the `plan-authoring` skill's **Producing a Plan** procedure performs this, because P7 of that procedure is where it happens. | 2 |
-| `/m:build` | For each `dirty` entry whose tasks completed: flip status to `implemented`, move the line from TODO to DONE (prepended at top of DONE). | 3 |
-| `/m:build` | When a mid-build amendment records a known issue, or precedes an inline spec edit: insert a new `pending` entry at the top of TODO, with the `command:` token of the work it describes (`fix`, `change`, or `cover`). | 1 |
-| `/m:build` | When that inline spec edit produces a task in the running plan: flip the entry it just wrote to `dirty` and set `plan:<running-plan-id>`. A known-issue entry is **not** stamped — it stays `pending` with `plan:—` so the next `/m:plan` picks it up. | 2 |
+| `/m:execute` | For each `dirty` entry whose tasks completed: flip status to `implemented`, move the line from TODO to DONE (prepended at top of DONE). | 3 |
+| `/m:execute` | When a mid-build amendment records a known issue, or precedes an inline spec edit: insert a new `pending` entry at the top of TODO, with the `command:` token of the work it describes (`fix`, `change`, or `cover`). | 1 |
+| `/m:execute` | When that inline spec edit produces a task in the running plan: flip the entry it just wrote to `dirty` and set `plan:<running-plan-id>`. A known-issue entry is **not** stamped — it stays `pending` with `plan:—` so the next `/m:plan` picks it up. | 2 |
 
 **A TODO section may mix commands.** A use case whose log holds a `command:cover` entry beside a `command:fix` entry is normal, and `/m:plan` consumes both in one run: the `plan-authoring` skill assigns each entry its own task `**Kind:**`, so one plan carries `cover` tasks and `fix` tasks together. No command refuses a mixed set.
 
