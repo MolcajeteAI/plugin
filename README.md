@@ -178,13 +178,14 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | spec | `spec-revision` | Machinery shared by `/m:fix` and `/m:change` — module-instance fan-out, spec-edit rules, log/status, plan hand-off |
 | spec | `spec-lookup` | Machinery shared by `/m:desc`, `/m:ids`, and `/m:prompt` — ID taxonomy, resolve by ID or keyword, context assembly |
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
-| build | `change-report` | The `/m:build` change report — before/after tables for interface, data layer, event, and configuration changes, plus Before/Now/Why blocks for spec edits |
+| build | `change-report` | The `/m:build` change report — the change-description walk at full depth plus the report tail: UI sketch, new IDs, interview decisions, Done / Not done / Next step |
 | build | `plan-adaptation` | Mid-build plan change — trigger catalog, insert/revise operations, the three-option gate, and the audit trail |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, the four review questions and the admission test, rubric and severity, observations and their GitHub issue offer |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
 | research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
 | research | `headless-research` | Silent, no-interaction research brief written before spec-writing |
 | shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion carrying only the decision |
+| shared | `change-description` | The universal change template — the walk: reason, spec deltas, surface items, flow pairs, verdict, at three depths (full / orientation / glance) |
 | shared | `resolution-gate` | Analyze, then ask, then write — no unresolved item ever reaches a generated spec or plan |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
 | shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, coverage scoped to a new file in full and to an existing file's changed lines |

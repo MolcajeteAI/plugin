@@ -14,7 +14,7 @@ allowed-tools:
 
 # Review Command
 
-`/m:review` produces a review document that **walks the reviewer by the hand** — first orient them (the problem, the 10,000-ft solution, where to look), then list every issue in one place, each traced back to what the spec says (`FEAT/UC/SC`) and what the integration test asserts. It writes the result to a file under `reviews/`. It never edits source, and it never comments on the pull request.
+`/m:review` produces a review document that **walks the reviewer by the hand** — first orient them (the lead, the change map, the changed flows, where to look), then list every issue in one place, each traced back to what the spec says (`FEAT/UC/SC`) and what the integration test asserts. It writes the result to a file under `reviews/`. It never edits source, and it never comments on the pull request.
 
 **The review judges the change, and only the change.** It answers four questions: is the change architecturally sound, does it follow the rules, do its added and modified lines meet the 80% coverage floor, and does it introduce a defect. A problem the change did not cause is not part of this review. It goes to the observations, where you decide whether to open a GitHub issue for it and fix it under its own pull request. The `change-review` skill's **Scope of the Review** owns that boundary, and Step 5 enforces it.
 
@@ -30,6 +30,7 @@ The whole point is traceability: **every issue cites the spec and the integratio
 
 1. `${CLAUDE_PLUGIN_ROOT}/review/skills/change-review/SKILL.md` — the prerequisite gate, change-set resolution, diff→spec mapping, the scope of the review with its admission test, the rubric + severity, and the observation bucket with its GitHub issue offer.
 2. **Engineering principles** — the operative rubric. Load them per that skill's **Review Rubric & Severity** (host file first, plugin fallback with its warning).
+3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` — the universal change template. The document's opening renders its **orientation depth**: the Lead, the Change map, and the flow pairs.
 
 Apply the `change-review` skill's **Prerequisites** gate now. If it is not a Molcajete project, refuse per that skill and stop.
 
@@ -107,23 +108,21 @@ This is the only step that writes anything outside this repository, and it write
 
 ## What this change does
 
-- <3–5 bullets, one clause each>
+<The change-description Lead: one to three sentences in product language — the reason and the outcome.>
+
+| Change | Kind | Touches |
+|---|---|---|
+| <change title, name before ID> | added / changed / fixed / retired | <the moved surfaces> |
+
+When the change references no spec, say so here in one line. That absence is also an issue below.
 
 ---
 
 ## Orientation
 
-### The problem
+### Flows
 
-<Plain-language description of the need this change addresses.>
-
-> `UC-3Z2L` says: "<what the spec requires>"
-
-When the change references no spec, say so here in one line. That absence is also an issue below.
-
-### The approach
-
-<Narrative of the solution, then a mermaid flow map of the changed path, so the reviewer holds the shape before reading code.>
+<The Before/After sequence-diagram pair of every unit that changed a flow, each with its one-sentence lead, per the change-description skill. Omit this subsection when no flow changed.>
 
 ### Reading order
 
@@ -200,6 +199,8 @@ These are not part of this review, and they do not affect the verdict. This chan
 `````
 
 ### Rules for the template
+
+**The opening is the change-description orientation depth.** The Lead, the Change map, and the flow pairs follow that skill's atoms exactly — its layout rules (the 3-column cap, stacked before/after, block leads) bind them. The review's own verdict replaces the template's architecture verdict.
 
 **Every issue goes in the one list**, sorted `HIGH` → `MEDIUM` → `LOW`. A convention violation, a bug, confusing code, wrong architecture, a missing spec, and a missing integration test are all issues and all rank the same way — when the change owns them.
 

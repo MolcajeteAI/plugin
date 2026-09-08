@@ -71,7 +71,7 @@ Read later, only when needed:
 
 9. **When any part is an Addition** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`.
 10. **When any part is a Change or a Fix** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the three-way diagnosis and the spec-edit application rules.
-11. **At Step 9** — `${CLAUDE_PLUGIN_ROOT}/build/skills/change-report/SKILL.md` — the report template.
+11. **At Step 9** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` (the walk template that is the report body) and `${CLAUDE_PLUGIN_ROOT}/build/skills/change-report/SKILL.md` (the report tail).
 12. **When Step 8 produces a legacy-coverage list** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md`.
 
 Prerequisites: `specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist and be read in full now. If any is missing: "Project foundation not found. Run `/m:setup` first." Stop.
@@ -236,6 +236,6 @@ Set `state: report`.
 
 ## Step 9: Report
 
-Read `${CLAUDE_PLUGIN_ROOT}/build/skills/change-report/SKILL.md` now. Fill its template from the run: the saved `## Replaced spec text` blocks, the decisions section, the new-ID list, and the validation results.
+Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/build/skills/change-report/SKILL.md` now. The report body is the change-description walk at full depth; the change-report skill adds the tail. Fill both from the run: the saved `## Replaced spec text` blocks, the decisions section, the new-ID list, and the validation results.
 
 Append the finished report to the change-request file as its final `## Report` section, **and** print the same report to the screen. The double write is deliberate: the file is the durable record the user re-reads, the screen is the delivery. Set `state: done` and tick the last Progress box.
