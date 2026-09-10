@@ -8,7 +8,7 @@ Molcajete.ai is a Claude Code plugin that provides opinionated, reusable workflo
 
 ### What It Ships
 
-- **`m` plugin** (v3.25.2) — 17 slash commands and 29 reusable skills
+- **`m` plugin** (v3.26.0) — 17 slash commands and 29 reusable skills
 
 ### Key Directories
 
