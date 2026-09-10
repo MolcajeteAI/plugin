@@ -27,6 +27,8 @@ The argument is the goal in the user's own words. No ID is required. It may name
 
 **This command never generates an ID and never writes under `specs/`.** A new feature, use case, or scenario is named and marked `(new)`. The command that writes the spec generates its ID.
 
+**Passing an existing exploration makes the run a follow-up.** When `$ARGUMENTS` is, or starts with, a path under `.molcajete/explorations/`, the command reads that document, checks each prerequisite against the code, asks what you decided, and rewrites the same file. There is no separate update command.
+
 **Writing style:** every document you write and every message you print uses Simplified Technical English. Every one carries only what its reader needs. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/writing-style/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/output-economy/SKILL.md` before writing.
 
 ## Step 1: Load Skills
@@ -44,7 +46,9 @@ The argument is the goal in the user's own words. No ID is required. It may name
 
 ## Step 3: Read the Goal
 
-`$ARGUMENTS` is the goal. When it carries `FEAT-XXXX` or `UC-XXXX` IDs, they seed the `specs-first` skill's by-ID mode. When it names a document — `research/*.md`, `.molcajete/research/*.md`, `.molcajete/explorations/*.md`, or any path — read that document in full now.
+`$ARGUMENTS` is the goal. When it carries `FEAT-XXXX` or `UC-XXXX` IDs, they seed the `specs-first` skill's by-ID mode. When it names a document — `research/*.md`, `.molcajete/research/*.md`, or any path — read that document in full now.
+
+**Follow-up mode.** When `$ARGUMENTS` is, or starts with, a path under `.molcajete/explorations/`, this run is a follow-up. Read that document in full. The goal is its `goal` line plus any text after the path in the argument. Its `features` and `use_cases` frontmatter lists are the candidate IDs and seed by-ID mode. Every later step that names follow-up mode applies.
 
 When `$ARGUMENTS` is empty, open the interview with one question: what do you want to explore? End the turn and wait for the answer.
 
@@ -52,29 +56,99 @@ When `$ARGUMENTS` is empty, open the interview with one question: what do you wa
 
 Run the `specs-first` skill — by-description mode, or by-ID mode when Step 3 found IDs — through its exit checklist. Read the code the Code Map names and the code around it. Search the web at any point a library, protocol, or external API fact is uncertain. Dispatch an `Agent` only for a code read too large for one context. Read the spec index yourself.
 
-## Step 5: Size the Change
+**Follow-up mode.** Run by-ID mode over the frontmatter IDs. Then, for each prerequisite in the document, evaluate its `Done when` fact against the tree and record `done` or `not done`.
 
-Hold this in memory. Nothing is written yet.
+## Step 5: The Open Interview
 
-1. Draft the change map and one numbered section per change, in the shape of the Step 7 template. Name each new feature, use case, or scenario and mark it `(new)`.
-2. Sort every out-of-scope issue Step 4 found through the `blocker-protocol` skill's size test. A **significant** one is a prerequisite candidate. A **small** one is part of the work and joins the change it serves. A prerequisite is a significant out-of-scope issue found before the work starts instead of during it.
-3. Draft the configuration changes from the `specs-first` S6 inventory: the set each setting extends, its location, the value the change sets, the value recommended, and what an operator does to change it.
-4. Run the `resolution-gate` skill's G1 to G3 to find the open items.
-5. Rank every fork per this plugin's rule: what is right first, architecture second, effort last and counted. Never quote hours or days.
+The interview comes before the solution is drafted, because the answers shape it. Prepare three things first, in memory:
 
-## Step 6: The Open Interview
+1. Sort every out-of-scope issue Step 4 found through the `blocker-protocol` skill's size test. A **significant** one is a prerequisite candidate of kind existing bug, surfaced bug, side effect, or technical limitation. A **small** one is part of the work and joins the change it serves. A prerequisite is a significant out-of-scope issue found before the work starts instead of during it. Step 7 adds the fifth kind, improvement.
+2. Run the `resolution-gate` skill's G1 to G3 over the goal and the exit checklist to find the open items.
+3. Rank every fork per this plugin's rule: what is right first, architecture second, effort last and counted. Never quote hours or days.
 
-Round 1 opens with orientation, because the user has not seen the tree: the Summary, the change map, and the prerequisite candidates as a list. Then the questions: the open items from Step 5, each fork with its options and its counted effort, each prerequisite candidate (agree it is a blocker, or fold it into the work), and each configuration choice. At most 5 questions per round.
+Round 1 opens with orientation, because the user has not seen the tree: what is built for this capability, how it works, what conflicts with the goal, and what else reads the code, from the exit checklist in product language, then the prerequisite candidates as a list. Then the questions: the open items, each fork with its options and its counted effort, each prerequisite candidate (agree it is a blocker, or fold it into the work), and each configuration choice from the `specs-first` S6 inventory. At most 5 questions per round.
 
-When the user asks a question back, answer it before you ask again. Run rounds until nothing is open. Close by restating the agreement as a short list. Then continue to Step 7 without waiting for a reply.
+**Follow-up mode.** Round 1 opens with the document's prerequisites, one line each: the name, `Required` or `Optional`, its recorded status, and what the `Done when` check found. Then the questions: for each optional prerequisite, done, will be done before the work, or not doing. Then any new goal text from the argument.
+
+When the user asks a question back, answer it before you ask again. Run rounds until nothing is open. Close by restating the agreement as a short list. Then continue to Step 6 without waiting for a reply.
 
 **Headless.** No user is present, so the interview cannot run. Decide every item from the codebase and record each as a decided default with the provenance "no user was present". List every question you would have asked in `.molcajete/escalations/resolution-explore-{timestamp}.md`, and name that file in the report.
 
-## Step 7: Write the Exploration Document
+## Step 6: Size the Change
+
+Draft the solution from the agreement. Hold it in memory. Nothing is written yet.
+
+1. Draft the change map and one numbered section per change, in the shape of the Step 8 template. Name each new feature, use case, or scenario and mark it `(new)`.
+2. Write each agreed prerequisite candidate as a `### P{n}` of its kind, marked `Required`.
+3. Draft the configuration changes from the `specs-first` S6 inventory and the agreed choices: the set each setting extends, its location, the value the change sets, the value recommended, and what an operator does to change it.
+
+## Step 7: Review the Solution
+
+Dispatch a **Design Reviewer sub-agent** via the `Agent` tool. It did not draft the solution, and it does not see the reasoning behind it. This is a maker-checker boundary, the same one `/m:execute` puts between its Implementer and its Reviewer.
+
+**Receives:**
+
+- the Step 6 draft — the change map and every numbered change section as drafted, with the components, files, interfaces, entities, events, and settings it names,
+- the host principles file (`.claude/rules/principles.md`, or the plugin's `principles` skill when the host file is missing),
+- the host `CLAUDE.md` and every other file under `.claude/rules/` — the project's local rules,
+- `specs/MODULES.md`,
+- each candidate feature's `ARCHITECTURE.md` in full,
+- the current contents of every production file the draft touches.
+
+It does **not** receive the interview notes, the `specs-first` checklist, or this command's reasoning.
+
+**Verifies:**
+
+1. **Placement.** Each new or changed component sits where the layering puts it: domain logic in the domain, a port at the boundary, an adapter behind a port. A component placed where it is easiest to write, not where it belongs, is a finding. Principle 2 and Principle 3 of the principles file are the test.
+2. **Coupling and dependencies.** Every new dependency is justified, and no change adds a path around a port or a boundary.
+3. **Reuse.** An existing module, adapter, or setting already serves the need, and the draft builds a second one. A near-duplicate is a finding.
+4. **Quality of the touched code.** In the files the draft edits: a function that does more than one thing, a file that owns more than one concern, duplicated logic that a shared function would remove, a name that hides what the code does. Principle 5 is the test. Report only what the change would touch or sit beside. The reviewer is not auditing the codebase.
+5. **Decisions.** No finding reverses an ADR in the architecture document. A draft that reverses one is a finding of kind placement, and the ADR is named.
+6. **Local rules.** Nothing in the draft breaks a rule the host `CLAUDE.md` or a file under `.claude/rules/` states: a forbidden library, a required pattern, a naming rule, a file that must not be edited, a layout the project mandates. Each violation is a finding of kind rule, and the finding quotes the rule and names the file it comes from.
+
+**Returns:** exactly one of `sound` or `findings{list}`. Each finding carries these fields:
+
+| Field | Value |
+|---|---|
+| `kind` | rule, placement, coupling, reuse, quality, or infrastructure |
+| `where` | a component name or a `file:line` |
+| `what` | the problem in one sentence |
+| `why` | the principle or the ADR it rests on |
+| `change` | the recommended change in one or two sentences |
+| `impact` | high, medium, or low, with the consequence of not doing it in one sentence |
+| `effort` | counts of files, tests, and specs. Never hours or days |
+
+**The improvement rule.** Assign each finding an effort band from its counts, then place it. Read the table top to bottom and take the first row that fits.
+
+| Effort band | Counts |
+|---|---|
+| very small | 1 file, no test change |
+| small | at most 2 files, no spec |
+| medium | at most 5 files, or 1 spec |
+| high | more than 5 files, or more than 1 spec |
+| massive | a new module, or a cross-feature rewrite |
+
+| Finding | Where it goes |
+|---|---|
+| Kind is rule | Inside the work, always. The draft is redrawn until the rule holds, whatever the effort |
+| Impact high and effort very small | Inside the work, always |
+| Effort small, whatever the impact | Inside the work: the change section it serves, or `## Cleanups` when it alters no behavior |
+| It changes a file a change section already edits | Inside the work |
+| Kind is infrastructure — a dependency, a migration, build or deploy tooling, a shared module | Required prerequisite |
+| Effort medium | Required prerequisite, assumed done before the work starts |
+| Effort high or massive | Optional prerequisite. Every change section is written as if it is not done |
+
+**Every finding is applied, and every finding reaches the document.** Correct the draft now. A finding placed inside the work is written into the change section it serves. A placement, coupling, or reuse finding changes that section's design. A quality finding that alters no behavior goes under `## Cleanups` with its principle named. A finding placed as a prerequisite becomes a `### P{n}` of kind improvement, marked `Required` or `Optional`. No finding is left as a note, a remark, or an item for later. The rule places each finding without a question. The Step 9 report names every finding and its place, and the user moves one with a follow-up run.
+
+A finding that contradicts an answer from Step 5 does not reopen the interview. Apply the rule, and name the contradiction in the report.
+
+## Step 8: Write the Exploration Document
 
 Run `mkdir -p .molcajete/explorations`. Run `date -u +%Y%m%dT%H%M%S` and copy the output — never compose a timestamp. The slug is kebab-case, at most 40 characters. Write the file without asking:
 
 `.molcajete/explorations/<timestamp>-<slug>.md`
+
+**Follow-up mode.** The path is the one the argument named. Never write a second file for the same exploration. Increment `revision`, set `updated` from the clock, and write a `Status` line on every prerequisite: `done`, `not done`, or `declined`. Then rewrite the change sections under the decided assumptions. A prerequisite marked `done`, or one the user will do before the work, is assumed present. One marked `declined` or `not done` is assumed absent.
 
 The document is a walkthrough for a human: one numbered section per change, and inside it everything the reader needs — the behavior, the screen, the flow, the interfaces, the data, the configuration. Context travels with the change, so the reader never jumps between global sections to assemble one change. A reader who stops after the Summary and the Change map still holds the big picture.
 
@@ -86,6 +160,8 @@ Every block opens with one short sentence, and its facts live in item tables. A 
 ---
 goal: <the goal in one line, in the user's words>
 created: <timestamp>
+updated: <timestamp of the last follow-up. Omit the key on the first run.>
+revision: 1
 references: [research/x.md]    # documents the user named. Omit the key when none.
 ---
 
@@ -93,15 +169,21 @@ references: [research/x.md]    # documents the user named. Omit the key when non
 
 ## Prerequisites
 
-<One paragraph: how many prerequisites there are, and that each one lands on its own branch off `master` before the main work starts. Work that belongs to the change is not a prerequisite. When there are none, write: "None. The main work starts from `master`.">
+<One paragraph: how many prerequisites there are, how many are required and how many optional, and that each one lands on its own branch off `master` before the main work starts. Work that belongs to the change is not a prerequisite. When there are none, write: "None. The main work starts from `master`.">
 
 ### P1 — <name>
 
-<What it is and where it lives, with `file:line`. Its kind: an existing bug, a bug the feature will surface, a side effect, or a technical limitation.>
+**Required** — or — **Optional**. The change sections below assume this is not done.
 
-<Why it blocks the main work, and what happens if it is not fixed first.>
+<What it is and where it lives, with `file:line`. Its kind: an existing bug, a bug the feature will surface, a side effect, a technical limitation, or an improvement the design review found.>
+
+<Why it blocks the main work — or, for an improvement, what it makes better and which principle it rests on. What happens if it is not fixed first.>
 
 <Effort as counts: N files, N tests, N specs. Branch: `fix/<slug>` off `master`.>
+
+Done when: <a fact in the tree — a file, a symbol, a test, or a spec element that exists once this landed>.
+
+Status: <done | not done | declined — present only after a follow-up>.
 
 (Alternative command: /m:fix UC-XXXX "...")
 
@@ -273,7 +355,7 @@ erDiagram
 
 ## Cleanups
 
-<Changes that alter no behavior — one line each: the file, the edit, the reason. Omit the section when there are none.>
+<Changes that alter no behavior — one line each: the file, the edit, the reason, and for a design review finding the principle it rests on. Omit the section when there are none.>
 
 ## Architecture
 
@@ -284,25 +366,32 @@ erDiagram
 **Sound** | **Sound with concerns** | **Questionable**
 ````
 
-Five rules bind the document:
+Six rules bind the document:
 
 1. **Nothing is abbreviated.** The reader must see the before and after of every spec element, every interface, every table, and every setting without opening another file. The Behavior tables, the diagrams, and the prerequisite prose are exempt from the output budget, because completeness is the document's purpose.
 2. **Every `Why` states the reason.** The interview settled every reason. Never write "reason not stated".
 3. **`## Prerequisites` is always present.** Its negative is the fact sentence above, never the word "none" alone.
 4. **A prerequisite here never becomes a plan's `**Prerequisites:**` line.** It lands on its own branch before the plan is written.
 5. **Run the `resolution-gate` skill's G5 over the file before it is final.** A banned marker or a sentence that hands a choice to the reader means the interview left an item open. Reopen it.
+6. **A follow-up rewrites the change sections under the decided assumptions.** A section that assumed an optional prerequisite absent, when the user marks it done, is redrawn with it present, and the reverse. Every diagram and every Before/After row is re-checked, not patched.
 
-## Step 8: Report
+## Step 9: Report
 
 Print:
 
 ```markdown
 ## Exploration written — `.molcajete/explorations/<timestamp>-<slug>.md`
 
-<N> prerequisites · <N> changes · <N> settings
+<N> prerequisites (<N> required, <N> optional) · <N> changes · <N> settings
 
 <The prerequisite names, one per line, when there are any.>
+
+**Design review**
+
+<One line per finding: its kind, where, what, and where it landed — the change section, Cleanups, or the prerequisite tag. When the reviewer returned `sound`, one line says so. A finding that contradicts an interview answer says so in the same line.>
 ```
+
+**Follow-up mode.** The metadata line opens with `revision <n>`, and one line per prerequisite whose status changed follows the names.
 
 Then the hand-off, as a ready prompt. Land each prerequisite first with the prompt in the document. Then:
 
