@@ -57,6 +57,8 @@ The scan surface. One table, one row per change unit:
 
 `Kind` takes one of `added`, `changed`, `fixed`, `retired`. `Touches` names the moved surfaces in a few words. The map is the table of contents: a reader who stops after the Lead and the map still holds the big picture.
 
+Under the map, one line names the surfaces the whole change never touched: "No data layer or configuration changes." Absence then reads as checked, not skipped.
+
 ### Atom 3 — Spec delta
 
 Under a bare `**Specs**` label: the block's one-sentence lead, the element name and ID on its own line, then a stacked 2-column table.
@@ -193,6 +195,16 @@ connection diagram and per-arrow tables when a connection changed}
 
 {lead sentence, then item table(s), plus an erDiagram when an entity changed shape}
 
+**Events**
+
+{lead sentence, then one item table per event — Event, Publisher, Payload, Condition,
+Consumers, then Before / After / Why}
+
+**Configuration**
+
+{lead sentence naming the configuration set the change extends, then one item table per
+setting — Setting, Location, then Before / After / Why}
+
 ## 2. {Next change title}
 
 ...
@@ -212,7 +224,7 @@ one clause: "uses the shared retry setting (see Cross-cutting)."}
 {one or two sentences on the design, then **Sound** / **Sound with concerns** / **Questionable**}
 ```
 
-Two rules keep the walk honest. A label appears only when its block has content — a unit that moved no data has no `**Data layer changes**` label. And a flow shared by two units is drawn under the first and referenced by the second in one clause.
+Two rules keep the walk honest. A label appears only when its block has content — a unit that moved no data has no `**Data layer changes**` label, and a unit that adds no setting has no `**Configuration**` label. And a flow shared by two units is drawn under the first and referenced by the second in one clause.
 
 ## The three depths
 

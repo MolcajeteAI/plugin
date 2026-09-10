@@ -10,6 +10,8 @@ allowed-tools:
   - Grep
   - Bash
   - AskUserQuestion
+  - WebSearch
+  - WebFetch
 ---
 
 # Change Command
@@ -49,7 +51,7 @@ Apply the `spec-revision` skill's **Prerequisites** gate. Refuse and stop if it 
 
 ## Step 4: Load the Referenced Specs
 
-Follow the `spec-revision` skill's **Loading the Referenced Specs**.
+Follow the `spec-revision` skill's **Loading the Referenced Specs** — specs first, then the code the Code Map names.
 
 ## Step 5: Resolve UC Module-Instances
 
@@ -61,7 +63,7 @@ Before proposing edits, follow the `spec-revision` skill's **Resolving UC Module
 
 ## Step 6: Draft the Spec Edit
 
-From the description in `$ARGUMENTS`, draft the spec edit **per module-instance** in each UC's target set. The edit may:
+From the description in `$ARGUMENTS`, draft the spec edit **per module-instance** in each UC's target set. Draft against what Step 4 read: a scenario you change has callers, consumers, and settings the exit checklist named. Say in the brief which of them the edit reaches. The edit may:
 
 - Change an existing scenario's Steps / Outcomes / Side Effects.
 - Add or remove scenarios.

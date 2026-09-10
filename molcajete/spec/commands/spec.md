@@ -27,38 +27,40 @@ The single spec-authoring entry point. Takes free-form natural language and crea
 
 ## Step 1: Load Skills
 
-1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
-3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before Step 9 writes anything.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+1. `${CLAUDE_PLUGIN_ROOT}/shared/skills/specs-first/SKILL.md` — the read order Step 4 runs, and its exit checklist.
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
+3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
+4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before Step 9 writes anything.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+8. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
 
 ## Step 2: Verify Prerequisites
 
 `specs/PROJECT.md` and `specs/MODULES.md` must exist. If missing: "Project foundation not found. Run `/m:setup` first." Stop.
 
-## Step 3: Load Spec Context
-
-- Project-level: `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/FEATURES.md` (skip missing optional files)
-- Per-feature: For every feature in FEATURES.md, read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` and `USE-CASES.md`. On very large projects launch one Explore subagent per domain.
-
-## Step 4: Research (optional)
-
-If `$ARGUMENTS` references `research/*.md`, load `${CLAUDE_PLUGIN_ROOT}/research/skills/headless-research/SKILL.md` and pass it the reference. Otherwise use the freeform input as the research query if the topic is new and non-obvious. Skip research for small edits.
-
-## Step 5: Collect Input
+## Step 3: Collect Input
 
 If `$ARGUMENTS` is empty, ask via AskUserQuestion: "Describe what to spec out — new features, new use cases for existing features, edits to existing features or UCs, or any combination."
 
 `/m:spec` is for creating or extending specs. For bug fixes ("spec says X, code does Y"), use `/m:fix`. For intentional behavior changes to a built UC, use `/m:change`. For extracting specs from existing code, use `/m:cover`.
 
+## Step 4: Load Spec Context
+
+Read the project-level files: `specs/PROJECT.md`, `specs/TECH-STACK.md`, `specs/ACTORS.md`, `specs/MODULES.md`, `specs/DOMAINS.md`, `specs/GLOSSARY.md` (skip missing optional files).
+
+Then run the `specs-first` skill in by-description mode over the input, through its exit checklist. Its frontmatter scan covers every feature at frontmatter cost, which Step 6's classification and the C13 sweep need. Only the candidates are read in full, and then their code. When the input names an exploration under `.molcajete/explorations/`, the skill reads it first.
+
+## Step 5: Research (optional)
+
+If `$ARGUMENTS` references `research/*.md`, load `${CLAUDE_PLUGIN_ROOT}/research/skills/headless-research/SKILL.md` and pass it the reference. Otherwise use the freeform input as the research query if the topic is new and non-obvious. Skip research for small edits.
+
 ## Step 6: Classify and Plan
 
 Parse the free-form text against the loaded context and classify each entity as a **new feature** (a capability not in any existing feature — resolve module + domain per the feature-authoring skill's Module and Domain Resolution), a **new use case** (a workflow belonging to an existing feature), a **modified feature** (adds or changes requirements), or a **modified use case** (adds or changes scenarios). Step 9 has the write mechanics for each.
 
-Then look sideways. Run the `resolution-gate` skill's `C13` category across every sibling spec loaded in Step 3: find each already-written FEAT or UC that the entities above contradict, rename, or retire. A UC whose scenario asserts a behavior this run redefines is contradicted, even when the user asked for no change to it. Add every contradicted UC to the **Modified UCs** list, with one line that names what contradicts it. Those UCs then flow through Step 9's **Modified Use Cases** mechanics and Step 10's changelog and status writes, unchanged. Never carry the contradiction forward as a note for a later command.
+Then look sideways. Run the `resolution-gate` skill's `C13` category across every sibling spec loaded in Step 4: find each already-written FEAT or UC that the entities above contradict, rename, or retire. A UC whose scenario asserts a behavior this run redefines is contradicted, even when the user asked for no change to it. Add every contradicted UC to the **Modified UCs** list, with one line that names what contradicts it. Those UCs then flow through Step 9's **Modified Use Cases** mechanics and Step 10's changelog and status writes, unchanged. Never carry the contradiction forward as a note for a later command.
 
 Present the full plan as a brief, then gate on it:
 

@@ -2,10 +2,11 @@
 name: plan-adaptation
 description: >-
   Lets /m:execute change the plan it is running instead of halting. Owns the trigger catalog
-  (the seven discoveries that used to stop a run), the two amendment operations (insert a task,
-  revise a task), the slot-and-run task ID scheme, the three-option gate, the adaptation budget,
-  and the audit trail. Calls plan-authoring to write task prose and spec-revision to edit specs.
-  Loaded by /m:execute only. /m:build does not load it — its standing rule
+  (the eight discoveries that used to stop a run — A8, the significant out-of-scope blocker,
+  arrives through the blocker-protocol skill's size test), the two amendment operations (insert
+  a task, revise a task), the slot-and-run task ID scheme, the three-option gate, the adaptation
+  budget, and the audit trail. Calls plan-authoring to write task prose and spec-revision to
+  edit specs. Loaded by /m:execute only. /m:build does not load it — its standing rule
   (choose, record, continue) replaces the amendment gate.
 ---
 
@@ -58,7 +59,7 @@ A dependency line written before an amendment therefore never needs editing, and
 
 ## The Trigger Catalog
 
-Seven discoveries reach this skill. Each names the `/m:execute` sub-step that detects it. All seven halt the run outright when this skill is not in play.
+Eight discoveries reach this skill. Each names the `/m:execute` sub-step that detects it. All eight halt the run outright when this skill is not in play. The `blocker-protocol` skill's size test runs before this catalog: a small out-of-scope issue is fixed in place and never reaches it.
 
 | ID | Trigger | Detected at | Spec edit | Produces | Skip |
 |----|---------|-------------|-----------|----------|------|
@@ -69,12 +70,15 @@ Seven discoveries reach this skill. Each names the `/m:execute` sub-step that de
 | A5 | Phase 2 cannot reach GREEN because a dependency behaves wrong | 8.6 | maybe | `fix` task | no |
 | A6 | Plan drift against provenance | 5.2 | no | revised task | yes |
 | A7 | A file invariant is broken — a file the task creates already exists | 8.2 | no | revised task | yes |
+| A8 | An out-of-scope issue blocks the task, and the `blocker-protocol` size test says significant | any 8.x | maybe | `fix` task, or `cover` + `fix` | no |
 
 **Spec edit** says whether the discovery can need a spec fact the specs do not carry. `maybe` means the diagnosis decides.
 
-**Skip** says whether the gate may offer "Note and continue". It is `no` wherever the current task cannot finish without the correction — offering to skip there would only produce a failed task two minutes later. A1 blocks on the coverage floor. A3, A4, and A5 block on a test that will not go green.
+**Skip** says whether the gate may offer "Note and continue". It is `no` wherever the current task cannot finish without the correction — offering to skip there would only produce a failed task two minutes later. A1 blocks on the coverage floor. A3, A4, A5, and A8 block on a test that will not go green.
 
 **Nothing outside this catalog is a trigger.** A discovery that fits no row is not an amendment — halt with the escalation the sub-step already defines. Growing the catalog is a change to this skill, not a judgment call inside a run.
+
+**Classify against A1 to A7 first.** A8 is the row for a significant out-of-scope issue no other row names: a broken shared module the task only reads, a test suite that fails for a reason the plan did not cause, a tool or platform limit. When the A8 draft needs more than `maxTasksPerAmendment` tasks, skip the ask. Write the escalation with the draft and the ready prompt, and halt.
 
 ## The Procedure
 
@@ -126,7 +130,9 @@ Write the brief as Markdown, in this order: what the build was doing when it fou
 - Header: "Amend plan"
 - Options: "Amend and continue" / "Note and continue" / "Stop here"
 
-Omit "Note and continue" when the catalog row's `Skip` is `no`. Recommend "Amend and continue" for every row except A6, where drift means the user may want to re-plan from the specs instead.
+Omit "Note and continue" when the catalog row's `Skip` is `no`. Recommend "Amend and continue" for every row except A6, where drift means the user may want to re-plan from the specs instead, and A8, where the `blocker-protocol` skill decides the recommendation.
+
+For A8 the brief and the question come from the `blocker-protocol` skill. The options stay "Amend and continue" / "Stop here".
 
 The discovery goes in the brief, never in `question` and never in an option `preview`. It is identical under every option, so it is shared context.
 
@@ -183,13 +189,15 @@ The user knows about the gap and chooses to finish the plan first. Record it so 
 
 3. **Continue the current task** from where it stopped. The task must still be able to finish, which is why this option is absent for a row whose `Skip` is `no`.
 
-The `## Known Issues` section is the only heading in a plan file that is not a task. It never carries a checkbox, and `/m:execute` never executes it.
+`## Known Issues` and `## Fixed in passing` are the only headings in a plan file that are not tasks. Neither carries a checkbox, and `/m:execute` never executes either. The `blocker-protocol` skill owns the second one.
 
 ### Stop here
 
 The original behavior. Write `.molcajete/escalations/{plan-id}-{T-NNN}.md` carrying the discovery, the drafted amendment, and the drafted spec edit, then halt the run per `/m:execute` Step 8's failure policy. Completed tasks keep their `[x]`, Step 9 still runs, and the user resolves it and re-runs `/m:execute {plan-id}`.
 
 Write the draft into the escalation file even though nothing applied it. The work of diagnosing was already done, and throwing it away makes the user do it again.
+
+For A8 the file also carries the ready prompt and the branch name from the `blocker-protocol` skill. This skill never creates that branch.
 
 ## Budget
 
@@ -224,5 +232,5 @@ In a headless run every trigger writes its escalation and halts, per the `resolu
 - It never writes production code or test code. It changes the plan; `/m:execute`'s own sub-steps then run the amended task through the full lifecycle, including the coverage gate, the mutation check, and the correctness review. An amended task gets no shortcut.
 - It never flips a checkbox. `/m:execute` 8.11 owns that.
 - It never edits the `**Provenance:**` line. That line is evidence of the plan's origin, and amending it would erase the only record drift detection reads.
-- It never removes a task, a `## Known Issues` line, or an audit line.
+- It never removes a task, a `## Known Issues` line, a `## Fixed in passing` line, or an audit line.
 - It never re-tags or renumbers a task whose checkbox reads `[x]`.

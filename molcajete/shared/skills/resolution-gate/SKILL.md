@@ -6,7 +6,7 @@ description: >-
   spec guard hook enforces, the difference between a hole and a decided default,
   the fixed-category analysis sweep, the relevance filter and the question cap,
   the batched ask, and the halt-and-escalate rule for headless runs. Loaded by
-  /m:spec, /m:cover, /m:fix, /m:change, and /m:plan.
+  /m:spec, /m:cover, /m:fix, /m:change, /m:plan, and /m:explore.
 ---
 
 # Resolution Gate
@@ -191,6 +191,7 @@ Each command sweeps the categories it owns:
 | `/m:fix` | C1, C3, C6, C7, C10, C12, and C13 — a fix can retire a scenario a sibling depends on |
 | `/m:change` | C1 to C9, C12, and C13 |
 | `/m:plan` | C4, C6, C7, C9, C10, and C13 — the spec settled the rest, and this is the last gate before code is written |
+| `/m:explore` | C1 to C13, resolved in the open interview instead of the batched ask |
 
 **C13 resolves differently from the other twelve.** The other categories find a missing answer, so
 they produce a question. A C13 finding is usually not a question. It is work in this run: the
@@ -226,6 +227,11 @@ If items survive round two, stop. Write only the entities whose items are all re
 every entity you did not write in the report, with the item that blocked it. Tell the user to
 run the command again on a narrower scope. Never write a partial entity, and never drop an item
 in silence.
+
+**`/m:explore` replaces G4.** It runs G1 to G3 to find the items and G5 over the file it
+writes. Its ask is the open interview the `asking-questions` skill defines, which has no round
+cap. The exploration lives under `.molcajete/explorations/`, outside the hook's reach, so G5 is
+the only check it gets. Run it.
 
 ## The Batched Ask
 

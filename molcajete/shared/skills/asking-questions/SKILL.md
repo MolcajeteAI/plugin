@@ -4,7 +4,8 @@ description: >-
   Rule governing how every user-facing question is presented — write a Markdown
   brief first, then ask with AskUserQuestion carrying only the decision. Covers
   what may never go inside the question field, field limits, the built-in escape
-  hatches, when a brief is not required, and when not to ask at all.
+  hatches, when a brief is not required, when not to ask at all, and the one
+  declared carve-out, the open interview.
 ---
 
 # Asking Questions
@@ -121,6 +122,22 @@ When in doubt, write the brief. The cost of an unnecessary brief is a few second
 - **When the answer is inferable.** If only one module exists, use it. Detect rather than ask.
 
 Reports, usage messages, progress summaries, and briefs are **not** questions. Emitting them as plain text is correct and required — the two-move rule governs questions only.
+
+## The Open Interview
+
+A command may declare an open interview in place of the two-move rule. `/m:explore` declares one. No other command does today, and a command that does not declare it follows the two-move rule everywhere.
+
+An open interview is a conversation in your response text. There is no `AskUserQuestion` call.
+
+- Ask in prose, as numbered questions. At most 5 per round. Give each question the context the user needs to answer it — one to three sentences — and your recommended answer when you have one.
+- The user answers in chat, in any form. The user may ask a question back. Answer it before you ask again.
+- Run as many rounds as alignment needs. There is no round cap. Stop when every open item has an answer or a recorded deferral.
+- Before you write anything, restate the agreement once, as a short list. That restatement is the interview's confirmation. It is not a question, and it does not wait for a reply.
+- Never mix modes. A decision the interview is working through never also appears in an `AskUserQuestion` call.
+
+Why: the decision widget carries a decision with 2-4 labels. An exploration has neither — the user does not know the options yet, and the command is finding them. Prose is the only container that fits.
+
+An open interview cannot run headless. The declaring command says what it does then.
 
 ## Authoring Format
 

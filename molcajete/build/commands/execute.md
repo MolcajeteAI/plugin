@@ -88,14 +88,15 @@ Read:
 
 1. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — plan file format, task shape, and Test File Convention.
 2. `${CLAUDE_PLUGIN_ROOT}/build/skills/plan-adaptation/SKILL.md` — the trigger catalog, the slot-and-run task ID scheme, the amendment gate, and the budget. Every STOP in Step 8 routes through this skill before it halts.
-3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer / Validator / Reviewer roles, runner inference, outer-edge mocking, coverage gate.
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC status and roll up Feature.
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — **Immutability** section. This command writes `SC-XXXX` IDs into task `Covers` lists and into test-file comments. It copies existing IDs verbatim and never generates, renumbers, or alters one. Task tags (`T-NNN`) are not spec IDs and are re-tagged by the `plan-adaptation` skill under its own rules.
-7. **Only when `--commit` is set** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/git-committing/SKILL.md` — message format, style detection, the spec-references block, and the no-attribution rule. A run without the modifier does not read it.
-8. **Only when an amendment needs a spec edit** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md`. Load them at the moment the `plan-adaptation` skill's step 3 runs, not up front — most runs never edit a spec.
-9. **Only when Step 11 has a legacy-coverage list to offer** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md` — the labels, the label creation that must run first, the batched offer, and the issue body with its fix prompt. A run where every touched file met its floor never loads it.
-10. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, correctness review, and refactor in this command must respect these principles.
+3. `${CLAUDE_PLUGIN_ROOT}/build/skills/blocker-protocol/SKILL.md` — the size test that runs before the trigger catalog, the fixed-in-passing record, and the A8 brief.
+4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer / Validator / Reviewer roles, runner inference, outer-edge mocking, coverage gate.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC status and roll up Feature.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — **Immutability** section. This command writes `SC-XXXX` IDs into task `Covers` lists and into test-file comments. It copies existing IDs verbatim and never generates, renumbers, or alters one. Task tags (`T-NNN`) are not spec IDs and are re-tagged by the `plan-adaptation` skill under its own rules.
+8. **Only when `--commit` is set** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/git-committing/SKILL.md` — message format, style detection, the spec-references block, and the no-attribution rule. A run without the modifier does not read it.
+9. **Only when an amendment needs a spec edit** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md`. Load them at the moment the `plan-adaptation` skill's step 3 runs, not up front — most runs never edit a spec.
+10. **Only when Step 11 has a legacy-coverage list to offer** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md` — the labels, the label creation that must run first, the batched offer, and the issue body with its fix prompt. A run where every touched file met its floor never loads it.
+11. **Engineering principles.** Read `.claude/rules/principles.md` from the host project — this is the operative version of the principles. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning to the user: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Every code edit, test scaffold, correctness review, and refactor in this command must respect these principles.
 
 ## Step 3: Verify Prerequisites
 
@@ -119,7 +120,7 @@ Read:
    - **The `**Prerequisites:**` line** — work that must be done outside this plan before any task runs. `—` means none. A plan written before this field existed carries no such line; treat a missing line as `—`. Carry the parsed value to Step 6. Do not act on it here.
    - **The `**Provenance:**` line** — per UC, the spec `version` and the changelog entry timestamps this plan was written against. A plan written before this field existed carries no such line; record that fact and carry it to 5.2. Do not act on it here.
    - **Each task** — every `## [ ] T-NNN — {outcome}` (or `## [x] T-NNN`) heading, where the tag is `T-NNN` or `T-NNN.M`, its `**Kind:**` value, its `**Covers:**` list, its `**Depends on:**` list, and the task prose beneath it up to the next `## ` heading. A task with no `**Kind:**` line predates the field; apply the missing-field rule from the header.
-3. Build an in-memory task index: `tag → { outcome, kind, covers, depends_on, done (checkbox state), prose }`, keeping file order. A `## Known Issues` heading is not a task — a prior run recorded it, and this command never executes it. Ignore any `## ` heading that carries no checkbox.
+3. Build an in-memory task index: `tag → { outcome, kind, covers, depends_on, done (checkbox state), prose }`, keeping file order. A `## Known Issues` or `## Fixed in passing` heading is not a task — a prior run recorded it, and this command never executes it. Ignore any `## ` heading that carries no checkbox.
 4. Select the tasks to execute:
    - **`$ARGUMENTS` carries no task ID** → mark every task whose checkbox is `[ ]`, in `T-NNN` ascending order. A task already `[x]` is skipped, so a re-run resumes the plan where the last run stopped. If no task is `[ ]`, tell the user "Plan `{plan-id}` has no unfinished tasks — nothing to do." and stop.
    - **`$ARGUMENTS` carries one or more task IDs** → for each one:
@@ -235,6 +236,8 @@ For each task marked in Step 4, run it through the lifecycle. **Process tasks in
 **Re-read the task list after every amendment.** An amendment inserts tasks and re-tags others, so the in-memory index from Step 4 is stale the moment one applies. Re-parse the plan file, then continue from the first `[ ]` task in file order.
 
 **A discovery in the trigger catalog is not a failure.** Before any STOP below halts the run, run the `plan-adaptation` procedure for its trigger. The escalation those sub-steps describe is what happens on "Stop here", when the budget is spent, or in a headless run — it is no longer the only outcome.
+
+**An out-of-scope issue goes through the size test first.** Before you classify a discovery against the catalog, run the `blocker-protocol` skill's size test on it. Small: fix it inside this task, append the record under `## Fixed in passing` at the foot of the plan file, and continue — no gate, no amendment. Significant: it is **trigger A8**; run the `plan-adaptation` procedure with the blocker-protocol brief. The task's own failing test is never out of scope; it follows the sub-steps below.
 
 **Everything else halts the rest of the run.** When a task halts — on an unmet dependency (8.2), on a discovery outside the catalog, or on any escalation the sub-steps below define — stop dispatching the remaining tasks and go to Step 9. Never skip past a failed task to the next one. The completed tasks keep their `[x]`, the rest stay `[ ]`, and Step 9 still runs — so the user fixes the escalation and re-runs `/m:execute {plan-id}` to resume.
 
@@ -397,6 +400,7 @@ Only reached when 8.9's evidence was emitted complete AND 8.10 returned `correct
 4. **Commit the task.** Only when `--commit` is set. Stage an explicit list of paths — never `git add .` and never `git add -A`, so unrelated work already in the tree stays out. Stage exactly:
    - the production files this task created or modified,
    - its test file,
+   - any file a fix in passing changed during this task,
    - any file deleted by a `migrate` disposition in item 2,
    - `specs/plans/<plan-id>.md`, carrying this task's `[x]`,
    - the spec files written in item 3.
@@ -504,6 +508,10 @@ This is the shape. Every section below the task table is conditional — print i
 
 - `T-004` · A2 — `src/auth/token.ts` has no canonical integration coverage. Logged on `UC-3Z2L` as `pending`.
 
+**Fixed in passing**
+
+- during T-002 — `src/shared/clock.ts`: the test fixture froze the clock in local time, not UTC. 1 file, no spec.
+
 **Plan drift**
 
 - `UC-3Z2L` — spec is `v3`, plan was written against `v2`.
@@ -535,6 +543,8 @@ Plan `20260820T1430-otp-expiry` — 2 of 3 tasks complete.
 **Amendments** prints when any amendment applied. One row per amendment, in the order they happened: the task that was running, the trigger ID, and what changed — tasks inserted or revised, tags re-assigned, and any spec edit. The heading carries the count against `maxAmendments`, so the user sees how close the run came to the budget. **This section is exempt from the output budget** — the plan the user approved at Step 6 is not the plan that ran, and every difference belongs here.
 
 **Known issues** prints when the user answered "Note and continue" at any gate. One line per issue: the task that hit it, the trigger ID, the reason, and the UC the `pending` changelog entry landed on. Close the section by naming the command that picks them up: `/m:plan <UC-XXXX>`. Also exempt from the output budget.
+
+**Fixed in passing** prints when the `blocker-protocol` size test found a small out-of-scope issue and the task fixed it. One line per fix, verbatim from the plan file's `## Fixed in passing` section. Exempt from the output budget.
 
 **Plan drift** from 5.2 lists every signal the provenance check found, one line each. **This section is exempt from the output budget** — a drift the report truncates is a drift the user never acts on. When the plan carried no `**Provenance:**` line, replace the list with the single sentence 5.2 defines. Omit the section only when the check ran and found nothing.
 

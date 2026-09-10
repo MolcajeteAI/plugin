@@ -26,15 +26,16 @@ decision step, its `command` token and `reason` policy, and its hand-off line.
 
 Load these after this skill:
 
-1. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
-2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
-3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before any spec edit is applied.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
-7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
-8. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used by **Producing the Plan** below.
-9. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in **Producing the Plan** applies these.
+1. `${CLAUDE_PLUGIN_ROOT}/shared/skills/specs-first/SKILL.md` — the read order **Loading the Referenced Specs** runs.
+2. `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`
+3. `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md`
+4. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md`
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep and the batched ask that run before any spec edit is applied.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md`
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — CHANGELOG mechanics only.
+8. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — how to write UC and Feature status directly.
+9. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the plan format and the **Producing a Plan** procedure used by **Producing the Plan** below.
+10. **Engineering principles.** Read `.claude/rules/principles.md` from the host project (fall back to `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` with a one-line warning if missing). The architecture pass in **Producing the Plan** applies these.
 
 ## Prerequisites
 
@@ -44,11 +45,16 @@ unresolved IDs.
 
 ## Loading the Referenced Specs
 
-For each FEAT/UC ID:
+Run the `specs-first` skill in its **by-ID mode** over every FEAT/UC ID in `$ARGUMENTS`: the
+feature index, the referenced use cases, each feature's `ARCHITECTURE.md` and `REQUIREMENTS.md`,
+then the code the Code Map names and the code around it. Two additions for a revision:
 
-- Resolve the spec path. Read `specs/features/{module}/FEAT-XXXX-{slug}/REQUIREMENTS.md` (and `USE-CASES.md`) for FEAT IDs. Read `specs/features/{module}/FEAT-XXXX-{slug}/UC-XXXX-{slug}.md` for UC IDs.
-- Read the feature's `ARCHITECTURE.md`.
-- Read the UC's `CHANGELOG.md` (for context on prior changes).
+- Read each UC's `CHANGELOG.md` — the prior changes and their reasons.
+- Read each UC's canonical integration test, at the `plan-authoring` skill's Test File Convention
+  path, when it exists. A revision that changes or retires a scenario changes that test.
+
+Finish the skill's exit checklist before the command drafts anything. A diagnosis or a spec edit
+made from the spec prose alone is a guess about the code.
 
 ## Resolving UC Module-Instances
 

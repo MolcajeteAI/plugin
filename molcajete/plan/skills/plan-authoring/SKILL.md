@@ -42,8 +42,8 @@ specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md
 ## Plan File Structure
 
 A plan has a title, a one- or two-line summary, a `**Specs:**` line, a `**Prerequisites:**`
-line, a `**Provenance:**` line, an optional short context paragraph, and then one
-`## [ ] T-NNN` section per task.
+line, a `**Provenance:**` line, a `**Configuration changes:**` block, an optional short context
+paragraph, and then one `## [ ] T-NNN` section per task.
 
 ```markdown
 # Plan: {Descriptive Name}
@@ -53,6 +53,7 @@ line, a `**Provenance:**` line, an optional short context paragraph, and then on
 **Specs:** FEAT-XXXX-{slug} · UC-XXXX-{slug} · SC-XXXX, SC-YYYY  ·  **Mode:** implement | cover | mixed
 **Prerequisites:** —
 **Provenance:** UC-XXXX v{n} ({entry-timestamp}) · UC-YYYY v{n} ({entry-timestamp})
+**Configuration changes:** —
 
 {Optional short paragraph of shared context — what we're building and the slice of the
 architecture it touches. Reference the spec files once here (`specs/features/{module}/
@@ -107,12 +108,44 @@ plan is either a task in this plan, or a sign that the spec is not finished. If 
 without work that is not a task in it, the plan is not ready to be written: resolve the work first
 under the `resolution-gate` skill — category `C13` — then write the plan.
 
+**A prerequisite an `/m:explore` document names is not this line's value either.** It lands on
+its own branch before this plan is written.
+
 Write one clause per item. Name the file and the canonical test path it needs:
 
 ```markdown
 **Prerequisites:** Canonical integration coverage for `src/auth/session.ts` and
 `src/auth/token.ts` (`tests/FEAT-0A1b-auth/UC-0KTg-sign-in.test.ts`)
 ```
+
+### The Configuration changes block
+
+The `**Configuration changes:**` block is **mandatory and always present**. It names every
+setting the plan adds, changes, or removes, or `—` when there is none. When it is not `—`, the
+label stands alone on its line and a table follows it:
+
+```markdown
+**Configuration changes:**
+
+| Setting | Location | Change |
+|---|---|---|
+| `otp.ttlMinutes` | `config/auth.yaml` | new · default `10` · read by T-003 |
+| `session.lifetimeDays` | `config/auth.yaml` | `30` → `7` · T-002 |
+```
+
+Three rules bind it:
+
+1. **Understand the existing configuration before you add any.** The `specs-first` skill's
+   configuration step (S6) finds the sets that exist. P2 reads that inventory before it designs.
+2. **Extend an existing set over a near-duplicate.** A new setting joins the set that already
+   governs the nearest behavior. A new set exists only when no existing set has the same reader,
+   and the task prose records that decision with its reason.
+3. **The block is an index, not the contract.** The task that needs a setting names it in its
+   own prose, with its location and its default. The block lets a reader see every setting the
+   plan moves without reading every task.
+
+P2 drafts it. P6 writes it. Nothing else edits it. An exploration written by `/m:explore` may
+list the same settings; the plan re-derives them from its tasks and never copies them.
 
 ### The Provenance line
 
@@ -178,8 +211,8 @@ following unambiguous — written as flowing explanation, not as labeled lists:
 1. **What the increment makes real, end to end** — the behavior a user or caller observes.
 2. **The files it creates and modifies**, named inline as you explain the work ("the rule lands
    in `server/profile/setName.ts`, wired through `server/profile/router.ts`, and the `NameStep`
-   in `web/onboarding/` calls it"). Build derives its edit set and its mutation targets from
-   these.
+   in `web/onboarding/` calls it"), and the settings it adds or changes, named inline with
+   their location and default. Build derives its edit set and its mutation targets from these.
 3. **The entry point / driving port** the behavior is reached through (e.g. an HTTP route, a
    GraphQL field, an event handler, a service call). The driving-port kind must be one listed in
    the module's `Driving Ports` column in `specs/MODULES.md`.
@@ -319,6 +352,9 @@ Run the pass over the kinds present, not over the mode label:
   `Driving Ports`), adapters, domain boundaries, and cross-cutting work (migrations, shared
   adapters, config); wire through DI. Reflect the design into each feature's `ARCHITECTURE.md`
   per the architecture skill's Table Filling rules.
+- **Configuration** — read the inventory the `specs-first` skill's S6 step produced. Place
+  every new setting per the three rules of The Configuration changes block. Draft the block
+  now; P6 writes it.
 - **For `cover` work** — skip design; reconstruct the shipped structure with the
   reverse-engineering skill and ensure each `ARCHITECTURE.md` reflects what actually ships.
 - **When both are present** — run the cover pass first, so the current design is the baseline,
@@ -429,7 +465,8 @@ This step never moves or deletes files.
 **P6 — Write the plan.** Pick a kebab-case slug (max 40 chars) from the entries' reasons. Write a
 **new** single file `specs/plans/<YYYYMMDDTHHMMSS>-<slug>.md` (UTC timestamp to the second) per the
 Plan File Structure above — summary, `**Specs:**` line (with the mode), `**Prerequisites:**` line,
-`**Provenance:**` line, optional context paragraph, and one `## [ ] T-NNN` section per task.
+`**Provenance:**` line, `**Configuration changes:**` block, optional context paragraph, and one
+`## [ ] T-NNN` section per task.
 
 Build the `**Provenance:**` line here, per The Provenance line above. For every UC in scope, read
 the `version` from the frontmatter of the `UC-XXXX-{slug}.md` the caller already loaded, and list
@@ -458,6 +495,7 @@ of one behavior, not a layer.
 **Specs:** FEAT-0Fy0-onboarding · UC-0KTg-collect-identity · SC-0KTg-01, SC-0KTg-02, SC-0KTg-03  ·  **Mode:** implement
 **Prerequisites:** —
 **Provenance:** UC-0KTg v1 (20260727T142140)
+**Configuration changes:** —
 
 We're building against the `patient` module (`specs/features/patient/FEAT-0Fy0-onboarding/`).
 The onboarding flow is a client wizard backed by an HTTP profile service; persistence is the

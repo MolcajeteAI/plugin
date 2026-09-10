@@ -10,6 +10,8 @@ allowed-tools:
   - Grep
   - Bash
   - AskUserQuestion
+  - WebSearch
+  - WebFetch
 ---
 
 # Fix Command
@@ -49,7 +51,7 @@ Apply the `spec-revision` skill's **Prerequisites** gate. Refuse and stop if it 
 
 ## Step 4: Load the Referenced Specs
 
-Follow the `spec-revision` skill's **Loading the Referenced Specs**.
+Follow the `spec-revision` skill's **Loading the Referenced Specs** — specs first, then the code the Code Map names.
 
 ## Step 5: Resolve UC Module-Instances
 
@@ -62,6 +64,8 @@ Diagnosis, spec edits, and log entries in the next steps iterate over the confir
 ## Step 6: Diagnose
 
 For each module-instance in each target set, compare the description in `$ARGUMENTS` against that module-instance's spec. Pick exactly one diagnosis **per module-instance**, per the `spec-revision` skill's **Diagnosing a Defect** table — it defines the three diagnoses, the spec edit each one requires in Step 7, the task `**Kind:**` each one produces, and the rule that the diagnosis may differ per module-instance.
+
+Read the code path Step 4 opened before you pick a diagnosis. **Spec correct, code wrong** needs the line that is wrong. **Spec silent** needs the code that handles the case with no scenario behind it. A diagnosis made from the spec prose alone cannot tell the two apart. Name the `file:line` in the brief.
 
 Surface the diagnosis(es) one prompt per affected module-instance. The diagnosis is the brief:
 

@@ -11,6 +11,8 @@ allowed-tools:
   - Bash
   - Agent
   - AskUserQuestion
+  - WebSearch
+  - WebFetch
 ---
 
 # Build Command
@@ -48,7 +50,9 @@ This rule holds through every step below.
 
 A recorded decision is the deliverable. A blocked run is not. When a decision carries a real cost, state the cost in the same paragraph.
 
-This command does not load the `plan-adaptation` skill. That skill's amendment gate asks the user a question mid-run, and this command never asks after Step 4. The standing rule replaces the gate: amend your own task sections directly, and record the amendment as a decision.
+**One exception: an out-of-scope blocker.** When the run meets an issue outside the request — shipped code that is broken, a test that fails for a reason the request did not cause, a platform limit — the `blocker-protocol` skill decides. A small issue is fixed in place and recorded under Decisions. A significant one stops the run for one question, the only question this command asks after Step 4. The protocol's size test draws that line, not your judgment in the moment, and the run never creates a branch.
+
+This command does not load the `plan-adaptation` skill. That skill's amendment gate asks the user a question mid-run, and this command never asks after Step 4. The standing rule replaces the gate: amend your own task sections directly, and record the amendment as a decision. It loads `blocker-protocol` instead, which owns the one mid-run question. On "Amend and continue" this command reads plan-adaptation's **Task IDs: Slots and Runs** section for the tag, and nothing else from it.
 
 **Questions:** every substantive question is two moves — write the brief, then ask. Read `${CLAUDE_PLUGIN_ROOT}/shared/skills/asking-questions/SKILL.md` before the first question.
 
@@ -58,21 +62,23 @@ This command does not load the `plan-adaptation` skill. That skill's amendment g
 
 Read now:
 
-1. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the task shape (`**Kind:**`, `**Covers:**`, `**Depends on:**`), task ordering, and the Test File Convention. The change-request file embeds this format.
-2. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — every new ID comes from the shared script; an ID never changes.
-3. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — changelog mechanics. This command performs all three permitted mutations.
-4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — UC status writes and the Feature roll-up.
-5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep Step 4 folds into the interview.
-6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer / Validator / Reviewer roles, Runner Inference, outer-edge mocking, the scoped coverage gate.
-7. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md` — the ARCHITECTURE.md tables this run must keep current, and the vocabulary the change report reuses.
-8. **Engineering principles.** Read `.claude/rules/principles.md` from the host project. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Also read every other file under the host `.claude/rules/`. Host rules outrank anything a skill says.
+1. `${CLAUDE_PLUGIN_ROOT}/shared/skills/specs-first/SKILL.md` — the read order Step 3 runs, and its exit checklist.
+2. `${CLAUDE_PLUGIN_ROOT}/build/skills/blocker-protocol/SKILL.md` — the size test and the one mid-run question the standing rule allows.
+3. `${CLAUDE_PLUGIN_ROOT}/plan/skills/plan-authoring/SKILL.md` — the task shape (`**Kind:**`, `**Covers:**`, `**Depends on:**`), task ordering, the Configuration changes block, and the Test File Convention. The change-request file embeds this format.
+4. `${CLAUDE_PLUGIN_ROOT}/shared/skills/id-generation/SKILL.md` — every new ID comes from the shared script; an ID never changes.
+5. `${CLAUDE_PLUGIN_ROOT}/shared/skills/uc-log/SKILL.md` — changelog mechanics. This command performs all three permitted mutations.
+6. `${CLAUDE_PLUGIN_ROOT}/shared/skills/status-rollup/SKILL.md` — UC status writes and the Feature roll-up.
+7. `${CLAUDE_PLUGIN_ROOT}/shared/skills/resolution-gate/SKILL.md` — the analysis sweep Step 4 folds into the interview.
+8. `${CLAUDE_PLUGIN_ROOT}/shared/skills/testing/SKILL.md` — Implementer / Validator / Reviewer roles, Runner Inference, outer-edge mocking, the scoped coverage gate.
+9. `${CLAUDE_PLUGIN_ROOT}/spec/skills/architecture/SKILL.md` — the ARCHITECTURE.md tables this run must keep current, and the vocabulary the change report reuses.
+10. **Engineering principles.** Read `.claude/rules/principles.md` from the host project. If the host file is missing, read `${CLAUDE_PLUGIN_ROOT}/shared/skills/principles/SKILL.md` instead and emit a one-line warning: "No host principles file found at `.claude/rules/principles.md`. Using plugin defaults. Run `/m:setup` to generate the host file." Also read every other file under the host `.claude/rules/`. Host rules outrank anything a skill says.
 
 Read later, only when needed:
 
-9. **When any part is an Addition** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`.
-10. **When any part is a Change or a Fix** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the three-way diagnosis and the spec-edit application rules.
-11. **At Step 9** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` (the walk template that is the report body) and `${CLAUDE_PLUGIN_ROOT}/build/skills/change-report/SKILL.md` (the report tail).
-12. **When Step 8 produces a legacy-coverage list** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md`.
+11. **When any part is an Addition** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/feature-authoring/SKILL.md` and `${CLAUDE_PLUGIN_ROOT}/spec/skills/usecase-authoring/SKILL.md`.
+12. **When any part is a Change or a Fix** — `${CLAUDE_PLUGIN_ROOT}/spec/skills/spec-revision/SKILL.md` — the three-way diagnosis and the spec-edit application rules.
+13. **At Step 9** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/change-description/SKILL.md` (the walk template that is the report body) and `${CLAUDE_PLUGIN_ROOT}/build/skills/change-report/SKILL.md` (the report tail).
+14. **When Step 8 produces a legacy-coverage list** — `${CLAUDE_PLUGIN_ROOT}/shared/skills/github-issues/SKILL.md`.
 
 Prerequisites: `specs/PROJECT.md`, `specs/MODULES.md`, and `specs/TECH-STACK.md` must exist and be read in full now. If any is missing: "Project foundation not found. Run `/m:setup` first." Stop.
 
@@ -93,10 +99,10 @@ List `.molcajete/change-request/*.md`. Read the YAML frontmatter of each file fo
 
 Read before you ask, so Step 4's questions are about decisions and not about the code.
 
-1. **The features and use cases the request touches.** Search `specs/` — `FEATURES.md`, then each candidate feature's `REQUIREMENTS.md`, `USE-CASES.md`, every in-scope `UC-*.md`, and `ARCHITECTURE.md`.
+1. **Specs first, then code.** Run the `specs-first` skill — by-description mode, or by-ID mode when the request names IDs — through its exit checklist. When `$ARGUMENTS` names an exploration under `.molcajete/explorations/`, read it first: it holds the features, the prerequisites, and the decisions the user aligned on, and Step 4 asks only what it left open.
 2. **The kind of work each part needs**, per the table above. For a suspected defect, run the three-way diagnosis the `spec-revision` skill defines: the spec is right and the code is wrong, the spec is silent, or the spec itself is wrong. The first two produce a `fix`. The third produces a `change`.
-3. **The code that serves those use cases.** Follow each feature's Code Map. Read the files it names.
-4. **What else reads the code you are about to change.** A shared module, a configuration key, or an event may serve another feature. Name that feature. If your change reaches its requirements, amend those too, and log the change on its use cases.
+3. **What else reads the code you are about to change.** The exit checklist's fourth item names it: a shared module, a configuration key, or an event may serve another feature. Name that feature. If your change reaches its requirements, amend those too, and log the change on its use cases.
+4. **The configuration that governs it.** From the skill's S6 step: the set, its location, and the settings the touched code reads. The change-request file's `**Configuration changes:**` block comes from here, under the `plan-authoring` rules — extend the existing set, never a near-duplicate.
 
 ## Step 4: Interview Once, Then Confirm
 
@@ -148,6 +154,7 @@ updated: <timestamp>
 
 **Specs:** <every FEAT-, UC-, and SC- in scope> · **Mode:** <label>
 **Prerequisites:** <per plan-authoring>
+**Configuration changes:** <per plan-authoring — `—`, or the Setting / Location / Change table>
 
 ## Progress
 
@@ -211,6 +218,8 @@ Follow the task order. The host rules and the loaded principles govern every edi
 
 The standing rule bites hardest here. A shape the plan did not settle is a fork: a reused module or a second one, a scope, a name. Choose it and record it as you go, not at the end.
 
+A failure in code this request does not own goes through the `blocker-protocol` skill's size test before anything else. Small: fix it and record it under Decisions. Significant: write the brief, ask the one question, then follow the chosen option's path per that skill.
+
 Then the tests, per the `testing` skill: integration tests exclusively, outer-edge mocking, names that read as sentences, IDs in comments, exact pinned values, the test path from plan-authoring's Test File Convention. Two rules this command owns:
 
 - **A fix starts with a failing test that reproduces the defect.** Write it, watch it fail, then correct the code.
@@ -225,6 +234,8 @@ Resolve the runner per the `testing` skill's Runner Inference from `specs/TECH-S
 Coverage is scoped per the `testing` skill: a new file in full, the changed lines of an existing file. A pre-existing file below the floor is legacy coverage — report it, never block on it, and offer the GitHub issue per the `github-issues` skill.
 
 **Before you blame your change for a failure, prove the failure is yours.** Save the working tree to the scratchpad, stash your changes, run the failing test against `HEAD`, then restore and verify the restore byte for byte. Report a pre-existing failure as pre-existing.
+
+A pre-existing failure in a test this request did not touch is an out-of-scope issue. Run the `blocker-protocol` skill's size test on it, and report it as a fix in passing or as a blocker. Never leave it in place without a decision.
 
 Loop until the tests you wrote pass and the linters the project configures are clean. Then close the books:
 
