@@ -1,7 +1,7 @@
 ---
 module: molcajete-ai
 purpose: Spec-driven development framework for Claude Code — EARS requirements, use cases with explicit side effects, prose plans, and automated build dispatch
-last-updated: 2026-09-08
+last-updated: 2026-09-10
 ---
 
 # Molcajete.ai
@@ -31,12 +31,13 @@ The framework ships two components:
 Feature idea → EARS Requirements → Use Cases → Plan (vertical tasks) → Build
 ```
 
-1. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
-2. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build.
-3. **Build** — `/m:execute` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass). The gate holds a new file to the threshold in full, and an existing file only on the lines the task wrote; a file that was already under the threshold is reported and offered as a GitHub issue, never used to block the task. `/m:build` runs the whole lifecycle end to end from one request: one interview, then an autonomous pass through plan, specs, code, tests, and scoped validation, closed by a before/after change report.
-4. **Review** — A spec-traceable review surface, scoped to the change and nothing around it. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue itself, and hands you parallel-ready `/m:build` prompts for what must move. Both offer a GitHub issue for anything they meet outside the change. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
-5. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
-6. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
+1. **Explore** — `/m:explore` sizes a change before anything is written: specs first, then code, then an open interview in prose, closed by an exploration document under `.molcajete/explorations/` that walks the change like a pull request body — the true prerequisites, then every change with its behavior, screen, flow, interfaces, data, and configuration, before and after. `/m:build`, `/m:spec`, `/m:change`, and `/m:fix` read it first.
+2. **Spec** — Define features with EARS-syntax requirements, measurable fit criteria, and explicit non-goals. Break them into use cases with flat scenario blocks, side effects, and non-side-effects. `/m:spec` (new features) and `/m:cover` (reverse-extract from existing code) write spec prose and log pending work for a separate planning step.
+3. **Plan** — A single prose plan file (`specs/plans/<timestamp>-<slug>.md`) decomposes the change into ordered, vertical, working-software tasks — each a `## [ ] T-NNN` checkbox delivering one behavior across all its layers. `/m:plan` writes it for the spec/cover flows; **`/m:fix` and `/m:change` produce their own plan in the same invocation** (diagnose or edit the spec, then plan) and hand straight to build. Every plan carries a Configuration changes block, so a setting is never added without naming the set it extends.
+4. **Build** — `/m:execute` executes each task through a TDD red/green protocol, a mutation check, a coverage gate, and a correctness review that verifies the implementation actually satisfies the spec (not just that its own tests pass). The gate holds a new file to the threshold in full, and an existing file only on the lines the task wrote; a file that was already under the threshold is reported and offered as a GitHub issue, never used to block the task. `/m:build` runs the whole lifecycle end to end from one request: one interview, then an autonomous pass through plan, specs, code, tests, and scoped validation, closed by a before/after change report. Both follow one blocker protocol for an issue outside the plan: a small one is fixed in place and recorded, a significant one stops for one question, and neither ever creates a branch.
+5. **Review** — A spec-traceable review surface, scoped to the change and nothing around it. `/m:review` writes a severity-scored review to a file. `/m:preflight` walks your own change set before you open a PR, decides each issue itself, and hands you parallel-ready `/m:build` prompts for what must move. Both offer a GitHub issue for anything they meet outside the change. `/m:walkthrough` gives a guided, hierarchical tour of a change set.
+6. **Research** — Deep research with tech stack context, parallel agents, and long-form output.
+7. **Query** — Read the spec tree back: `/m:desc` explains an ID, `/m:ids` finds the IDs behind a capability, and `/m:prompt` turns a freeform request into the command that delivers it.
 
 ### Why Specs?
 
@@ -126,6 +127,7 @@ Three read-only commands query the spec tree instead of writing to it:
 
 | Command | Description |
 |---------|-------------|
+| `/m:explore` | Size a change or a fix before it is specified — specs first, then code, then a prose interview; writes an exploration document under `.molcajete/explorations/`, never a spec |
 | `/m:plan` | Decompose pending spec work into a single prose plan of vertical, working-software tasks under `specs/plans/` |
 
 ### Build Module
@@ -180,6 +182,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | plan | `plan-authoring` | Prose plan format, vertical task shape, filing under specs/plans, Test File Convention, Producing-a-Plan procedure |
 | build | `change-report` | The `/m:build` change report — the change-description walk at full depth plus the report tail: new IDs, interview decisions, Done / Not done / Next step |
 | build | `plan-adaptation` | Mid-build plan change — trigger catalog, insert/revise operations, the three-option gate, and the audit trail |
+| build | `blocker-protocol` | An issue outside the plan, mid-run — the size test, the fix-in-passing record, the two-option blocker question, never a branch |
 | review | `change-review` | Change-set resolution + base detection, diff→FEAT/UC/SC mapping, the four review questions and the admission test, rubric and severity, observations and their GitHub issue offer |
 | setup | `setup` | One-shot project initialization, module detection, host-rule generation |
 | research | `research-methods` | Parallel research fan-out (web docs, community, libraries, local code) with source evaluation |
@@ -187,6 +190,7 @@ Skills are reusable knowledge documents loaded by commands at runtime. Each enco
 | shared | `asking-questions` | Question presentation — markdown brief first, then a short AskUserQuestion carrying only the decision |
 | shared | `change-description` | The universal change template — the walk: reason, spec deltas, UI sketches, surface items, flow pairs, verdict, at three depths (full / orientation / glance) |
 | shared | `resolution-gate` | Analyze, then ask, then write — no unresolved item ever reaches a generated spec or plan |
+| shared | `specs-first` | The read order every entry point runs — features, use cases, architecture, requirements, then code; the configuration inventory; the exit checklist |
 | shared | `principles` | Engineering principles — integration-tests-as-contract, hexagonal, DI, coverage floor, craft |
 | shared | `testing` | Test-first loop — Implementer / Validator / Reviewer roles, outer-edge mocking, coverage scoped to a new file in full and to an existing file's changed lines |
 | shared | `status-rollup` | Status enum (pending / dirty / implemented), UC-as-leaf, Feature roll-up |
@@ -232,6 +236,7 @@ Commands that write outside the spec tree use a `.molcajete/` working directory:
 ```
 .molcajete/
 ├── research/       # Context briefs written before spec-writing
+├── explorations/   # Pre-planning sizing documents from /m:explore
 ├── prompts/        # Ready-to-paste commands from /m:prompt and /m:preflight
 ├── change-request/ # Per-run plan + decision log + progress + report from /m:build
 └── escalations/    # Unresolved-item reports from headless runs
@@ -258,10 +263,10 @@ molcajete/
 ├── spec/                  # Spec module — spec/change/fix/cover + authoring/architecture/reverse-engineering skills
 │   ├── commands/
 │   └── skills/
-├── plan/                  # Plan module — /m:plan + plan-authoring skill
+├── plan/                  # Plan module — /m:explore + /m:plan + plan-authoring skill
 │   ├── commands/
 │   └── skills/
-├── build/                 # Build module — /m:build (end-to-end run) + /m:execute (TDD + mutation + coverage + correctness review) + change-report and plan-adaptation skills
+├── build/                 # Build module — /m:build (end-to-end run) + /m:execute (TDD + mutation + coverage + correctness review) + change-report, plan-adaptation, and blocker-protocol skills
 │   ├── commands/
 │   └── skills/
 ├── review/                # Review module — /m:review, /m:preflight, /m:walkthrough + change-review skill
@@ -273,7 +278,7 @@ molcajete/
 ├── research/              # Research module — /m:research + research skills
 │   ├── commands/
 │   └── skills/
-└── shared/                # Shared command (/m:doc) + cross-module skills (asking-questions, principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation, writing-style, output-economy)
+└── shared/                # Shared command (/m:doc) + cross-module skills (asking-questions, specs-first, principles, testing, status-rollup, uc-log, git-*, id-generation, code-documentation, writing-style, output-economy)
     ├── commands/
     └── skills/
 ```
